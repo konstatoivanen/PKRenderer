@@ -1,5 +1,6 @@
 #pragma once
-#include <exception>
+#include <stdint.h>
+#include <stdarg.h>
 
 namespace PK
 {
@@ -58,6 +59,6 @@ namespace PK
         virtual void Outdent(LogSeverity severity) = 0;
         virtual void NewLine() = 0;
         virtual void LogV(LogSeverity severity, LogColor color, const char* format, va_list args) = 0;
-        virtual std::exception ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args) = 0;
+        virtual void ErrorV(LogSeverity severity, LogColor color, const char* format, va_list args) = 0;
     };
 }

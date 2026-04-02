@@ -164,7 +164,7 @@ namespace PK
             }
             break;
 
-            default: PK_THROW_ERROR("Unsupproted graphics API"); break;
+            default: PK_FATAL_ERROR("Unsupproted graphics API"); break;
         }
 
         PK_LOG_HEADER("----------RHI INITIALIZED----------");
@@ -216,7 +216,7 @@ namespace PK
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution)
     {
-        PK_DEBUG_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
+        PK_DEBUG_FATAL_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
 
         if (inoutTexture->GetResolution() == resolution)
         {
@@ -231,7 +231,7 @@ namespace PK
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution, const uint32_t levels)
     {
-        PK_DEBUG_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
+        PK_DEBUG_FATAL_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
 
         if (inoutTexture->GetResolution() == resolution && inoutTexture->GetLevels() == levels)
         {
@@ -247,7 +247,7 @@ namespace PK
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint32_t levels, const uint32_t layers)
     {
-        PK_DEBUG_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
+        PK_DEBUG_FATAL_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
 
         if (inoutTexture->GetLevels() == levels && 
             inoutTexture->GetLayers() == layers)
@@ -281,7 +281,7 @@ namespace PK
 
     bool RHI::ValidateBuffer(RHIBufferRef& inoutBuffer, size_t size)
     {
-        PK_DEBUG_THROW_ASSERT(inoutBuffer, "Cant partially validate a buffer that hasnt been fully initialized!");
+        PK_DEBUG_FATAL_ASSERT(inoutBuffer, "Cant partially validate a buffer that hasnt been fully initialized!");
 
         if (inoutBuffer->GetSize() >= size)
         {

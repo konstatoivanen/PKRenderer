@@ -86,6 +86,7 @@
 
 #include <stdint.h>
 #include "Core/Utilities/NoCopy.h"
+#include "Core/Utilities/Memory.h"
 #include "Core/Math/MathFwd.h"
 
 namespace PK
@@ -109,11 +110,25 @@ namespace PK
 
     struct IPlatform : public NoCopy
     {
-        static int Initialize() = delete;
-        static int Terminate() = delete;
+        // For objects that need to be cleaned in case of a crash
+        // Do not use for sub allocations of other managed objects.
+        template<typename T, typename ... Args>
+        static T* ManagedAllocate(Args&& ... args)
+        {
+            auto ptr = static_cast<T*>(malloc(sizeof(T)));
+            AddManagedAllocation(ptr, [](void* ptr) { static_cast<T*>(ptr)->~T(); });
+            new (ptr) T(Memory::Forward<Args>(args)...);
+            return ptr;
+        }
 
+        static void ManagedDeallocate(void* ptr);
+
+        static void FatalExit(const char* message);
         static void PollEvents();
         static void WaitEvents();
+
+        static int Initialize() = delete;
+        static int Terminate() = delete;
 
         static void PollEvents(bool wait) = delete;
         static void* GetProcess() = delete;
@@ -151,8 +166,22 @@ namespace PK
         static uint32_t AtomicRead(const volatile uint32_t* dst) = delete;
         static void AtomicStore(volatile uint32_t* dst, uint32_t value) = delete;
         static uint64_t BitScan64(uint64_t mask) = delete;
+
+    private: 
+        static void AddManagedAllocation(void* object, void (*destructor)(void*));
+
+        struct ManagedAllocation
+        {
+            void (*destructor)(void*) = nullptr;
+            void* object = nullptr;
+            ManagedAllocation* next = nullptr;
+        };
+
+        inline static ManagedAllocation* s_ManagedAllocations = nullptr;
     };
 }
+
+#define PK_PLATFORM_ASSERT(value, msg) { if(!(value)) { PK::Platform::FatalExit(msg); } }
 
 #include "Windows/Win32Platform.h"
 #include "Linux/LinuxPlatform.h"

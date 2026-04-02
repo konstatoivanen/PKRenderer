@@ -254,10 +254,10 @@ namespace PK::App
 
 PK::IApplication* PK::CreateProjectApplication(const PK::CArguments& arguments)
 {
-    return new App::RendererApplication(arguments);
+    return PK::Platform::ManagedAllocate<App::RendererApplication>(arguments);
 }
 
 void PK::FreeProjectApplication(IApplication* application)
 {
-    delete application;
+    PK::Platform::ManagedDeallocate(application);
 }

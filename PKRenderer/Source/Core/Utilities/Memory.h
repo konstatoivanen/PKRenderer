@@ -8,12 +8,6 @@
     #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(alloca(sizeof(Type) * count))
 #endif
 
-#if PK_DEBUG
-    #define PK_DEBUG_ASSERT(cond, msg) PK::Memory::Assert(cond, msg);
-#else
-    #define PK_DEBUG_ASSERT(cond, msg)
-#endif
-
 namespace PK::Memory
 {
     template<typename> inline constexpr bool IsLvalueRef = false;

@@ -251,7 +251,7 @@ namespace PK
         {
             auto handle = handles[i];
 
-            PK_DEBUG_THROW_ASSERT(handle != nullptr, "Passing null vertex buffer is not allowed!");
+            PK_DEBUG_FATAL_ASSERT(handle != nullptr, "Passing null vertex buffer is not allowed!");
 
             if (handle != m_vertexBuffers[i])
             {
@@ -268,7 +268,7 @@ namespace PK
 
     void VulkanRenderState::SetVertexStreams(const VertexStreamElement* elements, uint32_t count)
     {
-        PK_DEBUG_THROW_ASSERT(count <= PK_RHI_MAX_VERTEX_ATTRIBUTES, "Tried to bind more vertex attributes than currently supported!");
+        PK_DEBUG_FATAL_ASSERT(count <= PK_RHI_MAX_VERTEX_ATTRIBUTES, "Tried to bind more vertex attributes than currently supported!");
 
         if (memcmp(m_vertexStreamLayout, elements, sizeof(VertexStreamElement) * count) != 0)
         {
@@ -476,7 +476,7 @@ namespace PK
             if (element.count > 1)
             {
                 const VulkanBindSet* handleSet = nullptr;
-                PK_THROW_ASSERT(resources->TryGet<const VulkanBindSet*>(element.name, handleSet), "Descriptors (%s) not bound!", element.name.c_str());
+                PK_FATAL_ASSERT(resources->TryGet<const VulkanBindSet*>(element.name, handleSet), "Descriptors (%s) not bound!", element.name.c_str());
 
                 uint32_t version = 0u;
                 uint32_t count = 0u;
@@ -497,7 +497,7 @@ namespace PK
             }
 
             const VulkanBindHandle* handle = nullptr;
-            PK_THROW_ASSERT(resources->TryGet<const VulkanBindHandle*>(element.name, handle), "Descriptor (%s) not bound!", element.name.c_str());
+            PK_FATAL_ASSERT(resources->TryGet<const VulkanBindHandle*>(element.name, handle), "Descriptor (%s) not bound!", element.name.c_str());
 
             if (binding->count != element.count || binding->type != element.type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
             {
@@ -713,7 +713,7 @@ namespace PK
 
     PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const FenceRef& fence)
     {
-        PK_DEBUG_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
+        PK_DEBUG_FATAL_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
         ValidateVertexBuffers();
         ValidateDescriptors(fence);

@@ -108,7 +108,7 @@ namespace PK
         auto index = 0u;
         auto isNew = m_variables.AddKey(name, &index);
         auto binding = &m_variables[index].value;
-        PK_THROW_ASSERT(!isNew || !binding->variable, "CVar is already bound! (%s)", name.c_str());
+        PK_FATAL_ASSERT(!isNew || !binding->variable, "CVar is already bound! (%s)", name.c_str());
         PK_LOG_VERBOSE_FUNC("%s", name.c_str());
         
         binding->variable = variable;

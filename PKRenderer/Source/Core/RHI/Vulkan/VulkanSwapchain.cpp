@@ -14,7 +14,7 @@ namespace PK
 
         VkBool32 presentSupported;
         VK_ASSERT_RESULT_CTX(vkGetPhysicalDeviceSurfaceSupportKHR(driver->physicalDevice, presentFamily, m_surface, &presentSupported), "Surface support query failure!");
-        PK_THROW_ASSERT(presentSupported, "Surface present not supported on selected physical device!");
+        PK_FATAL_ASSERT(presentSupported, "Surface present not supported on selected physical device!");
 
         Rebuild(descriptor);
     }
@@ -111,7 +111,7 @@ namespace PK
         // @TODO NV by default uses DXGI layered swapchain. the present of which is not visible to the application
         // In this mode the imaqe acquire fence only waits for the vk submit usage and not the full present.
         // This causes the frame time to accumulate unevenly and an eventual long wait when the dxgi swapchain has to actually wait for images.
-        PK_THROW_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
+        PK_FATAL_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
 
         auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);
 

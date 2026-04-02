@@ -25,14 +25,14 @@ namespace PK
         c4::yml::ConstNodeRef root = tree.rootref();
 
         auto material = root.find_child("Material");
-        PK_THROW_ASSERT(material.readable(), "Could not locate material (%s) header in file.", filepath);
+        PK_FATAL_ASSERT(material.readable(), "Could not locate material (%s) header in file.", filepath);
 
         auto shaderPathProp = material.find_child("Shader");
         auto shaderShadowPathProp = material.find_child("ShaderShadow");
         auto keywords = material.find_child("Keywords");
         auto properties = material.find_child("Properties");
 
-        PK_THROW_ASSERT(shaderPathProp.readable(), "Material (%s) doesn't define a shader.", filepath);
+        PK_FATAL_ASSERT(shaderPathProp.readable(), "Material (%s) doesn't define a shader.", filepath);
 
         m_shader = YAML::Read<ShaderAsset*>(shaderPathProp);
 
@@ -164,7 +164,7 @@ namespace PK
 
     void Material::ReservePropertyBuffer()
     {
-        PK_THROW_ASSERT(m_shader->SupportsMaterials(), "Shader is doesn't support materials!");
+        PK_FATAL_ASSERT(m_shader->SupportsMaterials(), "Shader is doesn't support materials!");
 
         EndWrite();
 

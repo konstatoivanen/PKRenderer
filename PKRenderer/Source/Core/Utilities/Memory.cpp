@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include <stdlib.h>
-#include <exception>
 #include "Memory.h"
 
 namespace PK
@@ -9,8 +8,7 @@ namespace PK
     {
         if (!value)
         {
-            PK_PLATFORM_DEBUG_BREAK;
-            throw std::exception(str);
+            PK::Platform::FatalExit(str);
         }
     }
 

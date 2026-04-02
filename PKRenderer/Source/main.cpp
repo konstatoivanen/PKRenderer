@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 
-#ifdef PK_DEBUG
+#if defined(PK_DEBUG) && PK_PLATFORM_WINDOWS
 #define _CRTDBG_MAP_ALLOC  
 #include <stdlib.h>  
 #include <crtdbg.h>  
@@ -19,21 +19,21 @@ extern "C"
 
 int main(int argc, char** argv)
 {
-#if defined(_CRTDBG_MAP_ALLOC)
+#if defined(_CRTDBG_MAP_ALLOC) && PK_PLATFORM_WINDOWS
     auto flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     flag |= _CRTDBG_LEAK_CHECK_DF | _CRTDBG_ALLOC_MEM_DF;
     _CrtSetDbgFlag(flag);
-   // _crtBreakAlloc = 483;
+    //_crtBreakAlloc = 154;
 #endif
 
-    auto status = PK::Platform::Initialize();
+    auto platformStatus = PK::Platform::Initialize();
 
-    if (status == 0)
+    if (platformStatus == 0)
     {
         auto application = PK::CreateProjectApplication({ argv, argc });
 
         application->Execute();
-
+        
         PK::FreeProjectApplication(application);
     }
 

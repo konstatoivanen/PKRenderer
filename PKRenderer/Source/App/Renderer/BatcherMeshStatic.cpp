@@ -198,7 +198,7 @@ namespace PK::App
         uint32_t userdata,
         uint16_t sortDepth)
     {
-        PK_THROW_ASSERT(mesh->baseMesh == &m_staticGeometry, "Cannot submit draws for meshes not registered in the scene mesh of this geometry batcher!");
+        PK_FATAL_ASSERT(mesh->baseMesh == &m_staticGeometry, "Cannot submit draws for meshes not registered in the scene mesh of this geometry batcher!");
 
         auto info = m_drawArena.Allocate<DrawInfo>(1u);
         info->shader = m_shaders.Add({ shader, 0ull, 0ull });

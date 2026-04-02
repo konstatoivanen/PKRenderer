@@ -196,7 +196,7 @@ namespace PK
             &m_useDpiScaling
         );
 
-        Memory::Assert(m_handle, "Failed to create a window through: CreateWindowExW.");
+        PK_PLATFORM_ASSERT(m_handle, "Failed to create a window through: CreateWindowExW.");
 
         // Set default icon from rc.
         if (descriptor.useEmbeddedIcon)

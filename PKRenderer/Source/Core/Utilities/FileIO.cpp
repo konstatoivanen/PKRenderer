@@ -140,16 +140,9 @@ namespace PK::FileIO
         auto path = std::filesystem::path(filepath).remove_filename().string();
         path = path.substr(0, path.length() - 1);
 
-        if (!std::filesystem::exists(path))
+        if (!std::filesystem::exists(path) && !std::filesystem::create_directories(path))
         {
-            try
-            {
-                std::filesystem::create_directories(path);
-            }
-            catch (std::exception& e)
-            {
-                printf("%s", e.what());
-            }
+            return -1;
         }
 
         file = fopen(filepath, isText ? "w" : "wb");

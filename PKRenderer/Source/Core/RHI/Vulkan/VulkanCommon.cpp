@@ -503,7 +503,7 @@ namespace PK
     {
         if ((createInfo.buffer.flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0)
         {
-            // No automatic memory allocation for sparse buffers. Do note that mapping a sparse buffer will throw an error.
+            // No automatic memory allocation for sparse buffers. Do note that mapping a sparse buffer will cause a fatal error.
             VK_ASSERT_RESULT_CTX(vkCreateBuffer(device, &createInfo.buffer, nullptr, &buffer), "Failed to create a buffer!");
             VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, name);
             memory = nullptr;
@@ -529,7 +529,7 @@ namespace PK
 
     void* VulkanRawBuffer::BeginMap(size_t offset, size_t readsize) const
     {
-        PK_DEBUG_THROW_ASSERT(memory, "Trying to map a buffer without dedicated memory!");
+        PK_DEBUG_FATAL_ASSERT(memory, "Trying to map a buffer without dedicated memory!");
 
         if (readsize > 0ull)
         {
@@ -554,7 +554,7 @@ namespace PK
 
     void VulkanRawBuffer::EndMap(size_t offset, size_t size) const
     {
-        PK_DEBUG_THROW_ASSERT(memory, "Trying to umap a buffer without dedicated memory!");
+        PK_DEBUG_FATAL_ASSERT(memory, "Trying to umap a buffer without dedicated memory!");
 
         if (!isPersistentMap)
         {
@@ -2232,7 +2232,7 @@ namespace PK
             return;
         }
 
-        PK_THROW_ERROR("Could not find a suitable vulkan physical device!");
+        PK_FATAL_ERROR("Could not find a suitable vulkan physical device!");
     }
 
     VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent)
@@ -2379,7 +2379,7 @@ namespace PK
 
         if (major > supportedMajor || minor > supportedMinor)
         {
-            PK_THROW_ERROR("Vulkan version %i.%i required. Your driver only supports version %i.%i", major, minor, supportedMajor, supportedMinor);
+            PK_FATAL_ERROR("Vulkan version %i.%i required. Your driver only supports version %i.%i", major, minor, supportedMajor, supportedMinor);
         }
     }
 
@@ -2387,11 +2387,11 @@ namespace PK
     {
         if (context != nullptr)
         {
-            PK_THROW_ERROR("%s (%s)", context, string_VkResult(result));
+            PK_FATAL_ERROR("%s (%s)", context, string_VkResult(result));
         }
         else
         {
-            PK_THROW_ERROR("VK COMMAND FAILED! (%s)", string_VkResult(result));
+            PK_FATAL_ERROR("VK COMMAND FAILED! (%s)", string_VkResult(result));
         }
     }
 }

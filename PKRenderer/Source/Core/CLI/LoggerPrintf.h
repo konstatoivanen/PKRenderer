@@ -20,7 +20,7 @@ namespace PK
         void Outdent(LogSeverity severity) final;
         void NewLine() final;
         void LogV(LogSeverity severity, LogColor color, const char* format, va_list args) final;
-        std::exception ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args) final;
+        void ErrorV(LogSeverity severity, LogColor color, const char* format, va_list args) final;
 
     private:
         void LogIndent();

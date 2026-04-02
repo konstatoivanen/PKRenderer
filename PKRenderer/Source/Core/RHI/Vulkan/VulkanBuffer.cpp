@@ -72,8 +72,8 @@ namespace PK
 
     void* VulkanBuffer::BeginMap(size_t offset, size_t readsize) const
     {
-        PK_DEBUG_THROW_ASSERT((offset + readsize) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + readsize, GetSize());
-        PK_DEBUG_THROW_ASSERT((m_usage & BufferUsage::TypeBits) != BufferUsage::GPUOnly, "Cant map a gpu only buffer");
+        PK_DEBUG_FATAL_ASSERT((offset + readsize) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + readsize, GetSize());
+        PK_DEBUG_FATAL_ASSERT((m_usage & BufferUsage::TypeBits) != BufferUsage::GPUOnly, "Cant map a gpu only buffer");
         return m_buffer->BeginMap(offset, readsize);
     }
 
@@ -84,30 +84,30 @@ namespace PK
 
     size_t VulkanBuffer::SparseAllocate(const size_t size, QueueType type)
     {
-        PK_DEBUG_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
+        PK_DEBUG_FATAL_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
         return m_pageTable->Allocate(size, type);
     }
 
     void VulkanBuffer::SparseAllocateRange(const BufferIndexRange& range, QueueType type)
     {
-        PK_DEBUG_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
+        PK_DEBUG_FATAL_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
         m_pageTable->AllocateRange(range, type);
     }
 
     void VulkanBuffer::SparseDeallocate(const BufferIndexRange& range)
     {
-        PK_DEBUG_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be deallocated from!");
+        PK_DEBUG_FATAL_ASSERT(m_pageTable, "Non sparse buffer cannot be deallocated from!");
         m_pageTable->DeallocateRange(range);
     }
 
 
     void* VulkanBuffer::BeginStagedWrite(size_t offset, size_t size)
     {
-        PK_DEBUG_THROW_ASSERT((offset + size) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + size, GetSize());
+        PK_DEBUG_FATAL_ASSERT((offset + size) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + size, GetSize());
 
         if (m_stage == nullptr || !m_stage->isPersistentMap)
         {
-            PK_DEBUG_THROW_ASSERT(m_stage == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
+            PK_DEBUG_FATAL_ASSERT(m_stage == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
             m_stage = m_driver->stagingBufferCache->Acquire(size, false, nullptr);
         }
 
@@ -119,7 +119,7 @@ namespace PK
 
     void VulkanBuffer::EndStagedWrite(RHIBuffer** dst, RHIBuffer** src, VkBufferCopy* region, const FenceRef& fence)
     {
-        PK_DEBUG_THROW_ASSERT(m_stage != nullptr, "Trying to end buffer map for an unmapped buffer!");
+        PK_DEBUG_FATAL_ASSERT(m_stage != nullptr, "Trying to end buffer map for an unmapped buffer!");
         
         *src = m_stage;
         *dst = this;
@@ -139,7 +139,7 @@ namespace PK
 
     const VulkanBindHandle* VulkanBuffer::GetBindHandle(const BufferIndexRange& range)
     {
-        PK_DEBUG_THROW_ASSERT(range.offset + range.count <= GetSize(), "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
+        PK_DEBUG_FATAL_ASSERT(range.offset + range.count <= GetSize(), "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
 
         if (m_firstView.FindAndSwapFirst(range))
         {

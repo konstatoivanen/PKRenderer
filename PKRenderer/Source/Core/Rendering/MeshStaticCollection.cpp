@@ -16,7 +16,7 @@ namespace PK
         const uint32_t maxTriangles = 65535u * 16u * 3u;
         const auto flags = BufferUsage::GPUOnly | BufferUsage::TransferDst | BufferUsage::Storage | BufferUsage::Sparse;
 
-        PK_THROW_ASSERT((maxTriangles * 3ull) % 4ull == 0ull, "Input triangle count x3 must be divisible by 4");
+        PK_FATAL_ASSERT((maxTriangles * 3ull) % 4ull == 0ull, "Input triangle count x3 must be divisible by 4");
 
         m_streamLayout = VertexStreamLayout(
             {
@@ -56,7 +56,7 @@ namespace PK
             desc->regular.vertexCount,
             desc->regular.indexCount);
 
-        PK_THROW_ASSERT(desc->meshlet.submeshCount == desc->regular.submeshCount, "Submesh count missmatch");
+        PK_FATAL_ASSERT(desc->meshlet.submeshCount == desc->regular.submeshCount, "Submesh count missmatch");
 
         MeshStatic* staticMesh = nullptr;
 
@@ -88,7 +88,7 @@ namespace PK
         auto attributesSize = desc->regular.vertexCount * attributesStride;
         auto indicesSize = desc->regular.indexCount * indexStride;
 
-        PK_THROW_ASSERT((meshletIndicesSize % 4ull) == 0ull, "Index counts must be aligned to 4!");
+        PK_FATAL_ASSERT((meshletIndicesSize % 4ull) == 0ull, "Index counts must be aligned to 4!");
 
         auto submeshOffset = m_submeshBuffer->SparseAllocate(submeshesSize, QueueType::Transfer);
         auto meshletOffset = m_meshletBuffer->SparseAllocate(meshletsSize, QueueType::Transfer);
@@ -98,7 +98,7 @@ namespace PK
         auto attributesOffset = m_attributesBuffer->SparseAllocate(attributesSize, QueueType::Transfer);
         auto indexOffset = m_indexBuffer->SparseAllocate(indicesSize, QueueType::Transfer);
 
-        PK_THROW_ASSERT((meshletIndexOffset % 12ull) == 0ull, "Meshlet Index offsets must be aligned to 12!");
+        PK_FATAL_ASSERT((meshletIndexOffset % 12ull) == 0ull, "Meshlet Index offsets must be aligned to 12!");
 
         // Used accross mesh types
         // Leverage submesh buffer offset by using it on cpu side submesh index as well.

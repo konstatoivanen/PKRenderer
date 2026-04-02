@@ -1,5 +1,5 @@
 #pragma once
-#include "Memory.h"
+#include <stdint.h>
 
 namespace PK
 {
@@ -14,7 +14,6 @@ namespace PK
     template<typename T>
     T& BufferView<T>::operator[](size_t index)
     {
-        PK_DEBUG_ASSERT(index < count, "Index is out of view bounds!")
         return data[index];
     }
 
@@ -31,7 +30,6 @@ namespace PK
     template<typename T>
     const T& ConstBufferView<T>::operator[](size_t index)
     {
-        PK_DEBUG_ASSERT(index < count, "Index is out of view bounds!")
         return data[index];
     }
 
@@ -48,7 +46,6 @@ namespace PK
     template<typename T>
     const T& InterleavedBufferView<T>::operator[](size_t index)
     {
-        PK_DEBUG_ASSERT(index < count, "Index is out of view bounds!")
         return *reinterpret_cast<T*>(data + index * stride + offset);  
     }
 }

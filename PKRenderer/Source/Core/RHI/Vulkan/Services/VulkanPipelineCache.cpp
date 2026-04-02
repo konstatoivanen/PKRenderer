@@ -94,7 +94,8 @@ namespace PK
             return GetRayTracingPipeline(key.shader);
         }
 
-        PK_THROW_ERROR("Pipeline retrieval failed! Unknown shader type!");
+        PK_FATAL_ERROR("Pipeline retrieval failed! Unknown shader type!");
+        return nullptr;
     }
 
     const VulkanPipeline* VulkanPipelineCache::GetVertexPipeline(const PipelineKey& key)

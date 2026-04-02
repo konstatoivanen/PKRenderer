@@ -13,8 +13,8 @@ namespace PK
     {
         PKAssets::PKAsset asset;
 
-        PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
-        PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Font, "Trying to read a font from a non font file!")
+        PK_FATAL_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
+        PK_FATAL_ASSERT(asset.header->type == PKAssets::PKAssetType::Font, "Trying to read a font from a non font file!")
 
         auto font = PKAssets::ReadAsFont(&asset);
         auto base = asset.rawData;

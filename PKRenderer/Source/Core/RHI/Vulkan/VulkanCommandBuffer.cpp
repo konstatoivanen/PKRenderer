@@ -447,7 +447,7 @@ namespace PK
 
     void VulkanCommandBuffer::CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount)
     {
-        PK_DEBUG_THROW_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture upload is only supported for sampled | upload | readonly textures!");
+        PK_DEBUG_FATAL_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture upload is only supported for sampled | upload | readonly textures!");
 
         auto vkTexture = static_cast<VulkanTexture*>(texture);
         auto layout = vkTexture->GetImageLayout();
@@ -536,7 +536,7 @@ namespace PK
 
     int32_t VulkanCommandBuffer::QueryAccelerationStructureCompactSize(const VulkanRawAccelerationStructure* structure, VulkanQueryPool* pool)
     {
-        PK_DEBUG_THROW_ASSERT(pool->type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "Invalid query pool type");
+        PK_DEBUG_FATAL_ASSERT(pool->type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "Invalid query pool type");
         auto queryIndex = pool->AddQuery(GetFenceRef());
 
         if (queryIndex != -1)
@@ -590,7 +590,7 @@ namespace PK
                 barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
                 break;
             default:
-                PK_THROW_ERROR("Unsupported layout transition!");
+                PK_FATAL_ERROR("Unsupported layout transition!");
         }
 
         EndRenderPass();

@@ -75,7 +75,7 @@ namespace PK
             }
         }
 
-        PK_THROW_ASSERT(selectedFamily != 0xFFFFFFFF, "Failed to find queue matching parameters!");
+        PK_FATAL_ASSERT(selectedFamily != 0xFFFFFFFF, "Failed to find queue matching parameters!");
 
         if (existingIndex != 0xFFFFFFFF)
         {
@@ -284,7 +284,7 @@ namespace PK
             }
         }
 
-        PK_DEBUG_THROW_ASSERT(m_currentCommandBuffer, "No available command buffers!");
+        PK_DEBUG_FATAL_ASSERT(m_currentCommandBuffer, "No available command buffers!");
 
         auto currentIndex = (int64_t)(m_currentCommandBuffer - m_commandWrappers);
         auto commandBuffer = m_commandBuffers[currentIndex];

@@ -118,15 +118,15 @@ namespace PK
 
         PKAssets::PKAsset asset;
 
-        PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
-        PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Shader, "Trying to read a shader from a non shader file!")
+        PK_FATAL_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
+        PK_FATAL_ASSERT(asset.header->type == PKAssets::PKAssetType::Shader, "Trying to read a shader from a non shader file!")
 
         auto shader = PKAssets::ReadAsShader(&asset);
         auto base = asset.rawData;
 
         if (shader->variantcount == 0)
         {
-            PK_THROW_ASSERT(shader->variantcount > 0, "Trying to read a shader with 0 variants!");
+            PK_FATAL_ASSERT(shader->variantcount > 0, "Trying to read a shader with 0 variants!");
         }
 
         m_attributes.blending.srcColorFactor = shader->attributes.blendSrcFactorColor;

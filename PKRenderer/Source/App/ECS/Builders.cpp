@@ -131,7 +131,7 @@ namespace PK::App::EntityBuilders
                 implementer->localAABB = BoundingBox::CenterExtents({ 0.0f, 0.0f, radius * 0.5f }, { a, a, radius * 0.5f });
             }
             break;
-            default: PK_THROW_ERROR("Invalid Light Type");
+            default: PK_FATAL_ERROR("Invalid Light Type");
         }
 
         CreateEntityViewScenePrimitive(entityDb, implementer, egid, flags);

@@ -59,8 +59,8 @@ namespace PK
         instanceCreateInfo.enabledLayerCount = properties.enableValidation ? 1u : 0u;
         instanceCreateInfo.ppEnabledLayerNames = &VK_LAYER_KHRONOS_validation;
 
-        PK_THROW_ASSERT(VulkanValidateInstanceExtensions(properties.instanceExtensions.data, properties.instanceExtensions.count), "Trying to enable unavailable extentions!");
-        PK_THROW_ASSERT(VulkanValidateValidationLayers(instanceCreateInfo.ppEnabledLayerNames, instanceCreateInfo.enabledLayerCount), "Trying to enable unavailable validation layers!");
+        PK_FATAL_ASSERT(VulkanValidateInstanceExtensions(properties.instanceExtensions.data, properties.instanceExtensions.count), "Trying to enable unavailable extentions!");
+        PK_FATAL_ASSERT(VulkanValidateValidationLayers(instanceCreateInfo.ppEnabledLayerNames, instanceCreateInfo.enabledLayerCount), "Trying to enable unavailable validation layers!");
 
         instanceCreateInfo.enabledExtensionCount = (uint32_t)properties.instanceExtensions.count;
         instanceCreateInfo.ppEnabledExtensionNames = properties.instanceExtensions.data;
@@ -325,7 +325,7 @@ namespace PK
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
-            PK_THROW_ERROR("Vulkan Validation Error: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+            PK_FATAL_ERROR("Vulkan Validation Error: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 

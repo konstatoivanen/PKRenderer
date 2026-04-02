@@ -30,7 +30,7 @@ namespace PK
         platformDescriptor.autoActivate = descriptor.autoActivate;
         platformDescriptor.useEmbeddedIcon = descriptor.iconPath.Length() == 0;
         m_native = Platform::CreateWindow(platformDescriptor);
-        PK_THROW_ASSERT(m_native, "Failed To Create Window");
+        PK_FATAL_ASSERT(m_native, "Failed To Create Window");
 
         m_native->SetListener(this);
 
@@ -38,7 +38,7 @@ namespace PK
         {
             auto icon = FileIO::ReadImage(descriptor.iconPath.c_str());
             PK_WARNING_ASSERT(icon, "Failed to load window icon at path, %s", descriptor.iconPath.c_str());
-            PK_THROW_ASSERT(!icon || icon->bytesPerPixel == 4, "Trying to load an icon with invalid bytes per pixel value, %i", icon->bytesPerPixel);
+            PK_FATAL_ASSERT(!icon || icon->bytesPerPixel == 4, "Trying to load an icon with invalid bytes per pixel value, %i", icon->bytesPerPixel);
             
             if (icon)
             {
@@ -110,7 +110,7 @@ namespace PK
 
     void Window::PresentImage()
     {
-        PK_THROW_ASSERT(m_inWindowScope, "Trying to end a frame that outside of a frame scope!")
+        PK_FATAL_ASSERT(m_inWindowScope, "Trying to end a frame that outside of a frame scope!")
         m_swapchain->Present();
         m_inWindowScope = false;
     }

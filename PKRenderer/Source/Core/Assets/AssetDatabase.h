@@ -136,7 +136,7 @@ namespace PK
         {
             auto object = CreateAssetObject<T>(assetId, CacheMode::Persistent);
             constexpr auto name = pk_base_type_name<T>();
-            PK_THROW_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
+            PK_FATAL_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
             PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, assetId.c_str());
             object->ConstructVirtual(Memory::Forward<Args>(args)...);
             return object->GetReference();
@@ -152,7 +152,7 @@ namespace PK
         Ref<T> Load(AssetID assetId, CacheMode cacheMode = CacheMode::Persistent, bool forceReload = false)
         {
             FixedString256 filepath(assetId.c_str());
-            PK_THROW_ASSERT(FileIO::FileExists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());
+            PK_FATAL_ASSERT(FileIO::FileExists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());
             auto object = CreateAssetObject<T>(assetId, cacheMode);
             LoadAsset(object, forceReload);
             return object->GetReference();
@@ -204,7 +204,7 @@ namespace PK
         Ref<T> Find(const char* keyword, bool doAssert = true) const
         {
             auto asset = Find(pk_base_type_index<T>(), keyword);
-            PK_THROW_ASSERT(!doAssert || asset != nullptr, "Could not find asset with keyword %s", keyword);
+            PK_FATAL_ASSERT(!doAssert || asset != nullptr, "Could not find asset with keyword %s", keyword);
             return asset ? StaticCastRef<T>(asset) : nullptr;
         }
         

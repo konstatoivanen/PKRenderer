@@ -70,8 +70,8 @@ namespace PK::MeshUtilities
 
                 if (vsrc.name == vdst.name)
                 {
-                    PK_THROW_ASSERT(vsrc.size == vdst.size, "Element '%s' size missmatch '%u' & '%u'", vdst.name.c_str(), vdst.size, vsrc.size);
-                    PK_THROW_ASSERT(vsrc.inputRate == vdst.inputRate, "Element '%s' input rate missmatch '%i' & '%i'", vdst.name.c_str(), (int)vdst.inputRate, (int)vsrc.inputRate);
+                    PK_FATAL_ASSERT(vsrc.size == vdst.size, "Element '%s' size missmatch '%u' & '%u'", vdst.name.c_str(), vdst.size, vsrc.size);
+                    PK_FATAL_ASSERT(vsrc.inputRate == vdst.inputRate, "Element '%s' input rate missmatch '%i' & '%i'", vdst.name.c_str(), (int)vdst.inputRate, (int)vsrc.inputRate);
                     needsAlignment |= vsrc.stream != vdst.stream || vsrc.offset != vdst.offset;
                     remap[i] = j;
                     break;
@@ -80,7 +80,7 @@ namespace PK::MeshUtilities
         }
 
 
-        PK_THROW_ASSERT(dst.GetStride() == src.GetStride(), "Layout stride missmatch!");
+        PK_FATAL_ASSERT(dst.GetStride() == src.GetStride(), "Layout stride missmatch!");
 
         if (needsAlignment)
         {
@@ -145,7 +145,7 @@ namespace PK::MeshUtilities
         context.m_pInterface = &mikttInterface;
         context.m_pUserData = ctx;
 
-        PK_THROW_ASSERT(genTangSpaceDefault(&context), "Failed to calculate tangents");
+        PK_FATAL_ASSERT(genTangSpaceDefault(&context), "Failed to calculate tangents");
     }
 
 

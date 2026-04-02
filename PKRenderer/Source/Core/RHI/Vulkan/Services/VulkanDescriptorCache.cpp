@@ -128,7 +128,7 @@ namespace PK
                 continue;
             }
 
-            PK_THROW_ERROR("Unsuppored binding type!");
+            PK_FATAL_ERROR("Unsuppored binding type!");
         }
 
         vkUpdateDescriptorSets(m_device, bindingCount, writes, 0, nullptr);
@@ -219,7 +219,7 @@ namespace PK
 
         if (vkdescriptorset == VK_NULL_HANDLE)
         {
-            PK_THROW_ERROR("Failed to allocate a descriptor set!");
+            PK_FATAL_ERROR("Failed to allocate a descriptor set!");
         }
 
         VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)vkdescriptorset, name);

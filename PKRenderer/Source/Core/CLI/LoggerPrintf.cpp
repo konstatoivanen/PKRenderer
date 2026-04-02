@@ -74,7 +74,7 @@ namespace PK
         }
     }
 
-    std::exception LoggerPrintf::ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args)
+    void LoggerPrintf::ErrorV(LogSeverity severity, LogColor color, const char* format, va_list args)
     {
         if (m_crashLogPath.Length() > 0)
         {
@@ -95,13 +95,10 @@ namespace PK
             SetColor(LogColor::PK_LOG_COLOR_BLACK);
             NewLine();
         }
-
+        
         PK_PLATFORM_DEBUG_BREAK;
-        
-        // Forces flush
-        _getch();
-        
-        return std::exception(format);
+
+        fflush(stdout);
     }
 
     void LoggerPrintf::LogIndent()

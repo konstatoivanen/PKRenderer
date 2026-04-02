@@ -13,16 +13,16 @@ namespace PK
     {
         PKAssets::PKAsset asset;
 
-        PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
-        PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
+        PK_FATAL_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
+        PK_FATAL_ASSERT(asset.header->type == PKAssets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
 
             auto mesh = PKAssets::ReadAsMesh(&asset);
         auto base = asset.rawData;
 
-        PK_THROW_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a mesh with 0 vertex attributes!");
-        PK_THROW_ASSERT(mesh->vertexCount > 0, "Trying to read a shader with 0 vertices!");
-        PK_THROW_ASSERT(mesh->indexCount > 0, "Trying to read a shader with 0 indices!");
-        PK_THROW_ASSERT(mesh->submeshCount > 0, "Trying to read a shader with 0 submeshes!");
+        PK_FATAL_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a mesh with 0 vertex attributes!");
+        PK_FATAL_ASSERT(mesh->vertexCount > 0, "Trying to read a shader with 0 vertices!");
+        PK_FATAL_ASSERT(mesh->indexCount > 0, "Trying to read a shader with 0 indices!");
+        PK_FATAL_ASSERT(mesh->submeshCount > 0, "Trying to read a shader with 0 submeshes!");
 
         auto pAttributes = mesh->vertexAttributes.Get(base);
         auto pVertices = mesh->vertexBuffer.Get(base);
@@ -53,7 +53,7 @@ namespace PK
         streamLayout.CalculateOffsetsAndStride();
 
         {
-            PK_THROW_ASSERT(baseMesh, "Cannot create a virtual mesh without a base mesh!");
+            PK_FATAL_ASSERT(baseMesh, "Cannot create a virtual mesh without a base mesh!");
 
             MeshStaticDescriptor desc{};
             desc.name = Parse::GetFilePathStem(filepath).c_str();

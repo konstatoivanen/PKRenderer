@@ -268,7 +268,7 @@ namespace PK
 
     void VulkanAccelerationStructure::BeginWrite(QueueType queue, uint32_t instanceLimit)
     {
-        PK_DEBUG_THROW_ASSERT(m_writeBuffer == nullptr, "Structure is already being written into!");
+        PK_DEBUG_FATAL_ASSERT(m_writeBuffer == nullptr, "Structure is already being written into!");
 
         m_cmd = m_driver->queues->GetQueue(queue)->GetCommandBuffer();
         m_instanceCount = 0u;
@@ -294,7 +294,7 @@ namespace PK
 
     void VulkanAccelerationStructure::AddInstance(AccelerationStructureGeometryInfo& geometry, const float3x4& matrix)
     {
-        PK_DEBUG_THROW_ASSERT(m_instanceCount < m_instanceLimit, "Instance limit exceeded!");
+        PK_DEBUG_FATAL_ASSERT(m_instanceCount < m_instanceLimit, "Instance limit exceeded!");
 
         VkAccelerationStructureInstanceKHR* instance = m_writeBuffer + m_instanceCount++;
 

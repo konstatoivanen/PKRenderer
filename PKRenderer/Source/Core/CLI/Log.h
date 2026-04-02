@@ -26,8 +26,8 @@ namespace PK
         static void NewLine();
         static void Log(LogSeverity severity, LogColor color, const char* format, ...);
         static void LogV(LogSeverity severity, LogColor color, const char* format, va_list args);
-        static std::exception Exception(LogSeverity severity, LogColor color, const char* format, ...);
-        static std::exception ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args);
+        static void Error(LogSeverity severity, LogColor color, const char* format, ...);
+        static void ErrorV(LogSeverity severity, LogColor color, const char* format, va_list args);
 
         private: 
             #if PK_LOG_USE_SATIC_SEVERITY_MASK
@@ -62,18 +62,16 @@ namespace PK
     #define PK_LOG_INDENT(severity) PK::LogScopeIndent PK_LOG_UNIQUE_NAME(pk_log_scope_indent_)(severity)
 #endif
 
-#define PK_LOG_EXCEPTION(...) PK::StaticLog::Exception(PK::PK_LOG_LVL_ERROR, PK::PK_LOG_COLOR_ERROR, __VA_ARGS__)
-
-#define PK_THROW_ERROR(...) throw PK_LOG_EXCEPTION(__VA_ARGS__)
-#define PK_THROW_ASSERT(value, ...) { if(!(value)) { PK_THROW_ERROR(__VA_ARGS__); } }
+#define PK_FATAL_ERROR(...) do { PK::StaticLog::Error(PK::PK_LOG_LVL_ERROR, PK::PK_LOG_COLOR_ERROR, __VA_ARGS__); PK::Platform::FatalExit(nullptr); } while(false)
+#define PK_FATAL_ASSERT(value, ...) { if(!(value)) { PK_FATAL_ERROR(__VA_ARGS__); } }
 #define PK_WARNING_ASSERT(value, ...) { if(!(value)) { PK_LOG_WARNING(__VA_ARGS__); } }
 
 #if PK_DEBUG
-#define PK_DEBUG_THROW_ASSERT(value, ...) { if(!(value)) { PK_THROW_ERROR(__VA_ARGS__); } }
+#define PK_DEBUG_FATAL_ASSERT(value, ...) { if(!(value)) { PK_FATAL_ERROR(__VA_ARGS__); } }
 #define PK_DEBUG_WARNING_ASSERT(value, ...) { if(!(value)) { PK_LOG_WARNING(__VA_ARGS__); } }
 #define PK_DEBUG_WARNING(...) PK_LOG_WARNING(__VA_ARGS__)
 #else
-#define PK_DEBUG_THROW_ASSERT(value, ...)
+#define PK_DEBUG_FATAL_ASSERT(value, ...)
 #define PK_DEBUG_WARNING_ASSERT(value, ...)
 #define PK_DEBUG_WARNING(...)
 #endif
