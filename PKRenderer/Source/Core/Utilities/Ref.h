@@ -17,7 +17,7 @@ namespace PK
         template<typename U>  
         DefaultDeleter(const DefaultDeleter<U>&, typename TEnableIf<__is_convertible_to(U*, T*)>::Type * = 0) noexcept {}
 
-        void operator()(T * p) const noexcept { delete p; }
+        void operator()(T* p) const noexcept { Memory::Delete(p); }
     };
 
     template<typename T, typename D, bool isEmpty = __is_empty(D) && !__is_final(D)>
@@ -135,7 +135,7 @@ namespace PK
         {
             if (!m_isCreated)
             {
-                new(&value) T(PK::Forward<Args>(args)...);
+                Memory::Construct(&value, PK::Forward<Args>(args)...);
                 m_isCreated = true;
             }
         }
@@ -179,10 +179,10 @@ namespace PK
     struct SharedObject : public SharedObjectBase
     {
         template <typename ... Args>
-        explicit SharedObject(Args&&... args) : SharedObjectBase() { new(&value) T(PK::Forward<Args>(args)...); }
+        explicit SharedObject(Args&&... args) : SharedObjectBase() { Memory::Construct(&value, PK::Forward<Args>(args)...); }
         virtual ~SharedObject() noexcept override {}
         virtual void Destroy() noexcept override final { value.~T(); }
-        virtual void Delete() noexcept override final { delete this; }
+        virtual void Delete() noexcept override final { Memory::Delete(this); }
         struct U { constexpr U() noexcept {} };
         union { U unionDefault; T value; };
     };
@@ -446,14 +446,14 @@ namespace PK
     constexpr Unique<T> CreateUnique(Args&& ... args) noexcept
     {
         // Separate line so that memory profiler picks the type correctly :/
-        auto ptr = new T(PK::Forward<Args>(args)...);
+        auto ptr = Memory::New<T>(PK::Forward<Args>(args)...);
         return Unique<T>(ptr);
     }
 
     template<typename T, typename ... Args>
     constexpr Ref<T> CreateRef(Args&& ... args) noexcept
     {
-        const auto shared = new SharedObject<T>(PK::Forward<Args>(args)...);
+        const auto shared = Memory::New<SharedObject<T>>(PK::Forward<Args>(args)...);
         Ref<T> ret;
         ret.pointer = &shared->value;
         ret.shared = shared;

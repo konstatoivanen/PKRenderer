@@ -28,20 +28,10 @@ namespace PK
         }
 
         template<typename ... Args>
-        T* New(Args&& ... args)
-        {
-            auto ptr = Allocate(1u);
-            new(ptr) T(PK::Forward<Args>(args)...);
-            return ptr;
-        }
+        T* New(Args&& ... args) { return Memory::Construct(Allocate(1u), PK::Forward<Args>(args)...); }
 
         template<typename ... Args>
-        T* NewAt(int64_t index, Args&& ... args)
-        {
-            auto ptr = Allocate(1u, index);
-            new(ptr) T(PK::Forward<Args>(args)...);
-            return ptr;
-        }
+        T* NewAt(int64_t index, Args&& ... args) { return Memory::Construct(Allocate(1u, index), PK::Forward<Args>(args)...); }
 
         template<typename ... Args>
         T* NewArray(size_t count, Args&& ... args)
@@ -50,7 +40,7 @@ namespace PK
 
             for (auto i = 0u; i < count; ++i)
             {
-                new(ptr + i) T(PK::Forward<Args>(args)...);
+                Memory::Construct(ptr + i, PK::Forward<Args>(args)...);
             }
 
             return ptr;

@@ -24,7 +24,7 @@ namespace PK
             template<typename T>
             void Dispose(T* disposable, const FenceRef& releaseFence)
             {
-                Dispose(nullptr, disposable, []([[maybe_unused]] void* c, void* v) { delete reinterpret_cast<T*>(v); }, releaseFence);
+                Dispose(nullptr, disposable, []([[maybe_unused]] void* c, void* v) { Memory::Delete(reinterpret_cast<T*>(v)); }, releaseFence);
             }
 
             void Dispose(void* context, void* disposable, Destructor destructor, const FenceRef& releaseFence);

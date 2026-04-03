@@ -330,7 +330,7 @@ namespace PK
                 resources->inputHandler->InputHandler_OnDisconnect(head);
             }
 
-            delete static_cast<Win32Window*>(head);
+            Memory::Delete(head);
             head = resources->windowHead;
         }
 
@@ -550,7 +550,7 @@ namespace PK
 
     PlatformWindow* Win32Platform::CreateWindow(const PlatformWindowDescriptor& descriptor)
     {
-        auto window = new Win32Window(descriptor);
+        auto window = Memory::New<Win32Window>(descriptor);
         window->GetNext() = resources->windowHead;
         resources->windowHead = window;
 
@@ -584,7 +584,7 @@ namespace PK
             head = head->GetNext();
         }
 
-        delete static_cast<Win32Window*>(window);
+        Memory::Delete(static_cast<Win32Window*>(window));
     }
 
     void Win32Platform::SetInputHandler(InputHandler* handler)

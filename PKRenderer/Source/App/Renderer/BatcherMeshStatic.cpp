@@ -25,7 +25,7 @@ namespace PK::App
 
     void BatcherMeshStatic::AssetConstruct(MeshStaticAsset* memory, const char* filepath)
     {
-        new(memory) MeshStaticAsset(&m_staticGeometry, filepath);
+        Memory::Construct(memory, &m_staticGeometry, filepath);
     }
 
     void BatcherMeshStatic::BeginCollectDrawCalls()

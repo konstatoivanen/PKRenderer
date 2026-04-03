@@ -52,6 +52,18 @@ namespace PK::Memory
     template<typename T>
     T* AllocateClear(size_t count) noexcept { return Memset<T>(Allocate<T>(count), 0, count); }
 
+    template<typename T, typename ... Args>
+    T* New(Args&& ... args) { return Construct<T>(Allocate<T>(1u), PK::Forward<Args>(args)...); }
+
+    template<typename T>
+    void Delete(T* ptr) { if (ptr) Free(Destruct<T>(ptr)); }
+
+    template<typename T, typename ... Args>
+    T* Construct(T* ptr, Args&& ... args) { new(ptr) T(PK::Forward<Args>(args)...); return ptr; }
+
+    template<typename T>
+    T* Destruct(T* ptr) { ptr->~T(); return ptr; }
+
     template<typename T>
     T* Memcpy(T* dst, const T* src, size_t count) noexcept { return static_cast<T*>(memcpy(dst, src, count * sizeof(T))); }
 

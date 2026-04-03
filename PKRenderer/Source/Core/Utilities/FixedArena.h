@@ -23,9 +23,7 @@ namespace PK
         template<typename T, typename ... Args>
         T* New(Args&& ... args)
         {
-            auto ptr = reinterpret_cast<T*>(AllocateBlock(sizeof(T), alignof(T)));
-            new(ptr) T(PK::Forward<Args>(args)...);
-            return ptr;
+            return Memory::Construct(reinterpret_cast<T*>(AllocateBlock(sizeof(T), alignof(T))), PK::Forward<Args>(args)...);
         }
 
         template<typename T>

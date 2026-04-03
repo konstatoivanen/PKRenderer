@@ -9,7 +9,7 @@ namespace PK
     struct PooledSharedObject : public SharedObjectBase
     {
         template <typename ... Args>
-        explicit PooledSharedObject(Args&&... args) : SharedObjectBase() { new(&value) T(PK::Forward<Args>(args)...); }
+        explicit PooledSharedObject(Args&&... args) : SharedObjectBase() { Memory::Construct(&value, PK::Forward<Args>(args)...); }
         virtual ~PooledSharedObject() noexcept override { Destroy(); }
 
         void Destroy() noexcept final 

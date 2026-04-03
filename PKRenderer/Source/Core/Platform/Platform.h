@@ -120,8 +120,7 @@ namespace PK
         {
             auto ptr = Memory::Allocate<T>(1u);
             AddManagedAllocation(ptr, [](void* ptr) { static_cast<T*>(ptr)->~T(); });
-            new (ptr) T(PK::Forward<Args>(args)...);
-            return ptr;
+            return Memory::Construct(ptr, PK::Forward<Args>(args)...);
         }
 
         static void ManagedDeallocate(void* ptr);

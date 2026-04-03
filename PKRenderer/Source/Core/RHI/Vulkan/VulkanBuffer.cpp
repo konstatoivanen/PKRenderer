@@ -32,7 +32,7 @@ namespace PK
         if ((m_usage & BufferUsage::Sparse) != 0)
         {
             FixedString128 pageTableName({ name, ".PageTable" });
-            m_pageTable = new VulkanSparsePageTable(m_driver, m_buffer->buffer, bufferCreateInfo.allocation.usage, pageTableName.c_str());
+            m_pageTable = Memory::New<VulkanSparsePageTable>(m_driver, m_buffer->buffer, bufferCreateInfo.allocation.usage, pageTableName.c_str());
         }
 
         // host local buffers cannot be bound and dont need tracking.

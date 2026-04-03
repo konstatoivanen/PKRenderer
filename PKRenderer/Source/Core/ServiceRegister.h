@@ -42,7 +42,7 @@ namespace PK
             auto index = 0u;
             AssertTypeExists(m_services.AddKey(typeIndex, &index), typeName);
             auto logIndent = LogScopeIndent(2);
-            auto service = new ServiceContainer<T>(PK::Forward<Args>(args)...);
+            auto service = Memory::New<ServiceContainer<T>>(PK::Forward<Args>(args)...);
             m_services[index].value = service;
             return &service->Instance;
         }
@@ -51,7 +51,7 @@ namespace PK
         {
             for (auto i = (int32_t)m_services.GetCount() - 1; i >= 0; --i)
             {
-                delete m_services[i].value;
+                Memory::Delete(m_services[i].value);
             }
 
             m_services.Clear();

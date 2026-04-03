@@ -28,7 +28,7 @@ namespace PK
 
         ~ImplementerBucket() 
         { 
-            delete previous;
+            Memory::Delete(previous);
             destructor(data, count); 
         }
     };
@@ -38,7 +38,7 @@ namespace PK
         size_t count = 0;
         ImplementerBucket* bucketHead;
 
-        ~ImplementerContainer() { delete bucketHead; }
+        ~ImplementerContainer() { Memory::Delete(bucketHead); }
     };
 
     struct EntityViewContainer
@@ -125,7 +125,7 @@ namespace PK
 
             if (!container.bucketHead || container.bucketHead->count >= elementsPerBucket)
             {
-                auto bucket = new ImplementerBucket();
+                auto bucket = Memory::New<ImplementerBucket>();
                 bucket->previous = container.bucketHead;
                 bucket->count = 0u;
                 bucket->destructor = [](void* data, size_t count)
@@ -140,7 +140,7 @@ namespace PK
             }
 
             auto ptr = reinterpret_cast<T*>(container.bucketHead->data) + container.bucketHead->count;
-            new(ptr) T();
+            Memory::Construct(ptr);
             ++container.bucketHead->count;
             ++container.count;
             return ptr;

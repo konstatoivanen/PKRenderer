@@ -97,7 +97,7 @@ namespace PK
 
         if (binding->arguments)
         {
-            delete binding->arguments;
+            Memory::Delete(binding->arguments);
             binding->arguments = nullptr;
         }
     }
@@ -118,7 +118,7 @@ namespace PK
         if (!isNew && binding->arguments != nullptr)
         {
             ExecuteInstance(binding->arguments->arguments, binding->arguments->count);
-            delete binding->arguments;
+            Memory::Delete(binding->arguments);
             binding->arguments = nullptr;
         }
     }
@@ -202,7 +202,7 @@ namespace PK
             {
                 // CVar was not found. cache arguments so that they can be executed upon binding.
                 binding->variable = nullptr;
-                binding->arguments = new CArgumentsInlineDefault(args, count);
+                binding->arguments = Memory::New<CArgumentsInlineDefault>(args, count);
             }
         }
     }

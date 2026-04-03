@@ -115,7 +115,7 @@ namespace PK
 
             while (m_count < count)
             {
-                new(GetData() + m_count++) T();
+                Memory::Construct(GetData() + m_count++);
             }
         }
 
@@ -129,7 +129,7 @@ namespace PK
         T* Add(Args&& ... args)
         {
             Reserve(m_count + 1u);
-            return new(GetData() + m_count++) T(PK::Forward<Args>(args)...);
+            return Memory::Construct(GetData() + m_count++, PK::Forward<Args>(args)...);
         }
 
         bool Remove(T* ptr)
@@ -231,18 +231,14 @@ namespace PK
         T* Add()
         {
             Memory::Assert(m_count < capacity, "Fast list capacity exceeded!");
-            auto ptr = GetData() + m_count++;
-            new(ptr) T();
-            return ptr;
+            return Memory::Construct(GetData() + m_count++);
         }
 
         template<typename ... Args>
         T* Add(Args&& ... args)
         {
             Memory::Assert(m_count < capacity, "Fast list capacity exceeded!");
-            auto ptr = GetData() + m_count++;
-            new(ptr) T(PK::Forward<Args>(args)...);
-            return ptr;
+            return Memory::Construct(GetData() + m_count++, PK::Forward<Args>(args)...);
         }
 
         void SetCount(size_t count) { m_count = count; }

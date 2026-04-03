@@ -66,7 +66,7 @@ namespace PK
             template <typename ... Args>
             void ConstructVirtual(Args&&... args) 
             { 
-                new(&value) T(PK::Forward<Args>(args)...);
+                Memory::Construct(&value, PK::Forward<Args>(args)...);
                 value.m_sharedObject = this;
                 isLoaded = true; 
                 isVirtual = true;
@@ -76,7 +76,7 @@ namespace PK
             {
                 if constexpr (__is_constructible(T, const char*))
                 {
-                    new(&value) T(filepath);
+                    Memory::Construct(&value, filepath);
                 }
                 else if (typeInfo->factory)
                 {
@@ -111,7 +111,7 @@ namespace PK
                 IncrementWeakRef();
             }
 
-            void Delete() noexcept final { delete this; }
+            void Delete() noexcept final { Memory::Delete(this); }
 
             Asset* GetAsset() noexcept final { return &value; };
 
@@ -246,7 +246,7 @@ namespace PK
             if (assetIndex == -1)
             {
                 auto typeInfo = CreateTypeInfo<T>();
-                auto newAsset = new AssetObject<T>();
+                auto newAsset = Memory::New<AssetObject<T>>();
                 newAsset->typeInfo = typeInfo;
                 newAsset->assetId = assetId;
                 newAsset->version = 0u;
