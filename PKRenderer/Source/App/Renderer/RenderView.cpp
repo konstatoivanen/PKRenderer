@@ -10,10 +10,7 @@ namespace PK::App
 
     uint2 GBuffers::AlignResolution(const uint2& resolution)
     {
-        auto alignedResolution = resolution;
-        alignedResolution.x = Math::GetAlignedSize(resolution.x, RESOLUTION_ALIGNMENT);
-        alignedResolution.y = Math::GetAlignedSize(resolution.y, RESOLUTION_ALIGNMENT);
-        return alignedResolution;
+        return Math::Align(resolution, RESOLUTION_ALIGNMENT);
     }
 
     uint3 GBuffers::GetResolution() const { return color->GetResolution(); }

@@ -276,55 +276,55 @@ namespace PK::Math
         }
     }
 
-    uint32_t GetAlignedSize(uint32_t value, uint32_t alignment)
+    uint32_t Align(uint32_t value, uint32_t alignment)
     {
         const auto remainder = value % alignment;
         return value + (remainder ? (alignment - remainder) : 0u);
     }
 
-    uint64_t GetAlignedSize(uint64_t value, uint64_t alignment)
+    uint64_t Align(uint64_t value, uint64_t alignment)
     {
         const auto remainder = value % alignment;
         return value + (remainder ? (alignment - remainder) : 0ull);
     }
 
-    uint2 GetAlignedSize(const uint2& resolution, uint32_t alignment)
+    uint2 Align(const uint2& resolution, uint32_t alignment)
     {
         return
         {
-            GetAlignedSize(resolution.x, alignment),
-            GetAlignedSize(resolution.y, alignment),
+            Align(resolution.x, alignment),
+            Align(resolution.y, alignment),
         };
     }
 
-    uint3 GetAlignedSize(const uint3& resolution, uint32_t alignment)
+    uint3 Align(const uint3& resolution, uint32_t alignment)
     {
         return
         {
-            GetAlignedSize(resolution.x, alignment),
-            GetAlignedSize(resolution.y, alignment),
-            GetAlignedSize(resolution.z, alignment)
+            Align(resolution.x, alignment),
+            Align(resolution.y, alignment),
+            Align(resolution.z, alignment)
         };
     }
 
-    uint3 GetAlignedSizeXY(const uint3& resolution, uint32_t alignment)
+    uint4 Align(const uint4& value, uint32_t alignment)
     {
         return
         {
-            GetAlignedSize(resolution.x, alignment),
-            GetAlignedSize(resolution.y, alignment),
+            Align(value.x, alignment),
+            Align(value.y, alignment),
+            Align(value.z, alignment),
+            Align(value.w, alignment)
+        };
+    }
+
+    uint3 AlignXY(const uint3& resolution, uint32_t alignment)
+    {
+        return
+        {
+            Align(resolution.x, alignment),
+            Align(resolution.y, alignment),
             resolution.z
-        };
-    }
-
-    uint4 GetAlignedSize(const uint4& value, uint32_t alignment)
-    {
-        return
-        {
-            GetAlignedSize(value.x, alignment),
-            GetAlignedSize(value.y, alignment),
-            GetAlignedSize(value.z, alignment),
-            GetAlignedSize(value.w, alignment)
         };
     }
 

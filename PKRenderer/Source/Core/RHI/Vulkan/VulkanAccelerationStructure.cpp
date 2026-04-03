@@ -123,13 +123,13 @@ namespace PK
                 }
 
                 structure->bufferOffset = bufferSize;
-                bufferSize += Math::GetAlignedSize(structure->size.accelerationStructureSize, 256ull);
+                bufferSize += Math::Align(structure->size.accelerationStructureSize, 256ull);
 
                 if (!structure->raw)
                 {
                     ++buildCount;
                     structure->scratchOffset = scratchSize;
-                    scratchSize += Math::GetAlignedSize(structure->size.buildScratchSize, 256ull);
+                    scratchSize += Math::Align(structure->size.buildScratchSize, 256ull);
                 }
             }
 
@@ -151,8 +151,8 @@ namespace PK
             m_structure.needsRealloc = prevSize < m_structure.size.accelerationStructureSize;
             m_structure.bufferOffset = bufferSize;
             m_structure.scratchOffset = scratchSize;
-            bufferSize += Math::GetAlignedSize(m_structure.size.accelerationStructureSize, 256ull);
-            scratchSize += Math::GetAlignedSize(m_structure.size.buildScratchSize, 256ull);
+            bufferSize += Math::Align(m_structure.size.accelerationStructureSize, 256ull);
+            scratchSize += Math::Align(m_structure.size.buildScratchSize, 256ull);
         }
 
         if (m_scratchBuffer == nullptr || m_scratchBuffer->size < scratchSize)

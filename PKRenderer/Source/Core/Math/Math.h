@@ -22,11 +22,18 @@ namespace PK
     constexpr ushort2 PK_USHORT2_ZERO = { 0, 0 };
     constexpr ushort3 PK_USHORT3_ZERO = { 0, 0, 0 };
     constexpr ushort4 PK_USHORT4_ZERO = { 0, 0, 0, 0 };
-    constexpr ushort4 PK_USHORT4_MAX = { 0, 0, ~0u, ~0u };
+
+    constexpr ushort2 PK_USHORT2_MAX = { ~0u, ~0u };
+    constexpr ushort3 PK_USHORT3_MAX = { ~0u, ~0u, ~0u };
+    constexpr ushort4 PK_USHORT4_MAX = { ~0u, ~0u, ~0u, ~0u };
 
     constexpr short2 PK_SHORT2_ZERO = { 0, 0 };
     constexpr short3 PK_SHORT3_ZERO = { 0, 0, 0 };
     constexpr short4 PK_SHORT4_ZERO = { 0, 0, 0, 0 };
+
+    constexpr short2 PK_SHORT2_MAX = { 32767, 32767 };
+    constexpr short3 PK_SHORT3_MAX = { 32767, 32767, 32767 };
+    constexpr short4 PK_SHORT4_MAX = { 32767, 32767, 32767, 32767 };
 
     constexpr int2 PK_INT2_ZERO = { 0, 0 };
     constexpr int3 PK_INT3_ZERO = { 0, 0, 0 };

@@ -310,8 +310,11 @@ namespace PK::App
         }
     }
 
-    void EngineGUIRenderer::GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style)
+    short4 EngineGUIRenderer::GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style)
     {
+        auto text_area_min = +PK_SHORT2_MAX;
+        auto text_area_max = -PK_SHORT2_MAX;
+        
         if (m_gui_enabled)
         {
             auto max_rects = Font::CalculateMaxRectCount(text, m_gui_font);
@@ -332,7 +335,7 @@ namespace PK::App
                     {
                         const float2 texelSize = m_gui_font->GetRHI()->GetTexelSize().xy;
 
-                        for (auto i = 0u; i <= rect_count; ++i)
+                        for (auto i = 0u; i < rect_count; ++i)
                         {
                             auto& crect = text_rects[i];
                             const auto sminmax = short4(crect.rect.x, crect.rect.y, crect.rect.x + crect.rect.z, crect.rect.y + crect.rect.w);
@@ -347,11 +350,18 @@ namespace PK::App
                             m_gui_vertexView[idxv++] = { color, sminmax.xw, Math::PackHalf(tminmax.xw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
                             m_gui_vertexView[idxv++] = { color, sminmax.zw, Math::PackHalf(tminmax.zw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
                             m_gui_vertexView[idxv++] = { color, sminmax.zy, Math::PackHalf(tminmax.zy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
+
+                            text_area_min.x = glm::min(text_area_min.x, sminmax.x, sminmax.z);
+                            text_area_min.y = glm::min(text_area_min.y, sminmax.y, sminmax.w);
+                            text_area_max.x = glm::max(text_area_max.x, sminmax.x, sminmax.z);
+                            text_area_max.y = glm::max(text_area_max.y, sminmax.y, sminmax.w);
                         }
                     }
                 }
             }
         }
+
+        return { text_area_min, text_area_max - text_area_min };
     }
 
 

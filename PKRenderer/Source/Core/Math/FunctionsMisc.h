@@ -42,12 +42,11 @@ namespace PK::Math
     uint32_t GetMaxMipLevel(const uint2& resolution);
     uint32_t GetMaxMipLevel(const uint3& resolution);
     void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count);
-    uint32_t GetAlignedSize(uint32_t value, uint32_t alignment);
-    uint64_t GetAlignedSize(uint64_t value, uint64_t alignment);
-    uint2 GetAlignedSize(const uint2& resolution, uint32_t alignment);
-    uint3 GetAlignedSize(const uint3& resolution, uint32_t alignment);
-    uint3 GetAlignedSizeXY(const uint3& resolution, uint32_t alignment);
-    uint4 GetAlignedSize(const uint4& value, uint32_t alignment);
+    uint32_t Align(uint32_t value, uint32_t alignment);
+    uint64_t Align(uint64_t value, uint64_t alignment);
+    uint2 Align(const uint2& resolution, uint32_t alignment);
+    uint3 Align(const uint3& resolution, uint32_t alignment);
+    uint4 Align(const uint4& value, uint32_t alignment);
     uint3 GetComputeGroupCount(const uint3& threads, const uint3& clusterSize);
     uint32_t CountBits(uint32_t value);
     inline uint64_t ULongAdd(uint64_t a, int32_t b) { return (int64_t)a + b < 0 ? 0ull : a + b; }

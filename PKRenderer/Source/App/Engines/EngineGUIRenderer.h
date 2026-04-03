@@ -40,7 +40,7 @@ namespace PK::App
         void GUIDrawRect(const color32& color, const short4& screenRect) final;
         void GUIDrawWireRect(const color32& color, const short4& rect, short inset) final;
         void GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width) final;
-        void GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style) final;
+        short4 GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style) final;
 
         void GizmosDrawBounds(const BoundingBox& aabb) final;
         void GizmosDrawBox(const float3& origin, const float3& size) final;

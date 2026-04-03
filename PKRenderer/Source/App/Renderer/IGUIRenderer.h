@@ -25,7 +25,7 @@ namespace PK::App
         virtual void GUIDrawRect(const color32& color, const short4& rect) = 0;
         virtual void GUIDrawWireRect(const color32& color, const short4& rect, short inset) = 0;
         virtual void GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width) = 0;
-        virtual void GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style) = 0;
+        virtual short4 GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style) = 0;
     };
 
     struct IGizmosRenderer
