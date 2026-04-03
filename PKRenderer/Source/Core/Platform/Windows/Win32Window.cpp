@@ -830,7 +830,7 @@ namespace PK
     void Win32Window::DispatchInputOnDrop(WPARAM wParam)
     {
         const auto count = ::DragQueryFileW((HDROP)wParam, 0xffffffff, NULL, 0);
-        auto paths = Memory::Calloc<char*>(count);
+        auto paths = Memory::Allocate<char*>(count);
 
         // Move the mouse to the position of the drop
         POINT point;
@@ -839,11 +839,11 @@ namespace PK
 
         for (auto i = 0u; i < count; ++i)
         {
-            const auto length = ::DragQueryFileW((HDROP)wParam, i, NULL, 0);
-            auto src = Memory::Calloc<WCHAR>(length + 1u);
-            auto dst = Memory::Calloc<char>(length + 1u);
+            const auto length = ::DragQueryFileW((HDROP)wParam, i, NULL, 0) + 1u;
+            auto src = Memory::Allocate<WCHAR>(length);
+            auto dst = Memory::Allocate<char>(length);
 
-            ::DragQueryFileW((HDROP)wParam, i, src, length + 1);
+            ::DragQueryFileW((HDROP)wParam, i, src, length);
             wcstombs(dst, src, length);
             Memory::Free(src);
             paths[i] = dst;

@@ -54,7 +54,7 @@ namespace PK
         {
             size_t size = 0ull;
             vkGetPipelineCacheData(m_device, m_pipelineCache, &size, nullptr);
-            void* cacheData = malloc(size);
+            void* cacheData = Memory::AllocateAligned(size);
             vkGetPipelineCacheData(m_device, m_pipelineCache, &size, cacheData);
             FileIO::WriteBinary(FixedString256({ m_workingDirectory, PIPELINE_CACHE_FILENAME }), false, cacheData, size);
             vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);

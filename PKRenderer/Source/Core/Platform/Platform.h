@@ -84,9 +84,8 @@
 #define PK_PLATFORM_LINUX 0
 #endif
 
-#include <stdint.h>
 #include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/Memory.h"
+#include "Core/Utilities/Templates.h"
 #include "Core/Math/MathFwd.h"
 
 namespace PK
@@ -110,12 +109,16 @@ namespace PK
 
     struct IPlatform : public NoCopy
     {
+        static void FatalExit(const char* message);
+        static void PollEvents();
+        static void WaitEvents();
+
         // For objects that need to be cleaned in case of a crash
         // Do not use for sub allocations of other managed objects.
         template<typename T, typename ... Args>
         static T* ManagedAllocate(Args&& ... args)
         {
-            auto ptr = Memory::Malloc<T>(1u);
+            auto ptr = Memory::Allocate<T>(1u);
             AddManagedAllocation(ptr, [](void* ptr) { static_cast<T*>(ptr)->~T(); });
             new (ptr) T(PK::Forward<Args>(args)...);
             return ptr;
@@ -123,12 +126,11 @@ namespace PK
 
         static void ManagedDeallocate(void* ptr);
 
-        static void FatalExit(const char* message);
-        static void PollEvents();
-        static void WaitEvents();
-
         static int Initialize() = delete;
         static int Terminate() = delete;
+
+        static void* AllocateAligned(size_t size, size_t alignment) = delete;
+        static void FreeAligned(void* block) = delete;
 
         static void PollEvents(bool wait) = delete;
         static void* GetProcess() = delete;
@@ -181,10 +183,15 @@ namespace PK
     };
 }
 
-#define PK_PLATFORM_ASSERT(value, msg) { if(!(value)) { PK::Platform::FatalExit(msg); } }
-
 #include "Windows/Win32Platform.h"
 #include "Linux/LinuxPlatform.h"
+
+#define PK_PLATFORM_ASSERT(value, msg) { if(!(value)) { PK::Platform::FatalExit(msg); } }
+#define PK_SYSTEM_DEFAULT_ALIGN 16
+#define PK_SYSTEM_ALIGNED_ALLOC(size, align) PK::Platform::AllocateAligned(size, align)
+#define PK_SYSTEM_ALIGNED_FREE(ptr) PK::Platform::FreeAligned(ptr)
+#define PK_SYSTEM_ERROR(message) PK::Platform::FatalExit(message)
+#include "Core/Utilities/Memory.h"
 
 #ifndef PK_PLATFORM_X64
 #define PK_PLATFORM_X64 0

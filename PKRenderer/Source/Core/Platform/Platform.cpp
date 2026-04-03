@@ -66,7 +66,7 @@ namespace PK
 
     void IPlatform::AddManagedAllocation(void* object, void(*destructor)(void*))
     {
-        auto alloc = Memory::Malloc<ManagedAllocation>(1u);
+        auto alloc = Memory::Allocate<ManagedAllocation>(1u);
         alloc->destructor = destructor;
         alloc->object = object;
         alloc->next = nullptr;

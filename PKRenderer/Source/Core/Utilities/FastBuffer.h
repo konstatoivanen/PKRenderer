@@ -86,16 +86,18 @@ namespace PK
                 return false;
             }
 
-            auto buffer = Memory::ReallocOrCalloc<T>(m_data.buffer, count, IsSmallBuffer(m_count));
+            auto buffer = Memory::Allocate<T>(count);
 
-            if (m_count > 0 && IsSmallBuffer(m_count))
+            if (m_count > 0)
             {
-                Memory::Memcpy<T>(buffer, reinterpret_cast<T*>(&m_data), m_count);
+                Memory::Memcpy<T>(buffer, GetData(), m_count);
             }
-            else if (m_count > 0)
+
+            Memory::Memset<T>(buffer + m_count, 0, count - m_count);
+
+            if (!IsSmallBuffer(m_count))
             {
-                // Realloc doesnt zero memory
-                Memory::Memset<T>(buffer + m_count, 0, count - m_count);
+                Memory::Free(m_data.buffer);
             }
 
             m_data.buffer = buffer;
@@ -103,7 +105,10 @@ namespace PK
             return true;
         }
 
-        void Clear() { memset(GetData(), 0, sizeof(T) * m_count); }
+        void Clear() 
+        {
+            Memory::Memset<T>(GetData(), 0, m_count); 
+        }
 
     private:
         constexpr static bool IsSmallBuffer(size_t count) { return count <= (sizeof(U) / sizeof(T)); }

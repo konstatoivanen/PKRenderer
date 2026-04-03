@@ -127,7 +127,7 @@ namespace PK
                 const auto offsetValue = Memory::AlignSize<_TValue>(size);
                 size = offsetValue + sizeof(_TValue) * m_capacity;
                 
-                auto newBuffer = calloc(size, 1u);
+                auto newBuffer = Memory::AllocateClear<uint8_t>(size);
                 auto newBuckets = Memory::CastOffsetPtr<_TIndex>(newBuffer, offsetBuckets);
                 auto newNodes = Memory::CastOffsetPtr<_TNode>(newBuffer, offsetNode);
                 auto newValues = Memory::CastOffsetPtr<_TValue>(newBuffer, offsetValue);

@@ -84,7 +84,7 @@ namespace PK::MeshUtilities
 
         if (needsAlignment)
         {
-            auto buffer = Memory::Malloc<char>(count * dst.GetStride());
+            auto buffer = Memory::Allocate<char>(count * dst.GetStride());
 
             for (auto i = 0u; i < dst.GetCount(); ++i)
             {
@@ -162,7 +162,7 @@ namespace PK::MeshUtilities
         const auto offset_meshlets = Memory::AlignSize<PKAssets::PKMeshlet>(size);
         size = offset_meshlets + sizeof(PKAssets::PKMeshlet) * count_meshlet;
 
-        auto buffer = calloc(size, 1u);
+        auto buffer = Memory::AllocateClear<uint8_t>(size);
         indices = Memory::CastOffsetPtr<uint8_t>(buffer, offset_indices);
         vertices = Memory::CastOffsetPtr<PKAssets::PKMeshletVertex>(buffer, offset_vertices);
         meshlets = Memory::CastOffsetPtr<PKAssets::PKMeshlet>(buffer, offset_meshlets);
@@ -195,9 +195,10 @@ namespace PK::MeshUtilities
 
         MeshletBuildData output(max_meshlets);
 
-        auto* meshlet_vertices = Memory::Calloc<uint32_t>(max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES);
+        auto* meshlet_vertices = Memory::Allocate<uint32_t>(max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES);
         auto* meshlet_indices = output.indices;
-        auto* used = Memory::Malloc<uint8_t>(ctx->countVertex);
+        auto* used = Memory::Allocate<uint8_t>(ctx->countVertex);
+        
         memset(used, -1, ctx->countVertex);
 
         memcpy(output.submesh.bbmin, glm::value_ptr(ctx->aabb.min), sizeof(float3));
@@ -547,7 +548,7 @@ namespace PK::MeshUtilities
         auto vcount = resolution.x * resolution.y * 4;
         auto icount = resolution.x * resolution.y * 6;
         auto bufferSize = sizeof(Vertex_Full) * vcount + sizeof(uint) * icount;
-        auto* buffer = malloc(bufferSize);
+        auto* buffer = Memory::AllocateAligned(bufferSize);
         auto* attributes = reinterpret_cast<Vertex_NormalTangentTexCoord*>(buffer);
         auto* positions = reinterpret_cast<float3*>(attributes + vcount);
         auto* indices = reinterpret_cast<uint*>(positions + vcount);
@@ -610,7 +611,7 @@ namespace PK::MeshUtilities
         const auto icount = ((lattc - 1) * longc * 2 + longc * 2) * 3;
 
         //Vertex_Full
-        auto* buffer = malloc(sizeof(Vertex_Full) * vcount + sizeof(uint) * icount);
+        auto* buffer = Memory::AllocateAligned(sizeof(Vertex_Full) * vcount + sizeof(uint) * icount);
         auto* attributes = reinterpret_cast<Vertex_NormalTangentTexCoord*>(buffer);
         auto* positions = reinterpret_cast<float3*>(attributes + vcount);
         auto* indices = reinterpret_cast<uint*>(positions + vcount);

@@ -119,6 +119,9 @@ namespace PK
         static int Initialize();
         static int Terminate();
 
+        static void* AllocateAligned(size_t size, size_t alignment);
+        static void FreeAligned(void* block);
+
         static void PollEvents(bool wait);
 
         static void* GetProcess();

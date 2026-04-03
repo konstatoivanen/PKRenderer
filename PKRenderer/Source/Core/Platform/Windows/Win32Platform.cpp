@@ -33,7 +33,7 @@ namespace PK
             return -1;
         }
 
-        resources = Memory::Calloc<Win32Resources>(1u);
+        resources = Memory::AllocateClear<Win32Resources>(1u);
 
         if (!resources)
         {
@@ -382,6 +382,16 @@ namespace PK
         return 0;
     }
 
+    void* Win32Platform::AllocateAligned(size_t size, size_t alignment)
+    {
+        return _aligned_malloc(size, alignment);
+    }
+
+    void Win32Platform::FreeAligned(void* block)
+    {
+        _aligned_free(block);
+    }
+
 
     void Win32Platform::PollEvents(bool wait)
     {
@@ -632,7 +642,7 @@ namespace PK
         if (!resources->clipboard || resources->clipboardSize < size)
         {
             Memory::Free(resources->clipboard);
-            resources->clipboard = Memory::Calloc<char>(size);
+            resources->clipboard = Memory::AllocateClear<char>(size);
             resources->clipboardSize = size;
             resources->clipboard[size] = '\0';
         }
@@ -853,7 +863,7 @@ namespace PK
                 Memory::Free(resources->rawInput);
             }
 
-            resources->rawInput = Memory::Calloc<RAWINPUT>(1u);
+            resources->rawInput = Memory::AllocateClear<RAWINPUT>(1u);
             resources->rawInputSize = size;
         }
 

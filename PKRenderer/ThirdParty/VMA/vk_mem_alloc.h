@@ -4,6 +4,7 @@
 #pragma clang diagnostic ignored "-Wnullability-completeness"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wunused-function"
 #endif
 //
 // Copyright (c) 2017-2025 Advanced Micro Devices, Inc. All rights reserved.

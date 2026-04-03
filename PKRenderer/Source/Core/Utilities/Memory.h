@@ -1,33 +1,56 @@
 #pragma once
 #include <stdint.h>
 #include <stdlib.h>
-#include "Templates.h"
-
-#if defined(_WIN32) && defined(_WIN64)
-    #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(_alloca(sizeof(Type) * count))
-#else
-    #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(alloca(sizeof(Type) * count))
+#if !defined(PK_SYSTEM_ERROR)
+#include <assert.h>
 #endif
+#include "Templates.h"
 
 namespace PK::Memory
 {
-    void Assert(bool value, const char* str);
-    void Assert(bool value);
+    // Fallback to these if no user defines have been set.
+    #if !defined(PK_SYSTEM_DEFAULT_ALIGN)
+        #define PK_SYSTEM_DEFAULT_ALIGN 16
+    #endif
+    
+    #if !defined(PK_SYSTEM_ALIGNED_ALLOC)
+    #if defined(_WIN32) && defined(_WIN64)
+        #define PK_SYSTEM_ALIGNED_ALLOC(size, align) _aligned_malloc(size, align)
+    #else
+        #define PK_SYSTEM_ALIGNED_ALLOC(size, align) aligned_alloc(align, size)
+    #endif
+    #endif
+    
+    #if !defined(PK_SYSTEM_ALIGNED_FREE)
+    #if defined(_WIN32) && defined(_WIN64)
+        #define PK_SYSTEM_ALIGNED_FREE(ptr) _aligned_free(ptr)
+    #else
+        #define PK_SYSTEM_ALIGNED_FREE(ptr) free(ptr)
+    #endif
+    #endif
 
-    inline void Free(void* block) { free(block); }
+    #if !defined(PK_SYSTEM_ERROR)
+        #define PK_SYSTEM_ERROR(message) assert(false)
+    #endif
 
+    #if defined(_WIN32) && defined(_WIN64)
+        #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(_alloca(sizeof(Type) * count))
+    #else
+        #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(alloca(sizeof(Type) * count))
+    #endif
+
+    inline void Assert(bool value, [[maybe_unused]] const char* str) { if (!value) { PK_SYSTEM_ERROR(str); } }
+    inline void Assert(bool value) { Assert(value, "Assertion failed!"); }
+
+    inline void Free(void* block) noexcept { PK_SYSTEM_ALIGNED_FREE(block); }
+    inline void* AllocateAligned(size_t size, size_t align = PK_SYSTEM_DEFAULT_ALIGN) noexcept { return PK_SYSTEM_ALIGNED_ALLOC(size, align); }
 
     template<typename T>
-    T* Malloc(size_t count) noexcept { return static_cast<T*>(malloc(count * sizeof(T))); }
+    T* Allocate(size_t count) noexcept { return static_cast<T*>(AllocateAligned(count * sizeof(T))); }
 
+    // Slower than calloc but allows for aligned alloc.
     template<typename T>
-    T* Calloc(size_t count) noexcept { return static_cast<T*>(calloc(count, sizeof(T))); }
-
-    template<typename T>
-    T* Realloc(T* block, size_t count) noexcept { return static_cast<T*>(realloc(block, count * sizeof(T))); }
-
-    template<typename T>
-    T* ReallocOrCalloc(T* block, size_t count, bool calloc) noexcept { return calloc ? Calloc<T>(count) : Realloc<T>(block, count); }
+    T* AllocateClear(size_t count) noexcept { return Memset<T>(Allocate<T>(count), 0, count); }
 
     template<typename T>
     T* Memcpy(T* dst, const T* src, size_t count) noexcept { return static_cast<T*>(memcpy(dst, src, count * sizeof(T))); }
@@ -38,35 +61,20 @@ namespace PK::Memory
     template<typename T>
     T* Memset(T* dst, int value, size_t count) noexcept { return static_cast<T*>(memset(dst, value, count * sizeof(T))); }
 
-    template<typename T0, typename T1>
-    T1 BitCast(const T0& value)
-    {
-        static_assert(sizeof(T0) == sizeof(T1));
-        T1 ret;
-        memcpy(&ret, &value, sizeof(T0));
-        return ret;
-    }
 
     template<typename T0, typename T1>
-    T1 BitCast(const T0* ptr)
-    {
-        T1 ret;
-        memcpy(&ret, ptr, sizeof(T1));
-        return ret;
-    }
+    T1 BitCast(const T0& value) { static_assert(sizeof(T0) == sizeof(T1)); T1 ret; memcpy(&ret, &value, sizeof(T0)); return ret; }
+
+    template<typename T0, typename T1>
+    T1 BitCast(const T0* ptr) noexcept { T1 ret; memcpy(&ret, ptr, sizeof(T1)); return ret; }
 
 
     template<typename TAlignment>
-    size_t AlignSize(size_t size)
-    {
-        return size == 0ull ? 0ull : (size + sizeof(TAlignment) - 1ull) & ~(sizeof(TAlignment) - 1ull);
-    }
+    size_t AlignSize(size_t size) noexcept { return size == 0ull ? 0ull : (size + sizeof(TAlignment) - 1ull) & ~(sizeof(TAlignment) - 1ull); }
 
     template<typename T>
-    T* CastOffsetPtr(void* data, size_t offset)
-    {
-        return reinterpret_cast<T*>(static_cast<char*>(data) + offset);
-    }
+    T* CastOffsetPtr(void* data, size_t offset) noexcept { return reinterpret_cast<T*>(static_cast<char*>(data) + offset); }
+
 
     template<typename T>
     void MoveArray(T* dst, T* src, size_t count)

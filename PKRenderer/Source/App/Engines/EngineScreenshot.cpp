@@ -59,7 +59,7 @@ namespace PK::App
             return;
         }
 
-        auto pixels = Memory::Calloc<byte>(elementCount);
+        auto pixels = Memory::Allocate<byte>(elementCount);
 
         for (auto i = 0u; i < elementCount; ++i)
         {

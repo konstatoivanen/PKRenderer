@@ -92,7 +92,7 @@ namespace PK
                 return false;
             }
 
-            auto buffer = Memory::Malloc<T>(capacity);
+            auto buffer = Memory::Allocate<T>(capacity);
 
             if (m_count > 0u)
             {

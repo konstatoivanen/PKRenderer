@@ -100,7 +100,7 @@ namespace PK::FileIO
             return -1;
         }
 
-        *data = malloc(*size);
+        *data = Memory::AllocateAligned(*size);
 
         if (*data == nullptr)
         {
@@ -194,7 +194,7 @@ namespace PK::FileIO
         auto unpaddedRowSize = width * bytesPerPixel;
         auto totalSize = unpaddedRowSize * height;
 
-        auto buffer = Memory::Malloc<char>(sizeof(Image) + totalSize);
+        auto buffer = Memory::Allocate<char>(sizeof(Image) + totalSize);
         auto image = reinterpret_cast<Image*>(buffer);
         image->pixels = reinterpret_cast<byte*>(buffer + sizeof(Image));
         image->width = width;
@@ -289,7 +289,7 @@ namespace PK::FileIO
         auto unpaddedRowSize = biWidth * bytesPerPixel;
         auto totalSize = unpaddedRowSize * biHeight;
 
-        auto buffer = Memory::Malloc<char>(sizeof(Image) + totalSize);
+        auto buffer = Memory::Allocate<char>(sizeof(Image) + totalSize);
         auto image = reinterpret_cast<Image*>(buffer);
         image->pixels = reinterpret_cast<byte*>(buffer + sizeof(Image));
         image->width = biWidth;

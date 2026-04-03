@@ -1,5 +1,7 @@
 #pragma once
 #include "Core/Platform/Platform.h"
+#define VMA_SYSTEM_ALIGNED_MALLOC(size, alignment) PK::Memory::AllocateAligned(size, alignment)
+#define VMA_SYSTEM_FREE(ptr) PK::Memory::Free(ptr)
 #include "vulkan/vulkan.h"
 #include "VMA/vk_mem_alloc.h"
 #include "Core/Utilities/FenceRef.h"

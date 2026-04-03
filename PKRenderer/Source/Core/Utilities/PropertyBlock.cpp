@@ -164,7 +164,7 @@ namespace PK
             const auto offsetProperties = Memory::AlignSize<Property>(size);
             size = offsetProperties + sizeof(Property) * propertyCapacity;
 
-            auto newBuffer = calloc(size, 1u);
+            auto newBuffer = Memory::AllocateClear<uint8_t>(size);
             auto newBuckets = Memory::CastOffsetPtr<uint16_t>(newBuffer, offsetBuckets);
             auto newProperties = Memory::CastOffsetPtr<Property>(newBuffer, offsetProperties);
 
