@@ -121,6 +121,7 @@ namespace PK
 
         static void* AllocateAligned(size_t size, size_t alignment);
         static void FreeAligned(void* block);
+        static PlatformMemoryInfo GetMemoryInfo();
 
         static void PollEvents(bool wait);
 

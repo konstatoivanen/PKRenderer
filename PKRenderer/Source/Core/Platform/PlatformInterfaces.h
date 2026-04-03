@@ -7,6 +7,16 @@
 
 namespace PK
 {
+    struct PlatformMemoryInfo
+    {
+        size_t physicalMemoryTotal;
+        size_t physicalMemoryUsed;
+        size_t virtualMemoryTotal;
+        size_t virtualMemoryUsed;
+        size_t programMemoryUsedInclusive;
+        size_t programMemoryUsedExclusive;
+    };
+
     enum class PlatformWindowEvent : uint8_t
     {
         FullScreenRequest,

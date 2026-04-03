@@ -21,6 +21,7 @@ PFN_RtlVerifyVersionInfo pkfn_RtlVerifyVersionInfo = nullptr;
 namespace PK
 {
     static int s_localPtr;
+    static int64_t s_programMemoryExclusive = 0ll;
 
     // These didnt want to get included from hidclass.h for some reason
     static const GUID s_GUID_DEVINTERFACE_HID = { 0x4d1e55b2,0xf16f,0x11cf,{0x88,0xcb,0x00,0x11,0x11,0x00,0x00,0x30} };
@@ -384,12 +385,46 @@ namespace PK
 
     void* Win32Platform::AllocateAligned(size_t size, size_t alignment)
     {
-        return _aligned_malloc(size, alignment);
+        auto ptr = _aligned_malloc(size, alignment);
+    
+        if (!ptr)
+        {
+            Platform::FatalExit("Out of memory");
+        }
+
+        _InlineInterlockedAdd64(reinterpret_cast<volatile int64_t*>(&s_programMemoryExclusive), size);
+
+        return ptr;
     }
 
     void Win32Platform::FreeAligned(void* block)
     {
-        _aligned_free(block);
+        if (block)
+        {
+            auto size = -(int64_t)_aligned_msize(block, 16ull, 0ull);
+            _InlineInterlockedAdd64(reinterpret_cast<volatile int64_t*>(&s_programMemoryExclusive), size);
+            _aligned_free(block);
+        }
+    }
+
+    PlatformMemoryInfo Win32Platform::GetMemoryInfo()
+    {
+        MEMORYSTATUSEX statusx;
+        statusx.dwLength = sizeof(statusx);
+        ::GlobalMemoryStatusEx(&statusx);
+
+        PROCESS_MEMORY_COUNTERS_EX countersEx;
+        countersEx.cb = sizeof(countersEx);
+        ::GetProcessMemoryInfo(GetCurrentProcess(), (PPROCESS_MEMORY_COUNTERS)&countersEx, sizeof(countersEx));
+
+        PlatformMemoryInfo info{};
+        info.physicalMemoryTotal = statusx.ullTotalPhys;
+        info.physicalMemoryUsed = statusx.ullTotalPhys - statusx.ullAvailPhys;
+        info.virtualMemoryTotal = statusx.ullTotalVirtual;
+        info.virtualMemoryUsed = statusx.ullTotalVirtual - statusx.ullAvailVirtual;
+        info.programMemoryUsedInclusive = countersEx.WorkingSetSize;
+        info.programMemoryUsedExclusive = s_programMemoryExclusive;
+        return info;
     }
 
 

@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Platform/PlatformInterfaces.h"
 #include "Core/Utilities/FixedMask.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Math/FunctionsColor.h"
@@ -22,6 +23,9 @@ namespace PK::App
         constexpr auto COLOR_FPS_AVG = color32(255, 255, 255, 127);
         constexpr auto COLOR_FPS_MIN = color32(0, 255, 0, 127);
         constexpr auto COLOR_FPS_MAX = color32(255, 0, 0, 127);
+        constexpr auto COLOR_VRAM = color32(0, 255, 255, 127);
+        constexpr auto COLOR_ERAM = color32(255, 0, 255, 127);
+        constexpr auto COLOR_IRAM = color32(255, 255, 0, 127);
 
         // @TODO this is pretty hacky & hard coded. fix later
         const auto height = 74;
@@ -35,6 +39,10 @@ namespace PK::App
         const auto sampleHeight = height - fontSize - padding * 3;
         const auto sampleCountMax = (uint64_t)(rectBar.z / sampleWidth);
         const auto sampleCountMin = glm::min(sampleCountMax, m_timeHistoryHead + 1ull);
+        const auto infoWidth = rectBar.z / 8;
+
+        auto cpumemory = Platform::GetMemoryInfo();
+        auto gpumemory = RHI::GetMemoryInfo();
 
         m_timeHistory.Reserve(sampleCountMax);
         m_timeHistory[m_timeHistoryHead % sampleCountMax] = m_framerate.frameMs;
@@ -53,13 +61,19 @@ namespace PK::App
         FixedString64 textFramerateAvg("Avg: %4.2fms", avgHistoryTime);
         FixedString64 textFramerateMin("Min: %4.2fms", minHistoryTime);
         FixedString64 textFramerateMax("Max: %4.2fms", maxHistoryTime);
+        FixedString64 textMemoryEram("Ram Prog: %s", Parse::BytesToString(cpumemory.programMemoryUsedExclusive).c_str());
+        FixedString64 textMemoryIram("Ram Total: %s", Parse::BytesToString(cpumemory.programMemoryUsedInclusive).c_str());
+        FixedString64 textMemoryVram("Vram: %s", Parse::BytesToString(gpumemory.usedBytes).c_str());
 
         gui->GUIDrawRect(COLOR_BG, rectWindow);
         gui->GUIDrawWireRect(COLOR_FG, rectWindow, 1);
-        gui->GUIDrawText(COLOR_FPS_AVG, short4(rectWindow.xy + short2(padding * 2 + 100 * 0, padding + 2), 0, 0), textFramerateCur.c_str(), FontStyle().SetSize(16.0f));
-        gui->GUIDrawText(COLOR_FPS_AVG, short4(rectWindow.xy + short2(padding * 2 + 100 * 1, padding + 2), 0, 0), textFramerateAvg.c_str(), FontStyle().SetSize(16.0f));
-        gui->GUIDrawText(COLOR_FPS_MIN, short4(rectWindow.xy + short2(padding * 2 + 100 * 2, padding + 2), 0, 0), textFramerateMin.c_str(), FontStyle().SetSize(16.0f));
-        gui->GUIDrawText(COLOR_FPS_MAX, short4(rectWindow.xy + short2(padding * 2 + 100 * 3, padding + 2), 0, 0), textFramerateMax.c_str(), FontStyle().SetSize(16.0f));
+        gui->GUIDrawText(COLOR_FPS_AVG, short4(rectWindow.xy + short2(padding * 2 + infoWidth * 0, padding + 2), infoWidth, 16), textFramerateCur.c_str(), FontStyle().SetSize(16.0f).SetClip(true));
+        gui->GUIDrawText(COLOR_FPS_AVG, short4(rectWindow.xy + short2(padding * 2 + infoWidth * 1, padding + 2), infoWidth, 16), textFramerateAvg.c_str(), FontStyle().SetSize(16.0f).SetClip(true));
+        gui->GUIDrawText(COLOR_FPS_MIN, short4(rectWindow.xy + short2(padding * 2 + infoWidth * 2, padding + 2), infoWidth, 16), textFramerateMin.c_str(), FontStyle().SetSize(16.0f).SetClip(true));
+        gui->GUIDrawText(COLOR_FPS_MAX, short4(rectWindow.xy + short2(padding * 2 + infoWidth * 3, padding + 2), infoWidth, 16), textFramerateMax.c_str(), FontStyle().SetSize(16.0f).SetClip(true));
+        gui->GUIDrawText(COLOR_VRAM,    short4(rectWindow.xy + short2(padding * 2 + infoWidth * 4, padding + 2), infoWidth, 16), textMemoryVram.c_str(), FontStyle().SetSize(16.0f).SetClip(true));
+        gui->GUIDrawText(COLOR_ERAM,    short4(rectWindow.xy + short2(padding * 2 + infoWidth * 5, padding + 2), infoWidth, 16), textMemoryEram.c_str(), FontStyle().SetSize(16.0f).SetClip(true));
+        gui->GUIDrawText(COLOR_IRAM,    short4(rectWindow.xy + short2(padding * 2 + infoWidth * 6, padding + 2), infoWidth, 16), textMemoryIram.c_str(), FontStyle().SetSize(16.0f).SetClip(true));
 
         for (auto i = 0ull; i < sampleCountMin; ++i)
         {

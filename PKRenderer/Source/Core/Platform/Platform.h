@@ -104,6 +104,7 @@ namespace PK
     struct PlatformWindow;
     struct PlatformWindowDescriptor;
     struct IPlatformWindowListener;
+    struct PlatformMemoryInfo;
     struct InputHandler;
     struct InputDevice;
 
@@ -130,6 +131,7 @@ namespace PK
 
         static void* AllocateAligned(size_t size, size_t alignment) = delete;
         static void FreeAligned(void* block) = delete;
+        static PlatformMemoryInfo GetMemoryInfo() = delete;
 
         static void PollEvents(bool wait) = delete;
         static void* GetProcess() = delete;

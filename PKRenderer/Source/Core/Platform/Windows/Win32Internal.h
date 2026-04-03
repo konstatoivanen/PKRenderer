@@ -13,6 +13,7 @@
 #include <dbt.h>
 #include <shellapi.h>
 #include <dwmapi.h>
+#include <psapi.h>
 #include "Core/Platform/Windows/Win32Window.h"
 
 
