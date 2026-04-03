@@ -66,7 +66,7 @@ namespace PK
             template <typename ... Args>
             void ConstructVirtual(Args&&... args) 
             { 
-                new(&value) T(Memory::Forward<Args>(args)...);
+                new(&value) T(PK::Forward<Args>(args)...);
                 value.m_sharedObject = this;
                 isLoaded = true; 
                 isVirtual = true;
@@ -138,14 +138,14 @@ namespace PK
             constexpr auto name = pk_base_type_name<T>();
             PK_FATAL_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
             PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, assetId.c_str());
-            object->ConstructVirtual(Memory::Forward<Args>(args)...);
+            object->ConstructVirtual(PK::Forward<Args>(args)...);
             return object->GetReference();
         }
 
         template<typename T, typename ... Args>
         Ref<T> CreateVirtual(const char* name, Args&& ... args)
         {
-            return CreateVirtual<T>(AssetID(name), Memory::Forward<Args>(args)...);
+            return CreateVirtual<T>(AssetID(name), PK::Forward<Args>(args)...);
         }
 
         template<typename T>

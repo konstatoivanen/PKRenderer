@@ -117,7 +117,7 @@ namespace PK
         {
             auto ptr = static_cast<T*>(malloc(sizeof(T)));
             AddManagedAllocation(ptr, [](void* ptr) { static_cast<T*>(ptr)->~T(); });
-            new (ptr) T(Memory::Forward<Args>(args)...);
+            new (ptr) T(PK::Forward<Args>(args)...);
             return ptr;
         }
 

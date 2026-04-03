@@ -31,7 +31,7 @@ namespace PK
         T* New(Args&& ... args)
         {
             auto ptr = Allocate(1u);
-            new(ptr) T(Memory::Forward<Args>(args)...);
+            new(ptr) T(PK::Forward<Args>(args)...);
             return ptr;
         }
 
@@ -39,7 +39,7 @@ namespace PK
         T* NewAt(int64_t index, Args&& ... args)
         {
             auto ptr = Allocate(1u, index);
-            new(ptr) T(Memory::Forward<Args>(args)...);
+            new(ptr) T(PK::Forward<Args>(args)...);
             return ptr;
         }
 
@@ -50,7 +50,7 @@ namespace PK
 
             for (auto i = 0u; i < count; ++i)
             {
-                new(ptr + i) T(Memory::Forward<Args>(args)...);
+                new(ptr + i) T(PK::Forward<Args>(args)...);
             }
 
             return ptr;

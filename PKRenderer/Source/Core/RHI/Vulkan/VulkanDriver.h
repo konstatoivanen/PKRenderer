@@ -90,7 +90,7 @@ namespace PK
         T* CreatePooled(Args&& ... args) const
         {
             auto pool = objectPools.GetInstance<IPool<T>>();
-            return pool->New(Memory::Forward<Args>(args)...);
+            return pool->New(PK::Forward<Args>(args)...);
         }
 
         template<typename T>

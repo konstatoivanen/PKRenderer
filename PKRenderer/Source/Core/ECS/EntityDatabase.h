@@ -47,15 +47,15 @@ namespace PK
         uint64_t head = 0ull;
 
         EntityViewContainer(EntityViewContainer&& other) noexcept :
-            buffer(Memory::Move(other.buffer)),
-            head(Memory::Exchange(other.head, 0ull))
+            buffer(PK::MoveTemp(other.buffer)),
+            head(PK::Exchange(other.head, 0ull))
         {
         }
 
         EntityViewContainer& operator=(EntityViewContainer&& other) noexcept
         {
-            buffer = Memory::Move(other.buffer);
-            head = Memory::Exchange(other.head, 0ull);
+            buffer = PK::MoveTemp(other.buffer);
+            head = PK::Exchange(other.head, 0ull);
             return *this;
         }
     };

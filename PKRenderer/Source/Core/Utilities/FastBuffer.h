@@ -13,7 +13,7 @@ namespace PK
     {
         FastBuffer(size_t count) { Reserve(count); }
         FastBuffer() {}
-        FastBuffer(FastBuffer&& other) noexcept { Move(Memory::Forward<FastBuffer>(other)); }
+        FastBuffer(FastBuffer&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); }
 
         ~FastBuffer()
         {
@@ -45,7 +45,7 @@ namespace PK
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
 
-        FastBuffer& operator=(FastBuffer&& other) noexcept { Move(Memory::Forward<FastBuffer>(other)); return *this; }
+        FastBuffer& operator=(FastBuffer&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); return *this; }
 
         void Copy(const FastBuffer& other)
         {
@@ -68,8 +68,8 @@ namespace PK
                     free(m_data.buffer);
                 }
 
-                m_data = Memory::Exchange(other.m_data, { nullptr });
-                m_count = Memory::Exchange(other.m_count, 0ull);
+                m_data = PK::Exchange(other.m_data, { nullptr });
+                m_count = PK::Exchange(other.m_count, 0ull);
             }
         }
 

@@ -1,7 +1,6 @@
 #pragma once
 #include "Hash.h"
 #include "NoCopy.h"
-#include "BufferView.h"
 #include "Memory.h"
 
 namespace PK
@@ -78,15 +77,15 @@ namespace PK
                     free(m_buffer);
                 }
 
-                m_buffer = Memory::Exchange(other.m_buffer, nullptr);
-                m_buckets = Memory::Exchange(other.m_buckets, nullptr);
-                m_values = Memory::Exchange(other.m_values, nullptr);
-                m_nodes = Memory::Exchange(other.m_nodes, nullptr);
-                m_bucketStride = Memory::Exchange(other.m_bucketStride, 0u);
-                m_bucketCount = Memory::Exchange(other.m_bucketCount, 0u);
-                m_collisions = Memory::Exchange(other.m_collisions, 0u);
-                m_capacity = Memory::Exchange(other.m_capacity, 0u);
-                m_count = Memory::Exchange(other.m_count, 0u);
+                m_buffer = PK::Exchange(other.m_buffer, nullptr);
+                m_buckets = PK::Exchange(other.m_buckets, nullptr);
+                m_values = PK::Exchange(other.m_values, nullptr);
+                m_nodes = PK::Exchange(other.m_nodes, nullptr);
+                m_bucketStride = PK::Exchange(other.m_bucketStride, 0u);
+                m_bucketCount = PK::Exchange(other.m_bucketCount, 0u);
+                m_collisions = PK::Exchange(other.m_collisions, 0u);
+                m_capacity = PK::Exchange(other.m_capacity, 0u);
+                m_count = PK::Exchange(other.m_count, 0u);
             }
         }
 
@@ -181,8 +180,8 @@ namespace PK
             Memory::MoveArray(m_buckets, other.m_buckets, capacity * bucket_stride);
             Memory::MoveArray(m_nodes, other.m_nodes, capacity);
             Memory::MoveArray(m_values, other.m_values, capacity);
-            m_collisions = Memory::Exchange(other.m_collisions, 0u);
-            m_count = Memory::Exchange(other.m_count, 0u);
+            m_collisions = PK::Exchange(other.m_collisions, 0u);
+            m_count = PK::Exchange(other.m_count, 0u);
         }
 
         void Copy(const IFastCollectionAllocatorFixed& other)
@@ -219,7 +218,7 @@ namespace PK
 
         IFastSet(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
         IFastSet() : IFastSet(0u, 1u) {}
-        IFastSet(IFastSet&& other) noexcept { TBase::Move(Memory::Forward<TAllocator>(other)); }
+        IFastSet(IFastSet&& other) noexcept { TBase::Move(PK::Forward<TAllocator>(other)); }
         IFastSet(const IFastSet& other) noexcept { TBase::Copy(other); }
 
         constexpr uint32_t GetCount() const { return TBase::m_count; }
@@ -230,7 +229,7 @@ namespace PK
         constexpr TValue const* end() const { return TBase::m_values + TBase::m_count; }
         const TValue& operator[](uint32_t index) const { return TBase::m_values[index]; }
         TValue& operator[](uint32_t index) { return TBase::m_values[index]; }
-        IFastSet& operator=(IFastSet&& other) noexcept { TBase::Move(Memory::Forward<TAllocator>(other)); return *this; }
+        IFastSet& operator=(IFastSet&& other) noexcept { TBase::Move(PK::Forward<TAllocator>(other)); return *this; }
         IFastSet& operator=(const IFastSet& other) noexcept { TBase::Copy(other); return *this; }
 
         // Special case access where key is inlined into value.
@@ -478,7 +477,7 @@ namespace PK
 
         IFastMap(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
         IFastMap() : IFastMap(0u, 1u) {}
-        IFastMap(IFastMap&& other) noexcept { TBase::Move(Memory::Forward<TAllocator>(other)); }
+        IFastMap(IFastMap&& other) noexcept { TBase::Move(PK::Forward<TAllocator>(other)); }
         IFastMap(const IFastMap& other) noexcept { TBase::Copy(other); }
 
         constexpr uint32_t GetCount() const { return TBase::m_count; }
@@ -489,7 +488,7 @@ namespace PK
         constexpr TValue const* end() const { return TBase::m_values + TBase::m_count; }
         const KeyValueConst operator[](uint32_t index) const { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
         KeyValue operator[](uint32_t index) { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
-        IFastMap& operator=(IFastMap&& other) noexcept { TBase::Move(Memory::Forward<TAllocator>(other)); return *this; }
+        IFastMap& operator=(IFastMap&& other) noexcept { TBase::Move(PK::Forward<TAllocator>(other)); return *this; }
         IFastMap& operator=(const IFastMap& other) noexcept { TBase::Copy(other); return *this; }
 
         const TValue* GetValuePtr(const TKey& key) const { auto index = GetIndex(key); return index != -1 ? &TBase::m_values[index] : nullptr; }
@@ -651,7 +650,7 @@ namespace PK
                 }
 
                 TBase::m_nodes[index] = TBase::m_nodes[TBase::m_count];
-                TBase::m_values[index] = Memory::Move(TBase::m_values[TBase::m_count]);
+                TBase::m_values[index] = PK::MoveTemp(TBase::m_values[TBase::m_count]);
             }
 
             return true;

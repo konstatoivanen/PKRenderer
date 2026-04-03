@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <stdlib.h>
+#include "Templates.h"
 
 #if defined(_WIN32) && defined(_WIN64)
     #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(_alloca(sizeof(Type) * count))
@@ -10,43 +11,6 @@
 
 namespace PK::Memory
 {
-    template<typename> inline constexpr bool IsLvalueRef = false;
-    template<typename T> inline constexpr bool IsLvalueRef<T&> = true;
-
-    template <typename> inline constexpr bool IsArray = false; 
-    template <typename T, size_t size> inline constexpr bool IsArray<T[size]> = true;
-    template <typename T> inline constexpr bool IsArray<T[]> = true;
-
-    template<bool test, class T = void> struct EnableIf {};
-    template<class T> struct EnableIf<true, T> { using Type = T; };
-    template<bool test, class T = void> using EnableIf_T = typename EnableIf<test, T>::Type;
-
-    template<typename T> struct RemoveRef { using Type = T; using ConstType = const T; };
-    template<typename T> struct RemoveRef<T&> { using Type = T; using ConstType = const T&; };
-    template<typename T> struct RemoveRef<T&&> { using Type = T; using ConstType = const T&&; };
-    template<typename T> using RemoveRef_T = typename RemoveRef<T>::Type;
-
-    template<typename T> struct RemoveCV { using Type = T; };
-    template<typename T> struct RemoveCV<const T> { using Type = T; };
-    template<typename T> struct RemoveCV<volatile T> { using Type = T; };
-    template<typename T> struct RemoveCV<const volatile T> { using Type = T; };
-    template<typename T> using RemoveCV_T = typename RemoveCV<T>::Type;
-
-    template <typename T>
-    [[nodiscard]] constexpr T&& Forward(RemoveRef_T<T>& v) noexcept { return static_cast<T&&>(v); }
-
-    template <typename T>
-    [[nodiscard]] constexpr T&& Forward(RemoveRef_T<T>&& v) noexcept { static_assert(!IsLvalueRef<T>, "Bad forward cast."); return static_cast<T&&>(v); }
-
-    template <typename T>
-    [[nodiscard]] constexpr RemoveRef_T<T>&& Move(T&& v) noexcept { return static_cast<RemoveRef_T<T>&&>(v); }
-
-    template<typename T0, typename T1 = T0>
-    constexpr T0 Exchange(T0& v, T1&& v_new) noexcept { T0 v_old = static_cast<T0&&>(v); v = static_cast<T1&&>(v_new); return v_old; }
-
-    template<typename T>
-    constexpr void Swap(T& a, T& b) noexcept { T t = Move(a); a = Move(b); b = Move(t); }
-
     void Assert(bool value, const char* str);
     void Assert(bool value);
 
@@ -118,7 +82,7 @@ namespace PK::Memory
         {
             for (auto i = 0u; i < count; ++i)
             {
-                dst[i] = Move(src[i]);
+                dst[i] = PK::MoveTemp(src[i]);
             }
         }
     }

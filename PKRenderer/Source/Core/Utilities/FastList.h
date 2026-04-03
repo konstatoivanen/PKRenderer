@@ -10,9 +10,9 @@ namespace PK
     {
         FastList() {}
         FastList(size_t capacity) { Reserve(capacity); }
-        FastList(FastList&& other) noexcept { Move(Memory::Forward<FastBuffer>(other)); }
+        FastList(FastList&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); }
         FastList(const FastList& other) noexcept { Copy(other); }
-        FastList(std::initializer_list<T>&& other) noexcept { Move(Memory::Forward<std::initializer_list<T>>(other)); }
+        FastList(std::initializer_list<T>&& other) noexcept { Move(PK::Forward<std::initializer_list<T>>(other)); }
         FastList(const std::initializer_list<T>& other) noexcept { Copy(other); }
 
         ~FastList()
@@ -48,7 +48,7 @@ namespace PK
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
 
-        FastList& operator=(FastList&& other) noexcept { Move(Memory::Forward<FastBuffer>(other)); return *this; }
+        FastList& operator=(FastList&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); return *this; }
 
         void Copy(const FastList& other)
         {
@@ -72,9 +72,9 @@ namespace PK
                     free(m_data.buffer);
                 }
 
-                m_data = Memory::Exchange(other.m_data, { nullptr });
-                m_count = Memory::Exchange(other.m_count, 0ull);
-                m_capacity = Memory::Exchange(other.m_capacity, 0ull);
+                m_data = PK::Exchange(other.m_data, { nullptr });
+                m_count = PK::Exchange(other.m_count, 0ull);
+                m_capacity = PK::Exchange(other.m_capacity, 0ull);
             }
         }
 
@@ -129,7 +129,7 @@ namespace PK
         T* Add(Args&& ... args)
         {
             Reserve(m_count + 1u);
-            return new(GetData() + m_count++) T(Memory::Forward<Args>(args)...);
+            return new(GetData() + m_count++) T(PK::Forward<Args>(args)...);
         }
 
         bool Remove(T* ptr)
@@ -152,7 +152,7 @@ namespace PK
 
             for (; i < m_count; ++i)
             {
-                GetData()[i] = Memory::Move(GetData()[i + 1]);
+                GetData()[i] = PK::MoveTemp(GetData()[i + 1]);
             }
 
             return true;
@@ -173,7 +173,7 @@ namespace PK
 
             if (m_count > 0u)
             {
-                GetData()[i] = Memory::Move(GetData()[m_count]);
+                GetData()[i] = PK::MoveTemp(GetData()[m_count]);
                 return true;
             }
 
@@ -241,7 +241,7 @@ namespace PK
         {
             Memory::Assert(m_count < capacity, "Fast list capacity exceeded!");
             auto ptr = GetData() + m_count++;
-            new(ptr) T(Memory::Forward<Args>(args)...);
+            new(ptr) T(PK::Forward<Args>(args)...);
             return ptr;
         }
 

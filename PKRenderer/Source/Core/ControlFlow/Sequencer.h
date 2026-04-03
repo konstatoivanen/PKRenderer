@@ -48,17 +48,17 @@ namespace PK
 
             for (auto i = 0u; i < view.count; ++i)
             {
-                static_cast<TStep*>(view.steps[i].step)->Step(Memory::Forward<Args>(args)...);
+                static_cast<TStep*>(view.steps[i].step)->Step(PK::Forward<Args>(args)...);
             }
         }
 
         template<typename ... Args>
-        void NextRoot(Args ... args) { Next(this, Memory::Forward<Args>(args)...); }
+        void NextRoot(Args ... args) { Next(this, PK::Forward<Args>(args)...); }
 
         template<typename T, typename ... Args>
         void NextEmplace(const void* engine, Args&& ... args)
         {
-            auto token = T(Memory::Forward<Args>(args)...);
+            auto token = T(PK::Forward<Args>(args)...);
             Next<T*>(engine, &token);
         }
 

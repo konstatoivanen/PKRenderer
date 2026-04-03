@@ -24,14 +24,14 @@ namespace PK
         T* New(Args&& ... args)
         {
             auto ptr = reinterpret_cast<T*>(AllocateBlock(sizeof(T), alignof(T)));
-            new(ptr) T(Memory::Forward<Args>(args)...);
+            new(ptr) T(PK::Forward<Args>(args)...);
             return ptr;
         }
 
         template<typename T>
         T* Emplace(T&& element)
         {
-            return New<T>(Memory::Forward<T>(element));
+            return New<T>(PK::Forward<T>(element));
         }
 
         virtual uint64_t GetAlignedHead(size_t alignment) const = 0;

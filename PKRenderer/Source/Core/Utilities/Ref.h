@@ -15,7 +15,7 @@ namespace PK
         constexpr DefaultDeleter() noexcept = default;
 
         template<typename U>  
-        DefaultDeleter(const DefaultDeleter<U>&, typename Memory::EnableIf<__is_convertible_to(U*, T*)>::Type * = 0) noexcept {}
+        DefaultDeleter(const DefaultDeleter<U>&, typename TEnableIf<__is_convertible_to(U*, T*)>::Type * = 0) noexcept {}
 
         void operator()(T * p) const noexcept { delete p; }
     };
@@ -44,7 +44,7 @@ namespace PK
     template <typename T, typename D = DefaultDeleter<T>>
     struct Unique
     {
-        static_assert(Memory::IsArray<T> == false, "Unique doesn't support array types.");
+        static_assert(TIsArray<T> == false, "Unique doesn't support array types.");
 
         typedef Unique<T, D>  this_type;
 
@@ -52,19 +52,19 @@ namespace PK
         constexpr Unique(nullptr_t) noexcept : pair(nullptr) {}
         explicit Unique(T* ptr) noexcept : pair(ptr) {}
         Unique(T* ptr, D deleter) noexcept : pair(ptr, deleter) {}
-        Unique(T* ptr, D&& deleter) noexcept : pair(ptr, Memory::Move(deleter)) {}
-        Unique(Unique&& other) noexcept : pair(other.Release(), Memory::Forward<D>(other.GetDeleter())) {}
+        Unique(T* ptr, D&& deleter) noexcept : pair(ptr, PK::MoveTemp(deleter)) {}
+        Unique(Unique&& other) noexcept : pair(other.Release(), PK::Forward<D>(other.GetDeleter())) {}
         Unique(const Unique&) = delete;
         
         template <typename U, typename E>
-        Unique(Unique<U, E>&& other) noexcept : pair(other.Release(), Memory::Forward<E>(other.GetDeleter())) {}
+        Unique(Unique<U, E>&& other) noexcept : pair(other.Release(), PK::Forward<E>(other.GetDeleter())) {}
 
         ~Unique() noexcept { Reset(); }
 
         Unique& operator=(Unique&& other) noexcept
         {
             Reset(other.Release());
-            pair.GetDeleter() = Memory::Move(Memory::Forward<D>(other.GetDeleter()));
+            pair.GetDeleter() = PK::MoveTemp(PK::Forward<D>(other.GetDeleter()));
             return *this;
         }
 
@@ -72,7 +72,7 @@ namespace PK
         Unique& operator=(Unique<U, E>&& other) noexcept
         {
             Reset(other.Release());
-            pair.GetDeleter() = Memory::Move(Memory::Forward<E>(other.GetDeleter()));
+            pair.GetDeleter() = PK::MoveTemp(PK::Forward<E>(other.GetDeleter()));
             return *this;
         }
         
@@ -94,7 +94,7 @@ namespace PK
         {
             if (pValue != pair.pointer)
             {
-                if (auto first = Memory::Exchange(pair.pointer, pValue))
+                if (auto first = PK::Exchange(pair.pointer, pValue))
                 {
                     GetDeleter()(first);
                 }
@@ -108,7 +108,7 @@ namespace PK
             return pTemp;
         }
 
-        void Swap(Unique& other) noexcept { Memory::Swap(pair.pointer, other.pair.pointer); }
+        void Swap(Unique& other) noexcept { PK::Swap(pair.pointer, other.pair.pointer); }
 
         UniquePair<T, D> pair;
     }; 
@@ -135,7 +135,7 @@ namespace PK
         {
             if (!m_isCreated)
             {
-                new(&value) T(Memory::Forward<Args>(args)...);
+                new(&value) T(PK::Forward<Args>(args)...);
                 m_isCreated = true;
             }
         }
@@ -179,7 +179,7 @@ namespace PK
     struct SharedObject : public SharedObjectBase
     {
         template <typename ... Args>
-        explicit SharedObject(Args&&... args) : SharedObjectBase() { new(&value) T(Memory::Forward<Args>(args)...); }
+        explicit SharedObject(Args&&... args) : SharedObjectBase() { new(&value) T(PK::Forward<Args>(args)...); }
         virtual ~SharedObject() noexcept override {}
         virtual void Destroy() noexcept override final { value.~T(); }
         virtual void Delete() noexcept override final { delete this; }
@@ -264,8 +264,8 @@ namespace PK
 
         void Swap(RefBase& other) noexcept 
         { 
-            Memory::Swap(pointer, other.pointer);
-            Memory::Swap(shared, other.shared);
+            PK::Swap(pointer, other.pointer);
+            PK::Swap(shared, other.shared);
         }
 
         T* pointer{ nullptr };
@@ -275,7 +275,7 @@ namespace PK
     template<typename T>
     struct Ref : public RefBase<T> 
     {
-        static_assert(Memory::IsArray<T> == false, "Ref doesn't support array types.");
+        static_assert(TIsArray<T> == false, "Ref doesn't support array types.");
 
         using TBase = RefBase<T>;
         using TWeak = Weak<T>;
@@ -295,32 +295,32 @@ namespace PK
         Ref(const Ref<TOther>& other, T* ptr) noexcept { TBase::AliasConstruct(other, ptr); }
 
         template <typename TOther>
-        Ref(Ref<TOther>&& other, T* ptr) noexcept { TBase::AliasMoveConstruct(Memory::Move(other), ptr); }
+        Ref(Ref<TOther>&& other, T* ptr) noexcept { TBase::AliasMoveConstruct(PK::MoveTemp(other), ptr); }
 
         Ref(const Ref& other) noexcept { TBase::CopyConstruct(other); }
 
-        template <typename TOther, Memory::EnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
+        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
         Ref(const Ref<TOther>& other) noexcept { TBase::CopyConstruct(other); }
 
-        Ref(Ref&& other) noexcept { TBase::MoveConstruct(Memory::Move(other)); }
+        Ref(Ref&& other) noexcept { TBase::MoveConstruct(PK::MoveTemp(other)); }
 
-        template <typename TOther, Memory::EnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
-        Ref(Ref<TOther>&& other) noexcept { TBase::MoveConstruct(Memory::Move(other)); }
+        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
+        Ref(Ref<TOther>&& other) noexcept { TBase::MoveConstruct(PK::MoveTemp(other)); }
 
-        template <typename TOther, Memory::EnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
+        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
         explicit Ref(const Weak<TOther>& other) { Memory::Assert(TBase::ConstructFromWeak(other), "Ref from weak ctor failed!") }
 
         ~Ref() noexcept { TBase::DecrementStrongRef(); }
 
         Ref& operator=(const Ref& other) noexcept { Ref(other).Swap(*this); return *this; }
 
-        Ref& operator=(Ref&& other) noexcept { Ref(Memory::Move(other)).Swap(*this); return *this; }
+        Ref& operator=(Ref&& other) noexcept { Ref(PK::MoveTemp(other)).Swap(*this); return *this; }
 
         template <typename TOther>
         Ref& operator=(const Ref<TOther>& other) noexcept { Ref(other).Swap(*this); return *this; }
 
         template <typename TOther>
-        Ref& operator=(Ref<TOther>&& other) noexcept { Ref(Memory::Move(other)).Swap(*this); return *this; }
+        Ref& operator=(Ref<TOther>&& other) noexcept { Ref(PK::MoveTemp(other)).Swap(*this); return *this; }
 
         T& operator*() const noexcept { return *get(); }
         T* operator->() const noexcept { return get(); }
@@ -339,12 +339,12 @@ namespace PK
         
         Weak(const Weak& other) noexcept { TBase::WeaklyConstruct(other);}
 
-        template <typename TOther, Memory::EnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
+        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
         Weak(const Ref<TOther>& other) noexcept { TBase::WeaklyConstruct(other); }
 
-        Weak(Weak&& other) noexcept { TBase::MoveConstruct(Memory::Move(other)); }
+        Weak(Weak&& other) noexcept { TBase::MoveConstruct(PK::MoveTemp(other)); }
 
-        template <typename TOther, Memory::EnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
+        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
         Weak(const Weak<TOther>& other) noexcept 
         {
             if (other.shared)
@@ -360,7 +360,7 @@ namespace PK
             }
         }
 
-        template <typename TOther, Memory::EnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
+        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
         Weak(Weak<TOther>&& other) noexcept 
         {
             shared = other.shared;
@@ -379,13 +379,13 @@ namespace PK
 
         Weak& operator=(const Weak& other) noexcept { Weak(other).Swap(*this); return *this; }
 
-        Weak& operator=(Weak&& other) noexcept { Weak(Memory::Move(other)).Swap(*this); return *this; }
+        Weak& operator=(Weak&& other) noexcept { Weak(PK::MoveTemp(other)).Swap(*this); return *this; }
 
         template <typename TOther>
         Weak& operator=(const Weak<TOther>& other) noexcept { Weak(other).Swap(*this); return *this; }
 
         template <typename TOther>
-        Weak& operator=(Weak<TOther>&& other) noexcept { Weak(Memory::Move(other)).Swap(*this); return *this; }
+        Weak& operator=(Weak<TOther>&& other) noexcept { Weak(PK::MoveTemp(other)).Swap(*this); return *this; }
 
         template <typename TOther>
         Weak& operator=(const Ref<TOther>& other) noexcept { Weak(other).Swap(*this); return *this; }
@@ -446,14 +446,14 @@ namespace PK
     constexpr Unique<T> CreateUnique(Args&& ... args) noexcept
     {
         // Separate line so that memory profiler picks the type correctly :/
-        auto ptr = new T(Memory::Forward<Args>(args)...);
+        auto ptr = new T(PK::Forward<Args>(args)...);
         return Unique<T>(ptr);
     }
 
     template<typename T, typename ... Args>
     constexpr Ref<T> CreateRef(Args&& ... args) noexcept
     {
-        const auto shared = new SharedObject<T>(Memory::Forward<Args>(args)...);
+        const auto shared = new SharedObject<T>(PK::Forward<Args>(args)...);
         Ref<T> ret;
         ret.pointer = &shared->value;
         ret.shared = shared;
