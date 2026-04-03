@@ -19,8 +19,8 @@ namespace PK
             {
                 handle->destructor(handle->object);
                 *head = handle->next;
-                free(handle->object);
-                free(handle);
+                Memory::Free(handle->object);
+                Memory::Free(handle);
                 break;
             }
 
@@ -45,8 +45,8 @@ namespace PK
             auto handle = head;
             handle->destructor(handle->object);
             head = head->next;
-            free(handle->object);
-            free(handle);
+            Memory::Free(handle->object);
+            Memory::Free(handle);
         }
 
         PK::Platform::Terminate();
@@ -66,7 +66,7 @@ namespace PK
 
     void IPlatform::AddManagedAllocation(void* object, void(*destructor)(void*))
     {
-        auto alloc = static_cast<ManagedAllocation*>(malloc(sizeof(ManagedAllocation)));
+        auto alloc = Memory::Malloc<ManagedAllocation>(1u);
         alloc->destructor = destructor;
         alloc->object = object;
         alloc->next = nullptr;

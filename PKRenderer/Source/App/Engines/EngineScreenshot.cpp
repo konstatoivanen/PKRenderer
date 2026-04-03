@@ -82,7 +82,7 @@ namespace PK::App
         }
 
         FileIO::WriteBMP(filename.c_str(), { pixels, (int32_t)m_captureResolution.x, (int32_t)m_captureResolution.y, 4 });
-        free(pixels);
+        Memory::Free(pixels);
 
         PK_LOG_INFO("Screenshot captured: %s", filename.c_str());
     }

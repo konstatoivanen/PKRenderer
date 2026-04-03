@@ -22,7 +22,7 @@ namespace PK
 
         ParseStruct(root);
 
-        free(fileData);
+        Memory::Free(fileData);
     }
 
     void IYamlStruct::ParseMemberStruct(const YAML::ConstNode& node, const char* memberName, IYamlStruct* outValue)

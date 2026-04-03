@@ -33,7 +33,7 @@ namespace PK
             return -1;
         }
 
-        resources = static_cast<Win32Resources*>(calloc(1, sizeof(Win32Resources)));
+        resources = Memory::Calloc<Win32Resources>(1u);
 
         if (!resources)
         {
@@ -358,8 +358,8 @@ namespace PK
             resources->windowClassMain = NULL;
         }
 
-        free(resources->rawInput);
-        free(resources->clipboard);
+        Memory::Free(resources->rawInput);
+        Memory::Free(resources->clipboard);
         resources->rawInput = nullptr;
         resources->clipboard = nullptr;
 
@@ -376,7 +376,7 @@ namespace PK
         FreeLibrary(resources->dwmapi_handle);
         FreeLibrary(resources->xinput_handle);
 
-        free(resources);
+        Memory::Free(resources);
         resources = nullptr;
 
         return 0;
@@ -631,7 +631,7 @@ namespace PK
 
         if (!resources->clipboard || resources->clipboardSize < size)
         {
-            free(resources->clipboard);
+            Memory::Free(resources->clipboard);
             resources->clipboard = Memory::Calloc<char>(size);
             resources->clipboardSize = size;
             resources->clipboard[size] = '\0';
@@ -850,10 +850,10 @@ namespace PK
         {
             if (resources->rawInput)
             {
-                free(resources->rawInput);
+                Memory::Free(resources->rawInput);
             }
 
-            resources->rawInput = (RAWINPUT*)calloc(size, 1);
+            resources->rawInput = Memory::Calloc<RAWINPUT>(1u);
             resources->rawInputSize = size;
         }
 

@@ -194,7 +194,7 @@ namespace PK::FileIO
         auto unpaddedRowSize = width * bytesPerPixel;
         auto totalSize = unpaddedRowSize * height;
 
-        auto buffer = static_cast<char*>(malloc(sizeof(Image) + totalSize));
+        auto buffer = Memory::Malloc<char>(sizeof(Image) + totalSize);
         auto image = reinterpret_cast<Image*>(buffer);
         image->pixels = reinterpret_cast<byte*>(buffer + sizeof(Image));
         image->width = width;
@@ -289,7 +289,7 @@ namespace PK::FileIO
         auto unpaddedRowSize = biWidth * bytesPerPixel;
         auto totalSize = unpaddedRowSize * biHeight;
 
-        auto buffer = static_cast<char*>(malloc(sizeof(Image) + totalSize));
+        auto buffer = Memory::Malloc<char>(sizeof(Image) + totalSize);
         auto image = reinterpret_cast<Image*>(buffer);
         image->pixels = reinterpret_cast<byte*>(buffer + sizeof(Image));
         image->width = biWidth;

@@ -115,7 +115,7 @@ namespace PK
         template<typename T, typename ... Args>
         static T* ManagedAllocate(Args&& ... args)
         {
-            auto ptr = static_cast<T*>(malloc(sizeof(T)));
+            auto ptr = Memory::Malloc<T>(1u);
             AddManagedAllocation(ptr, [](void* ptr) { static_cast<T*>(ptr)->~T(); });
             new (ptr) T(PK::Forward<Args>(args)...);
             return ptr;

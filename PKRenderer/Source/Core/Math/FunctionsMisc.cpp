@@ -124,10 +124,8 @@ namespace PK::Math
     }
 
     float3 ToFloat3(float* ptr)
-    {
-        float3 value;
-        memcpy(glm::value_ptr(value), ptr, sizeof(float) * 3);
-        return value;
+    { 
+        return Memory::BitCast<float, float3>(ptr);
     }
 
     ushort PackHalf(float v)

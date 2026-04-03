@@ -14,6 +14,9 @@ namespace PK::Memory
     void Assert(bool value, const char* str);
     void Assert(bool value);
 
+    inline void Free(void* block) { free(block); }
+
+
     template<typename T>
     T* Malloc(size_t count) noexcept { return static_cast<T*>(malloc(count * sizeof(T))); }
 
@@ -54,15 +57,9 @@ namespace PK::Memory
 
 
     template<typename TAlignment>
-    size_t AlignSize(size_t* size)
+    size_t AlignSize(size_t size)
     {
-        if (*size == 0ull)
-        {
-            return *size;
-        }
-
-        *size = (*size + sizeof(TAlignment) - 1ull) & ~(sizeof(TAlignment) - 1ull);
-        return *size;
+        return size == 0ull ? 0ull : (size + sizeof(TAlignment) - 1ull) & ~(sizeof(TAlignment) - 1ull);
     }
 
     template<typename T>

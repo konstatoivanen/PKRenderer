@@ -19,7 +19,7 @@ namespace PK
         {
             if (!IsSmallBuffer(m_count))
             {
-                free(m_data.buffer);
+                Memory::Free(m_data.buffer);
                 m_data.buffer = nullptr;
                 m_count = 0u;
             }
@@ -65,7 +65,7 @@ namespace PK
             {
                 if (!IsSmallBuffer(m_count))
                 {
-                    free(m_data.buffer);
+                    Memory::Free(m_data.buffer);
                 }
 
                 m_data = PK::Exchange(other.m_data, { nullptr });

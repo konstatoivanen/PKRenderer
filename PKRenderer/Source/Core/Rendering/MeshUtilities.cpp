@@ -84,7 +84,7 @@ namespace PK::MeshUtilities
 
         if (needsAlignment)
         {
-            auto buffer = (char*)malloc(count * dst.GetStride());
+            auto buffer = Memory::Malloc<char>(count * dst.GetStride());
 
             for (auto i = 0u; i < dst.GetCount(); ++i)
             {
@@ -95,12 +95,12 @@ namespace PK::MeshUtilities
 
                 for (auto i = 0u; i < count; ++i)
                 {
-                    memcpy(buffer + dstOffset + vdst.stride * i + vdst.offset, vertices + srcOffset + vsrc.stride * i + vsrc.offset, vdst.size);
+                    Memory::Memcpy(buffer + dstOffset + vdst.stride * i + vdst.offset, vertices + srcOffset + vsrc.stride * i + vsrc.offset, vdst.size);
                 }
             }
 
-            memcpy(vertices, buffer, count * dst.GetStride());
-            free(buffer);
+            Memory::Memcpy(vertices, buffer, count * dst.GetStride());
+            Memory::Free(buffer);
         }
     }
 
@@ -155,12 +155,12 @@ namespace PK::MeshUtilities
         const auto count_vertex = count_meshlet * PKAssets::PK_MESHLET_MAX_VERTICES;
 
         size_t size = 0ull;
-        const auto offset_indices = Memory::AlignSize<uint8_t>(&size);
-        size += sizeof(uint8_t) * count_index;
-        const auto offset_vertices = Memory::AlignSize<PKAssets::PKMeshletVertex>(&size);
-        size += sizeof(PKAssets::PKMeshletVertex) * count_vertex;
-        const auto offset_meshlets = Memory::AlignSize<PKAssets::PKMeshlet>(&size);
-        size += sizeof(PKAssets::PKMeshlet) * count_meshlet;
+        const auto offset_indices = Memory::AlignSize<uint8_t>(size);
+        size = offset_indices + sizeof(uint8_t) * count_index;
+        const auto offset_vertices = Memory::AlignSize<PKAssets::PKMeshletVertex>(size);
+        size = offset_vertices + sizeof(PKAssets::PKMeshletVertex) * count_vertex;
+        const auto offset_meshlets = Memory::AlignSize<PKAssets::PKMeshlet>(size);
+        size = offset_meshlets + sizeof(PKAssets::PKMeshlet) * count_meshlet;
 
         auto buffer = calloc(size, 1u);
         indices = Memory::CastOffsetPtr<uint8_t>(buffer, offset_indices);
@@ -170,7 +170,7 @@ namespace PK::MeshUtilities
 
     MeshletBuildData::~MeshletBuildData()
     {
-        free(indices);
+        Memory::Free(indices);
     }
 
     MeshletBuildData BuildMeshletsMonotone(GeometryContext* ctx)
@@ -352,8 +352,8 @@ namespace PK::MeshUtilities
         output.submesh.firstMeshlet = 0u;
         output.submesh.meshletCount = output.meshlet_count;
 
-        free(meshlet_vertices);
-        free(used);
+        Memory::Free(meshlet_vertices);
+        Memory::Free(used);
 
         return output;
     }
@@ -597,7 +597,7 @@ namespace PK::MeshUtilities
         geometryContext.aabb = BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f });
         auto virtualMesh = CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Plane"); 
 
-        free(buffer);
+        Memory::Free(buffer);
 
         return virtualMesh;
     }
@@ -704,7 +704,7 @@ namespace PK::MeshUtilities
         geometryContext.aabb = BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius);
         auto virtualMesh = CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Sphere");
 
-        free(buffer);
+        Memory::Free(buffer);
 
         return virtualMesh;
     }

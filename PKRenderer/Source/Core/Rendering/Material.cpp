@@ -130,7 +130,7 @@ namespace PK
             }
         }
 
-        free(fileData);
+        Memory::Free(fileData);
     }
 
     size_t Material::GetPropertyStride() const { return m_shader->GetMaterialPropertyLayout().GetStridePadded(); }

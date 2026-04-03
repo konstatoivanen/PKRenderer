@@ -21,7 +21,7 @@ namespace PK
 
             if (!IsSmallBuffer(m_capacity))
             {
-                free(m_data.buffer);
+                Memory::Free(m_data.buffer);
             }
 
             m_capacity = 0u;
@@ -69,7 +69,7 @@ namespace PK
             {
                 if (!IsSmallBuffer(m_capacity))
                 {
-                    free(m_data.buffer);
+                    Memory::Free(m_data.buffer);
                 }
 
                 m_data = PK::Exchange(other.m_data, { nullptr });
@@ -101,7 +101,7 @@ namespace PK
 
             if (!IsSmallBuffer(m_capacity))
             {
-                free(m_data.buffer);
+                Memory::Free(m_data.buffer);
             }
 
             m_data.buffer = buffer;

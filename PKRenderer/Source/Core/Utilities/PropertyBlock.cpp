@@ -12,10 +12,7 @@ namespace PK
 
     PropertyBlock::~PropertyBlock()
     {
-        if (m_buffer != nullptr)
-        {
-            free(m_buffer);
-        }
+        Memory::Free(m_buffer);
     }
 
 
@@ -161,11 +158,11 @@ namespace PK
         if (resize)
         {
             size_t size = 0ull;
-            size += sizeof(char) * byteCapacity;
-            const auto offsetBuckets = Memory::AlignSize<uint64_t>(&size);
-            size += sizeof(uint16_t) * (propertyCapacity * BUCKET_COUNT_FACTOR);
-            const auto offsetProperties = Memory::AlignSize<Property>(&size);
-            size += sizeof(Property) * propertyCapacity;
+            size = sizeof(char) * byteCapacity;
+            const auto offsetBuckets = Memory::AlignSize<uint64_t>(size);
+            size = offsetBuckets + sizeof(uint16_t) * (propertyCapacity * BUCKET_COUNT_FACTOR);
+            const auto offsetProperties = Memory::AlignSize<Property>(size);
+            size = offsetProperties + sizeof(Property) * propertyCapacity;
 
             auto newBuffer = calloc(size, 1u);
             auto newBuckets = Memory::CastOffsetPtr<uint16_t>(newBuffer, offsetBuckets);
@@ -175,7 +172,7 @@ namespace PK
             {
                 memcpy(newBuffer, m_buffer, sizeof(char) * m_bufferSize);
                 memcpy(newProperties, m_properties, sizeof(Property) * m_propertyCapacity);
-                free(m_buffer);
+                Memory::Free(m_buffer);
             }
 
             m_bucketCount = (propertyCapacity * BUCKET_COUNT_FACTOR);

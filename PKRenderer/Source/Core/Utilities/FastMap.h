@@ -58,7 +58,7 @@ namespace PK
             {
                 Memory::ClearArray(m_values, m_count);
                 Memory::ClearArray(m_nodes, m_count);
-                free(m_buffer);
+                Memory::Free(m_buffer);
             }
         }
 
@@ -74,7 +74,7 @@ namespace PK
                 {
                     Memory::ClearArray(m_values, m_count);
                     Memory::ClearArray(m_nodes, m_count);
-                    free(m_buffer);
+                    Memory::Free(m_buffer);
                 }
 
                 m_buffer = PK::Exchange(other.m_buffer, nullptr);
@@ -95,7 +95,7 @@ namespace PK
             {
                 Memory::ClearArray(m_values, m_count);
                 Memory::ClearArray(m_nodes, m_count);
-                free(m_buffer);
+                Memory::Free(m_buffer);
             }
             
             m_buffer = nullptr;
@@ -120,12 +120,12 @@ namespace PK
                 m_bucketCount = (m_bucketStride + 1u) * m_capacity - 1u;
                 
                 size_t size = 0ull;
-                const auto offsetBuckets = Memory::AlignSize<_TIndex>(&size);
-                size += sizeof(_TIndex) * GetBucketCount();
-                const auto offsetNode = Memory::AlignSize<_TNode>(&size);
-                size += sizeof(_TNode) * m_capacity;
-                const auto offsetValue = Memory::AlignSize<_TValue>(&size);
-                size += sizeof(_TValue) * m_capacity;
+                const auto offsetBuckets = Memory::AlignSize<_TIndex>(size);
+                size = offsetBuckets + sizeof(_TIndex) * GetBucketCount();
+                const auto offsetNode = Memory::AlignSize<_TNode>(size);
+                size = offsetNode + sizeof(_TNode) * m_capacity;
+                const auto offsetValue = Memory::AlignSize<_TValue>(size);
+                size = offsetValue + sizeof(_TValue) * m_capacity;
                 
                 auto newBuffer = calloc(size, 1u);
                 auto newBuckets = Memory::CastOffsetPtr<_TIndex>(newBuffer, offsetBuckets);
@@ -136,7 +136,7 @@ namespace PK
                 {
                     Memory::MoveArray(newValues, m_values, m_count);
                     Memory::MoveArray(newNodes, m_nodes, m_count);
-                    free(m_buffer);
+                    Memory::Free(m_buffer);
                 }
 
                 m_buffer = newBuffer;

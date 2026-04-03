@@ -43,7 +43,7 @@ namespace PK
             if (icon)
             {
                 m_native->SetIcon(icon->pixels, { icon->width, icon->height });
-                free(icon);
+                Memory::Free(icon);
             }
         }
 

@@ -44,7 +44,7 @@ namespace PK
             cacheCreateInfo.initialDataSize = cacheSize;
             cacheCreateInfo.pInitialData = cacheData;
             VK_ASSERT_RESULT_CTX(vkCreatePipelineCache(device, &cacheCreateInfo, nullptr, &m_pipelineCache), "Failed to create pipeline cache!");
-            free(cacheData);
+            Memory::Free(cacheData);
         }
     }
 
@@ -58,7 +58,7 @@ namespace PK
             vkGetPipelineCacheData(m_device, m_pipelineCache, &size, cacheData);
             FileIO::WriteBinary(FixedString256({ m_workingDirectory, PIPELINE_CACHE_FILENAME }), false, cacheData, size);
             vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
-            free(cacheData);
+            Memory::Free(cacheData);
         }
 
         m_pipelinePool.Clear();
