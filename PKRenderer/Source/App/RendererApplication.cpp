@@ -254,7 +254,9 @@ namespace PK::App
 
 PK::IApplication* PK::CreateProjectApplication(const PK::CArguments& arguments)
 {
-    return PK::Platform::ManagedAllocate<App::RendererApplication>(arguments);
+    auto app = Memory::Allocate<App::RendererApplication>(1u);
+    PK::Platform::AddManagedAllocation(app, [](void* ptr) { Memory::Destruct(static_cast<App::RendererApplication*>(ptr)); });
+    return Memory::Construct(app, arguments);
 }
 
 void PK::FreeProjectApplication(IApplication* application)

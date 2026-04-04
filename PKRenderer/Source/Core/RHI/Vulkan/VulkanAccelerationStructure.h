@@ -32,8 +32,6 @@ namespace PK
                 }
             };
 
-            using GeometryKeyHash = Hash::TFNV1AHash<BLASKey>;
-
             struct BLAS
             {
                 VulkanRawAccelerationStructure* raw = nullptr;
@@ -71,7 +69,7 @@ namespace PK
             VulkanRawBuffer* m_structureBuffer = nullptr;
             FixedUnique<VulkanQueryPool> m_queryPool;
             TLAS m_structure{};
-            FastMap<BLASKey, BLAS, GeometryKeyHash> m_substructures;
+            FastMap<BLASKey, BLAS> m_substructures;
             VulkanBindHandle m_bindHandle{};
             
             // Temporaries used during build process

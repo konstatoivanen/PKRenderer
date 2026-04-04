@@ -77,7 +77,7 @@ namespace PK
             FixedPool<VulkanPipeline, PK_VK_MAX_PIPELINES> m_pipelinePool;
             FixedMap16<PipelineKey, PipelineValue, PK_VK_MAX_PIPELINES_VERTEX, PipelineKeyHash> m_vertexPipelines;
             FixedMap16<MeshPipelineKey, PipelineValue, PK_VK_MAX_PIPELINES_MESH, MeshPipelineKeyHash> m_meshPipelines;
-            FixedMap16<VersionHandle<VulkanShader>, PipelineValue, PK_VK_MAX_PIPELINES_GENERIC, VersionHandle<VulkanShader>::Hash> m_otherPipelines;
+            FixedMap16<VersionHandle<VulkanShader>, PipelineValue, PK_VK_MAX_PIPELINES_GENERIC> m_otherPipelines;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;
     };

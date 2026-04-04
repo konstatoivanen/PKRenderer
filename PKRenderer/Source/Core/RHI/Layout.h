@@ -84,7 +84,7 @@ namespace PK
 
     struct ShaderVertexInputLayout : public FixedSet8<ShaderVertexInputElement, PK_RHI_MAX_VERTEX_ATTRIBUTES, ShaderVertexInputElementHash>
     {
-        ShaderVertexInputLayout() : IFastSet() {}
+        ShaderVertexInputLayout() : IHashSet() {}
         const ShaderVertexInputElement* TryGetElement(NameID name, uint32_t* index) const;
     };
 

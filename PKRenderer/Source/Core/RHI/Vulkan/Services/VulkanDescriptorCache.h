@@ -63,7 +63,7 @@ namespace PK
         VulkanDescriptorPool* m_currentPool = nullptr;
         FixedPool<VulkanDescriptorSet, PK_VK_MAX_DESCRIPTOR_SETS> m_setsPool;
         FixedPool<DescriptorBinding, PK_VK_MAX_DESCRIPTOR_BINDINGS> m_bindingPool;
-        FixedPointerMap16<SetKey, VulkanDescriptorSet, PK_VK_MAX_DESCRIPTOR_SETS, SetKeyHash> m_sets;
+        FixedMap16<SetKey, VulkanDescriptorSet*, PK_VK_MAX_DESCRIPTOR_SETS, SetKeyHash> m_sets;
         FixedPool<VulkanDescriptorPool, PK_VK_MAX_DESCRIPTOR_SET_POOLS> m_poolPool; // A great name for a great variable.
         FixedArena<PK_VK_DESCRIPTOR_WRITE_ARENA_SIZE> m_writeArena;
     };

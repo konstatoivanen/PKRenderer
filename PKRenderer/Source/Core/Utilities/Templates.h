@@ -2,31 +2,41 @@
 
 namespace PK
 {
-    template <typename> inline constexpr bool TIsArray = false;
+    template <typename>                inline constexpr bool TIsArray = false;
     template <typename T, size_t size> inline constexpr bool TIsArray<T[size]> = true;
-    template <typename T> inline constexpr bool TIsArray<T[]> = true;
+    template <typename T>              inline constexpr bool TIsArray<T[]> = true;
 
-    template<bool pred, typename T = void> struct TEnableIf {};
-    template<class T> struct TEnableIf<true, T> { using Type = T; };
-    template<bool pred, typename T = void> using TEnableIf_T = typename TEnableIf<pred, T>::Type;
+    template <typename>   inline constexpr bool TIsPointer = false; 
+    template <typename T> inline constexpr bool TIsPointer<T*> = true;
+    template <typename T> inline constexpr bool TIsPointer<T* const> = true;
+    template <typename T> inline constexpr bool TIsPointer<T* volatile> = true;
+    template <typename T> inline constexpr bool TIsPointer<T* const volatile> = true;
 
-    template<typename T> struct TRemoveRef { using Type = T; using ConstType = const T; };
-    template<typename T> struct TRemoveRef<T&> { using Type = T; using ConstType = const T&; };
-    template<typename T> struct TRemoveRef<T&&> { using Type = T; using ConstType = const T&&; };
-    template<typename T> using TRemoveRef_T = typename TRemoveRef<T>::Type;
+    template <typename T> inline constexpr bool TIsEnum = __is_enum(T);
 
-    template<typename T> struct TRemovePtr { using Type = T; };
-    template<typename T> struct TRemovePtr<T*> { using Type = T; };
-    template<typename T> struct TRemovePtr<T* const> { using Type = T; };
-    template<typename T> struct TRemovePtr<T* volatile> { using Type = T; };
-    template<typename T> struct TRemovePtr<T* const volatile> { using Type = T; };
-    template<typename T> using TRemovePtr_T = typename TRemovePtr<T>::Type;
+    template<bool predicate, typename T = void> struct TEnableIf;
+    template<typename T>                        struct TEnableIf<true, T> { using Type = T; };
+    template<typename T>                        struct TEnableIf<false, T> {};
 
-    template<typename T> struct TRemoveCV { using Type = T; };
-    template<typename T> struct TRemoveCV<const T> { using Type = T; };
-    template<typename T> struct TRemoveCV<volatile T> { using Type = T; };
+    template<typename T> struct TRemoveRef      { using Type = T; };
+    template<typename T> struct TRemoveRef<T&>  { using Type = T; };
+    template<typename T> struct TRemoveRef<T&&> { using Type = T; };
+
+    template<typename T> struct TRemovePtr                      { using Type = T; };
+    template<typename T> struct TRemovePtr<T*>                  { using Type = T; };
+    template<typename T> struct TRemovePtr<T* const>            { using Type = T; };
+    template<typename T> struct TRemovePtr<T* volatile>         { using Type = T; };
+    template<typename T> struct TRemovePtr<T* const volatile>   { using Type = T; };
+
+    template<typename T> struct TRemoveCV                   { using Type = T; };
+    template<typename T> struct TRemoveCV<const T>          { using Type = T; };
+    template<typename T> struct TRemoveCV<volatile T>       { using Type = T; };
     template<typename T> struct TRemoveCV<const volatile T> { using Type = T; };
-    template<typename T> using TRemoveCV_T = typename TRemoveCV<T>::Type;
+
+    template<bool predicate, typename T = void> using TEnableIf_T = typename TEnableIf<predicate, T>::Type;
+    template<typename T>                        using TRemoveRef_T = typename TRemoveRef<T>::Type;
+    template<typename T>                        using TRemovePtr_T = typename TRemovePtr<T>::Type;
+    template<typename T>                        using TRemoveCV_T = typename TRemoveCV<T>::Type;
 
     template <typename T>
     [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>& v) noexcept { return static_cast<T&&>(v); }

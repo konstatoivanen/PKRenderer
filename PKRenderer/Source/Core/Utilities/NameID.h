@@ -34,10 +34,9 @@ namespace PK
     constexpr static bool operator != (const NameID& a, const uint32_t& b) { return !(a == b); }
     constexpr static bool operator == (const uint32_t& a, const NameID& b) { return a == b.identifier; }
     constexpr static bool operator != (const uint32_t& a, const NameID& b) { return !(a == b); }
-}
 
-template <>
-struct std::hash<PK::NameID>
-{
-    std::size_t operator()(const PK::NameID& k) const { return k.identifier; }
-};
+    namespace Hash
+    {
+        template<> struct THash<NameID> { size_t operator()(const NameID& k) const { return k.identifier; } };
+    }
+}

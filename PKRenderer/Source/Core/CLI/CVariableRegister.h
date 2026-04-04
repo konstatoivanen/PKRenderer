@@ -59,7 +59,7 @@ namespace PK
         void ExecuteInstance(const char* const* args, uint32_t count);
         void ExecuteParseInstance(const char* arg);
 
-        FastMap<NameID, CVariableBinding, Hash::TCastHash<NameID>> m_variables;
+        FastMap<NameID, CVariableBinding> m_variables;
         FixedArena<32768ull> m_arena;
     };
 }

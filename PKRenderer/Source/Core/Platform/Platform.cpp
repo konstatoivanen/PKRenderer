@@ -11,6 +11,8 @@ namespace PK
         ManagedAllocation* next = nullptr;
     };
 
+    static ManagedAllocation* s_ManagedAllocations = nullptr;
+
     IPlatformWindowListener::~IPlatformWindowListener() = default;
     PlatformWindow::~PlatformWindow() = default;
     

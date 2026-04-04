@@ -17,6 +17,6 @@ namespace PK
         const char* INameIDProvider_IDToString(const uint32_t& name) final;
 
     private:
-        FastSet<FixedString128, std::hash<FixedString128>> m_names;
+        FastSet<FixedString128> m_names;
     };
 }

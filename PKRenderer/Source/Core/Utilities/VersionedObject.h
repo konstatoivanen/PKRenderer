@@ -1,6 +1,6 @@
 #pragma once
-#include <stdint.h>
 #include "NoCopy.h"
+#include "Hash.h"
 
 namespace PK
 {
@@ -22,14 +22,6 @@ namespace PK
     {
         static_assert(__is_base_of(VersionedObject, T), "Template argument type does not derive from VersionedObject!");
 
-        struct Hash
-        {
-            size_t operator()(const VersionHandle& k) const noexcept
-            {
-                return k.version;
-            }
-        };
-
         constexpr VersionHandle() : value(nullptr), version(0ull) {}
         constexpr VersionHandle(const T* value) : value(value), version(value ? value->Version() : 0ull) {}
 
@@ -41,4 +33,16 @@ namespace PK
         const T* value;
         uint64_t version;
     };
+
+    namespace Hash
+    {
+        template<typename T>
+        struct THash<VersionHandle<T>>
+        {
+            size_t operator()(const VersionHandle<T>& k) const noexcept
+            {
+                return k.version;
+            }
+        };
+    }
 }

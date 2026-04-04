@@ -240,7 +240,7 @@ namespace PK
             }
 
             const uint32_t m_queueFamily = 0u;
-            FixedPointerMap16<uint64_t, AccessRecord, PK_VK_MAX_ACCESS_HEADERS> m_resources;
+            FixedMap16<uint64_t, AccessRecord*, PK_VK_MAX_ACCESS_HEADERS> m_resources;
             FixedPool<AccessRecord, PK_VK_MAX_ACCESS_RECORDS> m_records;
             FixedList<VkBufferMemoryBarrier, PK_VK_MAX_BUFFER_BARRIERS> m_bufferBarriers;
             FixedList<VkImageMemoryBarrier, PK_VK_MAX_IMAGE_BARRIERS> m_imageBarriers;

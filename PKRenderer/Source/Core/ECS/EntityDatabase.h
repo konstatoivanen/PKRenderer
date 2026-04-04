@@ -194,7 +194,7 @@ namespace PK
     private:
         FastSet<EntityViewHeader, EntityViewHeaderHash> m_viewHeaders;
         FastBuffer<EntityViewContainer> m_entityViews;
-        FastMap<uint32_t, ImplementerContainer, Hash::TCastHash<uint32_t>> m_implementers;
+        FastMap<uint32_t, ImplementerContainer> m_implementers;
         uint32_t m_idCounter = 0u;
         uint32_t m_viewCounter = 0u;
     };

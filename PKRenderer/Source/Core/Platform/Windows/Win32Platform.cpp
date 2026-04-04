@@ -34,7 +34,7 @@ namespace PK
             return -1;
         }
 
-        resources = Memory::AllocateClear<Win32Resources>(1u);
+        resources = Memory::New<Win32Resources>();
 
         if (!resources)
         {
@@ -48,7 +48,7 @@ namespace PK
         }
 
         DWORD flags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
-        PK_PLATFORM_ASSERT(GetModuleHandleExW(flags, (const WCHAR*)&s_localPtr, (HMODULE*)&resources->instance), "Failed to get program HINSTANCE");
+        Memory::Assert(GetModuleHandleExW(flags, (const WCHAR*)&s_localPtr, (HMODULE*)&resources->instance), "Failed to get program HINSTANCE");
 
         ::SetPriorityClass(::GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
@@ -58,7 +58,7 @@ namespace PK
         resources->ntdll_handle = LoadLibrary("ntdll.dll");
         resources->dwmapi_handle = LoadLibrary("dwmapi.dll");
 
-        PK_PLATFORM_ASSERT(resources->user32_handle, "Failed to load user32.dll");
+        Memory::Assert(resources->user32_handle, "Failed to load user32.dll");
 
         pkfn_SetProcessDPIAware = (PFN_SetProcessDPIAware)GetProcAddress(resources->user32_handle, "SetProcessDPIAware");
         pkfn_ChangeWindowMessageFilterEx = (PFN_ChangeWindowMessageFilterEx)GetProcAddress(resources->user32_handle, "ChangeWindowMessageFilterEx");
@@ -135,7 +135,7 @@ namespace PK
             wc.hInstance = resources->instance;
             wc.hCursor = ::LoadCursorW(NULL, IDC_ARROW);
             wc.lpszClassName = Win32Window::CLASS_HELPER;
-            PK_PLATFORM_ASSERT((resources->windowClassHelper = ::RegisterClassExW(&wc)), "Failed to create window helper class.");
+            Memory::Assert((resources->windowClassHelper = ::RegisterClassExW(&wc)), "Failed to create window helper class.");
         }
 
         // Main window class for actual display windows.
@@ -147,7 +147,7 @@ namespace PK
             wc.hCursor = ::LoadCursorW(NULL, IDC_ARROW);
             wc.lpszClassName = Win32Window::CLASS_MAIN;
             wc.hIcon = (HICON)::LoadImageW(NULL, IDI_APPLICATION, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
-            PK_PLATFORM_ASSERT((resources->windowClassMain = ::RegisterClassExW(&wc)), "Failed to create window main class.");
+            Memory::Assert((resources->windowClassMain = ::RegisterClassExW(&wc)), "Failed to create window main class.");
         }
 
         resources->windowInstanceHelper = ::CreateWindowExW
@@ -162,7 +162,7 @@ namespace PK
             NULL
         );
 
-        PK_PLATFORM_ASSERT(resources->windowInstanceHelper, "Failed to create helper window.");
+        Memory::Assert(resources->windowInstanceHelper, "Failed to create helper window.");
 
         ::ShowWindow(resources->windowInstanceHelper, SW_HIDE);
 

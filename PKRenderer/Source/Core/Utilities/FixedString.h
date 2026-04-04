@@ -126,16 +126,16 @@ namespace PK
     typedef FixedString<256> FixedString256;
     typedef FixedString<512> FixedString512;
     typedef FixedString<1024> FixedString1024;
-}
 
-namespace std 
-{
-    template <size_t capacity>
-    struct hash<PK::FixedString<capacity>> 
+    namespace Hash
     {
-        size_t operator()(const PK::FixedString<capacity>& str) const noexcept
-        { 
-            return PK::Hash::FNV1AHash(str.c_str(), str.Length());
-        }
-    };
+        template<size_t capacity>
+        struct THash<FixedString<capacity>>
+        {
+            size_t operator()(const FixedString<capacity>& str) const noexcept
+            {
+                return FNV1AHash(str.c_str(), str.Length());
+            }
+        };
+    }
 }

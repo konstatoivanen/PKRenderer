@@ -64,6 +64,6 @@ namespace PK
 
     private:
         FastBuffer<Step> m_steps;
-        FastMap16<StepsKey, StepsView, Hash::TFNV1AHash<StepsKey>> m_map;
+        FastMap16<StepsKey, StepsView> m_map;
     };
 }

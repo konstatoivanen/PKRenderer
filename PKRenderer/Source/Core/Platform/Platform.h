@@ -47,83 +47,60 @@
 
 // SIMD defines
 #if defined(__i386__) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64) || defined(__SSE2__)
-#define PK_PLATFORM_SIMD_SSE2 1
+    #define PK_PLATFORM_SIMD_SSE2 1
 #if defined(__SSE3__)
-#define PK_PLATFORM_SIMD_SSE3 1
+    #define PK_PLATFORM_SIMD_SSE3 1
 #endif
 #if defined(__SSE4__)
-#define PK_PLATFORM_SIMD_SSE4 1
+    #define PK_PLATFORM_SIMD_SSE4 1
 #endif
 #if defined(__SSE4_1__)
-#define PK_PLATFORM_SIMD_SSE4_1 1
+    #define PK_PLATFORM_SIMD_SSE4_1 1
 #endif
 #if defined(__SSE4_2__)
-#define PK_PLATFORM_SIMD_SSE4_2 1
+    #define PK_PLATFORM_SIMD_SSE4_2 1
 #endif
 #endif
 
 #if defined(_M_ARM) || defined(__ARM_NEON__) || defined(__ARM_NEON)
-#define PK_PLATFORM_SIMD_NEON 1
+    #define PK_PLATFORM_SIMD_NEON 1
 #endif
 
 #if defined(_M_PPC) || defined(__CELLOS_LV2__)
-#define PK_PLATFORM_SIMD_VMX 1
+    #define PK_PLATFORM_SIMD_VMX 1
 #endif
 
 #define PK_PLATFORM_SIMD (PK_PLATFORM_SIMD_SSE2 || PK_PLATFORM_SIMD_SSE3 || PK_PLATFORM_SIMD_SSE4 || PK_PLATFORM_SIMD_NEON || PK_PLATFORM_SIMD_VMX)
 
 #if defined(_WIN32) && defined(_WIN64)
-#define PK_PLATFORM_WINDOWS 1
+    #define PK_PLATFORM_WINDOWS 1
 #else
-#define PK_PLATFORM_WINDOWS 0
+    #define PK_PLATFORM_WINDOWS 0
 #endif
 
 #if defined(__linux__) && defined(_LINUX64)
-#define PK_PLATFORM_LINUX 1
+    #define PK_PLATFORM_LINUX 1
 #else
-#define PK_PLATFORM_LINUX 0
+    #define PK_PLATFORM_LINUX 0
 #endif
 
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/Templates.h"
 #include "Core/Math/MathFwd.h"
 
 namespace PK
 {
-    #if PK_PLATFORM_WINDOWS
-    struct Win32Platform;
-    typedef Win32Platform Platform;
-    #elif PK_PLATFORM_LINUX
-    struct LinuxPlatform;
-    typedef LinuxPlatform Platform;
-    #else
-    struct IPlatform;
-    typedef IPlatform Platform;
-    #endif
-
-    struct PlatformWindow;
-    struct PlatformWindowDescriptor;
-    struct IPlatformWindowListener;
-    struct PlatformMemoryInfo;
-    struct InputHandler;
-    struct InputDevice;
-
-    struct IPlatform : public NoCopy
+    struct IPlatform
     {
+        IPlatform(IPlatform const&) = delete;
+        IPlatform& operator=(IPlatform const&) = delete;
+        IPlatform() = default;
+
         static void FatalExit(const char* message);
         static void PollEvents();
         static void WaitEvents();
 
         // For objects that need to be cleaned in case of a crash
         // Do not use for sub allocations of other managed objects.
-        template<typename T, typename ... Args>
-        static T* ManagedAllocate(Args&& ... args)
-        {
-            auto ptr = Memory::Allocate<T>(1u);
-            AddManagedAllocation(ptr, [](void* ptr) { Memory::Destruct(static_cast<T*>(ptr)); });
-            return Memory::Construct(ptr, PK::Forward<Args>(args)...);
-        }
-
+        static void AddManagedAllocation(void* object, void (*destructor)(void*));
         static void ManagedDeallocate(void* ptr);
 
         static int Initialize() = delete;
@@ -131,7 +108,7 @@ namespace PK
 
         static void* AllocateAligned(size_t size, size_t alignment) = delete;
         static void FreeAligned(void* block) = delete;
-        static PlatformMemoryInfo GetMemoryInfo() = delete;
+        static struct PlatformMemoryInfo GetMemoryInfo() = delete;
 
         static void PollEvents(bool wait) = delete;
         static void* GetProcess() = delete;
@@ -149,10 +126,10 @@ namespace PK
         static int4 GetMonitorRect(const int2& point, bool preferPrimary) = delete;
         static void* GetNativeMonitorHandle(const int2& point, bool preferPrimary) = delete;
 
-        static PlatformWindow* CreateWindow(const PlatformWindowDescriptor& descriptor) = delete;
-        static void DestroyWindow(PlatformWindow* window) = delete;
+        static struct PlatformWindow* CreateWindow(const struct PlatformWindowDescriptor& descriptor) = delete;
+        static void DestroyWindow(struct PlatformWindow* window) = delete;
 
-        static void SetInputHandler(InputHandler* handler) = delete;
+        static void SetInputHandler(struct InputHandler* handler) = delete;
 
         static const char* GetClipboardString() = delete;
         static void SetClipboardString(const char* str) = delete;
@@ -169,17 +146,19 @@ namespace PK
         static uint32_t AtomicRead(const volatile uint32_t* dst) = delete;
         static void AtomicStore(volatile uint32_t* dst, uint32_t value) = delete;
         static uint64_t BitScan64(uint64_t mask) = delete;
-
-    private: 
-        static void AddManagedAllocation(void* object, void (*destructor)(void*));
-        inline static struct ManagedAllocation* s_ManagedAllocations = nullptr;
     };
+
+#if PK_PLATFORM_WINDOWS
+    struct Win32Platform;
+    typedef Win32Platform Platform;
+#elif PK_PLATFORM_LINUX
+    struct LinuxPlatform;
+    typedef LinuxPlatform Platform;
+#else
+    struct IPlatform;
+    typedef IPlatform Platform;
+#endif
 }
-
-#include "Windows/Win32Platform.h"
-#include "Linux/LinuxPlatform.h"
-
-#define PK_PLATFORM_ASSERT(value, msg) { if(!(value)) { PK::Platform::FatalExit(msg); } }
 
 // Bypass platform alloc. 
 // Visual studio doesnt show object types in memory profiler if they're not immediately cast to the correct type.
@@ -189,6 +168,9 @@ namespace PK
 #define PK_SYSTEM_ALIGNED_FREE(ptr) PK::Platform::FreeAligned(ptr)
 #define PK_SYSTEM_ERROR(message) PK::Platform::FatalExit(message)
 #endif
+
+#include "Windows/Win32Platform.h"
+#include "Linux/LinuxPlatform.h"
 #include "Core/Utilities/Memory.h"
 
 #ifndef PK_PLATFORM_X64

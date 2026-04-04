@@ -43,6 +43,7 @@ namespace PK::Memory
     inline void Assert(bool value) { Assert(value, "Assertion failed!"); }
 
     inline void Free(void* block) noexcept { PK_SYSTEM_ALIGNED_FREE(block); }
+
     inline void* AllocateAligned(size_t size, size_t align = PK_SYSTEM_DEFAULT_ALIGN) noexcept { return PK_SYSTEM_ALIGNED_ALLOC(size, align); }
 
     template<typename T>

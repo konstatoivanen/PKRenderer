@@ -25,7 +25,7 @@ namespace PK
         private:
             int32_t Add(const VulkanBindHandle* handle);
 
-            FastSet16<const VulkanBindHandle*, Hash::TPointerHash<VulkanBindHandle>> m_set;
+            FastSet16<const VulkanBindHandle*> m_set;
 
             // Hackedy hack dirty stuff
             mutable bool m_isDirty = false;
