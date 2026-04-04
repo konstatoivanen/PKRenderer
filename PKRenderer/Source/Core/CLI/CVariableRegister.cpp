@@ -91,7 +91,7 @@ namespace PK
 
         if (binding->variable && (binding->variable->flags & FLAG_IS_REGISTER_OWNED) != 0u)
         {
-            binding->variable->~ICVariable();
+            Memory::Destruct(binding->variable);
             binding->variable = nullptr;
         }
 

@@ -120,7 +120,7 @@ namespace PK
         static T* ManagedAllocate(Args&& ... args)
         {
             auto ptr = Memory::Allocate<T>(1u);
-            AddManagedAllocation(ptr, [](void* ptr) { static_cast<T*>(ptr)->~T(); });
+            AddManagedAllocation(ptr, [](void* ptr) { Memory::Destruct(static_cast<T*>(ptr)); });
             return Memory::Construct(ptr, PK::Forward<Args>(args)...);
         }
 
@@ -172,15 +172,7 @@ namespace PK
 
     private: 
         static void AddManagedAllocation(void* object, void (*destructor)(void*));
-
-        struct ManagedAllocation
-        {
-            void (*destructor)(void*) = nullptr;
-            void* object = nullptr;
-            ManagedAllocation* next = nullptr;
-        };
-
-        inline static ManagedAllocation* s_ManagedAllocations = nullptr;
+        inline static struct ManagedAllocation* s_ManagedAllocations = nullptr;
     };
 }
 
@@ -188,10 +180,15 @@ namespace PK
 #include "Linux/LinuxPlatform.h"
 
 #define PK_PLATFORM_ASSERT(value, msg) { if(!(value)) { PK::Platform::FatalExit(msg); } }
+
+// Bypass platform alloc. 
+// Visual studio doesnt show object types in memory profiler if they're not immediately cast to the correct type.
+#if 1 
 #define PK_SYSTEM_DEFAULT_ALIGN 16
 #define PK_SYSTEM_ALIGNED_ALLOC(size, align) PK::Platform::AllocateAligned(size, align)
 #define PK_SYSTEM_ALIGNED_FREE(ptr) PK::Platform::FreeAligned(ptr)
 #define PK_SYSTEM_ERROR(message) PK::Platform::FatalExit(message)
+#endif
 #include "Core/Utilities/Memory.h"
 
 #ifndef PK_PLATFORM_X64

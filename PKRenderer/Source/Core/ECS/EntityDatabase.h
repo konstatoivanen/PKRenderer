@@ -100,16 +100,7 @@ namespace PK
     struct EntityDatabase
     {
         EntityDatabase() : m_viewHeaders(1024u, 5u), m_entityViews(32), m_implementers(32u, 4u) {}
-
-        ~EntityDatabase()
-        {
-            EntityViewContainer* containters = m_entityViews.GetData();
-
-            for (auto i = 0u; i < m_viewCounter; ++i)
-            {
-                (containters + i)->~EntityViewContainer();
-            }
-        }
+        ~EntityDatabase() { Memory::DestructArray(m_entityViews.GetData(), m_viewCounter); }
 
         constexpr uint32_t ReserveEntityId() { return ++m_idCounter; }
         inline EGID ReserveEntityId(uint32_t groupId) { return EGID(ReserveEntityId(), groupId); }
@@ -128,19 +119,11 @@ namespace PK
                 auto bucket = Memory::New<ImplementerBucket>();
                 bucket->previous = container.bucketHead;
                 bucket->count = 0u;
-                bucket->destructor = [](void* data, size_t count)
-                {
-                    for (auto i = 0u; i < count; ++i)
-                    {
-                        (static_cast<T*>(data) + i)->~T();
-                    }
-                };
-                
+                bucket->destructor = [](void* data, size_t count) { Memory::DestructArray(static_cast<T*>(data), count); };
                 container.bucketHead = bucket;
             }
 
-            auto ptr = reinterpret_cast<T*>(container.bucketHead->data) + container.bucketHead->count;
-            Memory::Construct(ptr);
+            auto ptr = Memory::Construct(reinterpret_cast<T*>(container.bucketHead->data) + container.bucketHead->count);
             ++container.bucketHead->count;
             ++container.count;
             return ptr;

@@ -16,7 +16,7 @@ namespace PK
         {
             if (isConstructed)
             {
-                value.~T(); 
+                Memory::Destruct(&value);
                 isConstructed = 0u; 
             }
         }

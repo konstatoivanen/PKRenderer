@@ -4,6 +4,13 @@
 
 namespace PK
 {
+    struct ManagedAllocation
+    {
+        void (*destructor)(void*) = nullptr;
+        void* object = nullptr;
+        ManagedAllocation* next = nullptr;
+    };
+
     IPlatformWindowListener::~IPlatformWindowListener() = default;
     PlatformWindow::~PlatformWindow() = default;
     

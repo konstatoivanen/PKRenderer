@@ -107,7 +107,7 @@ namespace PK
 
                 for (auto i = 0u; i < count; ++i)
                 {
-                    (ptr + i)~T();
+                    Memory::Destruct(ptr + i);
                 }
             }
 

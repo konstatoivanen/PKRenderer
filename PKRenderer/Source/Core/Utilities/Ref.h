@@ -79,16 +79,14 @@ namespace PK
         Unique& operator=(nullptr_t) noexcept { Reset(); return *this; }
         Unique& operator=(const Unique&) = delete;
         Unique& operator=(T* pValue) = delete;
-        
         const T& operator*() const { return *pair.pointer; }
         T& operator*() { return *pair.pointer; }
         T* operator->() const noexcept { return pair.pointer; }
+        explicit operator bool() const noexcept { return pair.pointer != nullptr; }
 
         T* get() const noexcept { return pair.pointer; }
         const D& GetDeleter() const noexcept { return pair.GetDeleter(); }
         D& GetDeleter() noexcept { return pair.GetDeleter(); }
-
-        explicit operator bool() const noexcept { return pair.pointer != nullptr; }
 
         void Reset(T* pValue = nullptr) noexcept
         {
@@ -123,10 +121,8 @@ namespace PK
 
         const T* get() const  noexcept { return m_isCreated ? &value : nullptr; }
         T* get() noexcept { return m_isCreated ? &value : nullptr; }
-
         operator const T* () const noexcept { return get(); }
         operator T* () noexcept { return get(); }
-
         const T* operator -> () const noexcept { return get(); }
         T* operator -> () noexcept { return get(); }
 
@@ -144,7 +140,7 @@ namespace PK
         {
             if (m_isCreated)
             {
-                reinterpret_cast<T*>(&value)->~T();
+                Memory::Destruct(&value);
                 m_isCreated = false;
             }
         }
@@ -181,7 +177,7 @@ namespace PK
         template <typename ... Args>
         explicit SharedObject(Args&&... args) : SharedObjectBase() { Memory::Construct(&value, PK::Forward<Args>(args)...); }
         virtual ~SharedObject() noexcept override {}
-        virtual void Destroy() noexcept override final { value.~T(); }
+        virtual void Destroy() noexcept override final { Memory::Destruct(&value); }
         virtual void Delete() noexcept override final { Memory::Delete(this); }
         struct U { constexpr U() noexcept {} };
         union { U unionDefault; T value; };
@@ -291,37 +287,21 @@ namespace PK
             TBase::shared = ref;
         }
 
-        template <typename TOther>
-        Ref(const Ref<TOther>& other, T* ptr) noexcept { TBase::AliasConstruct(other, ptr); }
-
-        template <typename TOther>
-        Ref(Ref<TOther>&& other, T* ptr) noexcept { TBase::AliasMoveConstruct(PK::MoveTemp(other), ptr); }
-
         Ref(const Ref& other) noexcept { TBase::CopyConstruct(other); }
-
-        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
-        Ref(const Ref<TOther>& other) noexcept { TBase::CopyConstruct(other); }
-
         Ref(Ref&& other) noexcept { TBase::MoveConstruct(PK::MoveTemp(other)); }
 
-        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
-        Ref(Ref<TOther>&& other) noexcept { TBase::MoveConstruct(PK::MoveTemp(other)); }
-
-        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
-        explicit Ref(const Weak<TOther>& other) { Memory::Assert(TBase::ConstructFromWeak(other), "Ref from weak ctor failed!") }
+        template <typename TOther> Ref(const Ref<TOther>& other, T* ptr) noexcept { TBase::AliasConstruct(other, ptr); }
+        template <typename TOther> Ref(Ref<TOther>&& other, T* ptr) noexcept { TBase::AliasMoveConstruct(PK::MoveTemp(other), ptr); }
+        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0> Ref(const Ref<TOther>& other) noexcept { TBase::CopyConstruct(other); }
+        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0> Ref(Ref<TOther>&& other) noexcept { TBase::MoveConstruct(PK::MoveTemp(other)); }
+        template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0> explicit Ref(const Weak<TOther>& other) { Memory::Assert(TBase::ConstructFromWeak(other), "Ref from weak ctor failed!") }
 
         ~Ref() noexcept { TBase::DecrementStrongRef(); }
 
         Ref& operator=(const Ref& other) noexcept { Ref(other).Swap(*this); return *this; }
-
         Ref& operator=(Ref&& other) noexcept { Ref(PK::MoveTemp(other)).Swap(*this); return *this; }
-
-        template <typename TOther>
-        Ref& operator=(const Ref<TOther>& other) noexcept { Ref(other).Swap(*this); return *this; }
-
-        template <typename TOther>
-        Ref& operator=(Ref<TOther>&& other) noexcept { Ref(PK::MoveTemp(other)).Swap(*this); return *this; }
-
+        template <typename TOther> Ref& operator=(const Ref<TOther>& other) noexcept { Ref(other).Swap(*this); return *this; }
+        template <typename TOther> Ref& operator=(Ref<TOther>&& other) noexcept { Ref(PK::MoveTemp(other)).Swap(*this); return *this; }
         T& operator*() const noexcept { return *get(); }
         T* operator->() const noexcept { return get(); }
         explicit operator bool() const noexcept { return get() != nullptr; }
@@ -338,11 +318,10 @@ namespace PK
         constexpr Weak() noexcept {}
         
         Weak(const Weak& other) noexcept { TBase::WeaklyConstruct(other);}
+        Weak(Weak&& other) noexcept { TBase::MoveConstruct(PK::MoveTemp(other)); }
 
         template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
         Weak(const Ref<TOther>& other) noexcept { TBase::WeaklyConstruct(other); }
-
-        Weak(Weak&& other) noexcept { TBase::MoveConstruct(PK::MoveTemp(other)); }
 
         template <typename TOther, TEnableIf_T<__is_convertible_to(TOther*, T*), int> = 0>
         Weak(const Weak<TOther>& other) noexcept 
@@ -378,22 +357,13 @@ namespace PK
         ~Weak() noexcept { TBase::DecrementWeakRef(); }
 
         Weak& operator=(const Weak& other) noexcept { Weak(other).Swap(*this); return *this; }
-
         Weak& operator=(Weak&& other) noexcept { Weak(PK::MoveTemp(other)).Swap(*this); return *this; }
-
-        template <typename TOther>
-        Weak& operator=(const Weak<TOther>& other) noexcept { Weak(other).Swap(*this); return *this; }
-
-        template <typename TOther>
-        Weak& operator=(Weak<TOther>&& other) noexcept { Weak(PK::MoveTemp(other)).Swap(*this); return *this; }
-
-        template <typename TOther>
-        Weak& operator=(const Ref<TOther>& other) noexcept { Weak(other).Swap(*this); return *this; }
+        template <typename TOther> Weak& operator=(const Weak<TOther>& other) noexcept { Weak(other).Swap(*this); return *this; }
+        template <typename TOther> Weak& operator=(Weak<TOther>&& other) noexcept { Weak(PK::MoveTemp(other)).Swap(*this); return *this; }
+        template <typename TOther> Weak& operator=(const Ref<TOther>& other) noexcept { Weak(other).Swap(*this); return *this; }
 
         void Reset() noexcept { Weak{}.Swap(*this); }
-
         void Swap(Weak& other) noexcept { TBase::Swap(other); }
-
         bool IsAlive() const noexcept { return TBase::GetStrongRefCount() != 0; }
 
         Ref<T> Lock() const noexcept 
@@ -445,9 +415,7 @@ namespace PK
     template<typename T, typename ... Args>
     constexpr Unique<T> CreateUnique(Args&& ... args) noexcept
     {
-        // Separate line so that memory profiler picks the type correctly :/
-        auto ptr = Memory::New<T>(PK::Forward<Args>(args)...);
-        return Unique<T>(ptr);
+        return Unique<T>(Memory::New<T>(PK::Forward<Args>(args)...));
     }
 
     template<typename T, typename ... Args>
@@ -472,7 +440,6 @@ namespace PK
     template<typename T0, typename T1>
     static Ref<T0> StaticCastRef(const Ref<T1>& other) noexcept
     {
-        const auto ptr = static_cast<T0*>(other.get());
-        return Ref<T0>(other, ptr);
+        return Ref<T0>(other, static_cast<T0*>(other.get()));
     }
 }

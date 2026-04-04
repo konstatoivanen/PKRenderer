@@ -96,7 +96,7 @@ namespace PK
             {
                 if (isLoaded)
                 {
-                    value.~T();
+                    Memory::Destruct(&value);
                     isLoaded = false;
                 }
             }

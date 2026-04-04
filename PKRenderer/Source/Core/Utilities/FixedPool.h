@@ -34,22 +34,9 @@ namespace PK
         T* NewAt(int64_t index, Args&& ... args) { return Memory::Construct(Allocate(1u, index), PK::Forward<Args>(args)...); }
 
         template<typename ... Args>
-        T* NewArray(size_t count, Args&& ... args)
-        {
-            auto ptr = Allocate(count);
+        T* NewArray(size_t count, Args&& ... args) { return Memory::ConstructArray(Allocate(count), count, PK::Forward<Args>(args)...); }
 
-            for (auto i = 0u; i < count; ++i)
-            {
-                Memory::Construct(ptr + i, PK::Forward<Args>(args)...);
-            }
-
-            return ptr;
-        }
-
-        void Delete(uint32_t index)
-        {
-            Delete(GetData() + index);
-        }
+        void Delete(uint32_t index) { Delete(GetData() + index); }
         
         protected:
             virtual T* Allocate(size_t count, int64_t index = -1) = 0;
@@ -81,7 +68,7 @@ namespace PK
                 if (m_mask.GetAt(index + i))
                 {
                     m_mask.FlipAt(index + i);
-                    ptr->~T();
+                    Memory::Destruct(ptr);
                 }
             }
         }
@@ -108,7 +95,7 @@ namespace PK
             {
                 if (m_mask.GetAt(i))
                 {
-                    (GetData() + i)->~T();
+                    Memory::Destruct(GetData() + i);
                     m_mask.FlipAt(i);
                 }
             }

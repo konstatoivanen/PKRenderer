@@ -146,7 +146,7 @@ namespace PK
 
             if (i == --m_count)
             {
-                (GetData() + i)->~T();
+                Memory::Destruct(GetData() + i);
                 return true;
             }
 
@@ -167,7 +167,7 @@ namespace PK
 
             if (i == --m_count)
             {
-                (GetData() + i)->~T();
+                Memory::Destruct(GetData() + i);
                 return true;
             }
 
