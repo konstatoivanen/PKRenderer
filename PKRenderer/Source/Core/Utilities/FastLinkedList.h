@@ -1,5 +1,4 @@
 #pragma once
-#include <iterator>
 
 namespace PK
 {
@@ -110,14 +109,9 @@ namespace PK
 
         struct ConstIterator
         {
-            using iterator_category = std::forward_iterator_tag;
-            using difference_type = std::ptrdiff_t;
-            using value_type = TValue*;
-            using pointer = const TValue*;
-            using reference = const TValue&;
             ConstIterator(TValue const* value) : data(value) {}
-            reference operator*() const { return data; }
-            pointer operator->() const { return data; }
+            const TValue& operator*() const { return data; }
+            const TValue* operator->() const { return data; }
             TValue const* data;
 
             bool operator != (const ConstIterator& iterator) const { return data != iterator.data; }
@@ -127,14 +121,9 @@ namespace PK
 
         struct Iterator
         {
-            using iterator_category = std::forward_iterator_tag;
-            using difference_type = std::ptrdiff_t;
-            using value_type = TValue*;
-            using pointer = TValue*;
-            using reference = TValue*&;
             Iterator(TValue* value) : data(value) {}
-            reference operator*() { return data; }
-            pointer operator->() { return data; }
+            TValue*& operator*() { return data; }
+            TValue* operator->() { return data; }
             TValue* data;
 
             bool operator != (const Iterator& iterator) const { return data != iterator.data; }
