@@ -47,20 +47,20 @@ namespace PK
     \
 
     #define PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(TType, TCount)\
-    template<> void CVariable<TType>::CVarExecute(const char* const* args, uint32_t count)\
+    template<> void CVariable<TType##TCount>::CVarExecute(const char* const* args, uint32_t count)\
     {\
-        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s // %s", name.c_str(), Parse::ArrayToString(&m_value.x, TCount).c_str(), m_hint.c_str())\
-        Parse::StringsToArray(args, &m_value.x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), Parse::ArrayToString(&m_value.x, TCount).c_str());\
+        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s // %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&m_value.x, TCount).c_str(), m_hint.c_str())\
+        Parse::StringsToArray(args, &m_value.x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&m_value.x, TCount).c_str());\
     }\
-    template<> void CVariable<TType*>::CVarExecute(const char* const* args, uint32_t count)\
+    template<> void CVariable<TType##TCount*>::CVarExecute(const char* const* args, uint32_t count)\
     {\
-        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s // %s", name.c_str(), Parse::ArrayToString(&m_value->x, TCount).c_str(), m_hint.c_str())\
-        Parse::StringsToArray(args, &m_value->x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), Parse::ArrayToString(&m_value->x, TCount).c_str());\
+        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s // %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&m_value->x, TCount).c_str(), m_hint.c_str())\
+        Parse::StringsToArray(args, &m_value->x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&m_value->x, TCount).c_str());\
     }\
-    template<> void CVariableField<TType>::CVarExecute(const char* const* args, [[maybe_unused]] uint32_t count)\
+    template<> void CVariableField<TType##TCount>::CVarExecute(const char* const* args, [[maybe_unused]] uint32_t count)\
     {\
-        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s", name.c_str(), Parse::ArrayToString(&Value.x, TCount).c_str())\
-        Parse::StringsToArray(args, &Value.x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), Parse::ArrayToString(&Value.x, TCount).c_str());\
+        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&Value.x, TCount).c_str())\
+        Parse::StringsToArray(args, &Value.x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&Value.x, TCount).c_str());\
     }\
     \
 
@@ -75,17 +75,17 @@ namespace PK
     PK_DECLARE_CVAR_SPECIALIZATION(4.4f, float)
     PK_DECLARE_CVAR_SPECIALIZATION(i, bool)
 
-    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(float2, 2)
-    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(float3, 3)
-    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(float4, 4)
+    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(float, 2)
+    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(float, 3)
+    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(float, 4)
 
-    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(uint2, 2)
-    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(uint3, 3)
-    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(uint4, 4)
+    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(uint, 2)
+    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(uint, 3)
+    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(uint, 4)
 
-    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(int2, 2)
-    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(int3, 3)
-    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(int4, 4)
+    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(int, 2)
+    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(int, 3)
+    PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(int, 4)
 
     #undef PK_DECLARE_CVAR_SPECIALIZATION
     #undef PK_DECLARE_CVAR_VECTOR_SPECIALIZATION

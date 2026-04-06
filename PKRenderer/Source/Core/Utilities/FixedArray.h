@@ -1,5 +1,6 @@
 #pragma once
 #include <initializer_list>
+#include "Memory.h"
 
 namespace PK
 {
@@ -14,7 +15,7 @@ namespace PK
         {
             if (count < capacity)
             {
-                std::copy(elements, elements + count, m_array);
+                Memory::CopyArray(m_array, elements, count);
             }
         }
 
@@ -25,7 +26,7 @@ namespace PK
         T& operator [](size_t i) { return m_array[i]; }
         const T& operator [](size_t i) const { return m_array[i]; }
 
-        void Clear() { memset(m_array, 0, sizeof(T) * capacity); }
+        void Clear() { Memory::Memset<T>(m_array, 0, capacity); }
 
     private:
         T m_array[capacity]{};

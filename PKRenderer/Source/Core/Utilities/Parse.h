@@ -57,25 +57,25 @@ namespace PK::Parse
         {
             if (*cur == ',' || cur == scope1)
             {
-                outArray[index++] = FromString<T>(std::string(strBegin, strCount).c_str());
+                outArray[index++] = FromString<T>(FixedString32(strCount, strBegin).c_str());
                 strBegin = cur + 1u;
                 strCount = 0u;
             }
         }
     }
 
-    template<typename T>
-    std::string ArrayToString(const T* array, const uint32_t count)
+    template<typename T, size_t size>
+    FixedString<size> ArrayToString(const T* array, const uint32_t count)
     {
-        std::string result;
+        FixedString<size> result;
 
         for (auto i = 0u; i < count; ++i)
         {
-            result.append(ToString(array[i]));
+            result.Append(ToString(array[i]).c_str());
 
             if (i != (count - 1))
             {
-                result.append(" ");
+                result.Append(' ');
             }
         }
 
