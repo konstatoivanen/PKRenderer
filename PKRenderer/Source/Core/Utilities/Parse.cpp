@@ -4,28 +4,6 @@
 
 namespace PK::Parse
 {
-    template<> uint8_t FromString(const char* str) { return (uint8_t)atoi(str); }
-    template<> int8_t FromString(const char* str) { return (int8_t)atoi(str); }
-    template<> uint16_t FromString(const char* str) { return (uint16_t)atoi(str); }
-    template<> int16_t FromString(const char* str) { return (int16_t)atoi(str); }
-    template<> uint32_t FromString(const char* str) { return (uint32_t)atoi(str); }
-    template<> int32_t FromString(const char* str) { return (int32_t)atoi(str); }
-    template<> uint64_t FromString(const char* str) { return (uint64_t)atoll(str); }
-    template<> int64_t FromString(const char* str) { return (int64_t)atoll(str); }
-    template<> float FromString(const char* str) { return (float)atof(str); }
-    template<> bool FromString(const char* str) { return strcmp(str, "True") == 0 ? true : (strcmp(str, "False") == 0 ? false : (bool)atoi(str)); }
-
-    template<> FixedString32 ToString(const uint8_t& value) { return FixedString32("%u", value); }
-    template<> FixedString32 ToString(const int8_t& value) { return FixedString32("%i", value); }
-    template<> FixedString32 ToString(const uint16_t& value) { return FixedString32("%u", value); }
-    template<> FixedString32 ToString(const int16_t& value) { return FixedString32("%i", value); }
-    template<> FixedString32 ToString(const uint32_t& value) { return FixedString32("%u", value); }
-    template<> FixedString32 ToString(const int32_t& value) { return FixedString32("%i", value); }
-    template<> FixedString32 ToString(const uint64_t& value) { return FixedString32("%llu", value); }
-    template<> FixedString32 ToString(const int64_t& value) { return FixedString32("%lli", value); }
-    template<> FixedString32 ToString(const float& value) { return FixedString32("%fg", value); }
-    template<> FixedString32 ToString(const bool& value) { return FixedString32("%u", (uint8_t)value); }
-
     FixedString32 BytesToString(size_t bytes)
     {
         if (bytes == 0)
@@ -58,13 +36,6 @@ namespace PK::Parse
         }
 
         return FixedString32(length + 2u, buffer);
-    }
-
-    std::wstring ToWideString(const char* str, size_t length)
-    {
-        std::wstring wide(length, L'#');
-        mbstowcs(wide.data(), str, length);
-        return wide;
     }
 
     FixedString64 GetFilePathStem(const char* str)

@@ -1,110 +1,132 @@
 #pragma once
+#include <wchar.h>
+#include <string.h>
+#include <stdarg.h>
 #include "Hash.h"
 #include "Memory.h"
 
 namespace PK
 {
-    template<size_t capacity>
-    struct FixedString
+    template<typename TChar, size_t capacity>
+    struct IFixedString
     {
-        constexpr const static size_t end = capacity - 1ull;
+        constexpr const static size_t max_length = capacity - 1ull;
 
-        FixedString() 
+        constexpr IFixedString() : m_length(0ull)
         {
-            m_string[0] = '\0';
-            m_string[end] = '\0';
-            m_length = 0u;
+            m_string[m_length] = '\0';
+            m_string[max_length] = '\0';
         }
 
-        FixedString(size_t length, const char* str) : FixedString()
+        template<typename TOther = TChar>
+        IFixedString(size_t length, const TOther* str) : IFixedString()
         {
             if (str && str[0])
             {
-                m_length = end > length ? length : end;
-                strncpy(m_string, str, m_length);
+                m_length = max_length > length ? length : max_length;
+
+                if constexpr (__is_same(TOther, TChar))
+                {
+                    String::Copy(m_string, str, m_length);
+                }
+                else if constexpr (__is_same(TOther, wchar_t))
+                {
+                    String::ToNarrow(m_string, str, m_length);
+                }
+                else if constexpr (__is_same(TOther, char))
+                {
+                    String::ToWide(m_string, str, m_length);
+                }
+
                 m_string[m_length] = '\0';
             }
         }
 
-        FixedString(const char* format, ...) : FixedString()
+        IFixedString(const TChar* format, ...) : IFixedString()
         {
             if (format && format[0])
             {
                 va_list v0;
                 va_start(v0, format);
-                m_length = _vsnprintf(m_string, capacity, format, v0);
-                m_length = end > m_length ? m_length : end;
+                m_length = String::Format(m_string, capacity, format, v0);
+                m_length = max_length > m_length ? m_length : max_length;
                 va_end(v0);
             }
         }
 
-        FixedString(std::initializer_list<const char*> strings) : FixedString()
+        IFixedString(std::initializer_list<const TChar*> strings) : IFixedString()
         {
             for (auto& str : strings)
             {
-                if (m_length < end && str && str[0])
+                if (m_length < max_length && str&& str[0])
                 {
-                    strncpy(m_string + m_length, str, end - m_length);
-                    m_length += strlen(str);
+                    String::Copy(m_string + m_length, str, max_length - m_length);
+                    m_length += String::Length(str);
                 }
             }
 
-            m_length = end > m_length ? m_length : end;
+            m_length = max_length > m_length ? m_length : max_length;
         }
+
+        TChar& operator [](size_t i) { return m_string[i]; }
+        const TChar& operator [](size_t i) const { return m_string[i]; }
+
+        operator TChar* () { return c_str(); }
+        operator const TChar* () const { return c_str(); }
+
+        bool operator == (const TChar* str) { return String::Cmp(str, m_string) == 0; }
+        bool operator != (const TChar* str) { return String::Cmp(str, m_string) != 0; }
+
+        TChar* begin() { return m_string; }
+        TChar* end() { return m_string + m_length; }
+        constexpr TChar const* begin() const { return m_string; }
+        constexpr TChar const* end() const { return m_string + m_length; }
+        TChar* c_str() { return m_string; }
+        constexpr const TChar* c_str() const { return m_string; }
 
         constexpr size_t Length() const { return m_length; }
-        constexpr char Back() const { return m_length == 0 ? '\0' : m_string[m_length - 1u]; }
-        constexpr bool IsFull() const { return m_length == capacity - 1ull; }
-        constexpr const char* c_str() const { return m_string; }
-        char* c_str() { return m_string; }
+        constexpr TChar Front() const { return m_string[0]; }
+        constexpr TChar Back() const { return m_string[m_length > 0ull ? m_length - 1ull : 0u]; }
+        constexpr bool IsFull() const { return m_length == max_length; }
 
-        char& operator [](size_t i) { return m_string[i]; }
-        const char& operator [](size_t i) const { return m_string[i]; }
+        int64_t Find(size_t offset, TChar c) const { return reinterpret_cast<int64_t>(String::Chr(m_string + offset, c) - m_string); }
+        IFixedString Slice(size_t offset, size_t count = max_length) const { return IFixedString(offset + count > m_length ? m_length - offset : count, m_string + offset); }
 
-        operator char* () { return c_str(); }
-        operator const char* () const { return c_str(); }
-
-        bool operator == (const char* str) { return strcmp(str, m_string) == 0; }
-        bool operator != (const char* str) { return strcmp(str, m_string) != 0; }
-
-        int64_t FindPos(size_t offset, char c) const { return reinterpret_cast<int64_t>(strchr(m_string + offset, c) - m_string); }
-        FixedString SubString(size_t offset, size_t count) const { return FixedString(count, m_string + offset); }
-
-        void Append(const char* str)
-        {
-            if (str && str[0])
-            {
-                strncpy(m_string + m_length, str, end - m_length);
-                m_length += strlen(str);
-                m_length = end > m_length ? m_length : end;
-            }
-        }
-
-        void AppendFormat(const char* format, ...)
+        void AppendFormat(const TChar* format, ...)
         {
             if (format && format[0])
             {
                 va_list v0;
                 va_start(v0, format);
-                m_length += _vsnprintf(m_string + m_length, capacity - m_length, format, v0);
-                m_length = end > m_length ? m_length : end;
+                m_length += String::Format(m_string + m_length, capacity - m_length, format, v0);
+                m_length = max_length > m_length ? m_length : max_length;
                 va_end(v0);
             }
         }
 
-        void Append(char c) 
+        void Append(const TChar* str)
         {
-            if (c && m_length < end)
+            if (str && str[0])
             {
-                m_string[m_length] = c;
-                m_string[++m_length] = 0;
+                String::Copy(m_string + m_length, str, max_length - m_length);
+                m_length += String::Length(str);
+                m_length = max_length > m_length ? m_length : max_length;
             }
         }
 
-        char Pop()
+        void Append(TChar c)
+        {
+            if (c && m_length < max_length)
+            {
+                m_string[m_length] = c;
+                m_string[++m_length] = '\0';
+            }
+        }
+
+        TChar Pop()
         {
             auto c = m_string[m_length];
-            m_string[m_length ? --m_length : 0ull] = 0;
+            m_string[m_length ? --m_length : 0ull] = '\0';
             return c;
         }
 
@@ -115,9 +137,12 @@ namespace PK
         }
 
     private:
-        char m_string[capacity];
+        TChar m_string[capacity];
         size_t m_length;
     };
+
+    template<size_t capacity> using FixedString = IFixedString<char, capacity>;
+    template<size_t capacity> using FixedWString = IFixedString<wchar_t, capacity>;
 
     typedef FixedString<16> FixedString16;
     typedef FixedString<32> FixedString32;
@@ -126,6 +151,14 @@ namespace PK
     typedef FixedString<256> FixedString256;
     typedef FixedString<512> FixedString512;
     typedef FixedString<1024> FixedString1024;
+
+    typedef FixedWString<16> FixedWString16;
+    typedef FixedWString<32> FixedWString32;
+    typedef FixedWString<64> FixedWString64;
+    typedef FixedWString<128> FixedWString128;
+    typedef FixedWString<256> FixedWString256;
+    typedef FixedWString<512> FixedWString512;
+    typedef FixedWString<1024> FixedWString1024;
 
     namespace Hash
     {
@@ -137,5 +170,54 @@ namespace PK
                 return FNV1AHash(str.c_str(), str.Length());
             }
         };
+
+        template<size_t capacity>
+        struct THash<FixedWString<capacity>>
+        {
+            size_t operator()(const FixedWString<capacity>& str) const noexcept
+            {
+                return FNV1AHash(str.c_str(), str.Length() * sizeof(wchar_t));
+            }
+        };
+    }
+
+    namespace String
+    {
+        inline wchar_t* Copy(wchar_t* dst, const wchar_t* src, size_t size) { return wcsncpy(dst, src, size); }
+        inline char* Copy(char* dst, const char* src, size_t size) { return strncpy(dst, src, size); }
+        inline const wchar_t* Chr(const wchar_t* str0, wchar_t c) { return wcschr(str0, c); }
+        inline const char* Chr(const char* str0, char c) { return strchr(str0, c); }
+        inline size_t Format(wchar_t* dst, size_t size, const wchar_t* format, va_list args) { return static_cast<size_t>(vswprintf(dst, size, format, args)); }
+        inline size_t Format(char* dst, size_t size, const char* format, va_list args) { return static_cast<size_t>(vsnprintf(dst, size, format, args)); }
+        inline size_t Length(const wchar_t* str) { return wcslen(str); }
+        inline size_t Length(const char* str) { return strlen(str); }
+        inline int32_t Cmp(const wchar_t* str0, const wchar_t* str1) { return wcscmp(str0, str1); }
+        inline int32_t Cmp(const char* str0, const char* str1) { return strcmp(str0, str1); }
+        inline size_t ToWide(wchar_t* dst, const char* src, size_t size) { return mbstowcs(dst, src, size); }
+        inline size_t ToNarrow(char* dst, const wchar_t* src, size_t size) { return wcstombs(dst, src, size); }
+
+        template<typename T> inline T To(const char* str) { return T(); }
+        template<> inline uint8_t To(const char* str) { return (uint8_t)atoi(str); }
+        template<> inline int8_t To(const char* str) { return (int8_t)atoi(str); }
+        template<> inline uint16_t To(const char* str) { return (uint16_t)atoi(str); }
+        template<> inline int16_t To(const char* str) { return (int16_t)atoi(str); }
+        template<> inline uint32_t To(const char* str) { return (uint32_t)atoi(str); }
+        template<> inline int32_t To(const char* str) { return (int32_t)atoi(str); }
+        template<> inline uint64_t To(const char* str) { return (uint64_t)atoll(str); }
+        template<> inline int64_t To(const char* str) { return (int64_t)atoll(str); }
+        template<> inline float To(const char* str) { return (float)atof(str); }
+        template<> inline bool To(const char* str) { return strcmp(str, "True") == 0 ? true : (strcmp(str, "False") == 0 ? false : (bool)atoi(str)); }
+
+        template<typename T> inline FixedString32 From(const T& value) { return FixedString32("unsupported"); }
+        template<> inline FixedString32 From(const uint8_t& value) { return FixedString32("%u", value); }
+        template<> inline FixedString32 From(const int8_t& value) { return FixedString32("%i", value); }
+        template<> inline FixedString32 From(const uint16_t& value) { return FixedString32("%u", value); }
+        template<> inline FixedString32 From(const int16_t& value) { return FixedString32("%i", value); }
+        template<> inline FixedString32 From(const uint32_t& value) { return FixedString32("%u", value); }
+        template<> inline FixedString32 From(const int32_t& value) { return FixedString32("%i", value); }
+        template<> inline FixedString32 From(const uint64_t& value) { return FixedString32("%llu", value); }
+        template<> inline FixedString32 From(const int64_t& value) { return FixedString32("%lli", value); }
+        template<> inline FixedString32 From(const float& value) { return FixedString32("%fg", value); }
+        template<> inline FixedString32 From(const bool& value) { return FixedString32("%u", (uint8_t)value); }
     }
 }

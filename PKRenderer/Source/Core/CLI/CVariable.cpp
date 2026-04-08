@@ -32,17 +32,17 @@ namespace PK
     template<> void CVariable<TType>::CVarExecute(const char* const* args, uint32_t count)\
     {\
         PK_CVAR_CHECK_ARG_COUNT(count, 1u, "%s = %"#TFormat" // %s", name.c_str(), m_value, m_hint.c_str())\
-        m_value = Parse::FromString<TType>(args[0]); PK_LOG_INFO("%s = %"#TFormat, name.c_str(), m_value);\
+        m_value = String::To<TType>(args[0]); PK_LOG_INFO("%s = %"#TFormat, name.c_str(), m_value);\
     }\
     template<> void CVariable<TType*>::CVarExecute(const char* const* args, uint32_t count)\
     {\
         PK_CVAR_CHECK_ARG_COUNT(count, 1u, "%s = %"#TFormat" // %s", name.c_str(), *m_value, m_hint.c_str())\
-        *m_value = Parse::FromString<TType>(args[0]); PK_LOG_INFO("%s = %"#TFormat, name.c_str(), *m_value);\
+        *m_value = String::To<TType>(args[0]); PK_LOG_INFO("%s = %"#TFormat, name.c_str(), *m_value);\
     }\
     template<> void CVariableField<TType>::CVarExecute(const char* const* args, uint32_t count)\
     {\
         PK_CVAR_CHECK_ARG_COUNT(count, 1u, "%s = %"#TFormat, name.c_str(), Value)\
-        Value = Parse::FromString<TType>(args[0]); PK_LOG_INFO("%s = %"#TFormat, name.c_str(), Value);\
+        Value = String::To<TType>(args[0]); PK_LOG_INFO("%s = %"#TFormat, name.c_str(), Value);\
     }\
     \
 

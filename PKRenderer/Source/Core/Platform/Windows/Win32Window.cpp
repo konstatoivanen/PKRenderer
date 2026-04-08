@@ -178,7 +178,7 @@ namespace PK
             frameRect.w = rect.bottom - rect.top;
         }
 
-        auto wideTitle = Parse::ToWideString(descriptor.title, strnlen(descriptor.title, 0xFFu));
+        FixedWString128 wideTitle(strnlen(descriptor.title, 0xFFu), descriptor.title);
 
         m_handle = ::CreateWindowExW
         (

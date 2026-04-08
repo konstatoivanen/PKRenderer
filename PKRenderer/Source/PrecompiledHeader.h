@@ -6,4 +6,3 @@
 #include "Core/Platform/Platform.h"
 #include "Core/Math/Math.h"
 #include <utility>
-#include <string>

@@ -501,7 +501,7 @@ namespace PK
 
     void* Win32Platform::LoadLibrary(const char* path)
     {
-        if (path == nullptr)
+        if (!path || !path[0])
         {
             return nullptr;
         }
@@ -520,8 +520,8 @@ namespace PK
 
         ::SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_SEARCH_USER_DIRS);
 
-        auto widepath = Parse::ToWideString(path, strlen(path));
-        void* handle = ::LoadLibraryW(widepath.data());
+        FixedWString256 widepath(strlen(path), path);
+        void* handle = ::LoadLibraryW(widepath);
 
         if (!handle)
         {
@@ -641,100 +641,86 @@ namespace PK
 
     const char* Win32Platform::GetClipboardString()
     {
-        HANDLE object = NULL;
-        WCHAR* buffer = NULL;
-        auto tries = 0;
+        const char* result = nullptr;
 
-        while (!OpenClipboard(resources->windowInstanceHelper))
+        if (::OpenClipboard(resources->windowInstanceHelper))
         {
-            Sleep(1);
-            tries++;
+            auto object = GetClipboardData(CF_UNICODETEXT);
 
-            if (tries++ >= 10)
+            if (object)
             {
-                return "";
+                auto buffer = static_cast<WCHAR*>(::GlobalLock(object));
+                auto length = wcsnlen(buffer, 0xFFFFu) + 1u;
+                auto size = length * sizeof(WCHAR);
+
+                if (!resources->clipboard || resources->clipboardSize < size)
+                {
+                    Memory::Free(resources->clipboard);
+                    resources->clipboard = Memory::AllocateClear<char>(size);
+                    resources->clipboardSize = size;
+                    resources->clipboard[size] = '\0';
+                }
+
+                result = resources->clipboard;
+                String::ToNarrow(resources->clipboard, buffer, length);
+                ::GlobalUnlock(object);
             }
-        }
+            else if (!object)
+            {
+                object = ::GetClipboardData(CF_TEXT);
 
-        object = GetClipboardData(CF_UNICODETEXT);
+                if (object)
+                {
+                    auto buffer = static_cast<char*>(::GlobalLock(object));
+                    auto length = strnlen(buffer, 0xFFFFu) + 1u;
+                    auto size = length;
 
-        if (!object)
-        {
+                    if (!resources->clipboard || resources->clipboardSize < size)
+                    {
+                        Memory::Free(resources->clipboard);
+                        resources->clipboard = Memory::AllocateClear<char>(size);
+                        resources->clipboardSize = size;
+                        resources->clipboard[size] = '\0';
+                    }
+
+                    result = resources->clipboard;
+                    String::Copy(resources->clipboard, buffer, length - 1u);
+                    ::GlobalUnlock(object);
+                }
+            }
+
             ::CloseClipboard();
-            return "";
         }
 
-        buffer = (WCHAR*)::GlobalLock(object);
-
-        if (!buffer)
-        {
-            ::CloseClipboard();
-            return "";
-        }
-
-        auto size = wcsnlen(buffer, 0xFFFFu) + 1u;
-
-        if (!resources->clipboard || resources->clipboardSize < size)
-        {
-            Memory::Free(resources->clipboard);
-            resources->clipboard = Memory::AllocateClear<char>(size);
-            resources->clipboardSize = size;
-            resources->clipboard[size] = '\0';
-        }
-
-        wcstombs(resources->clipboard, buffer, size);
-
-        ::GlobalUnlock(object);
-        ::CloseClipboard();
-
-        return resources->clipboard;
+        return result ? result : "";
     }
 
     void Win32Platform::SetClipboardString(const char* str)
     {
-        HANDLE object = NULL;
-        WCHAR* buffer = NULL;
-        auto tries = 0;
+        auto length = strlen(str);
 
-        auto wstring = Parse::ToWideString(str, strlen(str));
-
-        if (!wstring.empty())
+        if (length > 0)
         {
-            return;
-        }
-
-        object = ::GlobalAlloc(GMEM_MOVEABLE, wstring.size() * sizeof(WCHAR));
-
-        if (!object)
-        {
-            return;
-        }
-
-        buffer = (WCHAR*)::GlobalLock(object);
-
-        if (!buffer)
-        {
-            ::GlobalFree(object);
-            return;
-        }
-
-        ::GlobalUnlock(object);
-
-        while (!OpenClipboard(resources->windowInstanceHelper))
-        {
-            Sleep(1);
-            tries++;
-
-            if (tries++ >= 10)
+            const auto object = ::GlobalAlloc(GMEM_MOVEABLE, (length + 1ull) * sizeof(WCHAR));
+            
+            if (object)
             {
-                GlobalFree(object);
-                return;
+                auto buffer = static_cast<WCHAR*>(::GlobalLock(object));
+                String::ToWide(buffer, str, length + 1ull);
+                buffer[length] = '\0';
+                ::GlobalUnlock(object);
+                
+                if (!::OpenClipboard(resources->windowInstanceHelper))
+                {
+                    ::GlobalFree(object);
+                    return;
+                }
+
+                ::EmptyClipboard();
+                ::SetClipboardData(CF_UNICODETEXT, object);
+                ::CloseClipboard();
             }
         }
-
-        ::EmptyClipboard();
-        ::SetClipboardData(CF_UNICODETEXT, object);
-        ::CloseClipboard();
     }
     
     void Win32Platform::SetConsoleColor(uint32_t color)
@@ -751,13 +737,33 @@ namespace PK
 
     uint32_t Win32Platform::RemoteProcess(const char* executable, const char* arguments)
     {
-        const auto executableLen = strlen(executable);
-        const auto argumentsLen = strlen(arguments);
-
-        if (executableLen == 0 || argumentsLen == 0)
+        if (!executable || !executable[0] || !arguments || !arguments[0])
         {
             return 1u;
         }
+
+        auto executableLen = strlen(executable);
+        auto argumentsLen = strlen(arguments);
+
+        // Remove quotes from path
+        if (executable[executableLen - 1ull] == '\'')
+        {
+            executableLen--;
+        }
+
+        if (executable[0] == '\'')
+        {
+            executableLen--;
+            executable++;
+        }
+
+        if (executableLen == 0ull)
+        {
+            return 1u;
+        }
+
+        FixedWString512 wideExecutable(executableLen, executable);
+        FixedWString512 wideArguments(argumentsLen, arguments);
 
         STARTUPINFO si;
         PROCESS_INFORMATION pi;
@@ -766,21 +772,7 @@ namespace PK
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
 
-        auto wideExecutable = Parse::ToWideString(executable, executableLen);
-        auto wideArguments = Parse::ToWideString(arguments, argumentsLen);
-
-        // Remove quotes from path
-        if (wideExecutable[0] == L'\'')
-        {
-            wideExecutable = wideExecutable.substr(1);
-        }
-
-        if (wideExecutable.back() == L'\'')
-        {
-            wideExecutable = wideExecutable.substr(0, wideExecutable.size() - 1);
-        }
-
-        auto result = ::CreateProcessW(wideExecutable.data(), wideArguments.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+        auto result = ::CreateProcessW(wideExecutable, wideArguments, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
 
         if (result == 0)
         {

@@ -1,33 +1,16 @@
 #pragma once
-#include <string>
-
-// Forward declared to avoid dependency bloat.
-namespace PK
-{
-    template<size_t capacity>
-    struct FixedString;
-    typedef FixedString<32> FixedString32;
-    typedef FixedString<64> FixedString64;
-}
+#include "FixedString.h"
 
 namespace PK::Parse
 {
-    template<typename T>
-    T FromString(const char* str);
-
-    template<typename T>
-    FixedString32 ToString(const T& value);
-
     FixedString32 BytesToString(size_t bytes);
     
-    std::wstring ToWideString(const char* str, size_t length);
-
     template<typename T>
     void StringsToArray(const char* const* strs, T* outArray, const uint32_t count)
     {
         for (auto i = 0u; i < count; ++i)
         {
-            outArray[i] = FromString<T>(strs[i]);
+            outArray[i] = String::To<T>(strs[i]);
         }
     }
 
@@ -57,7 +40,7 @@ namespace PK::Parse
         {
             if (*cur == ',' || cur == scope1)
             {
-                outArray[index++] = FromString<T>(FixedString32(strCount, strBegin).c_str());
+                outArray[index++] = String::To<T>(FixedString32(strCount, strBegin).c_str());
                 strBegin = cur + 1u;
                 strCount = 0u;
             }
@@ -71,7 +54,7 @@ namespace PK::Parse
 
         for (auto i = 0u; i < count; ++i)
         {
-            result.Append(ToString(array[i]).c_str());
+            result.Append(String::From(array[i]).c_str());
 
             if (i != (count - 1))
             {
