@@ -219,5 +219,65 @@ namespace PK
         template<> inline FixedString32 From(const int64_t& value) { return FixedString32("%lli", value); }
         template<> inline FixedString32 From(const float& value) { return FixedString32("%fg", value); }
         template<> inline FixedString32 From(const bool& value) { return FixedString32("%u", (uint8_t)value); }
+
+        template<typename T>
+        void ToArray(const char* const* strs, T* outArray, const uint32_t count)
+        {
+            for (auto i = 0u; i < count; ++i)
+            {
+                outArray[i] = String::To<T>(strs[i]);
+            }
+        }
+
+        template<typename T>
+        void ToArray(const char* str, T* outArray, const uint32_t count)
+        {
+            auto length = strlen(str);
+
+            if (length == 0)
+            {
+                return;
+            }
+
+            auto scope0 = strchr(str, '[');
+            auto scope1 = strchr(str, ']');
+
+            if (scope0 == nullptr || scope1 == nullptr || scope1 <= scope0)
+            {
+                return;
+            }
+
+            auto strBegin = scope0 + 1u;
+            auto strCount = 0ull;
+            auto index = 0u;
+
+            for (auto cur = scope0 + 1u; cur <= scope1 && index < count; ++cur, ++strCount)
+            {
+                if (*cur == ',' || cur == scope1)
+                {
+                    outArray[index++] = String::To<T>(FixedString32(strCount, strBegin).c_str());
+                    strBegin = cur + 1u;
+                    strCount = 0u;
+                }
+            }
+        }
+
+        template<typename T, size_t size>
+        FixedString<size> FromArray(const T* array, const uint32_t count)
+        {
+            FixedString<size> result;
+
+            for (auto i = 0u; i < count; ++i)
+            {
+                result.Append(String::From(array[i]).c_str());
+
+                if (i != (count - 1))
+                {
+                    result.Append(' ');
+                }
+            }
+
+            return result;
+        }
     }
 }

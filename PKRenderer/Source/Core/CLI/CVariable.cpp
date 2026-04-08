@@ -49,18 +49,18 @@ namespace PK
     #define PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(TType, TCount)\
     template<> void CVariable<TType##TCount>::CVarExecute(const char* const* args, uint32_t count)\
     {\
-        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s // %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&m_value.x, TCount).c_str(), m_hint.c_str())\
-        Parse::StringsToArray(args, &m_value.x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&m_value.x, TCount).c_str());\
+        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s // %s", name.c_str(), String::FromArray<TType, TCount * 32ull>(&m_value.x, TCount).c_str(), m_hint.c_str())\
+        String::ToArray(args, &m_value.x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), String::FromArray<TType, TCount * 32ull>(&m_value.x, TCount).c_str());\
     }\
     template<> void CVariable<TType##TCount*>::CVarExecute(const char* const* args, uint32_t count)\
     {\
-        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s // %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&m_value->x, TCount).c_str(), m_hint.c_str())\
-        Parse::StringsToArray(args, &m_value->x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&m_value->x, TCount).c_str());\
+        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s // %s", name.c_str(), String::FromArray<TType, TCount * 32ull>(&m_value->x, TCount).c_str(), m_hint.c_str())\
+        String::ToArray(args, &m_value->x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), String::FromArray<TType, TCount * 32ull>(&m_value->x, TCount).c_str());\
     }\
     template<> void CVariableField<TType##TCount>::CVarExecute(const char* const* args, [[maybe_unused]] uint32_t count)\
     {\
-        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&Value.x, TCount).c_str())\
-        Parse::StringsToArray(args, &Value.x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), Parse::ArrayToString<TType, TCount * 32ull>(&Value.x, TCount).c_str());\
+        PK_CVAR_CHECK_ARG_COUNT(count, TCount, "%s = %s", name.c_str(), String::FromArray<TType, TCount * 32ull>(&Value.x, TCount).c_str())\
+        String::ToArray(args, &Value.x, TCount); PK_LOG_INFO("%s = %s", name.c_str(), String::FromArray<TType, TCount * 32ull>(&Value.x, TCount).c_str());\
     }\
     \
 
