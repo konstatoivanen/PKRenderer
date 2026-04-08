@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/Ref.h"
-#include "Core/Utilities/Parse.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/CLI/ILogger.h"
 #include "Core/CLI/LogScopeIndent.h"
 #include "Core/CLI/LogScopeTimer.h"
@@ -40,7 +40,7 @@ namespace PK
 #define PK_LOG_CONCAT_INNER(a, b) a##b
 #define PK_LOG_CONCAT(a, b) PK_LOG_CONCAT_INNER(a,b)
 #define PK_LOG_UNIQUE_NAME(base) PK_LOG_CONCAT(base, __COUNTER__)
-#define PK_LOG_SHORT_FUNCTION_NAME_PARAMS() static_cast<int>(PK::Parse::GetShortFunctionNameLength(__PRETTY_FUNCTION__)), PK::Parse::GetShortFunctionNameData(__PRETTY_FUNCTION__)
+#define PK_LOG_SHORT_FUNCTION_NAME_PARAMS() static_cast<int>(PK::String::ToFunctionNameLength(__PRETTY_FUNCTION__)), PK::String::ToFunctionNameBase(__PRETTY_FUNCTION__)
 
 #if defined(PK_NO_LOGS)
     #define PK_LOG_NEWLINE()

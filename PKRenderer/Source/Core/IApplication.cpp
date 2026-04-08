@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include "Utilities/NameIDProviderDefault.h"
-#include "Utilities/Parse.h"
 #include "CLI/CVariableRegister.h"
 #include "CLI/Log.h"
 #include "IApplication.h"
@@ -12,7 +11,7 @@ namespace PK
     IApplication::IApplication(const CArguments& arguments, const char* name, Ref<ILogger> logger) :
         m_arguments(arguments),
         m_name(name),
-        m_workingDirectory(Parse::GetFilePathDirectoryLength(arguments.args[0]), arguments.args[0]),
+        m_workingDirectory(String::ToFilePathDirectoryLength(arguments.args[0]), arguments.args[0]),
         m_logger(logger)
     {
         StaticLog::SetLogger(m_logger);

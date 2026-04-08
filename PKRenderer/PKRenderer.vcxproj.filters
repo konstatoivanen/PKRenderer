@@ -1386,9 +1386,6 @@
     <ClInclude Include="Source\App\Engines\EngineProfiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\Parse.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -2357,9 +2354,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Utilities\Parse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Yaml\SerializeCVariablesYaml.cpp">

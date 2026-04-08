@@ -68,7 +68,7 @@ namespace PK
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
 
-        m_texture = RHI::CreateTexture(descriptor, Parse::GetFilePathStem(filepath));
+        m_texture = RHI::CreateTexture(descriptor, String::ToFilePathStem<64>(filepath));
 
         TextureDataRegion dataRegion;
         dataRegion.bufferOffset = 0u;

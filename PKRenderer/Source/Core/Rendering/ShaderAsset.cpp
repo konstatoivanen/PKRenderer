@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
-#include "Core/Utilities/Parse.h"
 #include "Core/Utilities/PropertyBlock.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -178,7 +177,7 @@ namespace PK
         }
 
         auto pVariants = shader->variants.Get(base);
-        auto fileName = Parse::GetFilePathStem(filepath);
+        auto fileName = String::ToFilePathStem<64>(filepath);
 
         m_shaders.Reserve(shader->variantcount);
 

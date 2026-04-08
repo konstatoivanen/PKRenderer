@@ -3,7 +3,7 @@
 #include "Win32Internal.h"
 #include "Win32Window.h"
 #include "Windowsx.h"
-#include "Core/Utilities/Parse.h"
+#include "Core/Utilities/FixedString.h"
 
 namespace PK
 {

@@ -61,9 +61,9 @@ namespace PK::App
         FixedString64 textFramerateAvg("Avg: %4.2fms", avgHistoryTime);
         FixedString64 textFramerateMin("Min: %4.2fms", minHistoryTime);
         FixedString64 textFramerateMax("Max: %4.2fms", maxHistoryTime);
-        FixedString64 textMemoryEram("Ram Prog: %s", Parse::BytesToString(cpumemory.programMemoryUsedExclusive).c_str());
-        FixedString64 textMemoryIram("Ram Total: %s", Parse::BytesToString(cpumemory.programMemoryUsedInclusive).c_str());
-        FixedString64 textMemoryVram("Vram: %s", Parse::BytesToString(gpumemory.usedBytes).c_str());
+        FixedString64 textMemoryEram("Ram Prog: %s", String::FromBytes<16>(cpumemory.programMemoryUsedExclusive).c_str());
+        FixedString64 textMemoryIram("Ram Total: %s", String::FromBytes<16>(cpumemory.programMemoryUsedInclusive).c_str());
+        FixedString64 textMemoryVram("Vram: %s", String::FromBytes<16>(gpumemory.usedBytes).c_str());
 
         gui->GUIDrawRect(COLOR_BG, rectWindow);
         gui->GUIDrawWireRect(COLOR_FG, rectWindow, 1);

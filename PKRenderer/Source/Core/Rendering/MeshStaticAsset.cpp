@@ -56,7 +56,7 @@ namespace PK
             PK_FATAL_ASSERT(baseMesh, "Cannot create a virtual mesh without a base mesh!");
 
             MeshStaticDescriptor desc{};
-            desc.name = Parse::GetFilePathStem(filepath).c_str();
+            desc.name = String::ToFilePathStem<64>(filepath).c_str();
 
             desc.regular.pVertices = pVertices;
             desc.regular.pIndices = pIndices;

@@ -68,20 +68,20 @@ namespace PK
             m_length = max_length > m_length ? m_length : max_length;
         }
 
-        TChar& operator [](size_t i) { return m_string[i]; }
-        const TChar& operator [](size_t i) const { return m_string[i]; }
+        constexpr TChar& operator [](size_t i) { return m_string[i]; }
+        constexpr const TChar& operator [](size_t i) const { return m_string[i]; }
 
-        operator TChar* () { return c_str(); }
-        operator const TChar* () const { return c_str(); }
+        constexpr operator TChar* () { return c_str(); }
+        constexpr operator const TChar* () const { return c_str(); }
 
         bool operator == (const TChar* str) { return String::Cmp(str, m_string) == 0; }
         bool operator != (const TChar* str) { return String::Cmp(str, m_string) != 0; }
 
-        TChar* begin() { return m_string; }
-        TChar* end() { return m_string + m_length; }
+        constexpr TChar* begin() { return m_string; }
+        constexpr TChar* end() { return m_string + m_length; }
         constexpr TChar const* begin() const { return m_string; }
         constexpr TChar const* end() const { return m_string + m_length; }
-        TChar* c_str() { return m_string; }
+        constexpr TChar* c_str() { return m_string; }
         constexpr const TChar* c_str() const { return m_string; }
 
         constexpr size_t Length() const { return m_length; }
@@ -114,7 +114,7 @@ namespace PK
             }
         }
 
-        void Append(TChar c)
+        constexpr void Append(TChar c)
         {
             if (c && m_length < max_length)
             {
@@ -123,14 +123,14 @@ namespace PK
             }
         }
 
-        TChar Pop()
+        constexpr TChar Pop()
         {
             auto c = m_string[m_length];
             m_string[m_length ? --m_length : 0ull] = '\0';
             return c;
         }
 
-        void Clear()
+        constexpr void Clear()
         {
             m_string[0] = '\0';
             m_length = 0;
@@ -278,6 +278,120 @@ namespace PK
             }
 
             return result;
+        }
+
+        // Some utilities that are not really relevant here but I'd rather not add another header
+        template<size_t capacity>
+        inline FixedString<capacity> FromBytes(size_t bytes)
+        {
+            if (bytes == 0)
+            {
+                return FixedString<capacity>("0B");
+            }
+
+            auto mag = (int)(log(bytes) / log(1024));
+            mag = mag < 2 ? 2 : mag;
+
+            auto adjustedSize = (double)bytes / (1L << (mag * 10));
+            auto factor = pow(10, 4);
+
+            if ((round(adjustedSize * factor) / factor) >= 1000)
+            {
+                mag += 1;
+                adjustedSize /= 1024;
+            }
+
+            FixedString<capacity> str("%1.4g", adjustedSize);
+
+            switch (mag)
+            {
+                case 0: str.Append('B'); break;
+                case 1: str.Append('K'); str.Append('B'); break;
+                case 2: str.Append('M'); str.Append('B'); break;
+                default: str.Append('G'); str.Append('B'); break;
+            }
+
+            return str;
+        }
+
+        template<size_t capacity>
+        inline constexpr FixedString<capacity> ToFilePathStem(const char* str)
+        {
+            auto last_slash = 0ull;
+            auto last_dot = 0ull;
+            auto i = 0ull;
+
+            for (; i < 256ull && str[i] != '\0'; ++i)
+            {
+                if (str[i] == '/' || str[i] == '\\')
+                {
+                    last_slash = i + 1ull;
+                }
+
+                if (str[i] == '.')
+                {
+                    last_dot = i;
+                }
+            }
+
+            FixedString<capacity> stem;
+
+            for (i = last_slash; i < 256ull && i < last_dot; ++i)
+            {
+                stem.Append(str[i]);
+            }
+
+            return stem;
+        }
+
+        inline constexpr size_t ToFilePathDirectoryLength(const char* str)
+        {
+            auto length = 0u;
+
+            for (auto i = 0u; i < 256ull && str[i] != '\0'; ++i)
+            {
+                if (str[i] == '\\' || str[i] == '/')
+                {
+                    length = i + 1u;
+                }
+            }
+
+            return length;
+        }
+
+        inline constexpr void ToFunctionName(const char* str, const char** outData, size_t* outLength) noexcept
+        {
+            auto name_begin = 0ull;
+            auto name_begin_scoped = 256ull;
+
+            auto i = 0ull;
+            for (; i < 256ull && str[i] != '\0' && str[i] != '('; ++i)
+            {
+                auto is_name_char_0 = (str[i + 0ull] >= 'a' && str[i + 0ull] <= 'z') || (str[i + 0ull] >= 'A' && str[i + 0ull] <= 'Z') || (str[i + 0ull] == '_');
+                auto is_name_char_1 = (str[i + 1ull] >= 'a' && str[i + 1ull] <= 'z') || (str[i + 1ull] >= 'A' && str[i + 1ull] <= 'Z') || (str[i + 1ull] == '_');
+                if (!is_name_char_0 && is_name_char_1 && str[i] == ':') name_begin_scoped = name_begin;
+                if (!is_name_char_0 && is_name_char_1) name_begin = i + 1ull;
+            }
+
+            name_begin = name_begin < name_begin_scoped ? name_begin : name_begin_scoped;
+            *outData = str + name_begin;
+            *outLength = i - name_begin;
+        }
+
+        inline constexpr const char* ToFunctionNameBase(const char* str) noexcept
+        {
+            const char* data = str;
+            size_t length = 0ull;
+            ToFunctionName(str, &data, &length);
+            return data;
+        }
+
+        inline constexpr size_t ToFunctionNameLength(const char* str) noexcept
+        {
+            const char* begin = str;
+            size_t length = 0ull;
+            ToFunctionName(str, &begin, &length);
+            return length;
         }
     }
 }

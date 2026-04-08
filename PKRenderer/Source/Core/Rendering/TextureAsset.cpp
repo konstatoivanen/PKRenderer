@@ -42,7 +42,7 @@ namespace PK
         descriptor.sampler.wrap[1] = texture.wrap[1];
         descriptor.sampler.wrap[2] = texture.wrap[2];
 
-        m_texture = RHI::CreateTexture(descriptor, Parse::GetFilePathStem(filepath));
+        m_texture = RHI::CreateTexture(descriptor, String::ToFilePathStem<64>(filepath));
 
         auto regions = PK_STACK_ALLOC(TextureDataRegion, descriptor.levels);
         auto isCubeMap = descriptor.type == TextureType::CubemapArray || descriptor.type == TextureType::Cubemap;
