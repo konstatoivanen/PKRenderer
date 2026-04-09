@@ -283,4 +283,4 @@ namespace PK
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::ShaderAsset>(const wchar_t* extension) { return wcscmp(extension, L".pkshader") == 0; }
+const char* PK::Asset::GetExtension<PK::ShaderAsset>() { return "*.pkshader"; }

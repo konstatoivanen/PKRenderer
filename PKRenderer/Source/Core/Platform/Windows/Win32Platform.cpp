@@ -4,6 +4,8 @@
 #include "Win32Internal.h"
 #include "Core/Utilities/FixedString.h"
 
+#include "Core/CLI/Log.h"
+
 PFN_DirectInput8Create pkfn_DirectInput8Create = nullptr;
 PFN_XInputGetCapabilities pkfn_XInputGetCapabilities = nullptr;
 PFN_XInputGetState pkfn_XInputGetState = nullptr;
@@ -485,19 +487,6 @@ namespace PK
     void* Win32Platform::GetHelperWindow() { return resources->windowInstanceHelper; }
     void* Win32Platform::GetProcAddress(void* handle, const char* name) { return (void*)::GetProcAddress((HMODULE)handle, name); }
 
-    double Win32Platform::GetTimeSeconds()
-    {
-        LARGE_INTEGER counter;
-        QueryPerformanceCounter(&counter);
-        return double(counter.QuadPart) * resources->cyclesToSeconds;
-    }
-
-    uint64_t Win32Platform::GetTimeCycles()
-    {
-        LARGE_INTEGER counter;
-        QueryPerformanceCounter(&counter);
-        return counter.QuadPart;
-    }
 
     void* Win32Platform::LoadLibrary(const char* path)
     {
@@ -507,11 +496,11 @@ namespace PK
         }
 
         // Add folder to search path to load dependency libraries
-        auto folder = std::filesystem::path(path).parent_path();
+        auto folder = String::ToParentPath<wchar_t, char, 256>(path);
 
-        if (!folder.empty() && !folder.is_relative())
+        if (String::IsPathAbsolute(folder.c_str()))
         {
-            ::AddDllDirectory(folder.wstring().c_str());
+            ::AddDllDirectory(folder);
         }
 
         const DWORD errorMode = SEM_NOOPENFILEERRORBOX;
@@ -542,6 +531,146 @@ namespace PK
         {
             ::FreeLibrary((HMODULE)handle);
         }
+    }
+
+
+    void Win32Platform::FindFiles(void* ctx, const char* directory, const char* pattern, bool recursive, void(*onFile)(void*, const char*))
+    {
+        if (!directory || !directory[0] || !pattern || !pattern[0] || !onFile)
+        {
+            return;
+        }
+
+        // Try to find first file
+        auto lengthDir = strlen(directory);
+        char filepath[MAX_PATH];
+
+        strncpy(filepath, directory, MAX_PATH);
+
+        if (filepath[lengthDir - 1u] != '/')
+        {
+            filepath[lengthDir] = '/';
+            filepath[++lengthDir] = '\0';
+        }
+
+        strncpy(filepath + lengthDir, pattern, MAX_PATH - lengthDir);
+        filepath[MAX_PATH - 1u] = '\0';
+
+        WIN32_FIND_DATAA info;
+        auto handle = ::FindFirstFileExA(filepath, FindExInfoStandard, &info, FindExSearchNameMatch, NULL, 0);
+
+        if (handle != INVALID_HANDLE_VALUE)
+        {
+            do
+            {
+                if (info.cFileName[0] && info.cFileName[0] != '.' && !(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+                {
+                    strncpy(filepath + lengthDir, info.cFileName, MAX_PATH - lengthDir);
+                    onFile(ctx, filepath);
+                }
+            } 
+            while (::FindNextFileA(handle, &info) != 0);
+
+            ::FindClose(handle);
+        }
+
+        if (recursive)
+        {
+            filepath[lengthDir] = '*';
+            filepath[lengthDir + 1u] = '\0';
+
+            handle = ::FindFirstFileExA(filepath, FindExInfoStandard, &info, FindExSearchLimitToDirectories, NULL, 0);
+
+            if (handle != INVALID_HANDLE_VALUE)
+            {
+                do
+                {
+                    if (info.cFileName[0] && info.cFileName[0] != '.' && (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+                    {
+                        strncpy(filepath + lengthDir, info.cFileName, MAX_PATH - lengthDir);
+                        FindFiles(ctx, filepath, pattern, true, onFile);
+                    }
+                } 
+                while (FindNextFileA(handle, &info) != 0);
+
+                ::FindClose(handle);
+            }
+        }
+    }
+
+    bool Win32Platform::CreateDirectory(const char* path)
+    {
+        if (!path || !path[0])
+        {
+            return false;
+        }
+
+        char subpath[MAX_PATH];
+        strncpy(subpath, path, MAX_PATH);
+
+        for (auto i = 0u; i < MAX_PATH && path && path[i] && path[i] != '.'; ++i)
+        {
+            if (path[i + 1u] == '\0' || path[i + 1u] == '/')
+            {
+                subpath[i + 1u] = '\0';
+                const auto attributes = ::GetFileAttributesA(subpath);
+
+                if (attributes == INVALID_FILE_ATTRIBUTES)
+                {
+                    if (::GetLastError() == ERROR_ACCESS_DENIED)
+                    {
+                        return false;
+                    }
+
+                    const auto result = ::CreateDirectoryA(subpath, nullptr);
+
+                    if (result == FALSE)
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (!((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0 || (attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0))
+                    {
+                        return true;
+                    }
+                }
+                
+                subpath[i + 1u] = '/';
+            }
+        }
+
+        return true;
+    }
+
+    bool Win32Platform::DirectoryExists(const char* path)
+    {
+        const auto result = ::GetFileAttributesA(path);
+        return result != 0xFFFFFFFF && result & FILE_ATTRIBUTE_DIRECTORY;
+
+    }
+
+    bool Win32Platform::FileExists(const char* path)
+    {
+        const auto result = ::GetFileAttributesA(path);
+        return result != 0xFFFFFFFF && !(result & FILE_ATTRIBUTE_DIRECTORY);
+    }
+
+
+
+    double Win32Platform::GetTimeSeconds()
+    {
+        LARGE_INTEGER counter;
+        QueryPerformanceCounter(&counter);
+        return double(counter.QuadPart) * resources->cyclesToSeconds;
+    }
+
+    uint64_t Win32Platform::GetTimeCycles()
+    {
+        LARGE_INTEGER counter;
+        QueryPerformanceCounter(&counter);
+        return counter.QuadPart;
     }
 
 

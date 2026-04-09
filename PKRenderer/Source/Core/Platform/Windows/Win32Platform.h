@@ -132,13 +132,18 @@ namespace PK
         static void* LoadLibrary(const char* path);
         static void FreeLibrary(void* handle);
 
+        static void FindFiles(void* ctx, const char* directory, const char* pattern, bool recursive, void (*onFile)(void*, const char*));
+        static bool CreateDirectory(const char* path);
+        static bool DirectoryExists(const char* path);
+        static bool FileExists(const char* path);
+
+        static double GetTimeSeconds();
+        static uint64_t GetTimeCycles();
+
         static bool GetHasFocus();
         static int2 GetDesktopSize();
         static int4 GetMonitorRect(const int2& point, bool preferPrimary);
         static void* GetNativeMonitorHandle(const int2& point, bool preferPrimary);
-
-        static double GetTimeSeconds();
-        static uint64_t GetTimeCycles();
 
         static PlatformWindow* CreateWindow(const PlatformWindowDescriptor& descriptor);
         static void DestroyWindow(PlatformWindow* window);

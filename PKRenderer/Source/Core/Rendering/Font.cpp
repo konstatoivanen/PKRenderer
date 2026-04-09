@@ -228,4 +228,4 @@ namespace PK
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::Font>(const wchar_t* extension) { return wcscmp(extension, L".pkfont") == 0; }
+const char* PK::Asset::GetExtension<PK::Font>() { return "*.pkfont"; }

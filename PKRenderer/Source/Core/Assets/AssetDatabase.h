@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem>
 #include "Core/Utilities/Singleton.h"
 #include "Core/Utilities/FastTypeIndex.h"
 #include "Core/Utilities/FastMap.h"
@@ -21,6 +20,12 @@ namespace PK
     class AssetDatabase : public Singleton<AssetDatabase>
     {
         constexpr static uint32_t INVALID_LINK = ~0u;
+
+        struct SearchContext 
+        { 
+            AssetDatabase* database;
+            bool forceReload; 
+        };
 
         struct TypeInfo
         {
@@ -169,17 +174,12 @@ namespace PK
         {
             constexpr auto name = pk_base_type_name<T>();
             PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, directory);
-
-            if (FileIO::DirectoryExists(directory))
+            SearchContext ctx{ this, forceReload };
+            FileIO::FindFiles(&ctx, directory, Asset::GetExtension<T>(), false, [](void* ctx, const char* path)
             {
-                for (const auto& entry : std::filesystem::directory_iterator(directory))
-                {
-                    if (Asset::IsValidExtension<T>(entry.path().extension().c_str()))
-                    {
-                        Load<T>(AssetID(entry.path().string().c_str()), CacheMode::Persistent, forceReload);
-                    }
-                }
-            }
+                auto search = static_cast<SearchContext*>(ctx);
+                search->database->Load<T>(AssetID(path), CacheMode::Persistent, search->forceReload);
+            });
         }
 
         template<typename T>

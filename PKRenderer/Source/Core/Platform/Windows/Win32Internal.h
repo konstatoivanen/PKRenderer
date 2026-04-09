@@ -7,7 +7,6 @@
 #define far
 #define near
 
-#include <filesystem>
 #include <dinput.h>
 #include <xinput.h>
 #include <dbt.h>

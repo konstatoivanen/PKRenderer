@@ -282,7 +282,7 @@ namespace PK
 
         // Some utilities that are not really relevant here but I'd rather not add another header
         template<size_t capacity>
-        inline FixedString<capacity> FromBytes(size_t bytes)
+        FixedString<capacity> FromBytes(size_t bytes)
         {
             if (bytes == 0)
             {
@@ -392,6 +392,43 @@ namespace PK
             size_t length = 0ull;
             ToFunctionName(str, &begin, &length);
             return length;
+        }
+
+        template<typename TCharOut, typename TCharIn, size_t capacity>
+        IFixedString<TCharOut, capacity> ToParentPath(const TCharIn* str)
+        {
+            auto parent_slash = 0ull;
+            auto last_slash = 0ull;
+            auto i = 0ull;
+
+            for (; i < 256ull && str[i] != '\0'; ++i)
+            {
+                if (str[i] == '/' || str[i] == '\\')
+                {
+                    parent_slash = last_slash;
+                    last_slash = i + 1ull;
+                }
+            }
+
+            if (str[last_slash] == '\0')
+            {
+                last_slash = parent_slash;
+            }
+
+            IFixedString<TCharOut, capacity> parent;
+
+            for (i = 0; i < 256ull && i < last_slash; ++i)
+            {
+                parent.Append(str[i]);
+            }
+
+            return parent;
+        }
+
+        template<typename TCHar>
+        inline bool IsPathAbsolute(const TCHar* path)
+        {
+            return path && path[0] && path[1] && (((isdigit(path[0]) || isalpha(path[0])) && path[1] == ':') || (path[0] == '\\') || (path[0] == '/'));
         }
     }
 }

@@ -1,19 +1,16 @@
 #include "PrecompiledHeader.h"
 #include <sys/stat.h>
 #include <stdio.h>
+
+#define USE_STD_FILESYSTEM 0
+
+#if USE_STD_FILESYSTEM 
 #include <filesystem>
+#endif
+
 #include "Core/Utilities/FixedString.h"
 #include "FileIO.h"
 
-#if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
-#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-#endif
-#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
-#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-#endif
-
-// std::filesystem is faster than win emulated posix lookups.
-#define USE_STD_FILESYSTEM 1
 
 namespace PK::FileIO
 {
@@ -29,13 +26,29 @@ namespace PK::FileIO
     constexpr static const int32_t MAX_NUMBER_OF_COLORS = 0;
     constexpr static const int32_t ALL_COLORS_REQUIRED = 0;
 
+    void FindFiles(void* ctx, const char* directory, const char* pattern, bool recursive, void (*onFile)(void*, const char*))
+    {
+        // @TODO provide non platform header depndent alternative
+        return Platform::FindFiles(ctx, directory, pattern, recursive, onFile);
+    }
+
+    bool CreateDirectory(const char* path)
+    {
+        #if USE_STD_FILESYSTEM
+        auto fpath = std::filesystem::path(path).remove_filename().string();
+        fpath = fpath.substr(0, fpath.length() - 1);
+        return std::filesystem::exists(path) || std::filesystem::create_directories(path);
+        #else
+        return Platform::CreateDirectory(path);
+        #endif
+    }
+
     bool DirectoryExists(const char* path)
     {
         #if USE_STD_FILESYSTEM
         return std::filesystem::exists(path);
         #else
-        struct stat sb;
-        return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
+        return Platform::DirectoryExists(path);
         #endif
     }
 
@@ -44,14 +57,13 @@ namespace PK::FileIO
         #if USE_STD_FILESYSTEM
         return std::filesystem::exists(path);
         #else
-        struct stat sb;
-        return stat(path, &sb) == 0 && S_ISREG(sb.st_mode);
+        return Platform::FileExists(path);
         #endif
     }
 
     FILE* OpenFile(const char* filepath, const char* openMode, size_t* outSize = nullptr)
     {
-        if (filepath == nullptr || strlen(filepath) == 0)
+        if (!filepath || !filepath[0] || !FileExists(filepath))
         {
             return nullptr;
         }
@@ -135,15 +147,12 @@ namespace PK::FileIO
 
     int WriteBinary(const char* filepath, bool isText, void* data, size_t size)
     {
-        FILE* file = nullptr;
-
-        auto path = std::filesystem::path(filepath).remove_filename().string();
-        path = path.substr(0, path.length() - 1);
-
-        if (!std::filesystem::exists(path) && !std::filesystem::create_directories(path))
+        if (!filepath || !filepath[0] || !CreateDirectory(filepath))
         {
             return -1;
         }
+
+        FILE* file = nullptr;
 
         file = fopen(filepath, isText ? "w" : "wb");
 
@@ -320,7 +329,7 @@ namespace PK::FileIO
 
     Image* ReadImage(const char* fileName)
     {
-        if (fileName == nullptr)
+        if (!fileName || !fileName[0])
         {
             return nullptr;
         }

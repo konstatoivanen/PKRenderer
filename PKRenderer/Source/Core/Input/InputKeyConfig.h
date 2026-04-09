@@ -4,7 +4,7 @@
 
 namespace PK
 {
-    PK_YAML_ASSET_BEGIN(InputKeyConfig, L".keycfg")
+    PK_YAML_ASSET_BEGIN(InputKeyConfig, "*.keycfg")
         PK_YAML_MEMBER(CommandInputKeyBindingMap, CommandInputKeys, CommandInputKeyBindingMap())
         PK_YAML_MEMBER(InputKeyCommandBindings, InputKeyCommands, {})
     PK_YAML_ASSET_END()

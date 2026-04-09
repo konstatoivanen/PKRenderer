@@ -11,7 +11,9 @@ namespace PK::FileIO
         int32_t bytesPerPixel;
     };
 
-    bool DirectoryExists(const char* directory);
+    void FindFiles(void* ctx, const char* directory, const char* pattern, bool recursive, void (*onFile)(void*, const char*));
+    bool CreateDirectory(const char* path);
+    bool DirectoryExists(const char* path);
     bool FileExists(const char* path);
 
     int ReadBinary(const char* filepath, bool isText, void** data, size_t * size);

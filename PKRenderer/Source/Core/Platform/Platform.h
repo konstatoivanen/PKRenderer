@@ -118,6 +118,11 @@ namespace PK
         static void FreeLibrary(void* handle) = delete;
         static void* GetProcAddress(void* handle, const char* name) = delete;
 
+        static void FindFiles(void* ctx, const char* directory, const char* pattern, bool recursive, void (*onFile)(void*, const char*)) = delete;
+        static bool CreateDirectory(const char* path) = delete;
+        static bool DirectoryExists(const char* path) = delete;
+        static bool FileExists(const char* path) = delete;
+
         static double GetTimeSeconds() = delete;
         static uint64_t GetTimeCycles() = delete;
 

@@ -17,7 +17,7 @@ namespace PK::App
         PK_YAML_MEMBER(bool, DiscardPipelineCache, false)
     PK_YAML_STRUCT_END()
 
-    PK_YAML_ASSET_BEGIN(BaseRendererConfig, L".cfg")
+    PK_YAML_ASSET_BEGIN(BaseRendererConfig, "*.cfg")
         PK_YAML_MEMBER(float, TimeScale, 1.0f)
         PK_YAML_MEMBER(uint32_t, InactiveFrameInterval, 0u)
         PK_YAML_MEMBER(RHIDriverDescriptor, RHIDesc, {})
