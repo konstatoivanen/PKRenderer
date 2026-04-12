@@ -1,6 +1,5 @@
 #pragma once
 #include <stdint.h>
-#include <functional>
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/NameID.h"
 #include "Core/Utilities/FixedString.h"
@@ -69,10 +68,7 @@ namespace PK
             return *this;
         }
     };
-
-    typedef std::function<void(const char* const* args, uint32_t)> CVariableFunc;
-    typedef std::function<void()> CVariableFuncSimple;
-
-    typedef Function<void(const char* const* args, uint32_t)> CVariableFuncPK;
-    typedef Function<void()> CVariableFuncSimplePK;
+    
+    typedef Function<void(const char* const* args, uint32_t)> CVariableFunc;
+    typedef Function<void()> CVariableFuncSimple;
 }

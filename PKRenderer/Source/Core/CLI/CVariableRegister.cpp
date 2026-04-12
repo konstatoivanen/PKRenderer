@@ -108,6 +108,7 @@ namespace PK
         auto index = 0u;
         auto isNew = m_variables.AddKey(name, &index);
         auto binding = &m_variables[index].value;
+        
         PK_FATAL_ASSERT(!isNew || !binding->variable, "CVar is already bound! (%s)", name.c_str());
         PK_LOG_VERBOSE_FUNC("%s", name.c_str());
         
@@ -117,7 +118,7 @@ namespace PK
         // Immediately call execute if there is one pending for this variable.
         if (!isNew && binding->arguments != nullptr)
         {
-            ExecuteInstance(binding->arguments->arguments, binding->arguments->count);
+            ExecuteInstance(name, binding->arguments->arguments, binding->arguments->count);
             Memory::Delete(binding->arguments);
             binding->arguments = nullptr;
         }
@@ -138,6 +139,38 @@ namespace PK
     {
         auto binding = m_variables.GetValuePtr(name);
         return binding && binding->variable != nullptr;
+    }
+
+    void CVariableRegister::ExecuteParseInstance(const char* arg)
+    {
+        CArgumentsInlineDefault args(arg, ' ');
+        ExecuteInstance(args.arguments, args.count);
+    }
+
+    void CVariableRegister::ExecuteInstance(const char* const* args, uint32_t count)
+    {
+        if (count > 0)
+        {
+            ExecuteInstance(NameID(args[0]), args + 1u, count - 1u);
+        }
+    }
+
+    void CVariableRegister::ExecuteInstance(NameID name, const char* const* args, uint32_t count)
+    {
+        auto index = 0u;
+        auto isNew = m_variables.AddKey(name, &index);
+        auto binding = &m_variables[index].value;
+
+        if (!isNew && binding->variable)
+        {
+            binding->variable->CVarExecute(args, count);
+        }
+        else
+        {
+            // CVar was not found. cache arguments so that they can be executed upon binding.
+            binding->variable = nullptr;
+            binding->arguments = Memory::New<CArgumentsInlineDefault>(args, count);
+        }
     }
 
     const char* CVariableRegister::FindAutoCompleteHintInstance(const char* pattern, int32_t matchOffset)
@@ -183,33 +216,5 @@ namespace PK
         }
 
         return nullptr;
-    }
-
-
-    void CVariableRegister::ExecuteInstance(const char* const* args, uint32_t count)
-    {
-        if (count > 0)
-        {
-            auto index = 0u;
-            auto isNew = m_variables.AddKey(NameID(args[0]), &index);
-            auto binding = &m_variables[index].value;
-
-            if (!isNew && binding->variable)
-            {
-                binding->variable->CVarExecute(args + 1, count - 1u);
-            }
-            else
-            {
-                // CVar was not found. cache arguments so that they can be executed upon binding.
-                binding->variable = nullptr;
-                binding->arguments = Memory::New<CArgumentsInlineDefault>(args, count);
-            }
-        }
-    }
-
-    void CVariableRegister::ExecuteParseInstance(const char* arg)
-    {
-        CArgumentsInlineDefault args(arg, ' ');
-        ExecuteInstance(args.arguments, args.count);
     }
 }

@@ -5,4 +5,3 @@
 // Precompile glm
 #include "Core/Platform/Platform.h"
 #include "Core/Math/Math.h"
-#include <utility>

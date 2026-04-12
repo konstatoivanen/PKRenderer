@@ -54,10 +54,12 @@ namespace PK
         void BindInstance(ICVariable* variable, uint32_t flags);
         void UnbindInstance(ICVariable* variable);
         bool IsBoundInstance(const char* name) const;
-        const char* FindAutoCompleteHintInstance(const char* pattern, int32_t matchOffset);
 
-        void ExecuteInstance(const char* const* args, uint32_t count);
         void ExecuteParseInstance(const char* arg);
+        void ExecuteInstance(const char* const* args, uint32_t count);
+        void ExecuteInstance(NameID name, const char* const* args, uint32_t count);
+        
+        const char* FindAutoCompleteHintInstance(const char* pattern, int32_t matchOffset);
 
         FastMap<NameID, CVariableBinding> m_variables;
         FixedArena<32768ull> m_arena;

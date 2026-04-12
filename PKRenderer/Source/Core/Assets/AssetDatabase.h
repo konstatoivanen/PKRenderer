@@ -156,8 +156,6 @@ namespace PK
         template<typename T>
         Ref<T> Load(AssetID assetId, CacheMode cacheMode = CacheMode::Persistent, bool forceReload = false)
         {
-            FixedString256 filepath(assetId.c_str());
-            PK_FATAL_ASSERT(FileIO::FileExists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());
             auto object = CreateAssetObject<T>(assetId, cacheMode);
             LoadAsset(object, forceReload);
             return object->GetReference();
@@ -166,6 +164,7 @@ namespace PK
         template<typename T>
         Ref<T> Load(const char* filepath, CacheMode cachingMode = CacheMode::Persistent, bool forceReload = false)
         { 
+            PK_FATAL_ASSERT(FileIO::FileExists(filepath), "Asset not found at path: %s", filepath);
             return Load<T>(AssetID(filepath), cachingMode, forceReload); 
         }
 
