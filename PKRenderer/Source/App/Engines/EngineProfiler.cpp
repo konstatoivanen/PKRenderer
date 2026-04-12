@@ -33,7 +33,7 @@ namespace PK::App
         const auto fontSize = 16;
         const auto padding = 4;
         const auto renderArea = gui->GUIGetRenderAreaRect();
-        const auto rectWindow = short4(renderArea.x + padding, renderArea.w - height - padding, renderArea.z - padding * 2, height);
+        const auto rectWindow = short4(renderArea.x + padding, renderArea.y + renderArea.w - height - padding, renderArea.z - padding * 2, height);
         const auto rectSample = short4(rectWindow.x + padding, rectWindow.y + rectWindow.w - padding, 2, 0);
         const auto rectBar    = short4(rectWindow.x + padding, rectWindow.y + rectWindow.w - padding, rectWindow.z - padding * 2, 1);
         const auto sampleWidth = 2;
