@@ -12,6 +12,19 @@
 
 constexpr static const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_validation";
 
+#define VK_ASSERT_RESULT_CTX(cmd, ctx) \
+    { \
+        auto result = cmd; \
+        if (result != VK_SUCCESS) \
+        { \
+            PK:: VulkanThrowError(result, ctx); \
+        } \
+    } \
+
+#define VK_ASSERT_RESULT(cmd) VK_ASSERT_RESULT_CTX(cmd, "VK Error Result:")
+#define VK_THROW_RESULT(result) PK::VulkanThrowError(result, "VK Error Result:")
+#define VK_THROW_RESULT_CTX(result, ctx) PK::VulkanThrowError(result, ctx)
+
 #if PK_PLATFORM_WINDOWS
     #define PK_VK_LIBRARY_NAME "vulkan-1.dll"
 #elif PK_PLATFORM_LINUX
@@ -469,6 +482,37 @@ namespace PK
         VkQueryPool pool;
     };
 
+
+    void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames, bool enableDebugLabels);
+
+    VkResult VulkanCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);
+    VkResult VulkanCreateSurfaceKHR(VkInstance instance, void* nativeWindow, VkSurfaceKHR* surface);
+
+    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount);
+    VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
+    VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
+    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect);
+    TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange);
+
+    bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count);
+    bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface);
+
+    void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* device);
+    VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent);
+    VkSurfaceFormatKHR VulkanSelectSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace);
+    VkPresentModeKHR VulkanSelectPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPresentModeKHR desiredPresentMode);
+    
+    // Defined here to prevent multiple includes of vulkan.h with wrong defines.
+    FixedString128 VulkanStr_VkQueueFlags(VkQueueFlags value);
+    const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value);
+    const char* VulkanCStr_VkFormat(VkFormat value);
+    const char* VulkanCStr_VkColorSpaceKHR(VkColorSpaceKHR value);
+    const char* VulkanCStr_VkPresentModeKHR(VkPresentModeKHR value);
+
+    void VulkanSetObjectDebugName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* name);
+    void VulkanAssertAPIVersion(const uint32_t major, const uint32_t minor);
+    void VulkanThrowError(VkResult result, const char* context);
+
     namespace VulkanEnumConvert
     {
         VkFormat GetFormat(ElementType format);
@@ -517,53 +561,4 @@ namespace PK
         bool IsReadAccess(VkAccessFlags flags);
         bool IsWriteAccess(VkAccessFlags flags);
     }
-
-    VkResult VulkanCreateSurfaceKHR(VkInstance instance, void* nativeWindow, VkSurfaceKHR* surface);
-
-    void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames, bool enableDebugLabels);
-
-    VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
-    VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
-
-    bool VulkanValidateInstanceExtensions(const char* const* extensions, size_t count);
-    bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count);
-    bool VulkanValidateValidationLayers(const char* const* validationLayers, const uint32_t count);
-    bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface);
-
-    void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* device);
-    VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent);
-    VkSurfaceFormatKHR VulkanSelectSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace);
-    VkPresentModeKHR VulkanSelectPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPresentModeKHR desiredPresentMode);
-
-    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount);
-    
-    // Defined here to prevent multiple includes of vulkan.h with wrong defines.
-    FixedString128 VulkanStr_VkQueueFlags(VkQueueFlags value);
-    const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value);
-    const char* VulkanCStr_VkFormat(VkFormat value);
-    const char* VulkanCStr_VkColorSpaceKHR(VkColorSpaceKHR value);
-    const char* VulkanCStr_VkPresentModeKHR(VkPresentModeKHR value);
-
-    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect);
-    TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange);
-
-    void VulkanSetObjectDebugName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* name);
-
-    void VulkanAssertAPIVersion(const uint32_t major, const uint32_t minor);
-
-    void VulkanThrowError(VkResult result, const char* context);
-
-    #define VK_ASSERT_RESULT_CTX(cmd, ctx) \
-    { \
-        auto result = cmd; \
-        if (result != VK_SUCCESS) \
-        { \
-            VulkanThrowError(result, ctx); \
-        } \
-    } \
-
-    #define VK_ASSERT_RESULT(cmd) VK_ASSERT_RESULT_CTX(cmd, "VK Error Result:")
-    #define VK_THROW_RESULT(result) VulkanThrowError(result, "VK Error Result:")
-    #define VK_THROW_RESULT_CTX(result, ctx) VulkanThrowError(result, ctx)
-
 }

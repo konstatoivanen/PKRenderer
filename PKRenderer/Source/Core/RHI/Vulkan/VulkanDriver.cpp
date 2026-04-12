@@ -58,16 +58,10 @@ namespace PK
         instanceCreateInfo.pNext = properties.enableDebugLogging ? &debugMessengerCreateInfo : nullptr;
         instanceCreateInfo.enabledLayerCount = properties.enableValidation ? 1u : 0u;
         instanceCreateInfo.ppEnabledLayerNames = &VK_LAYER_KHRONOS_validation;
-
-        PK_FATAL_ASSERT(VulkanValidateInstanceExtensions(properties.instanceExtensions.data, properties.instanceExtensions.count), "Trying to enable unavailable extentions!");
-        PK_FATAL_ASSERT(VulkanValidateValidationLayers(instanceCreateInfo.ppEnabledLayerNames, instanceCreateInfo.enabledLayerCount), "Trying to enable unavailable validation layers!");
-
         instanceCreateInfo.enabledExtensionCount = (uint32_t)properties.instanceExtensions.count;
         instanceCreateInfo.ppEnabledExtensionNames = properties.instanceExtensions.data;
-
-        VK_ASSERT_RESULT_CTX(vkCreateInstance(&instanceCreateInfo, nullptr, &instance), "Failed to create vulkan instance!");
-        VulkanBindExtensionMethods(instance, properties.enableDebugNames, properties.enableDebugLabels);
-
+        VK_ASSERT_RESULT_CTX(VulkanCreateInstance(&instanceCreateInfo, nullptr, &instance), "Failed to create vulkan instance!");
+        
         {
             PK_LOG_NEWLINE();
             PK_LOG_INFO_SCOPE("VulkanDriver.vkCreateInstance: with '%i' layers and '%i' extensions:", instanceCreateInfo.enabledLayerCount, instanceCreateInfo.enabledExtensionCount);
@@ -84,6 +78,8 @@ namespace PK
 
             PK_LOG_NEWLINE();
         }
+
+        VulkanBindExtensionMethods(instance, properties.enableDebugNames, properties.enableDebugLabels);
 
         if (properties.enableDebugLogging)
         {

@@ -789,6 +789,497 @@ namespace PK
     }
 
 
+    void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames, bool enableDebugLabels)
+    {
+        if (enableDebugNames)
+        {
+            pkfn_vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
+        }
+
+        if (enableDebugLabels)
+        {
+            pkfn_vkSetDebugUtilsObjectTagEXT = (PFN_vkSetDebugUtilsObjectTagEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectTagEXT");
+            pkfn_vkQueueBeginDebugUtilsLabelEXT = (PFN_vkQueueBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueBeginDebugUtilsLabelEXT");
+            pkfn_vkQueueEndDebugUtilsLabelEXT = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
+            pkfn_vkQueueInsertDebugUtilsLabelEXT = (PFN_vkQueueInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueInsertDebugUtilsLabelEXT");
+            pkfn_vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
+            pkfn_vkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
+            pkfn_vkCmdInsertDebugUtilsLabelEXT = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
+            pkfn_vkSubmitDebugUtilsMessageEXT = (PFN_vkSubmitDebugUtilsMessageEXT)vkGetInstanceProcAddr(instance, "vkSubmitDebugUtilsMessageEXT");
+        }
+        
+        pkfn_vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+        pkfn_vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+
+        pkfn_vkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkCreateAccelerationStructureKHR");
+        pkfn_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkDestroyAccelerationStructureKHR");
+        pkfn_vkCmdSetRayTracingPipelineStackSizeKHR = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR)vkGetInstanceProcAddr(instance, "vkCmdSetRayTracingPipelineStackSizeKHR");
+        pkfn_vkCmdTraceRaysIndirectKHR = (PFN_vkCmdTraceRaysIndirectKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysIndirectKHR");
+        pkfn_vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysKHR");
+        pkfn_vkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetInstanceProcAddr(instance, "vkCreateRayTracingPipelinesKHR");
+        pkfn_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR = (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
+        pkfn_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
+        pkfn_vkGetRayTracingShaderGroupStackSizeKHR = (PFN_vkGetRayTracingShaderGroupStackSizeKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupStackSizeKHR");
+        pkfn_vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureDeviceAddressKHR");
+        pkfn_vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureBuildSizesKHR");
+        pkfn_vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetInstanceProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR");
+        pkfn_vkCmdCopyAccelerationStructureKHR = (PFN_vkCmdCopyAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyAccelerationStructureKHR");
+        pkfn_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
+        pkfn_vkCmdWriteAccelerationStructuresPropertiesKHR = (PFN_vkCmdWriteAccelerationStructuresPropertiesKHR)vkGetInstanceProcAddr(instance, "vkCmdWriteAccelerationStructuresPropertiesKHR");
+        pkfn_vkCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vkGetInstanceProcAddr(instance, "vkCmdPipelineBarrier2KHR");
+
+        pkfn_vkCmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksEXT");
+        pkfn_vkCmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectEXT");
+        pkfn_vkCmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectCountEXT");
+
+        pkfn_vkAcquireFullScreenExclusiveModeEXT = (PFN_vkAcquireFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkAcquireFullScreenExclusiveModeEXT");
+        pkfn_vkReleaseFullScreenExclusiveModeEXT = (PFN_vkReleaseFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkReleaseFullScreenExclusiveModeEXT");
+
+        pkfn_vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vkGetInstanceProcAddr(instance, "vkWaitForPresentKHR");
+    }
+
+    
+    VkResult VulkanCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance)
+    {
+        auto result = vkCreateInstance(pCreateInfo, pAllocator, pInstance);
+
+        if (result == VK_ERROR_EXTENSION_NOT_PRESENT && pCreateInfo->ppEnabledExtensionNames != nullptr && pCreateInfo->enabledExtensionCount > 0)
+        {
+            auto availableCount = 0u;
+            vkEnumerateInstanceExtensionProperties(nullptr, &availableCount, nullptr);
+            auto availableExtensions = PK_STACK_ALLOC(VkExtensionProperties, availableCount);
+            vkEnumerateInstanceExtensionProperties(nullptr, &availableCount, availableExtensions);
+
+            auto foundCount = 0u;
+            auto foundMask = PK_STACK_ALLOC(bool, pCreateInfo->enabledExtensionCount);
+            memset(foundMask, 0, sizeof(bool) * pCreateInfo->enabledExtensionCount);
+
+            for (auto i = 0u; i < availableCount; ++i)
+            {
+                auto name = availableExtensions[i].extensionName;
+
+                for (auto j = 0u; j < pCreateInfo->enabledExtensionCount; ++j)
+                {
+                    if (!foundMask[j] && strcmp(pCreateInfo->ppEnabledExtensionNames[j], name) == 0)
+                    {
+                        foundMask[j] = true;
+                        foundCount++;
+                    }
+                }
+            }
+
+            if (foundCount != pCreateInfo->enabledExtensionCount)
+            {
+                for (auto i = 0u; i < pCreateInfo->enabledExtensionCount; ++i)
+                {
+                    if (!foundMask[i])
+                    {
+                        PK_LOG_ERROR("Instance extension '%s' not found!", pCreateInfo->ppEnabledExtensionNames[i]);
+                    }
+                }
+            }
+        }
+
+        if (result == VK_ERROR_LAYER_NOT_PRESENT && pCreateInfo->ppEnabledLayerNames != nullptr && pCreateInfo->enabledLayerCount > 0)
+        {
+            uint32_t availableCount = 0u;
+            vkEnumerateInstanceLayerProperties(&availableCount, nullptr);
+            auto availableLayers = PK_STACK_ALLOC(VkLayerProperties, availableCount);
+            vkEnumerateInstanceLayerProperties(&availableCount, availableLayers);
+
+            auto foundCount = 0u;
+            auto foundMask = PK_STACK_ALLOC(bool, pCreateInfo->enabledLayerCount);
+            memset(foundMask, 0, sizeof(bool) * pCreateInfo->enabledLayerCount);
+
+            for (auto i = 0u; i < availableCount; ++i)
+            {
+                auto name = availableLayers[i].layerName;
+
+                for (auto j = 0u; j < pCreateInfo->enabledLayerCount; ++j)
+                {
+                    if (!foundMask[j] && strcmp(pCreateInfo->ppEnabledLayerNames[j], name) == 0)
+                    {
+                        foundMask[j] = true;
+                        foundCount++;
+                    }
+                }
+            }
+
+            if (foundCount != pCreateInfo->enabledLayerCount)
+            {
+                for (auto i = 0u; i < pCreateInfo->enabledLayerCount; ++i)
+                {
+                    if (!foundMask[i])
+                    {
+                        PK_LOG_ERROR("Instance layer '%s' not found!", pCreateInfo->ppEnabledLayerNames[i]);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    VkResult VulkanCreateSurfaceKHR(VkInstance instance, void* nativeWindow, VkSurfaceKHR* surface)
+    {
+#if PK_PLATFORM_WINDOWS
+        PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
+
+        if (!vkCreateWin32SurfaceKHR)
+        {
+            return VK_ERROR_EXTENSION_NOT_PRESENT;
+        }
+
+        VkWin32SurfaceCreateInfoKHR createInfo{ VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+        createInfo.pNext = nullptr;
+        createInfo.flags = 0;
+        createInfo.hinstance = (HINSTANCE)Platform::GetProcess();
+        createInfo.hwnd = (HWND)nativeWindow;
+        return vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, surface);
+#else
+        return VK_ERROR_UNKNOWN;
+#endif
+    }
+
+
+    VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device)
+    {
+        VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR };
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
+        VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterizationProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT };
+        VkPhysicalDeviceSubgroupProperties subgroupProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES };
+        VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT };
+        deviceProperties.pNext = &accelerationStructureProperties;
+        accelerationStructureProperties.pNext = &rayTracingProperties;
+        rayTracingProperties.pNext = &conservativeRasterizationProperties;
+        conservativeRasterizationProperties.pNext = &subgroupProperties;
+        subgroupProperties.pNext = &meshShaderProperties;
+
+        vkGetPhysicalDeviceProperties2(device, &deviceProperties);
+
+        VulkanPhysicalDeviceProperties returnProperties;
+        returnProperties.core = deviceProperties.properties;
+        returnProperties.accelerationStructure = accelerationStructureProperties;
+        returnProperties.rayTracing = rayTracingProperties;
+        returnProperties.conservativeRasterization = conservativeRasterizationProperties;
+        returnProperties.subgroup = subgroupProperties;
+        returnProperties.meshShader = meshShaderProperties;
+        return returnProperties;
+    }
+
+    VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen)
+    {
+        VulkanExclusiveFullscreenInfo info;
+        info.swapchainPNext = nullptr;
+
+        if (fullScreen)
+        {
+#if PK_PLATFORM_WINDOWS
+            info.win32Info = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT };
+            info.win32Info.hmonitor = (HMONITOR)nativeMonitor;
+            info.fullscreenInfo = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT };
+            info.fullscreenInfo.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
+            info.fullscreenInfo.pNext = &info.win32Info;
+            info.swapchainPNext = &info.fullscreenInfo;
+#endif
+        }
+
+        return info;
+    }
+
+    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount)
+    {
+        VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR };
+        pkfn_vkGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &info, &primitiveCount, &accelerationStructureBuildSizesInfo);
+        return accelerationStructureBuildSizesInfo;
+    }
+
+    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect)
+    {
+        return
+        {
+            aspect,                     //aspectMask
+            (uint32_t)viewRange.level,  //baseMipLevel
+            (uint32_t)viewRange.levels, //levelCount
+            (uint32_t)viewRange.layer,  //baseArrayLayer
+            (uint32_t)viewRange.layers  //layerCount
+        };
+    }
+
+    TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange)
+    {
+        return
+        {
+            (uint16_t)resourceRange.baseMipLevel,           //level
+            (uint16_t)resourceRange.baseArrayLayer,         //layer
+            (uint16_t)(resourceRange.levelCount & 0x7FFFu), //levels
+            (uint16_t)(resourceRange.layerCount & 0x7FFFu)  //layers
+        };
+    }
+
+
+    bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count)
+    {
+        if (extensions == nullptr || count == 0)
+        {
+            return true;
+        }
+
+        auto availableCount = 0u;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &availableCount, nullptr);
+        auto availableExtensions = PK_STACK_ALLOC(VkExtensionProperties, availableCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &availableCount, availableExtensions);
+
+        auto foundCount = 0u;
+        auto foundMask = PK_STACK_ALLOC(bool, count);
+        memset(foundMask, 0, sizeof(bool) * count);
+
+        for (auto i = 0u; i < availableCount; ++i)
+        {
+            auto name = availableExtensions[i].extensionName;
+
+            for (auto j = 0u; j < count; ++j)
+            {
+                if (!foundMask[j] && strcmp(extensions[j], name) == 0)
+                {
+                    foundMask[j] = true;
+                    foundCount++;
+                }
+            }
+        }
+
+        return foundCount == count;
+    }
+
+    bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface)
+    {
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, surface, &presentSupport);
+        return presentSupport;
+    }
+
+
+    void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* selectedDevice)
+    {
+        uint32_t deviceCount = 0u;
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        VkPhysicalDevice* devices = PK_STACK_ALLOC(VkPhysicalDevice, deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices);
+
+        *selectedDevice = VK_NULL_HANDLE;
+
+        for (auto deviceIndex = 0u; deviceIndex < deviceCount; ++deviceIndex)
+        {
+            const auto device = devices[deviceIndex];
+            auto properties = VulkanGetPhysicalDeviceProperties(device);
+            auto versionMajor = VK_API_VERSION_MAJOR(properties.core.apiVersion);
+            auto versionMinor = VK_API_VERSION_MINOR(properties.core.apiVersion);
+
+            if (versionMajor < requirements.versionMajor)
+            {
+                continue;
+            }
+
+            if (versionMajor == requirements.versionMajor && versionMinor < requirements.versionMinor)
+            {
+                continue;
+            }
+
+            uint32_t queueFamilyCount = 0;
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+            VkQueueFamilyProperties* queueFamilies = PK_STACK_ALLOC(VkQueueFamilyProperties, queueFamilyCount);
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies);
+
+            auto extensionSupported = VulkanValidatePhysicalDeviceExtensions(device, requirements.deviceExtensions, requirements.deviceExtensionCount);
+            auto swapChainSupported = false;
+
+            if (extensionSupported)
+            {
+                uint32_t presentModeCount;
+                vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+                uint32_t formatCount;
+                vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+                swapChainSupported = presentModeCount > 0 && formatCount > 0;
+            }
+
+            auto hasPresent = false;
+            auto queueMask = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
+
+            for (auto familyIndex = 0u; familyIndex < queueFamilyCount; ++familyIndex)
+            {
+                queueMask &= ~queueFamilies[familyIndex].queueFlags;
+                hasPresent |= VulkanIsPresentSupported(device, familyIndex, surface);
+            }
+
+            if (properties.core.deviceType != requirements.deviceType ||
+                !extensionSupported ||
+                !swapChainSupported ||
+                !hasPresent ||
+                queueMask != 0u)
+            {
+                continue;
+            }
+
+            VulkanPhysicalDeviceFeatures features{};
+            vkGetPhysicalDeviceFeatures2(device, &features.vk10);
+
+            if (!VulkanPhysicalDeviceFeatures::CheckRequirements(requirements.features, features))
+            {
+                continue;
+            }
+
+            {
+                PK_LOG_INFO_FUNC("from '%u' Physical Devices:", deviceCount);
+                PK_LOG_INFO("Name: %s", properties.core.deviceName);
+                PK_LOG_INFO("Vendor: %i", properties.core.vendorID);
+                PK_LOG_INFO("Device: %i", properties.core.deviceID);
+                PK_LOG_INFO("Driver: %i", properties.core.driverVersion);
+                PK_LOG_INFO("API VER: %i.%i", versionMajor, versionMinor);
+                PK_LOG_NEWLINE();
+            }
+
+            *selectedDevice = device;
+            return;
+        }
+
+        PK_FATAL_ERROR("Could not find a suitable vulkan physical device!");
+    }
+
+    VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent)
+    {
+        if (capabilities.currentExtent.width != UINT32_MAX)
+        {
+            return capabilities.currentExtent;
+        }
+
+        VkExtent2D actualExtent = desiredExtent;
+        actualExtent.width = glm::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.height = glm::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+        return actualExtent;
+    }
+
+    VkSurfaceFormatKHR VulkanSelectSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace)
+    {
+        uint32_t formatCount = 0u;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+
+        VkSurfaceFormatKHR* formats = PK_STACK_ALLOC(VkSurfaceFormatKHR, formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats);
+
+        for (auto i = 0u; i < formatCount; ++i)
+        {
+            auto& format = formats[i];
+
+            if (format.format == desiredFormat && format.colorSpace == desiredColorSpace)
+            {
+                return format;
+            }
+        }
+
+        return formats[0];
+    }
+
+    VkPresentModeKHR VulkanSelectPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPresentModeKHR desiredPresentMode)
+    {
+        uint32_t presentModeCount = 0u;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+
+        VkPresentModeKHR* presentModes = PK_STACK_ALLOC(VkPresentModeKHR, presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes);
+
+        for (auto i = 0u; i < presentModeCount; ++i)
+        {
+            auto& presentMode = presentModes[i];
+
+            if (presentMode == desiredPresentMode)
+            {
+                return presentMode;
+            }
+        }
+
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+
+    FixedString128 VulkanStr_VkQueueFlags(VkQueueFlags value) 
+    {
+        FixedString128 ret;
+        int index = 0;
+
+        while (value) 
+        {
+            if (value & 1) 
+            {
+                if (ret.Length() > 0u)
+                {
+                    ret.Append('|');
+                }
+
+                ret.Append(string_VkQueueFlagBits(static_cast<VkQueueFlagBits>(1U << index)));
+            }
+
+            ++index;
+            value >>= 1;
+        }
+        
+        if (ret.Length() == 0u)
+        {
+            ret.Append("VkQueueFlags(0)");
+        }
+
+        return ret;
+    }
+
+    const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value) { return string_VkShaderStageFlagBits(value); }
+    const char* VulkanCStr_VkFormat(VkFormat value) { return string_VkFormat(value); }
+    const char* VulkanCStr_VkColorSpaceKHR(VkColorSpaceKHR value) { return string_VkColorSpaceKHR(value); }
+    const char* VulkanCStr_VkPresentModeKHR(VkPresentModeKHR value) { return string_VkPresentModeKHR(value); }
+
+
+    void VulkanSetObjectDebugName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* name)
+    {
+        if (vkSetDebugUtilsObjectNameEXT)
+        {
+            VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+            nameInfo.pNext = nullptr;
+            nameInfo.objectType = objectType;
+            nameInfo.objectHandle = objectHandle;
+            nameInfo.pObjectName = name;
+            vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
+            PK_LOG_RHI("%s, %s", string_VkObjectType(nameInfo.objectType), name);
+        }
+    }
+
+    void VulkanAssertAPIVersion(const uint32_t major, const uint32_t minor)
+    {
+        uint32_t supportedApiVersion;
+        VK_ASSERT_RESULT_CTX(vkEnumerateInstanceVersion(&supportedApiVersion), "Failed to query supported api version!");
+
+        auto supportedMajor = VK_VERSION_MAJOR(supportedApiVersion);
+        auto supportedMinor = VK_VERSION_MINOR(supportedApiVersion);
+
+        if (major > supportedMajor || minor > supportedMinor)
+        {
+            PK_FATAL_ERROR("Vulkan version %i.%i required. Your driver only supports version %i.%i", major, minor, supportedMajor, supportedMinor);
+        }
+    }
+
+    void VulkanThrowError(VkResult result, const char* context)
+    {
+        if (context != nullptr)
+        {
+            PK_FATAL_ERROR("%s (%s)", context, string_VkResult(result));
+        }
+        else
+        {
+            PK_FATAL_ERROR("VK COMMAND FAILED! (%s)", string_VkResult(result));
+        }
+    }
+
+
     namespace VulkanEnumConvert
     {
         VkFormat GetFormat(ElementType format)
@@ -1920,478 +2411,6 @@ namespace PK
                 VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV;
 
             return (flags & writeMask) != 0u;
-        }
-    }
-
-    VkResult VulkanCreateSurfaceKHR(VkInstance instance, void* nativeWindow, VkSurfaceKHR* surface)
-    {
-#if PK_PLATFORM_WINDOWS
-        PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
-
-        if (!vkCreateWin32SurfaceKHR)
-        {
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-
-        VkWin32SurfaceCreateInfoKHR createInfo{ VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
-        createInfo.pNext = nullptr;
-        createInfo.flags = 0;
-        createInfo.hinstance = (HINSTANCE)Platform::GetProcess();
-        createInfo.hwnd = (HWND)nativeWindow;
-        return vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, surface);
-#else
-        return VK_ERROR_UNKNOWN;
-#endif
-    }
-
-    void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames, bool enableDebugLabels)
-    {
-        if (enableDebugNames)
-        {
-            pkfn_vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
-        }
-
-        if (enableDebugLabels)
-        {
-            pkfn_vkSetDebugUtilsObjectTagEXT = (PFN_vkSetDebugUtilsObjectTagEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectTagEXT");
-            pkfn_vkQueueBeginDebugUtilsLabelEXT = (PFN_vkQueueBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueBeginDebugUtilsLabelEXT");
-            pkfn_vkQueueEndDebugUtilsLabelEXT = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
-            pkfn_vkQueueInsertDebugUtilsLabelEXT = (PFN_vkQueueInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueInsertDebugUtilsLabelEXT");
-            pkfn_vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
-            pkfn_vkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
-            pkfn_vkCmdInsertDebugUtilsLabelEXT = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
-            pkfn_vkSubmitDebugUtilsMessageEXT = (PFN_vkSubmitDebugUtilsMessageEXT)vkGetInstanceProcAddr(instance, "vkSubmitDebugUtilsMessageEXT");
-        }
-        
-        pkfn_vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-        pkfn_vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-
-        pkfn_vkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkCreateAccelerationStructureKHR");
-        pkfn_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkDestroyAccelerationStructureKHR");
-        pkfn_vkCmdSetRayTracingPipelineStackSizeKHR = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR)vkGetInstanceProcAddr(instance, "vkCmdSetRayTracingPipelineStackSizeKHR");
-        pkfn_vkCmdTraceRaysIndirectKHR = (PFN_vkCmdTraceRaysIndirectKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysIndirectKHR");
-        pkfn_vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysKHR");
-        pkfn_vkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetInstanceProcAddr(instance, "vkCreateRayTracingPipelinesKHR");
-        pkfn_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR = (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
-        pkfn_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
-        pkfn_vkGetRayTracingShaderGroupStackSizeKHR = (PFN_vkGetRayTracingShaderGroupStackSizeKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupStackSizeKHR");
-        pkfn_vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureDeviceAddressKHR");
-        pkfn_vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureBuildSizesKHR");
-        pkfn_vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetInstanceProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR");
-        pkfn_vkCmdCopyAccelerationStructureKHR = (PFN_vkCmdCopyAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyAccelerationStructureKHR");
-        pkfn_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
-        pkfn_vkCmdWriteAccelerationStructuresPropertiesKHR = (PFN_vkCmdWriteAccelerationStructuresPropertiesKHR)vkGetInstanceProcAddr(instance, "vkCmdWriteAccelerationStructuresPropertiesKHR");
-        pkfn_vkCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vkGetInstanceProcAddr(instance, "vkCmdPipelineBarrier2KHR");
-
-        pkfn_vkCmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksEXT");
-        pkfn_vkCmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectEXT");
-        pkfn_vkCmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectCountEXT");
-
-        pkfn_vkAcquireFullScreenExclusiveModeEXT = (PFN_vkAcquireFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkAcquireFullScreenExclusiveModeEXT");
-        pkfn_vkReleaseFullScreenExclusiveModeEXT = (PFN_vkReleaseFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkReleaseFullScreenExclusiveModeEXT");
-
-        pkfn_vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vkGetInstanceProcAddr(instance, "vkWaitForPresentKHR");
-    }
-
-    VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device)
-    {
-        VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
-        VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR };
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
-        VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterizationProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT };
-        VkPhysicalDeviceSubgroupProperties subgroupProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES };
-        VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT };
-        deviceProperties.pNext = &accelerationStructureProperties;
-        accelerationStructureProperties.pNext = &rayTracingProperties;
-        rayTracingProperties.pNext = &conservativeRasterizationProperties;
-        conservativeRasterizationProperties.pNext = &subgroupProperties;
-        subgroupProperties.pNext = &meshShaderProperties;
-
-        vkGetPhysicalDeviceProperties2(device, &deviceProperties);
-
-        VulkanPhysicalDeviceProperties returnProperties;
-        returnProperties.core = deviceProperties.properties;
-        returnProperties.accelerationStructure = accelerationStructureProperties;
-        returnProperties.rayTracing = rayTracingProperties;
-        returnProperties.conservativeRasterization = conservativeRasterizationProperties;
-        returnProperties.subgroup = subgroupProperties;
-        returnProperties.meshShader = meshShaderProperties;
-        return returnProperties;
-    }
-
-    VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen)
-    {
-        VulkanExclusiveFullscreenInfo info;
-        info.swapchainPNext = nullptr;
-
-        if (fullScreen)
-        {
-#if PK_PLATFORM_WINDOWS
-            info.win32Info = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT };
-            info.win32Info.hmonitor = (HMONITOR)nativeMonitor;
-            info.fullscreenInfo = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT };
-            info.fullscreenInfo.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
-            info.fullscreenInfo.pNext = &info.win32Info;
-            info.swapchainPNext = &info.fullscreenInfo;
-#endif
-        }
-
-        return info;
-    }
-
-
-    bool VulkanValidateInstanceExtensions(const char* const* extensions, size_t count)
-    {
-        if (extensions == nullptr || count == 0)
-        {
-            return true;
-        }
-
-        auto availableCount = 0u;
-        vkEnumerateInstanceExtensionProperties(nullptr, &availableCount, nullptr);
-        auto availableExtensions = PK_STACK_ALLOC(VkExtensionProperties, availableCount);
-        vkEnumerateInstanceExtensionProperties(nullptr, &availableCount, availableExtensions);
-
-        auto foundCount = 0u;
-        auto foundMask = PK_STACK_ALLOC(bool, count);
-        memset(foundMask, 0, sizeof(bool) * count);
-
-        for (auto i = 0u; i < availableCount; ++i)
-        {
-            auto name = availableExtensions[i].extensionName;
-
-            for (auto j = 0u; j < count; ++j)
-            {
-                if (!foundMask[j] && strcmp(extensions[j], name) == 0)
-                {
-                    foundMask[j] = true;
-                    foundCount++;
-                }
-            }
-        }
-
-        return foundCount == count;
-    }
-
-    bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count)
-    {
-        if (extensions == nullptr || count == 0)
-        {
-            return true;
-        }
-
-        auto availableCount = 0u;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &availableCount, nullptr);
-        auto availableExtensions = PK_STACK_ALLOC(VkExtensionProperties, availableCount);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &availableCount, availableExtensions);
-
-        auto foundCount = 0u;
-        auto foundMask = PK_STACK_ALLOC(bool, count);
-        memset(foundMask, 0, sizeof(bool) * count);
-
-        for (auto i = 0u; i < availableCount; ++i)
-        {
-            auto name = availableExtensions[i].extensionName;
-
-            for (auto j = 0u; j < count; ++j)
-            {
-                if (!foundMask[j] && strcmp(extensions[j], name) == 0)
-                {
-                    foundMask[j] = true;
-                    foundCount++;
-                }
-            }
-        }
-
-        return foundCount == count;
-    }
-
-    bool VulkanValidateValidationLayers(const char* const* validationLayers, const uint32_t count)
-    {
-        if (validationLayers == nullptr || count == 0)
-        {
-            return true;
-        }
-
-        uint32_t availableCount = 0u;
-        vkEnumerateInstanceLayerProperties(&availableCount, nullptr);
-        auto availableLayers = PK_STACK_ALLOC(VkLayerProperties, availableCount);
-        vkEnumerateInstanceLayerProperties(&availableCount, availableLayers);
-
-        auto foundCount = 0u;
-        auto foundMask = PK_STACK_ALLOC(bool, count);
-        memset(foundMask, 0, sizeof(bool) * count);
-
-        for (auto i = 0u; i < availableCount; ++i)
-        {
-            auto name = availableLayers[i].layerName;
-
-            for (auto j = 0u; j < count; ++j)
-            {
-                if (!foundMask[j] && strcmp(validationLayers[j], name) == 0)
-                {
-                    foundMask[j] = true;
-                    foundCount++;
-                }
-            }
-        }
-
-        return foundCount == count;
-    }
-
-    bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface)
-    {
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, surface, &presentSupport);
-        return presentSupport;
-    }
-
-
-    void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* selectedDevice)
-    {
-        uint32_t deviceCount = 0u;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-        VkPhysicalDevice* devices = PK_STACK_ALLOC(VkPhysicalDevice, deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices);
-
-        *selectedDevice = VK_NULL_HANDLE;
-
-        for (auto deviceIndex = 0u; deviceIndex < deviceCount; ++deviceIndex)
-        {
-            const auto device = devices[deviceIndex];
-            auto properties = VulkanGetPhysicalDeviceProperties(device);
-            auto versionMajor = VK_API_VERSION_MAJOR(properties.core.apiVersion);
-            auto versionMinor = VK_API_VERSION_MINOR(properties.core.apiVersion);
-
-            if (versionMajor < requirements.versionMajor)
-            {
-                continue;
-            }
-
-            if (versionMajor == requirements.versionMajor && versionMinor < requirements.versionMinor)
-            {
-                continue;
-            }
-
-            uint32_t queueFamilyCount = 0;
-            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-            VkQueueFamilyProperties* queueFamilies = PK_STACK_ALLOC(VkQueueFamilyProperties, queueFamilyCount);
-            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies);
-
-            auto extensionSupported = VulkanValidatePhysicalDeviceExtensions(device, requirements.deviceExtensions, requirements.deviceExtensionCount);
-            auto swapChainSupported = false;
-
-            if (extensionSupported)
-            {
-                uint32_t presentModeCount;
-                vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-                uint32_t formatCount;
-                vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-                swapChainSupported = presentModeCount > 0 && formatCount > 0;
-            }
-
-            auto hasPresent = false;
-            auto queueMask = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
-
-            for (auto familyIndex = 0u; familyIndex < queueFamilyCount; ++familyIndex)
-            {
-                queueMask &= ~queueFamilies[familyIndex].queueFlags;
-                hasPresent |= VulkanIsPresentSupported(device, familyIndex, surface);
-            }
-
-            if (properties.core.deviceType != requirements.deviceType ||
-                !extensionSupported ||
-                !swapChainSupported ||
-                !hasPresent ||
-                queueMask != 0u)
-            {
-                continue;
-            }
-
-            VulkanPhysicalDeviceFeatures features{};
-            vkGetPhysicalDeviceFeatures2(device, &features.vk10);
-
-            if (!VulkanPhysicalDeviceFeatures::CheckRequirements(requirements.features, features))
-            {
-                continue;
-            }
-
-            {
-                PK_LOG_INFO_FUNC("from '%u' Physical Devices:", deviceCount);
-                PK_LOG_INFO("Name: %s", properties.core.deviceName);
-                PK_LOG_INFO("Vendor: %i", properties.core.vendorID);
-                PK_LOG_INFO("Device: %i", properties.core.deviceID);
-                PK_LOG_INFO("Driver: %i", properties.core.driverVersion);
-                PK_LOG_INFO("API VER: %i.%i", versionMajor, versionMinor);
-                PK_LOG_NEWLINE();
-            }
-
-            *selectedDevice = device;
-            return;
-        }
-
-        PK_FATAL_ERROR("Could not find a suitable vulkan physical device!");
-    }
-
-    VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent)
-    {
-        if (capabilities.currentExtent.width != UINT32_MAX)
-        {
-            return capabilities.currentExtent;
-        }
-
-        VkExtent2D actualExtent = desiredExtent;
-        actualExtent.width = glm::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        actualExtent.height = glm::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-        return actualExtent;
-    }
-
-    VkSurfaceFormatKHR VulkanSelectSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace)
-    {
-        uint32_t formatCount = 0u;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
-
-        VkSurfaceFormatKHR* formats = PK_STACK_ALLOC(VkSurfaceFormatKHR, formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats);
-
-        for (auto i = 0u; i < formatCount; ++i)
-        {
-            auto& format = formats[i];
-
-            if (format.format == desiredFormat && format.colorSpace == desiredColorSpace)
-            {
-                return format;
-            }
-        }
-
-        return formats[0];
-    }
-
-    VkPresentModeKHR VulkanSelectPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPresentModeKHR desiredPresentMode)
-    {
-        uint32_t presentModeCount = 0u;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
-
-        VkPresentModeKHR* presentModes = PK_STACK_ALLOC(VkPresentModeKHR, presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes);
-
-        for (auto i = 0u; i < presentModeCount; ++i)
-        {
-            auto& presentMode = presentModes[i];
-
-            if (presentMode == desiredPresentMode)
-            {
-                return presentMode;
-            }
-        }
-
-        return VK_PRESENT_MODE_FIFO_KHR;
-    }
-
-
-    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount)
-    {
-        VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR };
-        pkfn_vkGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &info, &primitiveCount, &accelerationStructureBuildSizesInfo);
-        return accelerationStructureBuildSizesInfo;
-    }
-
-    FixedString128 VulkanStr_VkQueueFlags(VkQueueFlags value) 
-    {
-        FixedString128 ret;
-        int index = 0;
-
-        while (value) 
-        {
-            if (value & 1) 
-            {
-                if (ret.Length() > 0u)
-                {
-                    ret.Append("|");
-                }
-
-                ret.Append(string_VkQueueFlagBits(static_cast<VkQueueFlagBits>(1U << index)));
-            }
-
-            ++index;
-            value >>= 1;
-        }
-        
-        if (ret.Length() == 0u)
-        {
-            ret.Append("VkQueueFlags(0)");
-        }
-
-        return ret;
-    }
-
-    const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value) { return string_VkShaderStageFlagBits(value); }
-    const char* VulkanCStr_VkFormat(VkFormat value) { return string_VkFormat(value); }
-    const char* VulkanCStr_VkColorSpaceKHR(VkColorSpaceKHR value) { return string_VkColorSpaceKHR(value); }
-    const char* VulkanCStr_VkPresentModeKHR(VkPresentModeKHR value) { return string_VkPresentModeKHR(value); }
-
-    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect)
-    {
-        return
-        {
-            aspect,                     //aspectMask
-            (uint32_t)viewRange.level,  //baseMipLevel
-            (uint32_t)viewRange.levels, //levelCount
-            (uint32_t)viewRange.layer,  //baseArrayLayer
-            (uint32_t)viewRange.layers  //layerCount
-        };
-    }
-
-    TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange)
-    {
-        return
-        {
-            (uint16_t)resourceRange.baseMipLevel,           //level
-            (uint16_t)resourceRange.baseArrayLayer,         //layer
-            (uint16_t)(resourceRange.levelCount & 0x7FFFu), //levels
-            (uint16_t)(resourceRange.layerCount & 0x7FFFu)  //layers
-        };
-    }
-
-    void VulkanSetObjectDebugName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* name)
-    {
-        if (vkSetDebugUtilsObjectNameEXT)
-        {
-            VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
-            nameInfo.pNext = nullptr;
-            nameInfo.objectType = objectType;
-            nameInfo.objectHandle = objectHandle;
-            nameInfo.pObjectName = name;
-            vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
-            PK_LOG_RHI("%s, %s", string_VkObjectType(nameInfo.objectType), name);
-        }
-    }
-
-    void VulkanAssertAPIVersion(const uint32_t major, const uint32_t minor)
-    {
-        uint32_t supportedApiVersion;
-        VK_ASSERT_RESULT_CTX(vkEnumerateInstanceVersion(&supportedApiVersion), "Failed to query supported api version!");
-
-        auto supportedMajor = VK_VERSION_MAJOR(supportedApiVersion);
-        auto supportedMinor = VK_VERSION_MINOR(supportedApiVersion);
-
-        if (major > supportedMajor || minor > supportedMinor)
-        {
-            PK_FATAL_ERROR("Vulkan version %i.%i required. Your driver only supports version %i.%i", major, minor, supportedMajor, supportedMinor);
-        }
-    }
-
-    void VulkanThrowError(VkResult result, const char* context)
-    {
-        if (context != nullptr)
-        {
-            PK_FATAL_ERROR("%s (%s)", context, string_VkResult(result));
-        }
-        else
-        {
-            PK_FATAL_ERROR("VK COMMAND FAILED! (%s)", string_VkResult(result));
         }
     }
 }
