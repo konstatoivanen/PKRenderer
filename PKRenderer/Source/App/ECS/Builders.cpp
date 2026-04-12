@@ -20,7 +20,7 @@
 
 namespace PK::App::EntityBuilders
 {
-    static BoundingBox GetSubmeshRangeBounds(MeshStatic* mesh, const std::initializer_list<MaterialTarget>& materials)
+    static BoundingBox GetSubmeshRangeBounds(MeshStatic* mesh, const initializer_list<MaterialTarget>& materials)
     {
         auto bounds = BoundingBox::GetMinBounds();
 
@@ -64,7 +64,7 @@ namespace PK::App::EntityBuilders
         T* implementer,
         const EGID& egid,
         MeshStaticRef staticMesh,
-        const std::initializer_list<MaterialTarget>& materials)
+        const initializer_list<MaterialTarget>& materials)
     {
         entityDb->ReserveView(implementer, egid, &EntityViewMeshStatic::primitive, &EntityViewMeshStatic::materials, &EntityViewMeshStatic::staticMesh, &EntityViewMeshStatic::transform);
         implementer->materials.Copy(materials);
@@ -186,7 +186,7 @@ namespace PK::App::EntityBuilders
 
     EGID CreateEntityMeshStatic(EntityDatabase* entityDb,
         MeshStaticRef mesh,
-        const std::initializer_list<MaterialTarget>& materials,
+        const initializer_list<MaterialTarget>& materials,
         const float3& position,
         const float3& rotation,
         float size,

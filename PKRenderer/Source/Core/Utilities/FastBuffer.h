@@ -1,6 +1,7 @@
 #pragma once
 #include "NoCopy.h"
 #include "BufferView.h"
+#include "InitializerList.h"
 #include "Memory.h"
 
 namespace PK
@@ -53,7 +54,7 @@ namespace PK
             Memory::CopyArray(GetData(), other.GetData(), other.m_count);
         }
 
-        void Copy(const std::initializer_list<T>& initializer)
+        void Copy(const initializer_list<T>& initializer)
         {
             Reserve(initializer.size());
             Memory::CopyArray(GetData(), initializer.begin(), initializer.size());

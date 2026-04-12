@@ -171,7 +171,7 @@ namespace PK
 
         VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT };
         conservativeRaster.conservativeRasterizationMode = VulkanEnumConvert::GetRasterMode(key.fixedFunctionState.rasterization.rasterMode, m_allowUnderEstimation);
-        conservativeRaster.extraPrimitiveOverestimationSize = std::fminf(m_maxOverEstimation, key.fixedFunctionState.rasterization.overEstimation);
+        conservativeRaster.extraPrimitiveOverestimationSize = fminf(m_maxOverEstimation, key.fixedFunctionState.rasterization.overEstimation);
         rasterizer.pNext = key.fixedFunctionState.rasterization.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
         auto rasterPnext = rasterizer.pNext ? &conservativeRaster.pNext : &rasterizer.pNext;
 
@@ -303,7 +303,7 @@ namespace PK
 
         VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT };
         conservativeRaster.conservativeRasterizationMode = VulkanEnumConvert::GetRasterMode(key.fixedFunctionState.rasterization.rasterMode, m_allowUnderEstimation);
-        conservativeRaster.extraPrimitiveOverestimationSize = std::fminf(m_maxOverEstimation, key.fixedFunctionState.rasterization.overEstimation);
+        conservativeRaster.extraPrimitiveOverestimationSize = fminf(m_maxOverEstimation, key.fixedFunctionState.rasterization.overEstimation);
         rasterizer.pNext = key.fixedFunctionState.rasterization.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
         auto rasterPnext = rasterizer.pNext ? &conservativeRaster.pNext : &rasterizer.pNext;
 

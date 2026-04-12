@@ -8,7 +8,7 @@ namespace PK
     VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device,
         uint64_t pruneDelay,
         size_t maxSets,
-        std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes) :
+        initializer_list<Pair<const VkDescriptorType, size_t>> poolSizes) :
         m_device(device),
         m_pruneDelay(pruneDelay)
     {

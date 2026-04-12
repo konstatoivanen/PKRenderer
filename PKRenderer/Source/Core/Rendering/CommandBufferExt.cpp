@@ -71,7 +71,7 @@ namespace PK
         commandBuffer->SetShader(pVariant);
     }
 
-    void CommandBufferExt::SetRenderTarget(const std::initializer_list<RenderTargetBinding>& targets, bool updateViewPort)
+    void CommandBufferExt::SetRenderTarget(const initializer_list<RenderTargetBinding>& targets, bool updateViewPort)
     {
         const uint32_t targetCount = (uint32_t)(targets.end() - targets.begin());
         auto& primary = targets.begin()[0];

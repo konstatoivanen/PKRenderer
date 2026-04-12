@@ -150,7 +150,7 @@ namespace PK
             device,
             properties.gcPruneDelay,
             PK_VK_DESCRIPTOR_INITIAL_COUNT_SETS,
-            std::initializer_list<std::pair<const VkDescriptorType, size_t>>(
+            initializer_list<Pair<const VkDescriptorType, size_t>>(
             {
                 { VK_DESCRIPTOR_TYPE_SAMPLER, PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLERS },
                 { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER , PK_VK_DESCRIPTOR_INITIAL_COUNT_STORAGE_BUFFER },

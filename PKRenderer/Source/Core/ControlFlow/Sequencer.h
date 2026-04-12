@@ -1,5 +1,6 @@
 #pragma once
 #include <utility>
+#include "Core/Utilities/Pair.h"
 #include "Core/Utilities/FastBuffer.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/ControlFlow/IStep.h"
@@ -34,7 +35,7 @@ namespace PK
             size_t count = 0ull;
         };
 
-        void SetSteps(const std::initializer_list<std::pair<const void*, std::initializer_list<Step>>>& initializer);
+        void SetSteps(const initializer_list<Pair<const void*, initializer_list<Step>>>& initializer);
         void Release();
 
         inline const void* GetRoot() const { return this; }

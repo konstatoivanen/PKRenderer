@@ -62,7 +62,10 @@ namespace PK::Memory
 
 
     template<typename T, typename ... Args>
-    T* Construct(T* ptr, Args&& ... args) { new(ptr) T(PK::Forward<Args>(args)...); return ptr; }
+    T* Construct(T* ptr, Args&& ... args) { return new(ptr) T(PK::Forward<Args>(args)...); }
+
+    template<typename T, typename ... Args>
+    T* Construct(void* ptr, Args&& ... args) { return new(ptr) T(PK::Forward<Args>(args)...); }
 
     template<typename T>
     T* Destruct(T* ptr) { ptr->~T(); return ptr; }

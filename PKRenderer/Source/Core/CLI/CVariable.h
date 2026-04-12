@@ -4,6 +4,7 @@
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/NameID.h"
 #include "Core/Utilities/FixedString.h"
+#include "Core/Utilities/Function.h"
 
 namespace PK
 {
@@ -71,4 +72,7 @@ namespace PK
 
     typedef std::function<void(const char* const* args, uint32_t)> CVariableFunc;
     typedef std::function<void()> CVariableFuncSimple;
+
+    typedef Function<void(const char* const* args, uint32_t)> CVariableFuncPK;
+    typedef Function<void()> CVariableFuncSimplePK;
 }

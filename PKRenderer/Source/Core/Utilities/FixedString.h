@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include "Hash.h"
 #include "Memory.h"
+#include "InitializerList.h"
 
 namespace PK
 {
@@ -54,7 +55,7 @@ namespace PK
             }
         }
 
-        IFixedString(std::initializer_list<const TChar*> strings) : IFixedString()
+        IFixedString(initializer_list<const TChar*> strings) : IFixedString()
         {
             for (auto& str : strings)
             {

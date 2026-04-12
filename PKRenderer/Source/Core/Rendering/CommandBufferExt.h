@@ -1,11 +1,10 @@
 #pragma once
 #include "Core/Math/MathFwd.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "Core/Utilities/InitializerList.h"
 
 namespace PK
 {
-    typedef std::initializer_list<const TextureViewRange> RenderTargetRanges;
-
     // Extended wrapper class with utility functions beyond the pure virtual interface
     struct CommandBufferExt
     {
@@ -26,7 +25,7 @@ namespace PK
 
         void SetShader(const ShaderAsset* shader, int32_t variantIndex = -1);
 
-        void SetRenderTarget(const std::initializer_list<RenderTargetBinding>& targets, bool updateViewPort);
+        void SetRenderTarget(const initializer_list<RenderTargetBinding>& targets, bool updateViewPort);
         void SetRenderTarget(const RenderTargetBinding& binding, bool updateViewPort = false);
         void SetRenderTarget(const uint2& resolution, uint32_t layerCount);
 

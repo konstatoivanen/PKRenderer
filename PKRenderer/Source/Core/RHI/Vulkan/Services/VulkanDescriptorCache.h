@@ -3,6 +3,7 @@
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedArena.h"
 #include "Core/Utilities/Ref.h"
+#include "Core/Utilities/Pair.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
@@ -24,7 +25,7 @@ namespace PK
             bool isArray;
         };
 
-        VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes);
+        VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, initializer_list<Pair<const VkDescriptorType, size_t>> poolSizes);
 
         const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
             const DescriptorBinding* bindings,

@@ -15,7 +15,7 @@ namespace PK
         CalculateOffsetsAndStride();
     }
 
-    ShaderPropertyLayout::ShaderPropertyLayout(std::initializer_list<ShaderProperty> elements) : TBase(elements.size(), 1u)
+    ShaderPropertyLayout::ShaderPropertyLayout(initializer_list<ShaderProperty> elements) : TBase(elements.size(), 1u)
     {
         for (auto& element : elements)
         {
@@ -194,7 +194,7 @@ namespace PK
         BeginWrite(&m_layout, m_properties.GetData());
     }
 
-    ShaderPropertyBlock::ShaderPropertyBlock(std::initializer_list<ShaderProperty> elements) :
+    ShaderPropertyBlock::ShaderPropertyBlock(initializer_list<ShaderProperty> elements) :
         m_layout(elements),
         m_properties(m_layout.GetStridePadded())
     {

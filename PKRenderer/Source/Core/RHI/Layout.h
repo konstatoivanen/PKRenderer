@@ -51,7 +51,7 @@ namespace PK
     {
         ShaderResourceLayout() {}
         ShaderResourceLayout(const ShaderResourceElement* elements, size_t count) : FixedList(elements, count) {}
-        ShaderResourceLayout(std::initializer_list<ShaderResourceElement> elements) : FixedList(elements) {}
+        ShaderResourceLayout(initializer_list<ShaderResourceElement> elements) : FixedList(elements) {}
         const ShaderResourceElement* TryGetElement(NameID name, uint32_t* index) const;
     };
 
@@ -132,7 +132,7 @@ namespace PK
             CalculateOffsetsAndStride();
         }
 
-        VertexStreamLayout(std::initializer_list<VertexStreamElement> elements) : FixedList(elements)
+        VertexStreamLayout(initializer_list<VertexStreamElement> elements) : FixedList(elements)
         {
             CalculateOffsetsAndStride();
         }

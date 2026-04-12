@@ -41,7 +41,7 @@ namespace PK
 
         inline uint32_t GetRHIIndex(const NameID* keywords, uint32_t count) const { return m_map.GetIndex(keywords, count); }
         inline uint32_t GetRHIIndex(NameID keyword) const { return m_map.GetIndex(&keyword, 1); }
-        inline uint32_t GetRHIIndex(const std::initializer_list<NameID>& keywords) const { return GetRHIIndex(keywords.begin(), (uint32_t)(keywords.end() - keywords.begin())); }
+        inline uint32_t GetRHIIndex(const initializer_list<NameID>& keywords) const { return GetRHIIndex(keywords.begin(), (uint32_t)(keywords.end() - keywords.begin())); }
         inline uint32_t GetRHIIndex(const PropertyBlock* keywords) const { return m_map.GetIndex(keywords); }
 
         inline const RHIShader* GetRHI(const NameID* keywords, uint32_t count) const { return m_shaders[GetRHIIndex(keywords, count)].get(); }

@@ -1,7 +1,8 @@
 #pragma once
 #include "NoCopy.h"
-#include "BufferView.h"
 #include "Memory.h"
+#include "BufferView.h"
+#include "InitializerList.h"
 
 namespace PK
 {
@@ -12,8 +13,8 @@ namespace PK
         FastList(size_t capacity) { Reserve(capacity); }
         FastList(FastList&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); }
         FastList(const FastList& other) noexcept { Copy(other); }
-        FastList(std::initializer_list<T>&& other) noexcept { Move(PK::Forward<std::initializer_list<T>>(other)); }
-        FastList(const std::initializer_list<T>& other) noexcept { Copy(other); }
+        FastList(initializer_list<T>&& other) noexcept { Move(PK::Forward<initializer_list<T>>(other)); }
+        FastList(const initializer_list<T>& other) noexcept { Copy(other); }
 
         ~FastList()
         {
@@ -57,7 +58,7 @@ namespace PK
             Memory::CopyArray(GetData(), other.GetData(), other.m_count);
         }
 
-        void Copy(const std::initializer_list<T>& initializer)
+        void Copy(const initializer_list<T>& initializer)
         {
             Resize(initializer.size());
             Memory::CopyArray(GetData(), initializer.begin(), initializer.size());
@@ -78,7 +79,7 @@ namespace PK
             }
         }
 
-        void Move(std::initializer_list<T>&& initializer)
+        void Move(initializer_list<T>&& initializer)
         {
             Reserve(initializer.size());
             Memory::MoveArray(GetData(), initializer.begin(), initializer.size());
@@ -200,7 +201,7 @@ namespace PK
             m_count = count;
         }
 
-        FixedList(std::initializer_list<T> elements) : FixedList(elements.begin(), (size_t)(elements.end() - elements.begin()))
+        FixedList(initializer_list<T> elements) : FixedList(elements.begin(), (size_t)(elements.end() - elements.begin()))
         {
         }
 

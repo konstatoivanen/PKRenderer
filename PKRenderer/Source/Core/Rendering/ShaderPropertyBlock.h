@@ -44,7 +44,7 @@ namespace PK
 
         ShaderPropertyLayout() {}
         ShaderPropertyLayout(ShaderProperty* elements, size_t count);
-        ShaderPropertyLayout(std::initializer_list<ShaderProperty> elements);
+        ShaderPropertyLayout(initializer_list<ShaderProperty> elements);
 
         constexpr inline uint32_t GetStride() const { return m_stride; }
         constexpr inline uint32_t GetStridePadded() const { return m_stridePadded; }
@@ -96,7 +96,7 @@ namespace PK
     {
         ShaderPropertyBlock(const ShaderPropertyLayout& layout);
         ShaderPropertyBlock(ShaderProperty* elements, size_t count);
-        ShaderPropertyBlock(std::initializer_list<ShaderProperty> elements);
+        ShaderPropertyBlock(initializer_list<ShaderProperty> elements);
         constexpr const ShaderPropertyLayout& GetLayout() const { return m_layout; }
         constexpr const void* GetData() const { return m_properties.GetData(); }
     private:

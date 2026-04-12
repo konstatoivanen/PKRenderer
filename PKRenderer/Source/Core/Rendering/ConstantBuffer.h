@@ -8,7 +8,7 @@ namespace PK
     {
         ConstantBuffer(const ShaderPropertyLayout& layout, const char* name);
         ConstantBuffer(ShaderProperty* elements, size_t count, const char* name);
-        ConstantBuffer(std::initializer_list<ShaderProperty> elements, const char* name);
+        ConstantBuffer(initializer_list<ShaderProperty> elements, const char* name);
 
         void FlushBuffer(RHICommandBuffer* cmd);
 

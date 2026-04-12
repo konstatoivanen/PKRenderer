@@ -3,7 +3,7 @@
 
 namespace PK
 {
-    void Sequencer::SetSteps(const std::initializer_list<std::pair<const void*, std::initializer_list<Step>>>& initializer)
+    void Sequencer::SetSteps(const initializer_list<Pair<const void*, initializer_list<Step>>>& initializer)
     {
         auto count = 0u;
 

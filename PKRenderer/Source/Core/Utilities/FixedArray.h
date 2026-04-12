@@ -1,6 +1,6 @@
 #pragma once
-#include <initializer_list>
 #include "Memory.h"
+#include "InitializerList.h"
 
 namespace PK
 {
@@ -19,7 +19,7 @@ namespace PK
             }
         }
 
-        FixedArray(std::initializer_list<T> elements) : FixedArray(elements.begin(), (size_t)(elements.end() - elements.begin()))
+        FixedArray(initializer_list<T> elements) : FixedArray(elements.begin(), (size_t)(elements.end() - elements.begin()))
         {
         }
 

@@ -11,7 +11,7 @@ namespace PK::App::EntityBuilders
 {
     EGID CreateEntityMeshStatic(EntityDatabase* entityDb,
         MeshStaticRef mesh,
-        const std::initializer_list<MaterialTarget>& materials,
+        const initializer_list<MaterialTarget>& materials,
         const float3& position,
         const float3& rotation,
         float size = 1.0f,
