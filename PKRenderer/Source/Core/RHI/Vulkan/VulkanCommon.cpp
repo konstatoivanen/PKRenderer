@@ -995,15 +995,15 @@ namespace PK
         return accelerationStructureBuildSizesInfo;
     }
 
-    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect)
+    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkFormat format)
     {
         return
         {
-            aspect,                     //aspectMask
-            (uint32_t)viewRange.level,  //baseMipLevel
-            (uint32_t)viewRange.levels, //levelCount
-            (uint32_t)viewRange.layer,  //baseArrayLayer
-            (uint32_t)viewRange.layers  //layerCount
+            (uint32_t)VulkanEnumConvert::GetFormatAspect(format), // aspect
+            viewRange.level,  //baseMipLevel
+            viewRange.levels >= PK_VK_IMAGE_RANGE_MAX ? VK_REMAINING_MIP_LEVELS : viewRange.levels, //levelCount
+            viewRange.layer,  //baseArrayLayer
+            viewRange.layers >= PK_VK_IMAGE_RANGE_MAX ? VK_REMAINING_ARRAY_LAYERS : viewRange.layers //layerCount
         };
     }
 
@@ -1013,8 +1013,8 @@ namespace PK
         {
             (uint16_t)resourceRange.baseMipLevel,           //level
             (uint16_t)resourceRange.baseArrayLayer,         //layer
-            (uint16_t)(resourceRange.levelCount & 0x7FFFu), //levels
-            (uint16_t)(resourceRange.layerCount & 0x7FFFu)  //layers
+            (uint16_t)(resourceRange.levelCount & PK_VK_IMAGE_RANGE_MAX), //levels
+            (uint16_t)(resourceRange.layerCount & PK_VK_IMAGE_RANGE_MAX)  //layers
         };
     }
 
@@ -1746,12 +1746,6 @@ namespace PK
             return VK_IMAGE_ASPECT_COLOR_BIT;
         }
 
-        uint32_t ExpandVkRange16(uint32_t v)
-        {
-            return v >= 0x7FFF ? VK_REMAINING_ARRAY_LAYERS : v;
-        }
-
-
         bool IsDepthFormat(VkFormat format)
         {
             return format == VK_FORMAT_D16_UNORM ||
@@ -1767,6 +1761,7 @@ namespace PK
                 format == VK_FORMAT_D24_UNORM_S8_UINT ||
                 format == VK_FORMAT_D32_SFLOAT_S8_UINT;
         }
+
 
         VkClearValue GetClearValue(const TextureClearValue& clearValue)
         {

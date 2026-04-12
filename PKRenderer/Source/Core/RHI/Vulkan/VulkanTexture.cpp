@@ -69,15 +69,15 @@ namespace PK
 
         if (out.level >= levels) out.level = levels - 1u;
         if (out.layer >= layers) out.layer = layers - 1u;
-        if (out.levels == 0 || out.level + out.levels >= levels) out.levels = 0x7FFF;
-        if (out.layers == 0 || out.layer + out.layers >= layers) out.layers = 0x7FFF;
+        if (out.levels == 0 || out.level + out.levels >= levels) out.levels = PK_VK_IMAGE_RANGE_MAX;
+        if (out.layers == 0 || out.layer + out.layers >= layers) out.layers = PK_VK_IMAGE_RANGE_MAX;
 
         // Use clamped range for render targets as framebuffers cannot have unbounded layer ranges
-        // Not checked based on bind type because of access tracking 
+        // Not checked based on bind type because of access tracking is not aware of it. 
         if ((m_descriptor.usage & TextureUsage::ValidRTTypes) != 0)
         {
-            if (out.levels == 0x7FFF) out.levels = glm::max(1, levels - out.level);
-            if (out.layers == 0x7FFF) out.layers = glm::max(1, layers - out.layer);
+            if (out.levels == PK_VK_IMAGE_RANGE_MAX) out.levels = glm::max(1, levels - out.level);
+            if (out.layers == PK_VK_IMAGE_RANGE_MAX) out.layers = glm::max(1, layers - out.layer);
         }
 
         return out;
@@ -95,15 +95,8 @@ namespace PK
         handle->image.format = m_rawImage->format;
         handle->image.extent = m_rawImage->extent;
         handle->image.samples = m_rawImage->samples;
-        handle->image.range =
-        {
-            (uint32_t)VulkanEnumConvert::GetFormatAspect(handle->image.format),
-            normalizedRange.level,
-            VulkanEnumConvert::ExpandVkRange16(normalizedRange.levels),
-            normalizedRange.layer,
-            VulkanEnumConvert::ExpandVkRange16(normalizedRange.layers)
-        };
-
+        handle->image.range = VulkanConvertRange(normalizedRange, handle->image.format);
+ 
         if (bindMode == TextureBindMode::SampledTexture)
         {
             handle->image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
@@ -137,14 +130,7 @@ namespace PK
         info.isConcurrent = IsConcurrent();
         info.isTracked = IsTracked();
         info.isAlias = useAlias;
-        info.subresourceRange =
-        {
-            (uint32_t)VulkanEnumConvert::GetFormatAspect(info.format),
-            normalizedRange.level,
-            VulkanEnumConvert::ExpandVkRange16(normalizedRange.levels),
-            normalizedRange.layer,
-            VulkanEnumConvert::ExpandVkRange16(normalizedRange.layers)
-        };
+        info.subresourceRange = VulkanConvertRange(normalizedRange, info.format);
 
         auto newView = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, m_name.c_str());
 

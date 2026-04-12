@@ -96,8 +96,8 @@ namespace PK
         a->layout = VK_IMAGE_LAYOUT_UNDEFINED;
         a->imageRange.layer = 0u;
         a->imageRange.level = 0u;
-        a->imageRange.layers = 0x7FFF;
-        a->imageRange.levels = 0x7FFF;
+        a->imageRange.layers = PK_VK_IMAGE_RANGE_MAX;
+        a->imageRange.levels = PK_VK_IMAGE_RANGE_MAX;
     }
 
     bool VulkanBarrierHandler::TInfo<VkImage>::IsOverlap(uint64_t a, uint64_t b)
@@ -380,12 +380,12 @@ namespace PK
         (*barrier)->subresourceRange.baseArrayLayer = rangeo.ymin;
         (*barrier)->subresourceRange.layerCount = rangeo.ymax - rangeo.ymin;
 
-        if (rangeo.xmax >= 0x7FFF)
+        if (rangeo.xmax >= PK_VK_IMAGE_RANGE_MAX)
         {
             (*barrier)->subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
         }
 
-        if (rangeo.ymax >= 0x7FFF)
+        if (rangeo.ymax >= PK_VK_IMAGE_RANGE_MAX)
         {
             (*barrier)->subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
         }

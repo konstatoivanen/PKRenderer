@@ -25,6 +25,8 @@ constexpr static const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_val
 #define VK_THROW_RESULT(result) PK::VulkanThrowError(result, "VK Error Result:")
 #define VK_THROW_RESULT_CTX(result, ctx) PK::VulkanThrowError(result, ctx)
 
+#define PK_VK_IMAGE_RANGE_MAX 0x7FFFu
+
 #if PK_PLATFORM_WINDOWS
     #define PK_VK_LIBRARY_NAME "vulkan-1.dll"
 #elif PK_PLATFORM_LINUX
@@ -491,7 +493,7 @@ namespace PK
     VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount);
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
     VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
-    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect);
+    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkFormat format);
     TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange);
 
     bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count);
@@ -557,7 +559,6 @@ namespace PK
         VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags);
         VkRayTracingShaderGroupTypeKHR GetRayTracingStageGroupType(ShaderStage stage);
         VkImageAspectFlagBits GetFormatAspect(VkFormat format);
-        uint32_t ExpandVkRange16(uint32_t v);
         bool IsReadAccess(VkAccessFlags flags);
         bool IsWriteAccess(VkAccessFlags flags);
     }
