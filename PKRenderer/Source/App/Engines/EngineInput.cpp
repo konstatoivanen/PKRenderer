@@ -60,12 +60,7 @@ namespace PK::App
 
         if (state)
         {
-            auto cursorPosition = float2(position.x, size.y - position.y);
-            auto cursorPositionNormalized = cursorPosition / size;
-            auto cursorPositionDelta = cursorPosition - state->cursorPosition;
-            state->cursorPosition = cursorPosition;
-            state->cursorPositionDelta += cursorPositionDelta;
-            state->cursorPositionNormalized = cursorPositionNormalized;
+            state->SetCursor(position, size);
             m_lastDevice = device;
         }
     }

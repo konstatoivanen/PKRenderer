@@ -19,7 +19,6 @@ namespace PK
         float2 cursorPositionNormalized = PK_FLOAT2_ZERO;
         float2 cursorScroll = PK_FLOAT2_ZERO;
 
-        void SetKey(InputKey key, bool isDown);
 
         bool GetKeyDown(InputKey key) const;
         bool GetKeyUp(InputKey key) const;
@@ -44,6 +43,9 @@ namespace PK
         float3 ConsumeAxisDown(InputKey xneg, InputKey xpos, InputKey yneg, InputKey ypos, InputKey zneg, InputKey zpos);
 
         void ConsumeAll();
+
+        void SetKey(InputKey key, bool isDown);
+        void SetCursor(const float2& position, const float2& size);
         void SwapBuffers(uint32_t deltaMillis);
     };
 }

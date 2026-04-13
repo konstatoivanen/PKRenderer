@@ -4,16 +4,6 @@
 
 namespace PK
 {
-    void InputState::SetKey(InputKey key, bool isDown)
-    {
-        if (!keysCurrent[(uint32_t)key])
-        {
-            keyTimers[(uint32_t)key] = 0u;
-        }
-
-        keysCurrent[(uint32_t)key] = isDown;
-    }
-
     bool InputState::GetKeyDown(InputKey key) const { return keysCurrent[(uint32_t)key] && !keysPrevious[(uint32_t)key]; }
     bool InputState::GetKeyUp(InputKey key) const { return !keysCurrent[(uint32_t)key] && keysPrevious[(uint32_t)key]; }
     bool InputState::GetKey(InputKey key) const { return keysCurrent[(uint32_t)key]; }
@@ -39,6 +29,26 @@ namespace PK
     void InputState::ConsumeAll()
     {
         keysConsumed.SetAll(true);
+    }
+
+    void InputState::SetKey(InputKey key, bool isDown)
+    {
+        if (!keysCurrent[(uint32_t)key])
+        {
+            keyTimers[(uint32_t)key] = 0u;
+        }
+
+        keysCurrent[(uint32_t)key] = isDown;
+    }
+
+    void InputState::SetCursor(const float2& position, const float2& size)
+    {
+        auto cursorPosition = float2(position.x, size.y - position.y);
+        auto cursorPositionNormalized = cursorPosition / size;
+        auto cursorPositionDelta = cursorPosition - this->cursorPosition;
+        this->cursorPosition = cursorPosition;
+        this->cursorPositionDelta += cursorPositionDelta;
+        this->cursorPositionNormalized = cursorPositionNormalized;
     }
 
     void InputState::SwapBuffers(uint32_t deltaMillis)

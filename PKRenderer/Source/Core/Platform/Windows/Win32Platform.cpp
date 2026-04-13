@@ -447,9 +447,16 @@ namespace PK
             inputHandler->InputHandler_OnPoll();
         }
 
-        if (!wait && inputHandler && activeWindow)
+        // call poll on all active windows so that they can swap their input buffers.
+        if (!wait && inputHandler)
         {
-            inputHandler->InputHandler_OnPoll(activeWindow);
+            auto head = resources->windowHead;
+
+            while (head)
+            {
+                inputHandler->InputHandler_OnPoll(head);
+                head = head->GetNext();
+            }
         }
 
         MSG msg;
