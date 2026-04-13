@@ -129,27 +129,12 @@ namespace PK
         m_renderTarget.layers = 1;
     }
 
-    void VulkanRenderState::SetRenderTarget(const VulkanRenderTargetBindings& target)
-    {
-        if (memcmp(&m_renderTarget, &target, sizeof(VulkanRenderTargetBindings)) != 0)
-        {
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
-            m_renderTarget = target;
-        }
-    }
-
-
     bool VulkanRenderState::SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports)
     {
-        if (count > PK_RHI_MAX_VIEWPORTS)
-        {
-            count = PK_RHI_MAX_VIEWPORTS;
-        }
-
         *outViewports = m_viewports;
         bool hasChanged = false;
 
-        for (auto i = 0u; i < count; ++i)
+        for (auto i = 0u; i < count && i < PK_RHI_MAX_VIEWPORTS; ++i)
         {
             auto& rect = rects[i];
             VkViewport v = { (float)rect.x, (float)rect.y, (float)rect.z, (float)rect.w, 0.0f, 1.0f };
@@ -166,27 +151,70 @@ namespace PK
 
     bool VulkanRenderState::SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors)
     {
-        if (count > PK_RHI_MAX_VIEWPORTS)
-        {
-            count = PK_RHI_MAX_VIEWPORTS;
-        }
-
         *outScissors = m_scissors;
-        bool hasChanged = false;
 
-        for (auto i = 0u; i < count; ++i)
+        if (memcmp(m_scissors, rects, sizeof(VkRect2D) * (count > PK_RHI_MAX_VIEWPORTS ? PK_RHI_MAX_VIEWPORTS : count)) != 0)
         {
-            auto& rect = rects[i];
-            VkRect2D v = { {(int)rect.x, (int)rect.y}, { rect.z, rect.w } };
-
-            if (memcmp(&m_scissors[i], &v, sizeof(VkRect2D)) != 0)
-            {
-                m_scissors[i] = v;
-                hasChanged = true;
-            }
+            memcpy(m_scissors, rects, sizeof(VkRect2D) * (count > PK_RHI_MAX_VIEWPORTS ? PK_RHI_MAX_VIEWPORTS : count));
+            return true;
         }
 
-        return hasChanged;
+        return false;
+    }
+
+    void VulkanRenderState::SetStageExcludeMask(const ShaderStageFlags mask)
+    {
+        if (m_pipelineKey.fixedFunctionState.excludeStageMask != (uint16_t)mask)
+        {
+            m_pipelineKey.fixedFunctionState.excludeStageMask = (uint16_t)mask;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+        }
+    }
+   
+    void VulkanRenderState::SetBlending(const BlendParameters& blend)
+    {
+        if (memcmp(&m_pipelineKey.fixedFunctionState.blending, &blend, sizeof(BlendParameters)) != 0)
+        {
+            m_pipelineKey.fixedFunctionState.blending = blend;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+        }
+    }
+    
+    void VulkanRenderState::SetRasterization(const RasterizationParameters& rasterization)
+    {
+        if (memcmp(&m_pipelineKey.fixedFunctionState.rasterization, &rasterization, sizeof(RasterizationParameters)) != 0)
+        {
+            m_pipelineKey.fixedFunctionState.rasterization = rasterization;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+        }
+    }
+    
+    void VulkanRenderState::SetDepthStencil(const DepthStencilParameters& depthStencil)
+    {
+        if (memcmp(&m_pipelineKey.fixedFunctionState.depthStencil, &depthStencil, sizeof(DepthStencilParameters)) != 0)
+        {
+            m_pipelineKey.fixedFunctionState.depthStencil = depthStencil;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+        }
+    }
+    
+    void VulkanRenderState::SetMultisampling(const MultisamplingParameters& multisampling)
+    {
+        if (memcmp(&m_pipelineKey.fixedFunctionState.multisampling, &multisampling, sizeof(MultisamplingParameters)) != 0)
+        {
+            m_pipelineKey.fixedFunctionState.multisampling = multisampling;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+        }
+    }
+    
+    
+    void VulkanRenderState::SetRenderTarget(const VulkanRenderTargetBindings& target)
+    {
+        if (memcmp(&m_renderTarget, &target, sizeof(VulkanRenderTargetBindings)) != 0)
+        {
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
+            m_renderTarget = target;
+        }
     }
 
     void VulkanRenderState::SetShader(const VulkanShader* shader)
@@ -198,56 +226,11 @@ namespace PK
         }
     }
 
-    void VulkanRenderState::SetStageExcludeMask(const ShaderStageFlags mask)
-    {
-        if (m_pipelineKey.fixedFunctionState.excludeStageMask != (uint16_t)mask)
-        {
-            m_pipelineKey.fixedFunctionState.excludeStageMask = (uint16_t)mask;
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-        }
-    }
-
-    void VulkanRenderState::SetBlending(const BlendParameters& blend)
-    {
-        if (memcmp(&m_pipelineKey.fixedFunctionState.blending, &blend, sizeof(BlendParameters)) != 0)
-        {
-            m_pipelineKey.fixedFunctionState.blending = blend;
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-        }
-    }
-
-    void VulkanRenderState::SetRasterization(const RasterizationParameters& rasterization)
-    {
-        if (memcmp(&m_pipelineKey.fixedFunctionState.rasterization, &rasterization, sizeof(RasterizationParameters)) != 0)
-        {
-            m_pipelineKey.fixedFunctionState.rasterization = rasterization;
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-        }
-    }
-
-    void VulkanRenderState::SetDepthStencil(const DepthStencilParameters& depthStencil)
-    {
-        if (memcmp(&m_pipelineKey.fixedFunctionState.depthStencil, &depthStencil, sizeof(DepthStencilParameters)) != 0)
-        {
-            m_pipelineKey.fixedFunctionState.depthStencil = depthStencil;
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-        }
-    }
-
-    void VulkanRenderState::SetMultisampling(const MultisamplingParameters& multisampling)
-    {
-        if (memcmp(&m_pipelineKey.fixedFunctionState.multisampling, &multisampling, sizeof(MultisamplingParameters)) != 0)
-        {
-            m_pipelineKey.fixedFunctionState.multisampling = multisampling;
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-        }
-    }
-
     void VulkanRenderState::SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count)
     {
         auto i = 0u;
 
-        for (; i < PK_RHI_MAX_VERTEX_ATTRIBUTES && i < count; ++i)
+        for (; i < count && i < PK_RHI_MAX_VERTEX_ATTRIBUTES; ++i)
         {
             auto handle = handles[i];
 

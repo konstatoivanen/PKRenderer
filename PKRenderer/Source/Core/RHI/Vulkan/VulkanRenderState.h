@@ -94,17 +94,17 @@ namespace PK
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
 
             void Reset();
-            void SetRenderTarget(const VulkanRenderTargetBindings& target);
 
             bool SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports);
             bool SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors);
-
-            void SetShader(const VulkanShader* shader);
             void SetStageExcludeMask(const ShaderStageFlags mask);
             void SetBlending(const BlendParameters& blend);
             void SetRasterization(const RasterizationParameters& rasterization);
             void SetDepthStencil(const DepthStencilParameters& depthStencil);
             void SetMultisampling(const MultisamplingParameters& multisampling);
+
+            void SetRenderTarget(const VulkanRenderTargetBindings& target);
+            void SetShader(const VulkanShader* shader);
             void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
             void SetVertexStreams(const VertexStreamElement* elements, uint32_t count);
             void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);

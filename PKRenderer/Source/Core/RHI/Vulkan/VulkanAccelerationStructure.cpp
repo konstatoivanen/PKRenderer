@@ -45,42 +45,41 @@ namespace PK
         BLASKey key{ geometry.indexBuffer, ((uint64_t)geometry.indexFirst & 0xFFFFFFFFu) | (((uint64_t)geometry.indexCount) << 32ull) };
         uint32_t index = 0u;
 
-        if (!m_substructures.AddKey(key, &index))
+        if (m_substructures.AddKey(key, &index))
         {
-            return (uint64_t)index;
+            auto structure = &m_substructures[index].value;
+
+            *structure = BLAS();
+            structure->name = geometry.name;
+
+            auto adressVertex = geometry.vertexBuffer->GetDeviceAddress();
+            auto adressIndex = geometry.indexBuffer->GetDeviceAddress();
+
+            structure->geometry = VkAccelerationStructureGeometryKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
+            structure->geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+            structure->geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+            structure->geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+            structure->geometry.geometry.triangles.vertexStride = geometry.vertexStride;
+            structure->geometry.geometry.triangles.vertexData.deviceAddress = adressVertex + geometry.vertexOffset;
+            structure->geometry.geometry.triangles.maxVertex = geometry.vertexFirst + geometry.vertexCount - 1;
+            structure->geometry.geometry.triangles.indexType = geometry.indexStride > 2 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
+            structure->geometry.geometry.triangles.indexData.deviceAddress = adressIndex;
+            structure->geometry.geometry.triangles.transformData.deviceAddress = 0ull;
+            structure->geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+            structure->range = { geometry.indexCount / 3 , geometry.indexStride * geometry.indexFirst, geometry.vertexFirst, 0u };
+
+            structure->buildInfo = VkAccelerationStructureBuildGeometryInfoKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
+            structure->buildInfo.geometryCount = 1u;
+            structure->buildInfo.pGeometries = &structure->geometry;
+            structure->buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+            structure->buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
+                VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR |
+                VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
+            structure->buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+            structure->size = VulkanGetAccelerationBuildSizesInfo(m_driver->device, structure->buildInfo, structure->range.primitiveCount);
         }
 
-        auto structure = &m_substructures[index].value;
-
-        *structure = BLAS();
-        structure->name = geometry.name;
-
-        auto adressVertex = geometry.vertexBuffer->GetDeviceAddress();
-        auto adressIndex = geometry.indexBuffer->GetDeviceAddress();
-
-        structure->geometry = VkAccelerationStructureGeometryKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
-        structure->geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-        structure->geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-        structure->geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-        structure->geometry.geometry.triangles.vertexStride = geometry.vertexStride;
-        structure->geometry.geometry.triangles.vertexData.deviceAddress = adressVertex + geometry.vertexOffset;
-        structure->geometry.geometry.triangles.maxVertex = geometry.vertexFirst + geometry.vertexCount - 1;
-        structure->geometry.geometry.triangles.indexType = geometry.indexStride > 2 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
-        structure->geometry.geometry.triangles.indexData.deviceAddress = adressIndex;
-        structure->geometry.geometry.triangles.transformData.deviceAddress = 0ull;
-        structure->geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-        structure->range = { geometry.indexCount / 3 , geometry.indexStride * geometry.indexFirst, geometry.vertexFirst, 0u };
-
-        structure->buildInfo = VkAccelerationStructureBuildGeometryInfoKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
-        structure->buildInfo.geometryCount = 1u;
-        structure->buildInfo.pGeometries = &structure->geometry;
-        structure->buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-        structure->buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
-            VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR |
-            VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
-        structure->buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-        structure->size = VulkanGetAccelerationBuildSizesInfo(m_driver->device, structure->buildInfo, structure->range.primitiveCount);
-        return index;
+        return (uint64_t)index;
     }
 
     void VulkanAccelerationStructure::ValidateResources()

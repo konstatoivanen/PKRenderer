@@ -74,15 +74,13 @@ namespace PK
 
         for (auto curr = *next; curr && curr->beg < end; head = curr->end, curr = *next)
         {
-            if (curr->end > beg || curr->beg == head)
+            if (curr->end <= beg && curr->beg != head)
             {
-                next = &curr->next;
-                continue;
+                const auto pageBeg = head > beg ? head : beg;
+                const auto pageEnd = end < curr->beg ? end : curr->beg;
+                *next = CreatePage(curr, pageBeg, pageEnd);
             }
 
-            const auto pageBeg = head > beg ? head : beg;
-            const auto pageEnd = end < curr->beg ? end : curr->beg;
-            *next = CreatePage(curr, pageBeg, pageEnd);
             next = &curr->next;
         }
 
@@ -122,21 +120,18 @@ namespace PK
 
         for (auto curr = *next; curr && curr->beg < end; curr = *next)
         {
-            if (curr->end <= beg)
+            if (curr->end > beg)
             {
-                next = &curr->next;
-                continue;
-            }
+                const auto currAlignedBeg = curr->beg * alignment;
+                const auto currAlignedEnd = curr->end * alignment;
 
-            const auto currAlignedBeg = curr->beg * alignment;
-            const auto currAlignedEnd = curr->end * alignment;
-
-            if (!m_residency.IsReservedAny(currAlignedBeg, currAlignedEnd))
-            {
-                *next = curr->next;
-                vmaFreeMemoryPages(m_driver->allocator, 1, &curr->memory);
-                m_pages.Delete(curr);
-                continue;
+                if (!m_residency.IsReservedAny(currAlignedBeg, currAlignedEnd))
+                {
+                    *next = curr->next;
+                    vmaFreeMemoryPages(m_driver->allocator, 1, &curr->memory);
+                    m_pages.Delete(curr);
+                    continue;
+                }
             }
 
             next = &curr->next;

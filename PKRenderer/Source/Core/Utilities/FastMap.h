@@ -477,7 +477,7 @@ namespace PK
 
         IHashMap(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
         IHashMap() : IHashMap(0u, 1u) {}
-        IHashMap(IHashMap&& other) noexcept { TBase::Move(PK::Forward<TAllocator>(other)); }
+        IHashMap(IHashMap&& other) noexcept { TBase::Move(PK::Forward<TBase>(other)); }
         IHashMap(const IHashMap& other) noexcept { TBase::Copy(other); }
 
         constexpr uint32_t GetCount() const { return TBase::m_count; }
@@ -488,7 +488,7 @@ namespace PK
         constexpr TValue const* end() const { return TBase::m_values + TBase::m_count; }
         const KeyValueConst operator[](uint32_t index) const { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
         KeyValue operator[](uint32_t index) { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
-        IHashMap& operator=(IHashMap&& other) noexcept { TBase::Move(PK::Forward<TAllocator>(other)); return *this; }
+        IHashMap& operator=(IHashMap&& other) noexcept { TBase::Move(PK::Forward<TBase>(other)); return *this; }
         IHashMap& operator=(const IHashMap& other) noexcept { TBase::Copy(other); return *this; }
 
         const TValue* GetValuePtr(const TKey& key) const { auto index = GetIndex(key); return index != -1 ? &TBase::m_values[index] : nullptr; }

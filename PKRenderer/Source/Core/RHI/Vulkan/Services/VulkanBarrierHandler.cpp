@@ -246,22 +246,22 @@ namespace PK
     {
         m_globalResolveCounter++;
 
-        if (outBarrierInfo == nullptr || (m_bufferBarriers.GetCount() == 0u && m_imageBarriers.GetCount() == 0u))
+        if (outBarrierInfo && (m_bufferBarriers.GetCount() || m_imageBarriers.GetCount()))
         {
-            return false;
+            outBarrierInfo->memoryBarrierCount = 0u;
+            outBarrierInfo->pMemoryBarriers = nullptr;
+            outBarrierInfo->dependencyFlags = 0u;
+            outBarrierInfo->srcStageMask = m_sourceStage;
+            outBarrierInfo->dstStageMask = m_destinationStage;
+            outBarrierInfo->pBufferMemoryBarriers = m_bufferBarriers.GetData();
+            outBarrierInfo->bufferMemoryBarrierCount = (uint32_t)m_bufferBarriers.GetCount();
+            outBarrierInfo->pImageMemoryBarriers = m_imageBarriers.GetData();
+            outBarrierInfo->imageMemoryBarrierCount = (uint32_t)m_imageBarriers.GetCount();
+            ClearBarriers();
+            return true;
         }
 
-        outBarrierInfo->memoryBarrierCount = 0u;
-        outBarrierInfo->pMemoryBarriers = nullptr;
-        outBarrierInfo->dependencyFlags = 0u;
-        outBarrierInfo->srcStageMask = m_sourceStage;
-        outBarrierInfo->dstStageMask = m_destinationStage;
-        outBarrierInfo->pBufferMemoryBarriers = m_bufferBarriers.GetData();
-        outBarrierInfo->bufferMemoryBarrierCount = (uint32_t)m_bufferBarriers.GetCount();
-        outBarrierInfo->pImageMemoryBarriers = m_imageBarriers.GetData();
-        outBarrierInfo->imageMemoryBarrierCount = (uint32_t)m_imageBarriers.GetCount();
-        ClearBarriers();
-        return true;
+        return false;
     }
 
     void VulkanBarrierHandler::ClearBarriers()

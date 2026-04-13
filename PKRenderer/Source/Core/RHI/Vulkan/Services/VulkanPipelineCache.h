@@ -61,8 +61,7 @@ namespace PK
         };
 
         const VulkanPipeline* GetPipeline(const PipelineKey& key);
-        const VulkanPipeline* GetVertexPipeline(const PipelineKey& key);
-        const VulkanPipeline* GetMeshPipeline(const MeshPipelineKey& key);
+        const VulkanPipeline* GetGraphicsPipeline(const PipelineKey& key);
         const VulkanPipeline* GetComputePipeline(const VersionHandle<VulkanShader>& shader);
         const VulkanPipeline* GetRayTracingPipeline(const VersionHandle<VulkanShader>& shader);
         void Prune();

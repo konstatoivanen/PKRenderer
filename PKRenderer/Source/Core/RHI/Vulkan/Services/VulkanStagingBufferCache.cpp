@@ -71,28 +71,26 @@ namespace PK
 
     void VulkanStagingBufferCache::Release(VulkanStagingBuffer* buffer, const FenceRef& fence)
     {
-        if (buffer == nullptr)
+        if (buffer)
         {
-            return;
-        }
+            auto nextPruneTick = m_currentPruneTick + 1;
+            buffer->pruneTick = nextPruneTick;
+            buffer->fence = fence;
 
-        auto nextPruneTick = m_currentPruneTick + 1;
-        buffer->pruneTick = nextPruneTick;
-        buffer->fence = fence;
-
-        if (buffer->isPersistentMap)
-        {
-            auto deleter = [](void* c, void* v)
+            if (buffer->isPersistentMap)
             {
-                static_cast<VulkanStagingBufferCache*>(c)->m_bufferPool.Delete(static_cast<VulkanStagingBuffer*>(v));
-            };
+                auto deleter = [](void* c, void* v)
+                {
+                    static_cast<VulkanStagingBufferCache*>(c)->m_bufferPool.Delete(static_cast<VulkanStagingBuffer*>(v));
+                };
 
-            m_disposer->Dispose(this, buffer, deleter, fence);
-        }
-        else
-        {
-            buffer->next = m_liveBufferHead;
-            m_liveBufferHead = buffer;
+                m_disposer->Dispose(this, buffer, deleter, fence);
+            }
+            else
+            {
+                buffer->next = m_liveBufferHead;
+                m_liveBufferHead = buffer;
+            }
         }
     }
 

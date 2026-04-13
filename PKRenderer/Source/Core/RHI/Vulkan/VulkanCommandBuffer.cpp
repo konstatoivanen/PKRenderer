@@ -549,52 +549,50 @@ namespace PK
 
     void VulkanCommandBuffer::TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range)
     {
-        if (srcLayout == dstLayout)
+        if (srcLayout != dstLayout)
         {
-            return;
+            VkImageMemoryBarrier imageBarrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+            imageBarrier.oldLayout = srcLayout;
+            imageBarrier.newLayout = dstLayout;
+            imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.image = image;
+            imageBarrier.subresourceRange = range;
+
+            VulkanBarrierInfo barrier;
+            barrier.imageMemoryBarrierCount = 1u;
+            barrier.pImageMemoryBarriers = &imageBarrier;
+
+            switch (dstLayout)
+            {
+                case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                    imageBarrier.srcAccessMask = 0;
+                    imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                    barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                    barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                    break;
+
+                case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                    imageBarrier.srcAccessMask = 0;
+                    imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                    barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                    barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                    break;
+
+                case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                case VK_IMAGE_LAYOUT_GENERAL:
+                    imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                    imageBarrier.dstAccessMask = 0u;
+                    barrier.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                    barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+                    break;
+                default:
+                    PK_FATAL_ERROR("Unsupported layout transition!");
+            }
+
+            EndRenderPass();
+            PipelineBarrier(barrier);
         }
-
-        VkImageMemoryBarrier imageBarrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
-        imageBarrier.oldLayout = srcLayout;
-        imageBarrier.newLayout = dstLayout;
-        imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageBarrier.image = image;
-        imageBarrier.subresourceRange = range;
-
-        VulkanBarrierInfo barrier;
-        barrier.imageMemoryBarrierCount = 1u;
-        barrier.pImageMemoryBarriers = &imageBarrier;
-
-        switch (dstLayout)
-        {
-            case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-                imageBarrier.srcAccessMask = 0;
-                imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                break;
-
-            case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-                imageBarrier.srcAccessMask = 0;
-                imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                break;
-
-            case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            case VK_IMAGE_LAYOUT_GENERAL:
-                imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                imageBarrier.dstAccessMask = 0u;
-                barrier.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-                break;
-            default:
-                PK_FATAL_ERROR("Unsupported layout transition!");
-        }
-
-        EndRenderPass();
-        PipelineBarrier(barrier);
     }
 
     void VulkanCommandBuffer::PipelineBarrier(const VulkanBarrierInfo& barrier)
