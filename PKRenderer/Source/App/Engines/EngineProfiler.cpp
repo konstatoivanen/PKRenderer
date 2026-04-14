@@ -5,6 +5,7 @@
 #include "Core/Math/FunctionsColor.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Assets/AssetDatabase.h"
+#include "Core/CLI/CVariableRegister.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Font.h"
 #include "App/Renderer/IGUIRenderer.h"
@@ -15,10 +16,16 @@ namespace PK::App
     EngineProfiler::EngineProfiler(AssetDatabase* assetDatabase) :
         m_assetDatabase(assetDatabase)
     {
+        CVariableRegister::Create<CVariableFuncSimple>("Engine.Profiler.Toggle", [this]() { m_enabled ^= true; });
     }
     
     void EngineProfiler::Step(IGUIRenderer* gui)
     {
+        if (!m_enabled)
+        {
+            return;
+        }
+
         constexpr auto COLOR_BG = color32(0, 0, 0, 192);
         constexpr auto COLOR_FG = color32(255, 255, 255, 127);
         constexpr auto COLOR_FPS_AVG = color32(255, 255, 255, 127);

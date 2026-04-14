@@ -24,5 +24,6 @@ namespace PK::App
         TimeFramerateInfo m_framerate{};
         FastBuffer<double> m_timeHistory;
         uint64_t m_timeHistoryHead = 0ull;
+        bool m_enabled = false;
     };
 }

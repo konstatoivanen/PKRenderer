@@ -41,10 +41,4 @@ namespace PK::App
         virtual const float4x4& GizmosGetWorldToClipMatrix() const = 0;
         virtual const short4& GizmosGetRenderAreaRect() const = 0;
     };
-
-    struct GUICombinedRenderEvent
-    {
-        IGUIRenderer* gui;
-        IGizmosRenderer* gizmos;
-    };
 }

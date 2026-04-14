@@ -18,12 +18,11 @@ namespace PK::App
         color32 color;
     };
 
-    class EngineGUIRenderer :
+    struct EngineGUIRenderer :
         public IStep<RenderPipelineEvent*>,
         public IGUIRenderer,
         public IGizmosRenderer
     {
-    public:
         EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer);
 
         virtual void Step(RenderPipelineEvent* renderEvent) final;
@@ -32,6 +31,9 @@ namespace PK::App
         inline void SetGizmosEnabledGPU(bool value) { m_gizmos_enabledGPU = value; }
         inline void SetGizmosEnabledCPU(bool value) { m_gizmos_enabledCPU = value; }
 
+        void GUICollectDraws(const uint4& renderArea, CommandBufferExt& cmd);
+        void GUIDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
+        bool GUIValidateDraw();
         short4 GUIGetRenderAreaRect() const final { return m_gui_renderAreaRect; }
         uint16_t GUIAddTexture(RHITexture* texture) final;
         void GUIDrawTriangle(const GUIVertex& a, const GUIVertex& b, const GUIVertex& c) final;
@@ -42,6 +44,8 @@ namespace PK::App
         void GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width) final;
         short4 GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style) final;
 
+        void GizmosCollectDraws(const uint4& renderArea, const float4x4& worldToClip, CommandBufferExt& cmd);
+        void GizmosDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
         void GizmosDrawBounds(const BoundingBox& aabb) final;
         void GizmosDrawBox(const float3& origin, const float3& size) final;
         void GizmosDrawLine(const float3& start, const float3& end) final;
@@ -49,7 +53,6 @@ namespace PK::App
         void GizmosDrawFrustrum(const float4x4& matrix) final;
         void GizmosSetColor(const color& color) final;
         void GizmosSetMatrix(const float4x4& matrix) final;
-
         const float4x4& GizmosGetWorldToClipMatrix() const final;
         const short4& GizmosGetRenderAreaRect() const final;
 
@@ -62,7 +65,9 @@ namespace PK::App
         constexpr static const uint16_t GUI_TEX_INDEX_DEFAULT_FONT = 2u;
 
         Sequencer* m_sequencer = nullptr;
+        AssetDatabase* m_assetDatabase = nullptr;
 
+        CommandBufferExt* m_gui_commandBuffer = nullptr;
         RHITextureBindSetRef m_gui_textures;
         ShaderAsset* m_gui_shader = nullptr;
         Font* m_gui_font = nullptr;
@@ -70,11 +75,10 @@ namespace PK::App
         RHIBufferRef m_gui_indexBuffer;
         BufferView<GUIVertex> m_gui_vertexView;
         BufferView<uint16_t> m_gui_indexView;
-
         short4 m_gui_renderAreaRect = PK_SHORT4_ZERO;
         uint32_t m_gui_vertexCount = 0;
         uint32_t m_gui_indexCount = 0;
-        bool m_gui_enabled = false;
+        bool m_gui_enabled = true;
 
         ShaderAsset* m_gizmos_shader = nullptr;
         RHIBufferRef m_gizmos_vertexBuffer;

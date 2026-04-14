@@ -13,21 +13,10 @@
 
 namespace PK::App
 {
-    EngineGUIRenderer::EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer) : m_sequencer(sequencer)
-    {
-        auto hash = HashCache::Get();
-
-        m_gui_shader = assetDatabase->Find<ShaderAsset>("VS_GUI").get();
-        m_gui_font = assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
-        m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::PersistentStorage, "GUI.VertexBuffer");
-        m_gui_indexBuffer = RHI::CreateBuffer<uint16_t>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
-        m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);
-
-        RHI::SetBuffer(hash->pk_GUI_Vertices, m_gui_vertexBuffer.get());
-
-        CVariableRegister::Create<bool*>("Engine.GUI.Enabled", &m_gui_enabled, "0 = 0ff, 1 = On", 1u);
-        CVariableRegister::Create<CVariableFuncSimple>("Engine.GUI.Toggle", [this]() { m_gui_enabled^= true; });
-    
+    EngineGUIRenderer::EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer) : 
+        m_sequencer(sequencer),
+        m_assetDatabase(assetDatabase)
+    { 
         m_gizmos_shader = assetDatabase->Find<ShaderAsset>("VS_Gizmos").get();
         m_gizmos_vertexBuffer = RHI::CreateBuffer<uint4>(m_gizmos_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
         m_gizmos_indirectVertexBuffer = RHI::CreateBuffer<uint4>(16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
@@ -43,9 +32,11 @@ namespace PK::App
         m_gizmos_vertexStreamElement.offset = 0u;
         m_gizmos_vertexStreamElement.size = sizeof(uint4);
 
+        auto hash = HashCache::Get();
         RHI::SetBuffer(hash->pk_Gizmos_IndirectVertices, m_gizmos_indirectVertexBuffer.get());
         RHI::SetBuffer(hash->pk_Gizmos_IndirectArguments, m_gizmos_indirectArgsBuffer.get());
 
+        CVariableRegister::Create<bool*>("Engine.GUI.Enabled", &m_gui_enabled, "0 = 0ff, 1 = On", 1u);
         CVariableRegister::Create<bool*>("Engine.Gizmos.CPU.Enabled", &m_gizmos_enabledCPU, "0 = 0ff, 1 = On", 1u);
         CVariableRegister::Create<bool*>("Engine.Gizmos.GPU.Enabled", &m_gizmos_enabledGPU, "0 = 0ff, 1 = On", 1u);
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Gizmos.CPU.Toggle", [this]() { m_gizmos_enabledCPU ^= true; });
@@ -54,104 +45,21 @@ namespace PK::App
 
     void EngineGUIRenderer::Step(RenderPipelineEvent* renderEvent)
     {
-        auto hash = HashCache::Get();
         auto view = renderEvent->context->views[0];
-        auto gbuffers = view->GetGBuffersFullView();
 
         switch (renderEvent->type)
         {
             case RenderPipelineEvent::CollectDraws:
             {
-                if (m_gizmos_enabledCPU)
-                {
-                    RHI::ValidateBuffer<uint4>(m_gizmos_vertexBuffer, m_gizmos_vertexCount);
-                    m_gizmos_color = PK_COLOR_WHITE;
-                    m_gizmos_renderAreaRect = view->renderAreaRect;
-                    m_gizmos_matrix = PK_FLOAT4X4_IDENTITY;
-                    m_gizmos_worldToClip = view->worldToClip;
-                    m_gizmos_vertexCount = 0u;
-                    m_gizmos_maxVertices = (uint32_t)m_gizmos_vertexBuffer->GetCount<uint4>();
-                    m_gizmos_vertexView = renderEvent->cmd.BeginBufferWrite<GizmosVertex>(m_gizmos_vertexBuffer.get());
-                }
-
-                if (m_gui_enabled)
-                {
-                    m_gui_vertexCount = 0u;
-                    m_gui_indexCount = 0u;
-                    m_gui_renderAreaRect = view->renderAreaRect;
-                    m_gui_vertexView = renderEvent->cmd.BeginBufferWrite<GUIVertex>(m_gui_vertexBuffer.get());
-                    m_gui_indexView = renderEvent->cmd.BeginBufferWrite<uint16_t>(m_gui_indexBuffer.get());
-                    m_gui_textures->Clear();
-                    m_gui_textures->Add(RHI::GetBuiltInResources()->WhiteTexture2D.get());
-                    m_gui_textures->Add(RHI::GetBuiltInResources()->ErrorTexture2D.get());
-                    m_gui_textures->Add(m_gui_font->GetRHI());
-                }
-
-                if (m_gizmos_enabledCPU)
-                {
-                    m_sequencer->Next<IGizmosRenderer*>(this, this);
-                }
-
-                if (m_gui_enabled)
-                {
-                    m_sequencer->Next<IGUIRenderer*>(this, this);
-                }
-
-                if (m_gui_enabled || m_gizmos_enabledCPU)
-                {
-                    GUICombinedRenderEvent guiEvent;
-                    guiEvent.gizmos = this;
-                    guiEvent.gui = this;
-                    m_sequencer->Next<GUICombinedRenderEvent>(this, guiEvent);
-                }
-
-                if (m_gizmos_enabledCPU)
-                {
-                    renderEvent->cmd->EndBufferWrite(m_gizmos_vertexBuffer.get());
-                }
-
-                if (m_gui_enabled)
-                {
-                    renderEvent->cmd->EndBufferWrite(m_gui_vertexBuffer.get());
-                    renderEvent->cmd->EndBufferWrite(m_gui_indexBuffer.get());
-                }
-
-                uint4 clearValue{ 0u, 1u, 0u, 0u };
-                renderEvent->cmd->UpdateBuffer(m_gizmos_indirectArgsBuffer.get(), 0u, sizeof(uint4), &clearValue);
+                GUICollectDraws(view->renderAreaRect, renderEvent->cmd);
+                GizmosCollectDraws(view->renderAreaRect, view->worldToClip, renderEvent->cmd);
             }
             return;
             case RenderPipelineEvent::AfterPostEffects:
             {
-                if (m_gizmos_enabledGPU)
-                {
-                    const RHIBuffer* vb = m_gizmos_indirectVertexBuffer.get();
-                    renderEvent->cmd->SetVertexBuffers(&vb, 1u);
-                    renderEvent->cmd->SetVertexStreams(&m_gizmos_vertexStreamElement, 1u);
-                    renderEvent->cmd.SetShader(m_gizmos_shader);
-                    renderEvent->cmd.SetRenderTarget({ gbuffers.current.color, LoadOp::Load, StoreOp::Store }, true);
-                    renderEvent->cmd.SetFixedStateAttributes(&m_gizmos_fixedFunctionAttribs);
-                    renderEvent->cmd->DrawIndirect(m_gizmos_indirectArgsBuffer.get(), 0u, 1u, sizeof(uint4));
-                }
-
-                if (m_gizmos_enabledCPU && m_gizmos_vertexCount >= 2)
-                {
-                    const RHIBuffer* vb = m_gizmos_vertexBuffer.get();
-                    renderEvent->cmd->SetVertexBuffers(&vb, 1u);
-                    renderEvent->cmd->SetVertexStreams(&m_gizmos_vertexStreamElement, 1u);
-                    renderEvent->cmd.SetShader(m_gizmos_shader);
-                    renderEvent->cmd.SetRenderTarget({ gbuffers.current.color, LoadOp::Load, StoreOp::Store }, true);
-                    renderEvent->cmd.SetFixedStateAttributes(&m_gizmos_fixedFunctionAttribs);
-                    renderEvent->cmd->Draw(glm::min(m_gizmos_vertexCount, m_gizmos_maxVertices), 1u, 0u, 0u);
-                }
-
-                if (m_gui_enabled && m_gui_vertexCount >= 2)
-                {
-                    RHI::SetTextureSet(hash->pk_GUI_Textures, m_gui_textures.get());
-                    renderEvent->cmd->SetIndexBuffer(m_gui_indexBuffer.get(), ElementType::Ushort);
-                    renderEvent->cmd.SetShader(m_gui_shader);
-                    renderEvent->cmd.SetRenderTarget({ gbuffers.current.color, LoadOp::Load, StoreOp::Store }, true);
-                    renderEvent->cmd->DrawIndexed(glm::min(GUI_MAX_INDICES, m_gui_indexCount), 1u, 0u, 0u, 0u);
-                }
+                auto gbuffers = view->GetGBuffersFullView();
+                GizmosDispatchDraws(renderEvent->cmd, gbuffers.current.color);
+                GUIDispatchDraws(renderEvent->cmd, gbuffers.current.color);
             }
             return;
 
@@ -160,9 +68,74 @@ namespace PK::App
     }
 
 
+    void EngineGUIRenderer::GUICollectDraws(const uint4& renderArea, CommandBufferExt& cmd)
+    {
+        m_gui_vertexCount = 0u;
+        m_gui_indexCount = 0u;
+        m_gui_renderAreaRect = renderArea;
+        m_gui_vertexView = {};
+        m_gui_indexView = {};
+        m_gui_commandBuffer = m_gui_enabled ? &cmd : nullptr;
+
+        if (m_gui_enabled)
+        {
+            m_sequencer->Next<IGUIRenderer*>(this, this);
+        }
+
+        if (m_gui_vertexView.data != nullptr)
+        {
+            cmd->EndBufferWrite(m_gui_vertexBuffer.get());
+            cmd->EndBufferWrite(m_gui_indexBuffer.get());
+        }
+
+        m_gui_commandBuffer = nullptr;
+    }
+
+    void EngineGUIRenderer::GUIDispatchDraws(CommandBufferExt& cmd, RHITexture* target)
+    {
+        if (m_gui_vertexCount >= 2)
+        {
+            RHI::SetTextureSet(HashCache::Get()->pk_GUI_Textures, m_gui_textures.get());
+            cmd->SetIndexBuffer(m_gui_indexBuffer.get(), ElementType::Ushort);
+            cmd.SetShader(m_gui_shader);
+            cmd.SetRenderTarget({ target, LoadOp::Load, StoreOp::Store }, true);
+            cmd->DrawIndexed(glm::min(GUI_MAX_INDICES, m_gui_indexCount), 1u, 0u, 0u, 0u);
+        }
+    }
+
+    bool EngineGUIRenderer::GUIValidateDraw()
+    {
+        if (m_gui_commandBuffer)
+        {
+            // initialize and load resources if the dont exist.
+            if (m_gui_shader == nullptr)
+            {
+                m_gui_shader = m_assetDatabase->Find<ShaderAsset>("VS_GUI").get();
+                m_gui_font = m_assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
+                m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::PersistentStorage, "GUI.VertexBuffer");
+                m_gui_indexBuffer = RHI::CreateBuffer<uint16_t>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
+                m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);
+                RHI::SetBuffer(HashCache::Get()->pk_GUI_Vertices, m_gui_vertexBuffer.get());
+            }
+
+            // Initialize draw state
+            if (m_gui_vertexView.data == nullptr)
+            {
+                m_gui_vertexView = m_gui_commandBuffer->BeginBufferWrite<GUIVertex>(m_gui_vertexBuffer.get());
+                m_gui_indexView = m_gui_commandBuffer->BeginBufferWrite<uint16_t>(m_gui_indexBuffer.get());
+                m_gui_textures->Clear();
+                m_gui_textures->Add(RHI::GetBuiltInResources()->WhiteTexture2D.get());
+                m_gui_textures->Add(RHI::GetBuiltInResources()->ErrorTexture2D.get());
+                m_gui_textures->Add(m_gui_font->GetRHI());
+            }
+        }
+        
+        return m_gui_commandBuffer != nullptr;
+    }
+
     uint16_t EngineGUIRenderer::GUIAddTexture(RHITexture* texture)
     {
-        if (!m_gui_enabled)
+        if (!GUIValidateDraw())
         {
             return GUI_TEX_INDEX_ERROR;
         }
@@ -179,7 +152,7 @@ namespace PK::App
 
     void EngineGUIRenderer::GUIDrawTriangle(const GUIVertex& a, const GUIVertex& b, const GUIVertex& c)
     {
-        if (m_gui_enabled)
+        if (GUIValidateDraw())
         {
             auto idxv = m_gui_vertexCount;
             auto idxi = m_gui_indexCount;
@@ -205,7 +178,7 @@ namespace PK::App
 
     void EngineGUIRenderer::GUIDrawRect(const color32& color, const short4& rect, const ushort4& textureRect, uint16_t textureIndex)
     {
-        if (m_gui_enabled)
+        if (GUIValidateDraw())
         {
             auto idxv = m_gui_vertexCount;
             auto idxi = m_gui_indexCount;
@@ -238,7 +211,7 @@ namespace PK::App
 
     void EngineGUIRenderer::GUIDrawWireRect(const color32& color, const short4& rect, short inset)
     {
-        if (m_gui_enabled)
+        if (GUIValidateDraw())
         {
             auto idxv = m_gui_vertexCount;
             auto idxi = m_gui_indexCount;
@@ -281,7 +254,7 @@ namespace PK::App
 
     void EngineGUIRenderer::GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width)
     {
-        if (m_gui_enabled)
+        if (GUIValidateDraw())
         {
             auto idxv = m_gui_vertexCount;
             auto idxi = m_gui_indexCount;
@@ -315,7 +288,7 @@ namespace PK::App
         auto text_area_min = +PK_SHORT2_MAX;
         auto text_area_max = -PK_SHORT2_MAX;
         
-        if (m_gui_enabled)
+        if (GUIValidateDraw())
         {
             auto max_rects = Font::CalculateMaxRectCount(text, m_gui_font);
             
@@ -364,6 +337,51 @@ namespace PK::App
         return { text_area_min, text_area_max - text_area_min };
     }
 
+
+    void EngineGUIRenderer::GizmosCollectDraws(const uint4& renderArea, const float4x4& worldToClip, CommandBufferExt& cmd)
+    {
+        if (m_gizmos_enabledCPU)
+        {
+            RHI::ValidateBuffer<uint4>(m_gizmos_vertexBuffer, m_gizmos_vertexCount);
+            m_gizmos_color = PK_COLOR_WHITE;
+            m_gizmos_renderAreaRect = renderArea;
+            m_gizmos_matrix = PK_FLOAT4X4_IDENTITY;
+            m_gizmos_worldToClip = worldToClip;
+            m_gizmos_vertexCount = 0u;
+            m_gizmos_maxVertices = (uint32_t)m_gizmos_vertexBuffer->GetCount<uint4>();
+            m_gizmos_vertexView = cmd.BeginBufferWrite<GizmosVertex>(m_gizmos_vertexBuffer.get());
+            m_sequencer->Next<IGizmosRenderer*>(this, this);
+            cmd->EndBufferWrite(m_gizmos_vertexBuffer.get());
+        }
+
+        uint4 clearValue{ 0u, 1u, 0u, 0u };
+        cmd->UpdateBuffer(m_gizmos_indirectArgsBuffer.get(), 0u, sizeof(uint4), &clearValue);
+    }
+
+    void EngineGUIRenderer::GizmosDispatchDraws(CommandBufferExt& cmd, RHITexture* target)
+    {
+        if (m_gizmos_enabledGPU)
+        {
+            const RHIBuffer* vb = m_gizmos_indirectVertexBuffer.get();
+            cmd->SetVertexBuffers(&vb, 1u);
+            cmd->SetVertexStreams(&m_gizmos_vertexStreamElement, 1u);
+            cmd.SetShader(m_gizmos_shader);
+            cmd.SetRenderTarget({ target, LoadOp::Load, StoreOp::Store }, true);
+            cmd.SetFixedStateAttributes(&m_gizmos_fixedFunctionAttribs);
+            cmd->DrawIndirect(m_gizmos_indirectArgsBuffer.get(), 0u, 1u, sizeof(uint4));
+        }
+
+        if (m_gizmos_enabledCPU && m_gizmos_vertexCount >= 2)
+        {
+            const RHIBuffer* vb = m_gizmos_vertexBuffer.get();
+            cmd->SetVertexBuffers(&vb, 1u);
+            cmd->SetVertexStreams(&m_gizmos_vertexStreamElement, 1u);
+            cmd.SetShader(m_gizmos_shader);
+            cmd.SetRenderTarget({ target, LoadOp::Load, StoreOp::Store }, true);
+            cmd.SetFixedStateAttributes(&m_gizmos_fixedFunctionAttribs);
+            cmd->Draw(glm::min(m_gizmos_vertexCount, m_gizmos_maxVertices), 1u, 0u, 0u);
+        }
+    }
 
     void EngineGUIRenderer::GizmosDrawBounds(const BoundingBox& aabb)
     {
