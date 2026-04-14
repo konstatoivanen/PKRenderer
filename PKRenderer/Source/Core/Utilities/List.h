@@ -7,16 +7,16 @@
 namespace PK
 {
     template<typename T, size_t fixed_count = 0ull>
-    struct FastList : NoCopy
+    struct List : NoCopy
     {
-        FastList() {}
-        FastList(size_t capacity) { Reserve(capacity); }
-        FastList(FastList&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); }
-        FastList(const FastList& other) noexcept { Copy(other); }
-        FastList(initializer_list<T>&& other) noexcept { Move(PK::Forward<initializer_list<T>>(other)); }
-        FastList(const initializer_list<T>& other) noexcept { Copy(other); }
+        List() {}
+        List(size_t capacity) { Reserve(capacity); }
+        List(List&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); }
+        List(const List& other) noexcept { Copy(other); }
+        List(initializer_list<T>&& other) noexcept { Move(PK::Forward<initializer_list<T>>(other)); }
+        List(const initializer_list<T>& other) noexcept { Copy(other); }
 
-        ~FastList()
+        ~List()
         {
             Clear();
 
@@ -49,9 +49,9 @@ namespace PK
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
 
-        FastList& operator=(FastList&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); return *this; }
+        List& operator=(List&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); return *this; }
 
-        void Copy(const FastList& other)
+        void Copy(const List& other)
         {
             Clear();
             Reserve(other.m_count);
@@ -64,7 +64,7 @@ namespace PK
             Memory::CopyArray(GetData(), initializer.begin(), initializer.size());
         }
 
-        void Move(FastList&& other)
+        void Move(List&& other)
         {
             if (this != &other)
             {

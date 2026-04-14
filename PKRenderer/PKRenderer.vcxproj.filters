@@ -1284,7 +1284,7 @@
     <ClInclude Include="Source\Core\Utilities\Hash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FastMap.h">
+    <ClInclude Include="Source\Core\Utilities\HashMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\Singleton.h">
@@ -1479,7 +1479,7 @@
     <ClInclude Include="Source\App\Renderer\Passes\PassDistort.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FastList.h">
+    <ClInclude Include="Source\Core\Utilities\List.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedRefPool.h">
