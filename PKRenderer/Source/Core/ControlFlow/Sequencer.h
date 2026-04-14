@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/Pair.h"
 #include "Core/Utilities/FastBuffer.h"
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/ControlFlow/IStep.h"
 
 namespace PK
@@ -64,6 +64,6 @@ namespace PK
 
     private:
         FastBuffer<Step> m_steps;
-        FastMap16<StepsKey, StepsView> m_map;
+        HashMap16<StepsKey, StepsView> m_map;
     };
 }

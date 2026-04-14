@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/Singleton.h"
 #include "Core/Utilities/FastTypeIndex.h"
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/FileIO.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Assets/AssetImportEvent.h"
@@ -265,8 +265,8 @@ namespace PK
         uint32_t GetTypeHead(uint32_t typeIndex) const;
         TypeInfo* CreateTypeInfo(uint32_t typeIndex, const ConstBufferView<char>& name);
 
-        FastSet<AssetObjectBase*, AssetObjectHash> m_assets;
-        FastSet<TypeInfo, TypeInfoHash> m_assetTypes;
+        HashSet<AssetObjectBase*, AssetObjectHash> m_assets;
+        HashSet<TypeInfo, TypeInfoHash> m_assetTypes;
         Sequencer* m_sequencer;
     };
 }

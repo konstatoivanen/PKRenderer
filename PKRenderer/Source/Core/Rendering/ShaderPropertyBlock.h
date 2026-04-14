@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/FastBuffer.h"
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/RHI/Structs.h"
 
 namespace PK
@@ -38,9 +38,9 @@ namespace PK
         }
     };
 
-    struct ShaderPropertyLayout : public FastSet16<ShaderProperty, ShaderPropertyHash>
+    struct ShaderPropertyLayout : public HashSet16<ShaderProperty, ShaderPropertyHash>
     {
-        using TBase = FastSet16<ShaderProperty, ShaderPropertyHash>;
+        using TBase = HashSet16<ShaderProperty, ShaderPropertyHash>;
 
         ShaderPropertyLayout() {}
         ShaderPropertyLayout(ShaderProperty* elements, size_t count);

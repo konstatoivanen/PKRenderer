@@ -699,10 +699,10 @@ namespace PK
 
 
     template<typename TValue, typename THash = Hash::THash<TValue>>
-    using FastSet = IHashSet<IHashAllocatorHeap<TValue, IHashSetNode<int32_t>>, THash>;
+    using HashSet = IHashSet<IHashAllocatorHeap<TValue, IHashSetNode<int32_t>>, THash>;
 
     template<typename TValue, typename THash = Hash::THash<TValue>>
-    using FastSet16 = IHashSet<IHashAllocatorHeap<TValue, IHashSetNode<int16_t>>, THash>;
+    using HashSet16 = IHashSet<IHashAllocatorHeap<TValue, IHashSetNode<int16_t>>, THash>;
 
     template<typename TValue, size_t capacity, typename THash = Hash::THash<TValue>, size_t bucket_stride = 1ull>
     using FixedSet = IHashSet<IHashAllocatorFixed<TValue, IHashSetNode<int32_t>, capacity, bucket_stride>, THash>;
@@ -715,10 +715,10 @@ namespace PK
 
 
     template<typename TKey, typename TValue, typename THash = Hash::THash<TKey>>
-    using FastMap = IHashMap<IHashAllocatorHeap<TValue, IHashMapNode<int32_t, TKey>>, THash>;
+    using HashMap = IHashMap<IHashAllocatorHeap<TValue, IHashMapNode<int32_t, TKey>>, THash>;
 
     template<typename TKey, typename TValue, typename THash = Hash::THash<TKey>>
-    using FastMap16 = IHashMap<IHashAllocatorHeap<TValue, IHashMapNode<int16_t, TKey>>, THash>;
+    using HashMap16 = IHashMap<IHashAllocatorHeap<TValue, IHashMapNode<int16_t, TKey>>, THash>;
 
     template<typename TKey, typename TValue, size_t capacity, typename THash = Hash::THash<TKey>, size_t bucket_stride = 1ull>
     using FixedMap = IHashMap<IHashAllocatorFixed<TValue, IHashMapNode<int32_t, TKey>, capacity, bucket_stride>, THash>;

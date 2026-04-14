@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/FastBuffer.h"
 #include "Core/Input/InputKey.h"
@@ -20,7 +20,7 @@ namespace PK
         InputKeyCommand* GetBindings() { return reinterpret_cast<InputKeyCommand*>(memory.GetData()); }
     };
 
-    struct CommandInputKeyBindingMap : public FastMap<FixedString32, InputKey>
+    struct CommandInputKeyBindingMap : public HashMap<FixedString32, InputKey>
     {
         void TryGetKey(const char* command, InputKey* outKey) const;
     };

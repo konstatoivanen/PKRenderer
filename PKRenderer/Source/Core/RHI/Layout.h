@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/FastList.h"
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/NameID.h"
 #include "Core/RHI/Structs.h"
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
@@ -25,7 +25,7 @@ namespace PK
         private:
             int32_t Add(const VulkanBindHandle* handle);
 
-            FastSet16<const VulkanBindHandle*> m_set;
+            HashSet16<const VulkanBindHandle*> m_set;
 
             // Hackedy hack dirty stuff
             mutable bool m_isDirty = false;

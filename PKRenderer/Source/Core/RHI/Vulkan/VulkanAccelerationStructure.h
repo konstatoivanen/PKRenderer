@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
@@ -69,7 +69,7 @@ namespace PK
             VulkanRawBuffer* m_structureBuffer = nullptr;
             FixedUnique<VulkanQueryPool> m_queryPool;
             TLAS m_structure{};
-            FastMap<BLASKey, BLAS> m_substructures;
+            HashMap<BLASKey, BLAS> m_substructures;
             VulkanBindHandle m_bindHandle{};
             
             // Temporaries used during build process

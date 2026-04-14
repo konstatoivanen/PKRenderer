@@ -1,5 +1,5 @@
 #pragma once
-#include "FastMap.h"
+#include "HashMap.h"
 #include "NameID.h"
 #include "FixedString.h"
 
@@ -18,6 +18,6 @@ namespace PK
         const char* INameIDProvider_IDToString(const uint32_t& name) final;
 
     private:
-        FastSet<FixedString128> m_names;
+        HashSet<FixedString128> m_names;
     };
 }

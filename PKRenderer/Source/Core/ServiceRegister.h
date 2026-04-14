@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/FastTypeIndex.h"
 #include "Core/CLI/LogScopeIndent.h"
 
@@ -60,6 +60,6 @@ namespace PK
     private:
         void AssertTypeExists(bool exists, const ConstBufferView<char>& name);
 
-        FastMap<uint32_t, Service*> m_services;
+        HashMap<uint32_t, Service*> m_services;
     };
 }

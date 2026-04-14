@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/FixedPool.h"
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/FixedArena.h"
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/Pair.h"

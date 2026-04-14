@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/BufferView.h"
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/FastTypeIndex.h"
 #include "Core/Utilities/FastBuffer.h"
 #include "Core/ECS/EGID.h"
@@ -192,9 +192,9 @@ namespace PK
         }
 
     private:
-        FastSet<EntityViewHeader, EntityViewHeaderHash> m_viewHeaders;
+        HashSet<EntityViewHeader, EntityViewHeaderHash> m_viewHeaders;
         FastBuffer<EntityViewContainer> m_entityViews;
-        FastMap<uint32_t, ImplementerContainer> m_implementers;
+        HashMap<uint32_t, ImplementerContainer> m_implementers;
         uint32_t m_idCounter = 0u;
         uint32_t m_viewCounter = 0u;
     };

@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/Singleton.h"
-#include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/FixedArena.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/CVariable.h"
@@ -61,7 +61,7 @@ namespace PK
         
         const char* FindAutoCompleteHintInstance(const char* pattern, int32_t matchOffset);
 
-        FastMap<NameID, CVariableBinding> m_variables;
+        HashMap<NameID, CVariableBinding> m_variables;
         FixedArena<32768ull> m_arena;
     };
 }
