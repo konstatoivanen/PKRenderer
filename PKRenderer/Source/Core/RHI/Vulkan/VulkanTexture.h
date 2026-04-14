@@ -45,6 +45,6 @@ namespace PK
             FixedString64 m_name;
             TextureDescriptor m_descriptor;
             VulkanRawImage* m_rawImage = nullptr;
-            FastLinkedListRoot<VulkanImageView, uint64_t> m_firstView = nullptr;
+            LinkedList<VulkanImageView, uint64_t> m_firstView = nullptr;
     };
 }

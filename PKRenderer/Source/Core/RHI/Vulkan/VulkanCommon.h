@@ -7,7 +7,7 @@
 #include "Core/Utilities/FenceRef.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/VersionedObject.h"
-#include "Core/Utilities/FastLinkedList.h"
+#include "Core/Utilities/LinkedList.h"
 #include "Core/RHI/Structs.h"
 
 constexpr static const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_validation";
@@ -321,11 +321,11 @@ namespace PK
         VulkanBindHandle() : image{}{};
     };
 
-    struct VulkanBufferView : public FastLinkedListElement<VulkanBufferView, BufferIndexRange>, public VulkanBindHandle
+    struct VulkanBufferView : public LinkedListElement<VulkanBufferView, BufferIndexRange>, public VulkanBindHandle
     {
     };
 
-    struct VulkanImageView : public VersionedObject, public FastLinkedListElement<VulkanImageView, uint64_t>
+    struct VulkanImageView : public VersionedObject, public LinkedListElement<VulkanImageView, uint64_t>
     {
         VulkanImageView(VkDevice device, const VulkanImageViewCreateInfo& createInfo, const char* name);
         ~VulkanImageView();

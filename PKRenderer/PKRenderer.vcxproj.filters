@@ -1404,7 +1404,7 @@
     <ClInclude Include="Source\Core\Utilities\FixedString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FastLinkedList.h">
+    <ClInclude Include="Source\Core\Utilities\LinkedList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\rapidyaml\rapidyaml-0.7.1.hpp">

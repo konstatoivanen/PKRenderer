@@ -274,7 +274,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FixedArray.h" />
     <ClInclude Include="Source\Core\Utilities\FixedRefPool.h" />
     <ClInclude Include="Source\Core\Utilities\FixedString.h" />
-    <ClInclude Include="Source\Core\Utilities\FastLinkedList.h" />
+    <ClInclude Include="Source\Core\Utilities\LinkedList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedTypeSet.h" />
     <ClInclude Include="Source\Core\Utilities\Function.h" />
     <ClInclude Include="Source\Core\Utilities\InitializerList.h" />

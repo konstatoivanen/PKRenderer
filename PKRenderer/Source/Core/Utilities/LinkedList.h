@@ -3,65 +3,34 @@
 namespace PK
 {
     template<typename TValue, typename TKey>
-    struct FastLinkedListRoot;
+    struct LinkedList;
 
     template<typename TValue, typename TKey>
-    struct FastLinkedListElement
+    struct LinkedListElement
     {
-        friend struct FastLinkedListRoot<TValue, TKey>;
+        friend struct LinkedList<TValue, TKey>;
+
+        void LinkedInsert(TValue* newValue, const TKey& key)
+        {
+            newValue->linkNext = linkNext;
+            newValue->linkKey = key;
+            linkNext = newValue;
+        }
 
     protected:
         TKey linkKey{};
         TValue* linkNext = nullptr;
-    public:
-
-        static bool LinkedFind(TValue** first, const TKey& key)
-        {
-            auto iter = *first;
-            TValue* prev = nullptr;
-
-            while (iter)
-            {
-                if (iter->linkKey == key)
-                {
-                    break;
-                }
-
-                prev = iter;
-                iter = iter->linkNext;
-            }
-
-            if (iter == nullptr)
-            {
-                return false;
-            }
-
-            if (prev)
-            {
-                // Swap found to the front
-                prev->linkNext = iter->linkNext;
-                iter->linkNext = *first;
-                *first = iter;
-            }
-
-            return true;
-        }
-
-        static void LinkedInsert(TValue** first, TValue* newValue, const TKey& key)
-        {
-            newValue->linkNext = *first;
-            *first = newValue;
-            (*first)->linkKey = key;
-        }
     };
 
     template<typename TValue, typename TKey>
-    struct FastLinkedListRoot
+    struct LinkedList
     {
+        static_assert(__is_base_of(LinkedListElement<TValue, TKey>, TValue), "TValue is not derived from LinkedListElement!");
+
         TValue* first = nullptr;
 
-        FastLinkedListRoot() {};
-        FastLinkedListRoot(TValue* value) : first(value) {};
+        LinkedList() {};
+        LinkedList(TValue* value) : first(value) {};
 
         operator TValue* () { return first; }
         operator const TValue* () const { return first; }

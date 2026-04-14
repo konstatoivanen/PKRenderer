@@ -38,7 +38,7 @@ namespace PK
             struct VulkanStagingBuffer* m_stage = nullptr;
             class VulkanSparsePageTable* m_pageTable = nullptr;
             VulkanBufferView* m_defaultView = nullptr;
-            FastLinkedListRoot<VulkanBufferView, BufferIndexRange> m_firstView = nullptr;
+            LinkedList<VulkanBufferView, BufferIndexRange> m_firstView = nullptr;
 
             struct
             {
