@@ -1,7 +1,7 @@
 #pragma once
-#include "Memory.h"
 #include "NoCopy.h"
-#include "FastTypeIndex.h"
+#include "Memory.h"
+#include "TypeIndex.h"
 
 namespace PK
 {

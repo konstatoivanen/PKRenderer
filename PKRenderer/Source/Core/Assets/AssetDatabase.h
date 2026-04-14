@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/Singleton.h"
-#include "Core/Utilities/FastTypeIndex.h"
+#include "Core/Utilities/TypeIndex.h"
 #include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/FileIO.h"
 #include "Core/Assets/Asset.h"

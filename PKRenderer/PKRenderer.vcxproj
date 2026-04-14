@@ -279,7 +279,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\Function.h" />
     <ClInclude Include="Source\Core\Utilities\InitializerList.h" />
     <ClInclude Include="Source\Core\Utilities\Memory.h" />
-    <ClInclude Include="Source\Core\Utilities\FastTypeIndex.h" />
+    <ClInclude Include="Source\Core\Utilities\TypeIndex.h" />
     <ClInclude Include="Source\Core\Utilities\Pair.h" />
     <ClInclude Include="Source\Core\Utilities\Templates.h" />
     <ClInclude Include="Source\Core\Yaml\RapidyamlFwd.h" />

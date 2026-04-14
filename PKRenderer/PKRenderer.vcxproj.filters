@@ -1470,7 +1470,7 @@
     <ClInclude Include="Source\Core\Utilities\FixedTypeSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FastTypeIndex.h">
+    <ClInclude Include="Source\Core\Utilities\TypeIndex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedArena.h">

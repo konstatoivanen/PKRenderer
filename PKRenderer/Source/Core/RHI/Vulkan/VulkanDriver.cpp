@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/TypeIndex.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
@@ -8,7 +9,6 @@
 #include "Core/RHI/BuiltInResources.h"
 #include "VulkanDriver.h"
 
-#include "Core/Utilities/FastTypeIndex.h"
 
 namespace PK
 {
