@@ -1,5 +1,4 @@
 #pragma once
-#include <stdint.h>
 #include "Core/Utilities/Ref.h"
 #include "Core/Math/MathFwd.h"
 

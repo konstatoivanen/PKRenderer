@@ -1,6 +1,5 @@
 #pragma once
-#include <stdint.h>
-#include "FixedString.h"
+#include "Hash.h"
 
 namespace PK
 {

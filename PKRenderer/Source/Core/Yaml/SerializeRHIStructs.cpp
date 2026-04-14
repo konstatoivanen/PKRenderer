@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/RHI/Structs.h"
 #include "Core/Yaml/RapidyamlPrivate.h"
 

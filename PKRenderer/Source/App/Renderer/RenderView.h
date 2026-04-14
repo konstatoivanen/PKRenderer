@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/FixedArray.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/Timers/TimeFrameInfo.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/Rendering/ConstantBuffer.h"

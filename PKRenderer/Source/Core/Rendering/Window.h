@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Platform/PlatformInterfaces.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/RHI/Structs.h"
 #include "Core/RHI/RHI.h"
 

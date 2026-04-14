@@ -2,7 +2,6 @@
 
 #if defined(PK_DEBUG) && PK_PLATFORM_WINDOWS
 #define _CRTDBG_MAP_ALLOC  
-#include <stdlib.h>  
 #include <crtdbg.h>  
 #endif 
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "FastMap.h"
 #include "NameID.h"
+#include "FixedString.h"
 
 namespace PK
 {

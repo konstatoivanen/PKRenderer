@@ -1,5 +1,4 @@
 #pragma once
-#include <stdint.h>
 #include "Core/Rendering/RenderingFwd.h"
 
 namespace PK::App
