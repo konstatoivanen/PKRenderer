@@ -256,6 +256,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Input\InputStateCollection.h" />
     <ClInclude Include="Source\Core\Input\InputDevice.h" />
     <ClInclude Include="Source\Core\Input\InputState.h" />
+    <ClInclude Include="Source\Core\Math\Scalar.h" />
+    <ClInclude Include="Source\Core\Math\Vector.h" />
     <ClInclude Include="Source\Core\Platform\Platform.h" />
     <ClInclude Include="Source\Core\Platform\PlatformInterfaces.h" />
     <ClInclude Include="Source\Core\Platform\Linux\LinuxPlatform.h" />
