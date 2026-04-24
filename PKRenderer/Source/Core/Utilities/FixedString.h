@@ -2,6 +2,7 @@
 #include <wchar.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include "Hash.h"
 #include "Memory.h"
 #include "InitializerList.h"

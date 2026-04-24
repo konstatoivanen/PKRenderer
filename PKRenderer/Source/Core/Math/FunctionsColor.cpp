@@ -10,10 +10,10 @@ namespace PK::Math
     
     color HueToRGB(float hue)
     {
-        float R = abs(hue * 6 - 3) - 1;
-        float G = 2 - abs(hue * 6 - 2);
-        float B = 2 - abs(hue * 6 - 4);
-        return float4(glm::clamp(float3(R, G, B), PK_FLOAT3_ZERO, PK_FLOAT3_ONE), 1.0f);
+        float R = math::abs(hue * 6 - 3) - 1;
+        float G = 2 - math::abs(hue * 6 - 2);
+        float B = 2 - math::abs(hue * 6 - 4);
+        return float4(math::clamp(float3(R, G, B), PK_FLOAT3_ZERO, PK_FLOAT3_ONE), 1.0f);
     }
 
     color32 HueToRGB32(float hue)
@@ -80,18 +80,18 @@ namespace PK::Math
         auto liftG = (nLift.g - avgLift) * liftScale;
         auto liftB = (nLift.b - avgLift) * liftScale;
 
-        auto gammaR = glm::pow(2.0f, (nGamma.r - avgGamma) * gammaScale);
-        auto gammaG = glm::pow(2.0f, (nGamma.g - avgGamma) * gammaScale);
-        auto gammaB = glm::pow(2.0f, (nGamma.b - avgGamma) * gammaScale);
+        auto gammaR = math::pow(2.0f, (nGamma.r - avgGamma) * gammaScale);
+        auto gammaG = math::pow(2.0f, (nGamma.g - avgGamma) * gammaScale);
+        auto gammaB = math::pow(2.0f, (nGamma.b - avgGamma) * gammaScale);
 
-        auto gainR = glm::pow(2.0f, (nGain.r - avgGain) * gainScale);
-        auto gainG = glm::pow(2.0f, (nGain.g - avgGain) * gainScale);
-        auto gainB = glm::pow(2.0f, (nGain.b - avgGain) * gainScale);
+        auto gainR = math::pow(2.0f, (nGain.r - avgGain) * gainScale);
+        auto gainG = math::pow(2.0f, (nGain.g - avgGain) * gainScale);
+        auto gainB = math::pow(2.0f, (nGain.b - avgGain) * gainScale);
 
         const float minGamma = 0.01f;
-        auto invGammaR = 1.0f / glm::max(minGamma, gammaR);
-        auto invGammaG = 1.0f / glm::max(minGamma, gammaG);
-        auto invGammaB = 1.0f / glm::max(minGamma, gammaB);
+        auto invGammaR = 1.0f / math::max(minGamma, gammaR);
+        auto invGammaG = 1.0f / math::max(minGamma, gammaG);
+        auto invGammaB = 1.0f / math::max(minGamma, gammaB);
 
         *outLift = color(liftR, liftG, liftB, 1.0f);
         *outGamma = color(invGammaR, invGammaG, invGammaB, 1.0f);
@@ -105,16 +105,16 @@ namespace PK::Math
     
     float Luminance(const color& color) 
     { 
-        return glm::dot(float3(0.22f, 0.707f, 0.071f), float3(color.rgb)); 
+        return math::dot(float3(0.22f, 0.707f, 0.071f), float3(color.rgb));
     }
     
     float LinearToPerceptual(const color& color) 
     { 
-        return glm::log(glm::max(Luminance(color), 0.001f)); 
+        return math::log(math::max(Luminance(color), 0.001f));
     }
     
     float PerceptualToLinear(float value) 
     { 
-        return glm::exp(value); 
+        return math::exp(value);
     }
 }

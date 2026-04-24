@@ -1,6 +1,7 @@
 #pragma once
 #include <math.h>
 #include <stdint.h>
+#include <float.h>
 
 namespace PK::math
 {
@@ -9,6 +10,9 @@ namespace PK::math
 
     inline bool isinf(float v) { return ::isinf(v); }
     inline bool isinf(double v) { return ::isinf(v); }
+
+    inline bool nearEqual(float x, float y, float e) { return ::fabsf(x - y) < e; }
+    inline bool nearEqual(double x, double y, double e) { return ::fabs(x - y) < e; }
 
     inline float asfloat(uint32_t v) { union { uint32_t in; float out; } u; u.in = v; return u.out; }
     inline float asfloat(int32_t v) { union { uint32_t in; float out; } u; u.in = v; return u.out; }
@@ -73,6 +77,13 @@ namespace PK::math
     
     inline float log2(float v) { return ::log2f(v); }
     inline double log2(double v) { return ::log2(v); }
+    inline uint32_t log2(uint32_t v)
+    {
+        uint32_t y;
+        asm("\tbsr %1, %0\n" : "=r"(y) : "r" (v));
+        return y;
+    }
+    inline uint64_t log2(uint64_t v) { return static_cast<uint64_t>(63 - __builtin_clzll(v)); }
 
     inline float sqrt(float v) { return ::sqrtf(v); }
     inline double sqrt(double v) { return ::sqrt(v); }
@@ -84,6 +95,10 @@ namespace PK::math
     inline double abs(double v) { return ::fabs(v); }
     inline int32_t abs(int32_t v) { return ::abs(v); }
     inline int64_t abs(int64_t v) { return ::llabs(v); }
+    inline long abs(long v) { return ::labs(v); }
+    
+    inline float round(float v) { return ::roundf(v); }
+    inline double round(double v) { return ::round(v); }
 
     inline float ceil(float v) { return ::ceilf(v); }
     inline double ceil(double v) { return ::ceil(v); }
@@ -110,6 +125,8 @@ namespace PK::math
     inline uint16_t min(uint16_t a, uint16_t b) { return a < b ? a : b; }
     inline uint32_t min(uint32_t a, uint32_t b) { return a < b ? a : b; }
     inline uint64_t min(uint64_t a, uint64_t b) { return a < b ? a : b; }
+    inline unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : b; }
+    inline long min(long a, long b) { return a < b ? a : b; }
 
     inline float max(float a, float b) { return ::fmaxf(a, b); }
     inline double max(double a, double b) { return ::fmax(a, b); }
@@ -121,6 +138,8 @@ namespace PK::math
     inline uint16_t max(uint16_t a, uint16_t b) { return a > b ? a : b; }
     inline uint32_t max(uint32_t a, uint32_t b) { return a > b ? a : b; }
     inline uint64_t max(uint64_t a, uint64_t b) { return a > b ? a : b; }
+    inline unsigned long max(unsigned long a, unsigned long b) { return a > b ? a : b; }
+    inline long max(long a, long b) { return a > b ? a : b; }
 
     inline float clamp(float v, float mi, float ma) { return min(max(v, mi), ma); }
     inline double clamp(double v, double mi, double ma) { return min(max(v, mi), ma); }
@@ -132,6 +151,8 @@ namespace PK::math
     inline uint16_t clamp(uint16_t v, uint16_t mi, uint16_t ma) { return min(max(v, mi), ma); }
     inline uint32_t clamp(uint32_t v, uint32_t mi, uint32_t ma) { return min(max(v, mi), ma); }
     inline uint64_t clamp(uint64_t v, uint64_t mi, uint64_t ma) { return min(max(v, mi), ma); }
+    inline unsigned long clamp(unsigned long v, unsigned long mi, unsigned long ma) { return min(max(v, mi), ma); }
+    inline long clamp(long v, long mi, long ma) { return min(max(v, mi), ma); }
 
     inline float saturate(float v) { return min(max(v, 0.0f), 1.0f); }
     inline double saturate(double v) { return min(max(v, 0.0), 1.0); }
@@ -171,6 +192,7 @@ namespace PK::math
     inline int16_t sign(int16_t v) { return (v > 0) - (v < 0); }
     inline int32_t sign(int32_t v) { return (v > 0) - (v < 0); }
     inline int64_t sign(int64_t v) { return (v > 0ll) - (v < 0ll); }
+    inline long sign(long v) { return (v > 0l) - (v < 0l); }
 
     inline float smoothstep(float a, float b, float i) { auto t = saturate((i - a) / (b - a)); return t * t * (3.0f - 2.0f * t); }
     inline double smoothstep(double a, double b, double i) { auto t = saturate((i - a) / (b - a)); return t * t * (3.0 - 2.0 * t); }

@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include <cassert>
 #include "FunctionsIntersect.h"
 
 namespace PK::Math
@@ -131,14 +132,14 @@ namespace PK::Math
 
     float ExtentsSignedDistance(const float3& point, const float3 extents)
     {
-        auto q = glm::abs(point) - extents;
-        return glm::length(glm::max(q, 0.0f)) + glm::min(glm::max(q.x, glm::max(q.y, q.z)), 0.0f);
+        auto q = math::abs(point) - extents;
+        return math::length(math::max(q, 0.0f)) + math::min(math::max(q.x, math::max(q.y, q.z)), 0.0f);
     }
 
     float3 IntesectPlanes3(const float4& p1, const float4& p2, const float4& p3)
     {
         float3 n1 = p1.xyz, n2 = p2.xyz, n3 = p3.xyz;
-        return ((-p1.w * glm::cross(n2, n3)) + (-p2.w * glm::cross(n3, n1)) + (-p3.w * glm::cross(n1, n2))) / (glm::dot(n1, glm::cross(n2, n3)));
+        return ((-p1.w * math::cross(n2, n3)) + (-p2.w * math::cross(n3, n1)) + (-p3.w * math::cross(n1, n2))) / (math::dot(n1, math::cross(n2, n3)));
     }
 
     bool IntersectAABB(const BoundingBox& a, const BoundingBox& b)
@@ -151,8 +152,8 @@ namespace PK::Math
 
     bool IntersectSphere(const float3& center, float radius, const BoundingBox& b)
     {
-        float3 d = glm::abs(center - b.GetCenter()) - b.GetExtents();
-        float r = radius - glm::compMax(min(d, float3(0.0f)));
+        float3 d = math::abs(center - b.GetCenter()) - b.GetExtents();
+        float r = radius - math::cmax(min(d, float3(0.0f)));
         d = max(d, float3(0.0f));
         return radius > 0.0f && dot(d, d) <= r * r;
     }
@@ -333,8 +334,8 @@ namespace PK::Math
         for (auto i = 0; i < 8; ++i)
         {
             positions[i] /= positions[i].w;
-            max = glm::max(float3(positions[i].xyz), max);
-            min = glm::min(float3(positions[i].xyz), min);
+            max = math::max(float3(positions[i].xyz), max);
+            min = math::min(float3(positions[i].xyz), min);
         }
 
         return BoundingBox::MinMax(min, max);
@@ -357,8 +358,8 @@ namespace PK::Math
             positions[i] /= positions[i].w;
             positions[i + 4] /= positions[i + 4].w;
 
-            auto pnear = glm::mix(positions[i], positions[i + 4], lznear);
-            auto pfar = glm::mix(positions[i], positions[i + 4], lzfar);
+            auto pnear = math::lerp(positions[i], positions[i + 4], lznear);
+            auto pfar = math::lerp(positions[i], positions[i + 4], lzfar);
 
             positions[i] = pnear;
             positions[i + 4] = pfar;
@@ -369,8 +370,8 @@ namespace PK::Math
 
         for (auto i = 0; i < 8; ++i)
         {
-            max = glm::max(float3(positions[i].xyz), max);
-            min = glm::min(float3(positions[i].xyz), min);
+            max = math::max(float3(positions[i].xyz), max);
+            min = math::min(float3(positions[i].xyz), min);
         }
 
         return BoundingBox::MinMax(min, max);
@@ -396,8 +397,8 @@ namespace PK::Math
             positions[i] = inverseMatrix * positions[i];
             positions[i] /= positions[i].w;
             positions[i] = worldToLocal * positions[i];
-            max = glm::max(float3(positions[i].xyz), max);
-            min = glm::min(float3(positions[i].xyz), min);
+            max = math::max(float3(positions[i].xyz), max);
+            min = math::min(float3(positions[i].xyz), min);
         }
 
         return BoundingBox::MinMax(min, max);

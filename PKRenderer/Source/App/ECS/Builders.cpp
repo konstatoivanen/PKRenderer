@@ -38,14 +38,14 @@ namespace PK::App::EntityBuilders
         T* implementer,
         const EGID& egid,
         const float3& position,
-        const float3& rotation,
+        const float3& euler,
         const float3& scale,
         const BoundingBox& localBounds)
     {
         entityDb->ReserveView(implementer, egid, &EntityViewTransform::bounds, &EntityViewTransform::transform);
         implementer->localAABB = localBounds;
         implementer->position = position;
-        implementer->rotation = glm::quat(rotation);
+        implementer->rotation = math::quat::fromEuler(euler);
         implementer->scale = scale;
     }
 
@@ -102,7 +102,7 @@ namespace PK::App::EntityBuilders
     {
         // Light radius based on phyiscal attenuation at minAtten cutoff.
         const auto minAtten = 0.2f;
-        auto intensity = glm::compMax(color);
+        const auto intensity = math::cmax(color);
         radius = radius < 0.0f ? (intensity * intensity) / (minAtten * minAtten) : radius;
 
         auto flags = ScenePrimitiveFlags::Light;
@@ -127,7 +127,7 @@ namespace PK::App::EntityBuilders
             break;
             case LightType::Spot:
             {
-                auto a = radius * glm::tan(angle * 0.5f * PK_FLOAT_DEG2RAD);
+                auto a = radius * math::tan(angle * 0.5f * PK_FLOAT_DEG2RAD);
                 implementer->localAABB = BoundingBox::CenterExtents({ 0.0f, 0.0f, radius * 0.5f }, { a, a, radius * 0.5f });
             }
             break;
@@ -171,10 +171,10 @@ namespace PK::App::EntityBuilders
             &EntityViewFlyCamera::time, 
             &EntityViewFlyCamera::flyCamera);
         implementer->mode = ComponentProjection::Perspective;
-        implementer->snashotPosition = implementer->position;
-        implementer->snashotRotation = glm::eulerAngles(implementer->rotation);
-        implementer->targetPosition = implementer->position;
-        implementer->eulerAngles = implementer->snashotRotation;
+        implementer->snapshotPosition = implementer->position;
+        implementer->snapshotRotation = math::quat::toEuler(implementer->rotation);
+        implementer->targetPosition = implementer->snapshotPosition;
+        implementer->eulerAngles = implementer->snapshotRotation;
         implementer->fieldOfView = fieldOfView;
         implementer->zNear = zNear;
         implementer->zFar = zFar;

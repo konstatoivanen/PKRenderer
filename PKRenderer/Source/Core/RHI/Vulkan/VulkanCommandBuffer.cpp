@@ -266,7 +266,7 @@ namespace PK
 
         auto srcRes = src->GetResolution();
         auto dstRes = dst->GetResolution();
-        auto minres = glm::min(srcRes, dstRes);
+        auto minres = math::min(srcRes, dstRes);
 
         auto diff = int3(srcRes - minres);
         auto srcMin = diff / 2;
@@ -313,15 +313,15 @@ namespace PK
         VulkanBindHandle dstHandle;
         static_cast<VulkanTexture*>(src)->FillBindHandle(&srcHandle, srcRange, TextureBindMode::RenderTarget);
         static_cast<VulkanTexture*>(dst)->FillBindHandle(&dstHandle, dstRange, TextureBindMode::RenderTarget);
-        auto srcLayers = glm::min(srcHandle.image.range.layerCount, src->GetLayers());
-        auto dstLayers = glm::min(dstHandle.image.range.layerCount, dst->GetLayers());
+        auto srcLayers = math::min(srcHandle.image.range.layerCount, src->GetLayers());
+        auto dstLayers = math::min(dstHandle.image.range.layerCount, dst->GetLayers());
 
         VkImageBlit blitRegion{};
         blitRegion.srcSubresource = { (uint32_t)srcHandle.image.range.aspectMask, srcHandle.image.range.baseMipLevel, srcHandle.image.range.baseArrayLayer, 0u };
         blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, dstHandle.image.range.baseMipLevel, dstHandle.image.range.baseArrayLayer, 0u };
         blitRegion.srcOffsets[1] = { (int)srcHandle.image.extent.width, (int)srcHandle.image.extent.height, (int)srcHandle.image.extent.depth };
         blitRegion.dstOffsets[1] = { (int)dstHandle.image.extent.width, (int)dstHandle.image.extent.height, (int)dstHandle.image.extent.depth };
-        blitRegion.dstSubresource.layerCount = blitRegion.srcSubresource.layerCount = glm::min(srcLayers, dstLayers);
+        blitRegion.dstSubresource.layerCount = blitRegion.srcSubresource.layerCount = math::min(srcLayers, dstLayers);
         BeginDebugScope("Blit Image", PK_COLOR_RED);
         Blit(&srcHandle, &dstHandle, blitRegion, filter);
         EndDebugScope();
@@ -388,7 +388,7 @@ namespace PK
         auto clearValue = VulkanEnumConvert::GetClearValue(value);
 
         VkClearColorValue clearColorValue{};
-        memcpy(clearColorValue.uint32, glm::value_ptr(value.uint32), sizeof(clearColorValue.uint32));
+        memcpy(clearColorValue.uint32, &value.uint32.x, sizeof(clearColorValue.uint32));
 
         m_renderState->RecordImage(handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
         ResolveBarriers();
@@ -473,10 +473,10 @@ namespace PK
             copyRegions[i].imageExtent.width = region.extent.x;
             copyRegions[i].imageExtent.height = region.extent.y;
             copyRegions[i].imageExtent.depth = region.extent.z;
-            resourceRange.baseMipLevel = glm::min(resourceRange.baseMipLevel, region.level);
-            resourceRange.baseArrayLayer = glm::min(resourceRange.baseArrayLayer, region.layer);
-            resourceRange.levelCount = glm::max(resourceRange.levelCount, region.level + 1u);
-            resourceRange.layerCount = glm::max(resourceRange.layerCount, region.layer + region.layers);
+            resourceRange.baseMipLevel = math::min(resourceRange.baseMipLevel, region.level);
+            resourceRange.baseArrayLayer = math::min(resourceRange.baseArrayLayer, region.layer);
+            resourceRange.levelCount = math::max(resourceRange.levelCount, region.level + 1u);
+            resourceRange.layerCount = math::max(resourceRange.layerCount, region.layer + region.layers);
         }
 
         resourceRange.levelCount = resourceRange.levelCount - resourceRange.baseMipLevel;
@@ -508,7 +508,7 @@ namespace PK
             VkDebugUtilsLabelEXT labelInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
             labelInfo.pNext = nullptr;
             labelInfo.pLabelName = name;
-            memcpy(labelInfo.color, glm::value_ptr(color), sizeof(PK::color));
+            memcpy(labelInfo.color, &color.x, sizeof(PK::color));
             vkCmdBeginDebugUtilsLabelEXT(m_commandBuffer, &labelInfo);
         }
     }

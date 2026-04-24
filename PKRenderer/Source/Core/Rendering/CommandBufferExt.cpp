@@ -76,7 +76,7 @@ namespace PK
         const uint32_t targetCount = (uint32_t)(targets.end() - targets.begin());
         auto& primary = targets.begin()[0];
         auto renderArea = primary.target->GetRect();
-        auto layerCount = glm::min(glm::max(1u, (uint32_t)primary.targetRange.layers), primary.target->GetLayers());
+        auto layerCount = math::min(math::max(1u, (uint32_t)primary.targetRange.layers), primary.target->GetLayers());
         commandBuffer->SetRenderTarget(targets.begin(), targetCount, renderArea, layerCount);
 
         if (updateViewPort)
@@ -90,7 +90,7 @@ namespace PK
     void CommandBufferExt::SetRenderTarget(const RenderTargetBinding& renderTarget, bool updateViewPort)
     {
         auto renderArea = renderTarget.target->GetRect();
-        auto layerCount = glm::min(glm::max(1u, (uint32_t)renderTarget.targetRange.layers), renderTarget.target->GetLayers());
+        auto layerCount = math::min(math::max(1u, (uint32_t)renderTarget.targetRange.layers), renderTarget.target->GetLayers());
         commandBuffer->SetRenderTarget(&renderTarget, 1u, renderArea, layerCount);
 
         if (updateViewPort)

@@ -358,7 +358,7 @@ namespace PK
 
     void Win32Window::SetCursorPosition(const float2& position)
     {
-        if (glm::any(glm::epsilonNotEqual(m_cursorpos, position, 1e-2f)))
+        if (math::any(!math::nearEqual(m_cursorpos, position, 1e-2f)))
         {
             m_cursorpos = position;
             POINT pos = { (int32_t)position.x, (int32_t)position.y };
@@ -547,14 +547,14 @@ namespace PK
             AdjustWindowRectExDpiAware(m_handle, &borderRect, style, FALSE, styleEx);
 
             // Sanity check restore rect
-            restoreRect.x = glm::min(restoreRect.x, desktopSize.x - restoreRect.z);
-            restoreRect.y = glm::min(restoreRect.y, desktopSize.y - restoreRect.y);
-            restoreRect.x = glm::max(restoreRect.x, 0);
-            restoreRect.y = glm::max(restoreRect.y, 0);
-            restoreRect.z = glm::min(restoreRect.z, desktopSize.x - restoreRect.x);
-            restoreRect.w = glm::min(restoreRect.w, desktopSize.y - restoreRect.y);
-            if (m_sizeMin.x >= 0) restoreRect.z = glm::max(restoreRect.z, m_sizeMin.x + (int32_t)(borderRect.right - borderRect.left));
-            if (m_sizeMin.y >= 0) restoreRect.w = glm::max(restoreRect.w, m_sizeMin.y + (int32_t)(borderRect.bottom - borderRect.top));
+            restoreRect.x = math::min(restoreRect.x, desktopSize.x - restoreRect.z);
+            restoreRect.y = math::min(restoreRect.y, desktopSize.y - restoreRect.y);
+            restoreRect.x = math::max(restoreRect.x, 0);
+            restoreRect.y = math::max(restoreRect.y, 0);
+            restoreRect.z = math::min(restoreRect.z, desktopSize.x - restoreRect.x);
+            restoreRect.w = math::min(restoreRect.w, desktopSize.y - restoreRect.y);
+            if (m_sizeMin.x >= 0) restoreRect.z = math::max(restoreRect.z, m_sizeMin.x + (int32_t)(borderRect.right - borderRect.left));
+            if (m_sizeMin.y >= 0) restoreRect.w = math::max(restoreRect.w, m_sizeMin.y + (int32_t)(borderRect.bottom - borderRect.top));
 
             ::SetWindowPos(m_handle, nullptr, restoreRect.x, restoreRect.y, restoreRect.z, restoreRect.w, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
             ::ShowWindow(m_handle, SW_SHOW);
@@ -656,8 +656,8 @@ namespace PK
 
         for (auto axis = 0u; axis < 2u; ++axis)
         {
-            auto hasValue0 = glm::abs(m_scroll[0][axis]) > 1e-4f;
-            auto hasValue1 = glm::abs(m_scroll[1][axis]) > 1e-4f;
+            auto hasValue0 = math::abs(m_scroll[0][axis]) > 1e-4f;
+            auto hasValue1 = math::abs(m_scroll[1][axis]) > 1e-4f;
 
             if (hasValue1 && !hasValue0)
             {
@@ -674,8 +674,8 @@ namespace PK
     {
         RECT rect;
         ::GetClientRect(m_handle, &rect);
-        auto width = glm::max(rect.right - rect.left, 0L);
-        auto height = glm::max(rect.bottom - rect.top, 0L);
+        auto width = math::max(rect.right - rect.left, 0L);
+        auto height = math::max(rect.bottom - rect.top, 0L);
 
         // Check for windows maximized size and see if it needs to adjust position if needed
         if (m_isMaximized)
@@ -801,7 +801,7 @@ namespace PK
 
     void Win32Window::DispatchInputOnMouseMoved(const float2& position)
     {
-        if (glm::any(glm::epsilonNotEqual(m_cursorposVirtual, position, 1e-6f)))
+        if (math::any(!math::nearEqual(m_cursorposVirtual, position, 1e-6f)))
         {
             m_cursorposVirtual = position;
             Platform::DispatchInputOnMouseMoved(this, position, m_clientsize);
@@ -961,10 +961,10 @@ namespace PK
                     monitorInfo.cbSize = sizeof(MONITORINFO);
                     if (::GetMonitorInfoW(monitor, &monitorInfo))
                     {
-                        minmax->ptMaxPosition.x = glm::abs(monitorInfo.rcWork.left - monitorInfo.rcMonitor.left);
-                        minmax->ptMaxPosition.y = glm::abs(monitorInfo.rcWork.top - monitorInfo.rcMonitor.top);
-                        minmax->ptMaxSize.x = glm::abs(monitorInfo.rcWork.right - monitorInfo.rcWork.left);
-                        minmax->ptMaxSize.y = glm::abs(monitorInfo.rcWork.bottom - monitorInfo.rcWork.top);
+                        minmax->ptMaxPosition.x = math::abs(monitorInfo.rcWork.left - monitorInfo.rcMonitor.left);
+                        minmax->ptMaxPosition.y = math::abs(monitorInfo.rcWork.top - monitorInfo.rcMonitor.top);
+                        minmax->ptMaxSize.x = math::abs(monitorInfo.rcWork.right - monitorInfo.rcWork.left);
+                        minmax->ptMaxSize.y = math::abs(monitorInfo.rcWork.bottom - monitorInfo.rcWork.top);
                     }
                 }
 

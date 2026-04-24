@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include <cassert>
 #include <mikktspace/mikktspace.h>
 #include "Core/Utilities/Memory.h"
 #include "Core/CLI/Log.h"
@@ -115,9 +116,9 @@ namespace PK::MeshUtilities
             auto& n1 = *reinterpret_cast<float3*>(ctx->pNormals + ctx->pIndices[i + 1] * ctx->strideNormalsf32);
             auto& n2 = *reinterpret_cast<float3*>(ctx->pNormals + ctx->pIndices[i + 2] * ctx->strideNormalsf32);
 
-            auto tangent = glm::normalize(v1 - v0);
-            auto binormal = glm::normalize(v2 - v0);
-            auto normal = glm::normalize(glm::cross(tangent, binormal));
+            auto tangent = math::normalize(v1 - v0);
+            auto binormal = math::normalize(v2 - v0);
+            auto normal = math::normalize(math::cross(tangent, binormal));
             n0 += normal;
             n1 += normal;
             n2 += normal;
@@ -126,7 +127,7 @@ namespace PK::MeshUtilities
         for (auto i = 0u; i < ctx->countVertex; ++i)
         {
             auto& normal = *reinterpret_cast<float3*>(ctx->pNormals + i * ctx->strideNormalsf32);
-            normal = glm::normalize(normal) * sign;
+            normal = math::normalize(normal) * sign;
         }
     }
 
@@ -201,8 +202,8 @@ namespace PK::MeshUtilities
         
         memset(used, -1, ctx->countVertex);
 
-        memcpy(output.submesh.bbmin, glm::value_ptr(ctx->aabb.min), sizeof(float3));
-        memcpy(output.submesh.bbmax, glm::value_ptr(ctx->aabb.max), sizeof(float3));
+        memcpy(output.submesh.bbmin, &ctx->aabb.min.x, sizeof(float3));
+        memcpy(output.submesh.bbmax, &ctx->aabb.max.x, sizeof(float3));
 
         auto pack_meshlet_vertex = [](GeometryContext* ctx, PKAssets::PKMeshletVertex* out_vertex, uint32_t index)
         {
@@ -212,8 +213,8 @@ namespace PK::MeshUtilities
                 ctx->pNormals + index * ctx->strideNormalsf32,
                 ctx->pTangents + index * ctx->strideTangentsf32,
                 nullptr,
-                glm::value_ptr(ctx->aabb.min),
-                glm::value_ptr(ctx->aabb.max));
+                &ctx->aabb.min.x,
+                &ctx->aabb.max.x);
         };
 
         auto pack_meshlet = [](GeometryContext* ctx, PKAssets::PKMeshlet* out_meshlet, MeshletIndexInfo meshlet, const uint32_t* meshlet_vertices, const uint8_t* meshlet_indices)
@@ -237,9 +238,9 @@ namespace PK::MeshUtilities
                     const auto b = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 1]];
                     const auto c = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 2]];
                     normals[valid_tri_count] = Math::GetTriangleNormal(a, b, c, isValid);
-                    corners[valid_tri_count][0] = glm::make_vec3(a);
-                    corners[valid_tri_count][1] = glm::make_vec3(b);
-                    corners[valid_tri_count][2] = glm::make_vec3(c);
+                    corners[valid_tri_count][0] = float3(a);
+                    corners[valid_tri_count][1] = float3(b);
+                    corners[valid_tri_count][2] = float3(c);
                     valid_tri_count += (size_t)isValid;
                 }
 
@@ -258,7 +259,7 @@ namespace PK::MeshUtilities
 
                     for (auto i = 0u; i < valid_tri_count; ++i)
                     {
-                        minCosA = glm::min(minCosA, glm::dot(normals[i], axis));
+                        minCosA = math::min(minCosA, math::dot(normals[i], axis));
                     }
 
                     if (minCosA > 0.1f)
@@ -267,12 +268,12 @@ namespace PK::MeshUtilities
 
                         for (auto i = 0u; i < valid_tri_count; ++i)
                         {
-                            maxt = glm::max(maxt, glm::dot(psphere.xyz - corners[i][0], normals[i]) / glm::dot(axis, normals[i]));
+                            maxt = math::max(maxt, math::dot(psphere.xyz - corners[i][0], normals[i]) / math::dot(axis, normals[i]));
                         }
 
                         cone_apex = (psphere.xyz - axis) * maxt;
                         cone_axis_s8 = Math::QuantizeSNorm(axis, 8);
-                        const auto cone_axis_s8_e = glm::abs(float3(cone_axis_s8) / 127.0f - axis);
+                        const auto cone_axis_s8_e = math::abs(float3(cone_axis_s8) / 127.0f - axis);
                         const auto cone_cutoff = int(127 * (sqrtf(1.0f - minCosA * minCosA) + cone_axis_s8_e.x + cone_axis_s8_e.y + cone_axis_s8_e.z) + 1);
                         cone_cutoff_s8 = (cone_cutoff > 127) ? 127 : (signed char)(cone_cutoff);
                     }
@@ -284,14 +285,14 @@ namespace PK::MeshUtilities
                 meshlet.triangle_offset / 3u,
                 meshlet.vertex_count,
                 meshlet.triangle_count,
-                glm::value_ptr(cone_axis_s8),
+                &cone_axis_s8.x,
                 cone_cutoff_s8,
-                glm::value_ptr(cone_apex),
-                glm::value_ptr(center),
-                glm::value_ptr(extents),
-                glm::value_ptr(center),
+                &cone_apex.x,
+                &center.x,
+                &extents.x,
+                &center.x,
                 -1.0f,
-                glm::value_ptr(center),
+                &center.x,
                 PKAssets::PK_MESHLET_LOD_MAX_ERROR);
         };
 
@@ -637,7 +638,7 @@ namespace PK::MeshUtilities
 
         for (int n = 0; n < vcount; ++n)
         {
-            attributes[n].in_NORMAL = glm::normalize(positions[n]);
+            attributes[n].in_NORMAL = math::normalize(positions[n]);
         }
 
         attributes[0].in_TEXCOORD0 = PK_FLOAT2_UP;

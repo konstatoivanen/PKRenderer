@@ -43,7 +43,7 @@ namespace PK::App
     void PassFilmGrain::Compute(CommandBufferExt cmd)
     {
         auto hash = HashCache::Get();
-        cmd->BeginDebugScope("Noise Compute", PK_COLOR32_BLUE);
+        cmd->BeginDebugScope("Noise Compute", float4(PK_COLOR32_BLUE));
         RHI::SetImage(hash->pk_Image, m_filmGrainTexture.get(), 0, 0);
         cmd.Dispatch(m_computeFilmGrain, { 256, 256, 1 });
         cmd->EndDebugScope();

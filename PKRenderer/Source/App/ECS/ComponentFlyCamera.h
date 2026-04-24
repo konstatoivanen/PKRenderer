@@ -5,8 +5,8 @@ namespace PK::App
 {
     struct ComponentFlyCamera
     {
-        float3 snashotPosition;
-        float3 snashotRotation;
+        float3 snapshotPosition;
+        float3 snapshotRotation;
         float3 eulerAngles;
         float3 targetPosition;
         float moveSpeed;

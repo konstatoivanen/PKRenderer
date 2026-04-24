@@ -47,7 +47,6 @@ namespace PK::Math
     uint2 Align(const uint2& resolution, uint32_t alignment);
     uint3 Align(const uint3& resolution, uint32_t alignment);
     uint4 Align(const uint4& value, uint32_t alignment);
-    uint3 GetComputeGroupCount(const uint3& threads, const uint3& clusterSize);
     uint32_t CountBits(uint32_t value);
     inline uint64_t ULongAdd(uint64_t a, int32_t b) { return (int64_t)a + b < 0 ? 0ull : a + b; }
     uint4 MurmurHash41(uint32_t seed);

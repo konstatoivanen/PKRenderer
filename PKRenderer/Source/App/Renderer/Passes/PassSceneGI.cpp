@@ -81,7 +81,7 @@ namespace PK::App
         const auto levelscale = 2.0f * tan(angle / 2.0f) / voxelSize;
         const auto correctionAngle = tan(angle / 8.0f);
         const auto stepSize = (1.0f + correctionAngle) / (1.0f - correctionAngle) * voxelSize / 2.0f;
-        const auto volumeOriginQuantized = glm::round(volumeOrigin / voxelSize) * voxelSize;
+        const auto volumeOriginQuantized = math::round(volumeOrigin / voxelSize) * voxelSize;
 
         auto frameIndexSinceResize = view->timeRender.frameIndex - view->timeResize.frameIndex;
         m_rasterAxis = frameIndexSinceResize % 3;

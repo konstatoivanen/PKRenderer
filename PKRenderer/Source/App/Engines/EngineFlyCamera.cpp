@@ -33,9 +33,9 @@ namespace PK::App
             auto transform = view.transform;
 
             auto sensitivity = camera->sensitivity / 1000.0f;
-            auto deltaTime = glm::clamp((float)time.deltaTime, 0.001f, 0.99f);
-            auto interpolantPos = 1.0f - glm::exp(-deltaTime / camera->moveSmoothing);
-            auto interpolantRot = 1.0f - glm::exp(-deltaTime / camera->rotationSmoothing);
+            auto deltaTime = math::clamp((float)time.deltaTime, 0.001f, 0.99f);
+            auto interpolantPos = 1.0f - math::exp(-deltaTime / camera->moveSmoothing);
+            auto interpolantRot = 1.0f - math::exp(-deltaTime / camera->rotationSmoothing);
             auto isDragging = input->state.ConsumeKey(m_keys.LookDrag);
 
             if (isDragging)
@@ -44,10 +44,10 @@ namespace PK::App
                 camera->eulerAngles.y -= input->state.cursorPositionDelta.x * sensitivity;
             }
 
-            auto targetRotation = glm::quat(camera->eulerAngles);
+            auto targetRotation = math::quat::fromEuler(camera->eulerAngles);
 
             auto offset = input->state.ConsumeAxis(m_keys.Left, m_keys.Right, m_keys.Down, m_keys.Up, m_keys.Backward, m_keys.Forward);
-            auto length = glm::length(offset);
+            auto length = math::length(offset);
 
             if (length > 0)
             {
@@ -55,7 +55,7 @@ namespace PK::App
                 offset *= deltaTime * camera->moveSpeed;
             }
 
-            camera->targetPosition += targetRotation * offset;
+            camera->targetPosition += math::quat::mul(targetRotation, offset);
 
             if (input->state.ConsumeKey(m_keys.FovControl))
             {
@@ -67,7 +67,7 @@ namespace PK::App
                     auto fov1 = projection->fieldOfView + fovDelta;
                     auto fd0 = Math::Cot(fov0 * PK_FLOAT_DEG2RAD * 0.5f);
                     auto fd1 = Math::Cot(fov1 * PK_FLOAT_DEG2RAD * 0.5f);
-                    auto zoomOffset = targetRotation * float3(0, 0, fd0 - fd1);
+                    auto zoomOffset = math::quat::mul(targetRotation, float3(0, 0, fd0 - fd1));
 
                     camera->targetPosition += zoomOffset;
                     transform->position += zoomOffset;
@@ -79,7 +79,7 @@ namespace PK::App
             {
                 auto speedDelta = input->state.ConsumeAxis(m_keys.SpeedDown, m_keys.SpeedUp);
                 camera->moveSpeed += camera->moveSpeed * 0.25f * speedDelta;
-                camera->moveSpeed = glm::max(0.01f, camera->moveSpeed);
+                camera->moveSpeed = math::max(0.01f, camera->moveSpeed);
 
                 if (input->state.ConsumeKey(m_keys.ResetSmoothing))
                 {
@@ -88,8 +88,8 @@ namespace PK::App
                 }
             }
 
-            transform->position = glm::mix(transform->position, camera->targetPosition, interpolantPos);
-            transform->rotation = glm::slerp(transform->rotation, targetRotation, interpolantRot);
+            transform->position = math::lerp(transform->position, camera->targetPosition, interpolantPos);
+            transform->rotation = math::quat::slerp(transform->rotation, targetRotation, interpolantRot);
 
             // Force automatic perspective projection for this view.
             view.projection->mode = ComponentProjection::Perspective;
@@ -108,7 +108,7 @@ namespace PK::App
             auto& view = views[i];
             auto transform = view.transform;
             auto position = transform->position;
-            auto rotation = glm::eulerAngles(transform->rotation);
+            auto rotation = math::quat::toEuler(transform->rotation);
             PK_LOG_INFO("EngineFlyCamera.Transforms.Log: EntityId:%i Pos:[%f, %f, %f], Rot:[%f,%f,%f]", view.GID.entityID(), position.x, position.y, position.z, rotation.x, rotation.y, rotation.z);
         }
     }
@@ -123,9 +123,9 @@ namespace PK::App
             auto camera = view.flyCamera;
             auto transform = view.transform;
 
-            camera->eulerAngles = camera->snashotRotation;
-            camera->targetPosition = transform->position = camera->snashotPosition;
-            transform->rotation = glm::quat(camera->eulerAngles);
+            camera->eulerAngles = camera->snapshotRotation;
+            camera->targetPosition = transform->position = camera->snapshotPosition;
+            transform->rotation = math::quat::fromEuler(camera->eulerAngles);
             PK_LOG_INFO("EngineFlyCamera.Transforms.Reset: EntityId:%i", i);
         }
     }

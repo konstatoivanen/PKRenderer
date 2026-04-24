@@ -203,8 +203,8 @@ namespace PK::App
             const auto& viewToClipNoJitter = view->viewToClip;
             const auto& worldToView = view->worldToView;
             const auto viewToClip = Math::GetPerspectiveJittered(viewToClipNoJitter, jitter.xy);
-            const auto clipToView = glm::inverse(viewToClip);
-            const auto viewToWorld = glm::affineInverse(worldToView);
+            const auto clipToView = math::inverse(viewToClip);
+            const auto viewToWorld = math::affineInverse(worldToView);
             const auto worldToClip = viewToClip * worldToView;
             const auto worldToClipNoJitter = viewToClipNoJitter * worldToView;
             const auto n = view->znear;
@@ -214,7 +214,7 @@ namespace PK::App
             const auto& viewToClipNoJitterPrev = view->viewToClipPrev;
             const auto& worldToViewPrev = view->worldToViewPrev;
             const auto viewToClipPrev = Math::GetPerspectiveJittered(viewToClipNoJitterPrev, jitter.xy);
-            const auto viewToWorldPrev = glm::affineInverse(worldToViewPrev);
+            const auto viewToWorldPrev = math::affineInverse(worldToViewPrev);
             const auto worldToClipPrev = viewToClipPrev * worldToViewPrev;
             const auto worldToClipNoJitterPrev = viewToClipNoJitterPrev * worldToViewPrev;
 
@@ -229,7 +229,7 @@ namespace PK::App
             constants->Set<float4x4>(hash->pk_WorldToClipPrev, worldToClipPrev);
             constants->Set<float4x4>(hash->pk_WorldToClipPrev_NoJitter, worldToClipNoJitterPrev);
             constants->Set<float4x4>(hash->pk_ViewToPrevClip, worldToClipPrev * viewToWorld);
-            constants->Set<float4x4>(hash->pk_ClipToPrevClip_NoJitter, worldToClipNoJitterPrev * glm::inverse(worldToClipNoJitter));
+            constants->Set<float4x4>(hash->pk_ClipToPrevClip_NoJitter, worldToClipNoJitterPrev * math::inverse(worldToClipNoJitter));
             constants->Set<float4>(hash->pk_Time, { (float)time / 20.0f, (float)time, (float)time * 2.0f, (float)time * 3.0f });
             constants->Set<float4>(hash->pk_SinTime, { (float)sin(time / 8.0f), (float)sin(time / 4.0f), (float)sin(time / 2.0f), (float)sin(time) });
             constants->Set<float4>(hash->pk_CosTime, { (float)cos(time / 8.0f), (float)cos(time / 4.0f), (float)cos(time / 2.0f), (float)cos(time) });

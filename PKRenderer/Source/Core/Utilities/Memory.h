@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <stdlib.h>
+#include <new>
 #if !defined(PK_SYSTEM_ERROR)
 #include <assert.h>
 #endif

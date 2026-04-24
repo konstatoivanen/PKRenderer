@@ -38,7 +38,7 @@ namespace PK::App
         hzbDesc.sampler.filterMin = FilterMode::Bilinear;
         hzbDesc.sampler.filterMag = FilterMode::Bilinear;
         hzbDesc.resolution = resolution;
-        hzbDesc.levels = (uint8_t)glm::min(13u, Math::GetMaxMipLevel(uint2(resolution.x, resolution.y)));
+        hzbDesc.levels = (uint8_t)math::min(13u, Math::GetMaxMipLevel(uint2(resolution.x, resolution.y)));
         hzbDesc.layers = 2u;
         hzbDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         RHI::ValidateTexture(resources->hierarchicalDepth, hzbDesc, "Scene.HierarchicalDepth");
@@ -62,10 +62,10 @@ namespace PK::App
         RHI::SetImage(hash->pk_Image6, resources->hierarchicalDepth.get(), { 6, 0, 1, 2 });
         RHI::SetImage(hash->pk_Image7, resources->hierarchicalDepth.get(), { 7, 0, 1, 2 });
         RHI::SetImage(hash->pk_Image8, resources->hierarchicalDepth.get(), { 8, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image9, resources->hierarchicalDepth.get(), { (uint16_t)glm::min(9u, hzbDesc.levels - 1u), 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image10, resources->hierarchicalDepth.get(), { (uint16_t)glm::min(10u, hzbDesc.levels - 1u), 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image11, resources->hierarchicalDepth.get(), { (uint16_t)glm::min(11u, hzbDesc.levels - 1u), 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image12, resources->hierarchicalDepth.get(), { (uint16_t)glm::min(12u, hzbDesc.levels - 1u), 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image9, resources->hierarchicalDepth.get(), { (uint16_t)math::min(9u, hzbDesc.levels - 1u), 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image10, resources->hierarchicalDepth.get(), { (uint16_t)math::min(10u, hzbDesc.levels - 1u), 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image11, resources->hierarchicalDepth.get(), { (uint16_t)math::min(11u, hzbDesc.levels - 1u), 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image12, resources->hierarchicalDepth.get(), { (uint16_t)math::min(12u, hzbDesc.levels - 1u), 0, 1, 2 });
         cmd.Dispatch(m_computeHierachicalDepth, 0u, uint3(256u * groupCountX, groupCountY, 1));
     }
 }

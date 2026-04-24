@@ -21,7 +21,7 @@ namespace PK::App
 
         m_currentResolution = uint2(window->GetResolution().xy);
 
-        if (m_currentResolution != m_captureResolution)
+        if (math::any(m_currentResolution != m_captureResolution))
         {
             m_captureCounter = 0u;
             m_copyFence.Invalidate();

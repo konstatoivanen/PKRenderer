@@ -143,8 +143,8 @@ namespace PK
         {
             m_submeshes[i] = submeshes[i];
             Math::BoundsEncapsulate(&m_fullRange.bounds, submeshes[i].bounds);
-            m_fullRange.vertexCount = glm::max(m_fullRange.vertexCount, submeshes[i].vertexFirst + submeshes[i].vertexCount);
-            m_fullRange.indexCount = glm::max(m_fullRange.indexCount, submeshes[i].indexFirst + submeshes[i].indexCount);
+            m_fullRange.vertexCount = math::max(m_fullRange.vertexCount, submeshes[i].vertexFirst + submeshes[i].vertexCount);
+            m_fullRange.indexCount = math::max(m_fullRange.indexCount, submeshes[i].indexFirst + submeshes[i].indexCount);
         }
     }
 
@@ -178,14 +178,14 @@ namespace PK
             return m_fullRange;
         }
 
-        return m_submeshes[glm::min((uint)submesh, (uint)m_submeshes.GetCount())];
+        return m_submeshes[math::min((uint)submesh, (uint)m_submeshes.GetCount())];
     }
 
     const Mesh::VertexBuffers& Mesh::GetVertexBuffers() const { return m_vertexBuffers; }
     const VertexStreamLayout& Mesh::GetVertexStreamLayout() const { return m_streamLayout; }
     ElementType Mesh::GetIndexType() const { return m_indexType; }
     const RHIBuffer* Mesh::GetIndexBuffer() const { return m_indexBuffer.get(); }
-    uint32_t Mesh::GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.GetCount()); }
+    uint32_t Mesh::GetSubmeshCount() const { return math::max(1u, (uint32_t)m_submeshes.GetCount()); }
     const Mesh::SubMesh& Mesh::GetFullRange() const { return m_fullRange; }
     bool Mesh::HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
 }

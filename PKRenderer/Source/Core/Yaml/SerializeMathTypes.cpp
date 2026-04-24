@@ -22,7 +22,7 @@ namespace PK::YAML
             auto maxidx = (uint32_t)node.num_children() - 1u;               \
             for (auto i = 0u; i < count; ++i)                               \
             {                                                               \
-                node[glm::min(maxidx, i)] >> (*rhs)[i];                     \
+                node[math::min(maxidx, i)] >> (*rhs)[i];                    \
             }                                                               \
         }                                                                   \
         return true;                                                        \
@@ -39,7 +39,7 @@ namespace PK::YAML
             for (auto i = 0u; i < countx; ++i)                                              \
             for (auto j = 0u; j < county; ++j)                                              \
             {                                                                               \
-                node[glm::min(maxidx, i * county + j)] >> (*rhs)[i][j];                     \
+                node[math::min(maxidx, i * county + j)] >> (*rhs)[i][j];                    \
             }                                                                               \
         }                                                                                   \
         return true;                                                                        \

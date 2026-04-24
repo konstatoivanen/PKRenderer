@@ -25,9 +25,9 @@ namespace PK::App
         auto hash = HashCache::Get();
         auto& settings = view->settings.FogSettings;
 
-        auto fadeShadowsDirect = 1.0f / (settings.ZFar - glm::mix(settings.ZFar, settings.ZNear, settings.FadeShadowsDirect));
-        auto fadeShadowsVolumetric = 1.0f / (settings.ZFar - glm::mix(settings.ZFar, settings.ZNear, settings.FadeShadowsVolumetric));
-        auto fadeStatic = 1.0f / (settings.ZFar - glm::mix(settings.ZFar, settings.ZNear, settings.FadeStatic));
+        auto fadeShadowsDirect = 1.0f / (settings.ZFar - math::lerp(settings.ZFar, settings.ZNear, settings.FadeShadowsDirect));
+        auto fadeShadowsVolumetric = 1.0f / (settings.ZFar - math::lerp(settings.ZFar, settings.ZNear, settings.FadeShadowsVolumetric));
+        auto fadeStatic = 1.0f / (settings.ZFar - math::lerp(settings.ZFar, settings.ZNear, settings.FadeStatic));
 
         view->constants.Set<float>(hash->pk_Fog_Density_NoiseAmount, settings.DensityNoiseAmount);
         view->constants.Set<float>(hash->pk_Fog_Density_NoiseScale, settings.DensityNoiseScale);

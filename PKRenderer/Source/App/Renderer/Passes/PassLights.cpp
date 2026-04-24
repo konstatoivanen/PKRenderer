@@ -63,10 +63,10 @@ namespace PK::App
 
         if (light.light_type == (uint32_t)LightType::Spot)
         {
-            const auto outerAngle = glm::clamp(light.spot_angles.x * 0.5f * PK_FLOAT_DEG2RAD, PK_FLOAT_DEG2RAD, 180.0f * PK_FLOAT_DEG2RAD);
-            const auto innerAngle = glm::clamp(outerAngle * (1.0f - light.spot_angles.y), 0.0f, outerAngle - PK_FLOAT_DEG2RAD);
-            const auto outerCos = glm::cos(outerAngle);
-            const auto innerCos = glm::cos(innerAngle);
+            const auto outerAngle = math::clamp(light.spot_angles.x * 0.5f * PK_FLOAT_DEG2RAD, PK_FLOAT_DEG2RAD, 180.0f * PK_FLOAT_DEG2RAD);
+            const auto innerAngle = math::clamp(outerAngle * (1.0f - light.spot_angles.y), 0.0f, outerAngle - PK_FLOAT_DEG2RAD);
+            const auto outerCos = math::cos(outerAngle);
+            const auto innerCos = math::cos(innerAngle);
             const auto invCosDiff = 1.0f / (innerCos - outerCos);
             spotAngles = float2(outerCos, invCosDiff);
         }
@@ -179,7 +179,7 @@ namespace PK::App
             return;
         }
 
-        const auto clipToWorld = glm::inverse(renderView->worldToClip);
+        const auto clipToWorld = math::inverse(renderView->worldToClip);
         const auto tileZParams = Math::GetExponentialZParams(renderView->znear, renderView->zfar, m_tileZDistribution, LightGridSizeZ);
         const auto shadowCasterMask = ScenePrimitiveFlags::Mesh | ScenePrimitiveFlags::CastShadows;
         const auto lightCount = (uint)culledLights.GetCount();
@@ -221,8 +221,8 @@ namespace PK::App
 
             SceneLight light{};
             light.position = transform->position;
-            light.color = view->light->color;
-            light.rotation = float4(transform->rotation.y, transform->rotation.z, transform->rotation.w, transform->rotation.x);
+            light.color = view->light->color.rgb;
+            light.rotation = transform->rotation;
             light.spot_angles = float2(view->light->angle, view->light->angleFade);
             light.radius = view->light->radius;
             light.source_radius = view->light->sourceRadius;
@@ -431,7 +431,7 @@ namespace PK::App
         // Bend screen space shadows.
         // https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/
         auto lightView = resources->lightViews[batches[0].baseLightIndex];
-        auto lightDirection = lightView->transform->rotation * PK_FLOAT3_FORWARD;
+        auto lightDirection = math::quat::mul(lightView->transform->rotation, PK_FLOAT3_FORWARD);
         auto lightProjection = renderView->worldToClip * float4(-lightDirection, 0.0f);
         int viewMin[2] = { 0, 0 };
         int viewMax[2] = { (int)resolution.x, (int)resolution.y };

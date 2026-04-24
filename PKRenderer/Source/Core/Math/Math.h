@@ -1,13 +1,5 @@
 #pragma once
-#define GLM_FORCE_SWIZZLE 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include "MathFwd.h"
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-#include <glm/gtx/quaternion.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "Vector.h"
 
 namespace PK
 {
@@ -80,9 +72,9 @@ namespace PK
     constexpr float3 PK_FLOAT3_FORWARD = { 0.0f,  0.0f,  1.0f };
     constexpr float3 PK_FLOAT3_BACKWARD = { 0.0f,  0.0f, -1.0f };
 
-    constexpr quaternion PK_QUATERNION_IDENTITY = { 1.0f, 0.0f, 0.0f, 0.0f };
+    constexpr quaternion PK_QUATERNION_IDENTITY = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-    constexpr float4x4 PK_FLOAT3X4_IDENTITY = float3x4(1.0f);
+    constexpr float3x4 PK_FLOAT3X4_IDENTITY = float3x4(1.0f);
     constexpr float4x4 PK_FLOAT4X4_IDENTITY = float4x4(1.0f);
 
     constexpr color PK_COLOR_WHITE = { 1.0f, 1.0f, 1.0f, 1.0f };

@@ -139,8 +139,8 @@ namespace PK::App
 
             if (entity.renderView->isWindowTarget)
             {
-                viewrect.z = glm::max(0, (int)glm::min(viewrect.x + viewrect.z, window->GetResolution().x) - (int)viewrect.x);
-                viewrect.w = glm::max(0, (int)glm::min(viewrect.y + viewrect.w, window->GetResolution().y) - (int)viewrect.y);
+                viewrect.z = math::max(0, (int)math::min(viewrect.x + viewrect.z, window->GetResolution().x) - (int)viewrect.x);
+                viewrect.w = math::max(0, (int)math::min(viewrect.y + viewrect.w, window->GetResolution().y) - (int)viewrect.y);
             }
 
             if (viewrect.z > 0 && viewrect.w > 0 && m_renderViewCount < MAX_RENDER_VIEWS)
@@ -152,7 +152,7 @@ namespace PK::App
                 auto viewresolution = viewrect.zw - viewrect.xy;
                 auto bufferResolution = GBuffers::AlignResolution(viewresolution);
                 auto bufferAspectRatio = (float)bufferResolution.x / (float)bufferResolution.y;
-                auto isOutOfDate = bufferResolution != renderView->bufferResolution;
+                auto isOutOfDate = math::any(bufferResolution != renderView->bufferResolution);
 
                 entity.renderView->renderViewRef = renderView;
                 renderView->resources = resources;

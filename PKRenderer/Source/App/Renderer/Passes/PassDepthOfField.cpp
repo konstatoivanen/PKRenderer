@@ -44,7 +44,7 @@ namespace PK::App
             RHI::SetBuffer(HashCache::Get()->pk_DoF_AutoFocusState, resources->autoFocusBuffer.get());
         }
 
-        RHI::SetConstant(hash->pk_DoF_MaximumCoC, glm::min(0.05f, 10.0f / screenHeight));
+        RHI::SetConstant(hash->pk_DoF_MaximumCoC, math::min(0.05f, 10.0f / screenHeight));
         cmd.Dispatch(m_computeAutoFocus, 0, { 1u, 1u, 1u });
     }
 
@@ -78,7 +78,7 @@ namespace PK::App
             RHI::ValidateTexture(resources->alphaTarget, descriptor, "DepthOfField.Target.Alpha");
         }
 
-        RHI::SetConstant(hash->pk_DoF_MaximumCoC, glm::min(0.05f, 10.0f / destination->GetResolution().y));
+        RHI::SetConstant(hash->pk_DoF_MaximumCoC, math::min(0.05f, 10.0f / destination->GetResolution().y));
         RHI::SetImage(hash->pk_DoF_ColorWrite, resources->colorTarget.get());
         RHI::SetImage(hash->pk_DoF_AlphaWrite, resources->alphaTarget.get());
         RHI::SetTexture(hash->pk_DoF_ColorRead, resources->colorTarget.get());

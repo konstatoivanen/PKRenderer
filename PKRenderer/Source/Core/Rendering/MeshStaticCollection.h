@@ -78,7 +78,7 @@ namespace PK
         uint32_t indexFirst = 0u;
         uint32_t indexCount = 0u;
 
-        inline uint32_t GetGlobalSubmeshIndex(uint32_t localIndex) const { return submeshFirst + glm::min(localIndex, submeshCount - 1u); }
+        inline uint32_t GetGlobalSubmeshIndex(uint32_t localIndex) const { return submeshFirst + math::min(localIndex, submeshCount - 1u); }
         const SubMeshStatic* GetSubmesh(uint32_t localIndex) const;
         bool TryGetAccelerationStructureGeometryInfo(uint32_t localIndex, AccelerationStructureGeometryInfo* outInfo) const;
     };

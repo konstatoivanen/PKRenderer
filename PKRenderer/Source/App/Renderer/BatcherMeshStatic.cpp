@@ -102,7 +102,7 @@ namespace PK::App
     {
         m_resolvedGroups = m_drawArena.Allocate<PassGroup>(m_groupIndex);
 
-        RHI::ValidateBuffer<PKAssets::PKDrawInfo>(m_indices, glm::max(1024u, m_drawInfoCount));
+        RHI::ValidateBuffer<PKAssets::PKDrawInfo>(m_indices, math::max(1024u, m_drawInfoCount));
         RHI::ValidateBuffer<uint2>(m_tasklets, m_taskletCount);
 
         auto taskletView = cmd.BeginBufferWrite<uint2>(m_tasklets.get(), 0u, m_taskletCount);
@@ -150,7 +150,7 @@ namespace PK::App
 
                 for (auto j = 0u; j < taskCount; ++j)
                 {
-                    auto taskletMeshletCount = glm::min(PK_RHI_MAX_MESHLETS_PER_TASK, submesh->meshletCount - j * PK_RHI_MAX_MESHLETS_PER_TASK);
+                    auto taskletMeshletCount = math::min(PK_RHI_MAX_MESHLETS_PER_TASK, submesh->meshletCount - j * PK_RHI_MAX_MESHLETS_PER_TASK);
                     taskletView[taskletCount++] =
                     {
                         submesh->meshletFirst + j * PK_RHI_MAX_MESHLETS_PER_TASK,

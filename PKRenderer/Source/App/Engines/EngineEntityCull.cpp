@@ -33,9 +33,9 @@ namespace PK::App
                 if ((viewFlags & ScenePrimitiveFlags::NeverCull) != 0 || Math::IntersectPlanesAABB(cullingPlanes.array_ptr(), 6, entityView->bounds->worldAABB))
                 {
                     auto depth = Math::PlaneMaxDistanceToAABB(cullingPlanes.near, entityView->bounds->worldAABB);
-                    auto fixedDepth = glm::min(0xFFFFu, (uint32_t)glm::max(0.0f, depth * cullingInvRange));
-                    cullingMinDepth = glm::min(cullingMinDepth, depth);
-                    cullingMaxDepth = glm::max(cullingMaxDepth, depth);
+                    auto fixedDepth = math::min(0xFFFFu, (uint32_t)math::max(0.0f, depth * cullingInvRange));
+                    cullingMinDepth = math::min(cullingMinDepth, depth);
+                    cullingMaxDepth = math::max(cullingMaxDepth, depth);
                     frameArena->Emplace<CulledEntityInfo>({ entityView->GID.entityID(), (uint16_t)fixedDepth, 0u });
                 }
             }
@@ -56,7 +56,7 @@ namespace PK::App
         auto cullingBounds = request->aabb;
         auto cullingMask = request->mask;
 
-        auto cullingRange = (float)request->aabb.GetExtents().length();
+        auto cullingRange = (float)math::length(request->aabb.GetExtents());
         auto cullingInvRange = (float)(0xFFFF) / cullingRange;
         auto cullingMinDepth = cullingRange;
         auto cullingMaxDepth = 0.0f;
@@ -83,8 +83,8 @@ namespace PK::App
                     // Source: https://newq.net/dl/pub/s2015_shadows.pdf
                     for (uint32_t j = 0u; j < 6; ++j)
                     {
-                        auto dist = glm::dot(entityOffset, cubePlaneNormals[j]);
-                        auto radius = glm::dot(entityExtents, cubePlaneNormalsAbs[j]);
+                        auto dist = math::dot(entityOffset, cubePlaneNormals[j]);
+                        auto radius = math::dot(entityExtents, cubePlaneNormalsAbs[j]);
                         rp[j] = dist > -radius;
                         rn[j] = dist < +radius;
                     }
@@ -101,15 +101,15 @@ namespace PK::App
                     if (isVisible != 0u)
                     {
                         auto depth = Math::ExtentsSignedDistance(entityOffset, entityExtents);
-                        auto fixedDepth = glm::min(0xFFFFu, (uint32_t)glm::max(0.0f, depth * cullingInvRange));
+                        auto fixedDepth = math::min(0xFFFFu, (uint32_t)math::max(0.0f, depth * cullingInvRange));
                         auto entityId = entityView->GID.entityID();
 
                         for (auto j = 0u; j < 6u; ++j)
                         {
                             if (isVisible & (1 << j))
                             {
-                                cullingMinDepth = glm::min(cullingMinDepth, depth);
-                                cullingMaxDepth = glm::max(cullingMaxDepth, depth);
+                                cullingMinDepth = math::min(cullingMinDepth, depth);
+                                cullingMaxDepth = math::max(cullingMaxDepth, depth);
                                 frameArena->Emplace<CulledEntityInfo>({ entityId, (uint16_t)fixedDepth, (uint16_t)j });
                             }
                         }
@@ -140,14 +140,14 @@ namespace PK::App
         for (auto i = 0u; i < cullingCascadeCount; ++i)
         {
             cullingCascadePlanes[i] = Math::ExtractFrustrumPlanes(request->cascades[i], true);
-            cullingMaxDepth = glm::max(cullingMaxDepth, cullingCascadePlanes[i].near.w + cullingCascadePlanes[i].far.w);
+            cullingMaxDepth = math::max(cullingMaxDepth, cullingCascadePlanes[i].near.w + cullingCascadePlanes[i].far.w);
 
             // Check against cascade splits as well. 
             // this eliminates some draws that do not contribute to the sampled portion of the shadow map.
             // Cascades should be further optimized however, as now most of the texel density is wasted by the axis aligned rect fitting
             // @TODO A potential optimization would be to find the rotations for minimum bound cascade frustums.
             auto cascadeDirection = float3(cullingCascadePlanes[i].near.xyz);
-            auto offsetSign = glm::dot(cascadeDirection, float3(request->viewForwardPlane.xyz)) < 0.0f ? 0 : 1;
+            auto offsetSign = math::dot(cascadeDirection, float3(request->viewForwardPlane.xyz)) < 0.0f ? 0 : 1;
             cullingViewPlanes[i] = request->viewForwardPlane;
             cullingViewPlanes[i].w -= request->viewZOffsets[i + offsetSign];
             cullingViewPlanes[i] *= offsetSign == 0 ? 1.0f : -1.0f;
@@ -187,7 +187,7 @@ namespace PK::App
                         if ((isVisible & (1 << j)) != 0u)
                         {
                             auto minDistLocal = Math::PlaneMinDistanceToAABB(cullingCascadePlanes[j].near, entityBounds);
-                            cullingMinDepth = glm::min(cullingMinDepth, minDistLocal);
+                            cullingMinDepth = math::min(cullingMinDepth, minDistLocal);
                             frameArena->Emplace<CulledEntityInfo>({ entityId, Math::PackHalf(minDistLocal), (uint16_t)j });
                         }
                     }
@@ -204,7 +204,7 @@ namespace PK::App
         {
             auto& info = entityInfos[i];
             auto nearOffset = Math::UnPackHalf(info.depth);
-            auto fixedDepth = glm::min(0xFFFFu, (uint32_t)((nearOffset - cullingMinDepth) * cullingInvRange));
+            auto fixedDepth = math::min(0xFFFFu, (uint32_t)((nearOffset - cullingMinDepth) * cullingInvRange));
             info.depth = fixedDepth;
         }
 

@@ -227,9 +227,9 @@ namespace PK
 
         auto maxImageCount = capabilities.maxImageCount > 0 ? capabilities.maxImageCount : UINT32_MAX;
         auto minImageCount = capabilities.minImageCount;
-        maxImageCount = glm::min(PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT, maxImageCount);
+        maxImageCount = math::min(PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT, maxImageCount);
 
-        m_imageCount = glm::clamp(descriptor.desiredImageCount, minImageCount, maxImageCount);
+        m_imageCount = math::clamp(descriptor.desiredImageCount, minImageCount, maxImageCount);
         uint32_t queueFamilyIndices[] = { queueGraphics->GetFamily(), queuePresent->GetFamily() };
 
         auto fullscreenInfo = VulkanGetSwapchainFullscreenInfo(descriptor.nativeMonitorHandle, descriptor.nativeMonitorHandle != nullptr);

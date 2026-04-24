@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "PlatformInterfaces.h"
+#include <stdio.h>
 
 namespace PK
 {

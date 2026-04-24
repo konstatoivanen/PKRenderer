@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include <cassert>
 #include "Core/Utilities/Memory.h"
 #include "FunctionsMisc.h"
 
@@ -44,14 +45,14 @@ namespace PK::Math
 
     float3 GetExponentialZParams01(float znear, float zfar, float distribution)
     {
-        const auto o = (zfar - znear * glm::exp2(1.0f / distribution)) / (zfar - znear);
+        const auto o = (zfar - znear * math::exp2(1.0f / distribution)) / (zfar - znear);
         const auto b = (1.0f - o) / znear;
         return float3(b,o, distribution);
     }
 
     float3 GetExponentialZParams(float znear, float zfar, float distribution, uint32_t size)
     {
-        const auto o = (zfar - znear * glm::exp2((size - 1.0f) / distribution)) / (zfar - znear);
+        const auto o = (zfar - znear * math::exp2((size - 1.0f) / distribution)) / (zfar - znear);
         const auto b = (1.0f - o) / znear;
         return float3(b, o, distribution);
     }
@@ -211,7 +212,7 @@ namespace PK::Math
 
     float3 SafeNormalize(const float3& v)
     {
-        float length = glm::length(v);
+        float length = math::length(v);
         return v * (length == 0.0f ? 0.0f : (1.0f / length));
     }
 
@@ -232,17 +233,17 @@ namespace PK::Math
 
     uint32_t GetMaxMipLevelPow2(uint32_t resolution)
     {
-        return glm::log2(resolution);
+        return math::log2(resolution);
     }
 
     uint32_t GetMaxMipLevelPow2(const uint2& resolution)
     {
-        return glm::log2(glm::compMin(resolution));
+        return math::log2(math::cmin(resolution));
     }
 
     uint32_t GetMaxMipLevelPow2(const uint3& resolution)
     {
-        return glm::log2(glm::compMin(resolution));
+        return math::log2(math::cmin(resolution));
     }
 
     uint32_t GetMaxMipLevel(uint32_t resolution)
@@ -260,12 +261,12 @@ namespace PK::Math
 
     uint32_t GetMaxMipLevel(const uint2& resolution)
     {
-        return GetMaxMipLevel(glm::compMin(resolution));
+        return GetMaxMipLevel(math::cmin(resolution));
     }
 
     uint32_t GetMaxMipLevel(const uint3& resolution)
     {
-        return GetMaxMipLevel(glm::compMin(resolution));
+        return GetMaxMipLevel(math::cmin(resolution));
     }
 
     void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count)
@@ -328,16 +329,6 @@ namespace PK::Math
         };
     }
 
-    uint3 GetComputeGroupCount(const uint3& threads, const uint3& clusterSize)
-    {
-        return
-        {
-            (uint)glm::ceil(threads.x / float(clusterSize.x)),
-            (uint)glm::ceil(threads.y / float(clusterSize.y)),
-            (uint)glm::ceil(threads.z / float(clusterSize.z))
-        };
-    }
-
     uint32_t CountBits(uint32_t value)
     {
         value = value - ((value >> 1) & 0x55555555);
@@ -377,12 +368,12 @@ namespace PK::Math
         return h;
     }
 
-    float2 OctaWrap(const float2& v) { return (1.0f - glm::abs(float2(v.yx))) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }
+    float2 OctaWrap(const float2& v) { return (1.0f - math::abs(float2(v.yx))) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }
 
     float2 OctaEncode(const float3& n)
     {
         auto v = n;
-        v /= (abs(v.x) + abs(v.y) + abs(v.z));
+        v /= (math::abs(v.x) + math::abs(v.y) + math::abs(v.z));
         v.xz = v.y >= 0.0f ? v.xz : OctaWrap(v.xz);
         v.xz = v.xz * 0.5f + 0.5f;
         return v.xz;
@@ -391,8 +382,8 @@ namespace PK::Math
     uint OctaEncodeUint(const float3& direction)
     {
         auto uv = OctaEncode(direction);
-        auto x = (uint)glm::round(glm::clamp(uv.x, 0.0f, 1.0f) * 65535.0f);
-        auto y = (uint)glm::round(glm::clamp(uv.y, 0.0f, 1.0f) * 65535.0f);
+        auto x = (uint)math::round(math::clamp(uv.x, 0.0f, 1.0f) * 65535.0f);
+        auto y = (uint)math::round(math::clamp(uv.y, 0.0f, 1.0f) * 65535.0f);
         return (x & 0xFFFFu) | ((y & 0xFFFFu) << 16u);
     }
 
@@ -430,6 +421,6 @@ namespace PK::Math
     float3 GetTriangleNormal(const float3& a, const float3& b, const float3& c)
     {
         bool isValid = false;
-        return GetTriangleNormal(glm::value_ptr(a), glm::value_ptr(b), glm::value_ptr(c), isValid);
+        return GetTriangleNormal(&a.x, &b.x, &c.x, isValid);
     }
 }

@@ -49,10 +49,10 @@ namespace PK
             glyph.rect.w *= -1.0f;
             #endif
 
-            miny = glm::min(miny, glyph.rect.y + glyph.rect.w);
-            miny = glm::min(miny, glyph.rect.y);
-            maxy = glm::max(maxy, glyph.rect.y + glyph.rect.w);
-            maxy = glm::max(maxy, glyph.rect.y);
+            miny = math::min(miny, glyph.rect.y + glyph.rect.w);
+            miny = math::min(miny, glyph.rect.y);
+            maxy = math::max(maxy, glyph.rect.y + glyph.rect.w);
+            maxy = math::max(maxy, glyph.rect.y);
         }
 
         m_alignTop = -miny;
@@ -123,7 +123,7 @@ namespace PK
             return 0ull;
         }
 
-        const auto char_h = (int32_t)glm::round(font->GetLineHeight() * style.spacing.y * style.size);
+        const auto char_h = (int32_t)math::round(font->GetLineHeight() * style.spacing.y * style.size);
         const auto char_w = style.spacing.x * style.size;
         auto line_x = 0;
         auto line_y = 0;
@@ -137,7 +137,7 @@ namespace PK
                 break;
             }
 
-            auto x = (int32_t)glm::round(font->GetGlyph(text[i]).advance * char_w);
+            auto x = (int32_t)math::round(font->GetGlyph(text[i]).advance * char_w);
 
             if (text[i] == '\n' || (style.wrap && line_x + x > area_rect.z))
             {
@@ -161,7 +161,7 @@ namespace PK
                 break;
             }
 
-            auto x = (int32_t)glm::round(font->GetGlyph(text[i]).advance * char_w);
+            auto x = (int32_t)math::round(font->GetGlyph(text[i]).advance * char_w);
 
             if (text[i] == '\n' || (style.wrap && line_x + x > area_rect.z))
             {
@@ -172,12 +172,12 @@ namespace PK
             line_x += x;
         }
 
-        auto clip_min = glm::min(short2(clip_rect.xy), short2(clip_rect.xy + clip_rect.zw));
-        auto clip_max = glm::max(short2(clip_rect.xy), short2(clip_rect.xy + clip_rect.zw));
+        auto clip_min = math::min(short2(clip_rect.xy), short2(clip_rect.xy + clip_rect.zw));
+        auto clip_max = math::max(short2(clip_rect.xy), short2(clip_rect.xy + clip_rect.zw));
 
         // Top/Bottom alignment needs to take into account min/max rect boundaries as we otherwise add padding.
-        auto line_align = glm::mix(font->GetAlignTop(), font->GetAlignBottom(), style.align.y) * style.size;
-        auto offset_y = (int16_t)glm::round((area_rect.w - line_y * char_h) * style.align.y + line_align);
+        auto line_align = math::lerp(font->GetAlignTop(), font->GetAlignBottom(), style.align.y) * style.size;
+        auto offset_y = (int16_t)math::round((area_rect.w - line_y * char_h) * style.align.y + line_align);
         auto rect_count = 0u;
         line_x = 0;
         line_y = 0;
@@ -186,7 +186,7 @@ namespace PK
         for (auto i = 0u; i < length; ++i)
         {
             auto& c = font->GetGlyph(text[i]);
-            auto x = (uint32_t)glm::round(c.advance * char_w);
+            auto x = (uint32_t)math::round(c.advance * char_w);
 
             if (text[i] == '\n' || (style.wrap && line_x + x > (uint32_t)area_rect.z))
             {
@@ -199,18 +199,18 @@ namespace PK
                 FontRect rect{};
                 rect.character = text[i];
                 rect.lineIndex = line_y;
-                rect.rect.x = line_x + offsets_x[line_y] + area_rect.x + (int16_t)glm::round(c.rect.x * style.size);
-                rect.rect.y = line_y * char_h + offset_y + area_rect.y + (int16_t)glm::round(c.rect.y * style.size);
-                rect.rect.z = (int16_t)glm::round(c.rect.z * style.size);
-                rect.rect.w = (int16_t)glm::round(c.rect.w * style.size);
+                rect.rect.x = line_x + offsets_x[line_y] + area_rect.x + (int16_t)math::round(c.rect.x * style.size);
+                rect.rect.y = line_y * char_h + offset_y + area_rect.y + (int16_t)math::round(c.rect.y * style.size);
+                rect.rect.z = (int16_t)math::round(c.rect.z * style.size);
+                rect.rect.w = (int16_t)math::round(c.rect.w * style.size);
                 rect.texrect = c.texrect;
 
                 auto is_visible = true;
 
                 if (style.clip)
                 {
-                    auto rmin = glm::min(short2(rect.rect.xy), short2(rect.rect.xy + rect.rect.zw));
-                    auto rmax = glm::max(short2(rect.rect.xy), short2(rect.rect.xy + rect.rect.zw));
+                    auto rmin = math::min(short2(rect.rect.xy), short2(rect.rect.xy + rect.rect.zw));
+                    auto rmax = math::max(short2(rect.rect.xy), short2(rect.rect.xy + rect.rect.zw));
                     is_visible &= rmin.x < clip_max.x&& rmax.y < clip_max.y&& rmax.x > clip_min.x&& rmax.y > clip_min.y;
                 }
 

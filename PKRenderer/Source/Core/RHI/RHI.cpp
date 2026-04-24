@@ -197,7 +197,7 @@ namespace PK
         if (currentDesc.type != descriptor.type ||
             currentDesc.format != descriptor.format ||
             currentDesc.usage != descriptor.usage ||
-            currentDesc.resolution != descriptor.resolution ||
+            math::any(currentDesc.resolution != descriptor.resolution) ||
             currentDesc.levels != descriptor.levels ||
             currentDesc.samples != descriptor.samples ||
             currentDesc.layers != descriptor.layers)
@@ -218,7 +218,7 @@ namespace PK
     {
         PK_DEBUG_FATAL_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
 
-        if (inoutTexture->GetResolution() == resolution)
+        if (math::all(inoutTexture->GetResolution() == resolution))
         {
             return false;
         }
@@ -233,7 +233,7 @@ namespace PK
     {
         PK_DEBUG_FATAL_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
 
-        if (inoutTexture->GetResolution() == resolution && inoutTexture->GetLevels() == levels)
+        if (math::all(inoutTexture->GetResolution() == resolution) && inoutTexture->GetLevels() == levels)
         {
             return false;
         }

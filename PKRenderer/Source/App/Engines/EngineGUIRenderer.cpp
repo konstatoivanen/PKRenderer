@@ -99,7 +99,7 @@ namespace PK::App
             cmd->SetIndexBuffer(m_gui_indexBuffer.get(), ElementType::Ushort);
             cmd.SetShader(m_gui_shader);
             cmd.SetRenderTarget({ target, LoadOp::Load, StoreOp::Store }, true);
-            cmd->DrawIndexed(glm::min(GUI_MAX_INDICES, m_gui_indexCount), 1u, 0u, 0u, 0u);
+            cmd->DrawIndexed(math::min(GUI_MAX_INDICES, m_gui_indexCount), 1u, 0u, 0u, 0u);
         }
     }
 
@@ -206,7 +206,7 @@ namespace PK::App
 
     void EngineGUIRenderer::GUIDrawRect(const color32& color, const short4& rect)
     {
-        GUIDrawRect(color, rect, PK_SHORT4_ZERO, GUI_TEX_INDEX_WHITE);
+        GUIDrawRect(color, rect, PK_USHORT4_ZERO, GUI_TEX_INDEX_WHITE);
     }
 
     void EngineGUIRenderer::GUIDrawWireRect(const color32& color, const short4& rect, short inset)
@@ -265,9 +265,9 @@ namespace PK::App
             {
                 const auto p0f = float2(p0.x + 0.5f, p0.y + 0.5f);
                 const auto p1f = float2(p1.x + 0.5f, p1.y + 0.5f);
-                const auto direction = glm::normalize(p1f - p0f);
+                const auto direction = math::normalize(p1f - p0f);
                 const auto tangent = float2(-direction.y, direction.x);
-                const auto offset = glm::normalize(tangent + direction) * 0.5f * width;
+                const auto offset = math::normalize(tangent + direction) * 0.5f * width;
  
                 m_gui_indexView[idxi++] = idxv + 0;
                 m_gui_indexView[idxi++] = idxv + 1;
@@ -275,10 +275,10 @@ namespace PK::App
                 m_gui_indexView[idxi++] = idxv + 2;
                 m_gui_indexView[idxi++] = idxv + 3;
                 m_gui_indexView[idxi++] = idxv + 0;
-                m_gui_vertexView[idxv++] = { color0, glm::round(p0f + float2(-offset.y, +offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
-                m_gui_vertexView[idxv++] = { color1, glm::round(p1f + float2(+offset.x, +offset.y)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
-                m_gui_vertexView[idxv++] = { color1, glm::round(p1f + float2(+offset.y, -offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
-                m_gui_vertexView[idxv++] = { color0, glm::round(p0f + float2(-offset.x, -offset.y)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
+                m_gui_vertexView[idxv++] = { color0, math::round(p0f + float2(-offset.y, +offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
+                m_gui_vertexView[idxv++] = { color1, math::round(p1f + float2(+offset.x, +offset.y)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
+                m_gui_vertexView[idxv++] = { color1, math::round(p1f + float2(+offset.y, -offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
+                m_gui_vertexView[idxv++] = { color0, math::round(p0f + float2(-offset.x, -offset.y)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
             }
         }
     }
@@ -324,10 +324,10 @@ namespace PK::App
                             m_gui_vertexView[idxv++] = { color, sminmax.zw, Math::PackHalf(tminmax.zw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
                             m_gui_vertexView[idxv++] = { color, sminmax.zy, Math::PackHalf(tminmax.zy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
 
-                            text_area_min.x = glm::min(text_area_min.x, sminmax.x, sminmax.z);
-                            text_area_min.y = glm::min(text_area_min.y, sminmax.y, sminmax.w);
-                            text_area_max.x = glm::max(text_area_max.x, sminmax.x, sminmax.z);
-                            text_area_max.y = glm::max(text_area_max.y, sminmax.y, sminmax.w);
+                            text_area_min.x = math::min(text_area_min.x, sminmax.x, sminmax.z);
+                            text_area_min.y = math::min(text_area_min.y, sminmax.y, sminmax.w);
+                            text_area_max.x = math::max(text_area_max.x, sminmax.x, sminmax.z);
+                            text_area_max.y = math::max(text_area_max.y, sminmax.y, sminmax.w);
                         }
                     }
                 }
@@ -379,7 +379,7 @@ namespace PK::App
             cmd.SetShader(m_gizmos_shader);
             cmd.SetRenderTarget({ target, LoadOp::Load, StoreOp::Store }, true);
             cmd.SetFixedStateAttributes(&m_gizmos_fixedFunctionAttribs);
-            cmd->Draw(glm::min(m_gizmos_vertexCount, m_gizmos_maxVertices), 1u, 0u, 0u);
+            cmd->Draw(math::min(m_gizmos_vertexCount, m_gizmos_maxVertices), 1u, 0u, 0u);
         }
     }
 
@@ -394,30 +394,30 @@ namespace PK::App
             {
                 auto min = aabb.min;
                 auto max = aabb.max;
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, min.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, max.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, min.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, max.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, min.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, max.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, min.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, max.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, min.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, min.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, max.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, max.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, min.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, min.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, max.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, max.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, min.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, min.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, min.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, min.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, max.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(min.x, max.y, max.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, max.y, min.z, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(max.x, max.y, max.z, 1.0f), m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
             }
         }
     }
@@ -436,8 +436,8 @@ namespace PK::App
 
             if (m_gizmos_vertexCount <= m_gizmos_maxVertices)
             {
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(start, 1.0f), m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(end, 1.0f),   m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(start, 1.0f)).xyz, m_gizmos_color };
+                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(end, 1.0f)).xyz,   m_gizmos_color };
             }
         }
     }
@@ -472,12 +472,12 @@ namespace PK::App
 
                 for (auto i = 0; i < 4; ++i)
                 {
-                    m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(nearCorners[i], 1.0f),           m_gizmos_color };
-                    m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(nearCorners[(i + 1) % 4], 1.0f), m_gizmos_color };
-                    m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(farCorners[i], 1.0f),            m_gizmos_color };
-                    m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(farCorners[(i + 1) % 4], 1.0f),  m_gizmos_color };
-                    m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(nearCorners[i], 1.0f),           m_gizmos_color };
-                    m_gizmos_vertexView[idx++] = { m_gizmos_matrix * float4(farCorners[i], 1.0f),            m_gizmos_color };
+                    m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(nearCorners[i], 1.0f)).xyz,           m_gizmos_color };
+                    m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(nearCorners[(i + 1) % 4], 1.0f)).xyz, m_gizmos_color };
+                    m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(farCorners[i], 1.0f)).xyz,            m_gizmos_color };
+                    m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(farCorners[(i + 1) % 4], 1.0f)).xyz,  m_gizmos_color };
+                    m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(nearCorners[i], 1.0f)).xyz,           m_gizmos_color };
+                    m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(farCorners[i], 1.0f)).xyz,            m_gizmos_color };
                 }
             }
         }

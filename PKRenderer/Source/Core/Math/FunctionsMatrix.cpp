@@ -67,17 +67,17 @@ namespace PK::Math
 
     float4x4 GetMatrixTRS(const float3& position, const float3& euler, const float3& scale)
     {
-        return GetMatrixTRS(position, glm::quat(euler), scale);
+        return GetMatrixTRS(position, math::quat::fromEuler(euler), scale);
     }
 
     float4x4 GetMatrixInvTRS(const float3& position, const quaternion& rotation, const float3& scale)
     {
-        return glm::affineInverse(GetMatrixTRS(position, rotation, scale));
+        return math::affineInverse(GetMatrixTRS(position, rotation, scale));
     }
 
     float4x4 GetMatrixInvTRS(const float3& position, const float3& euler, const float3& scale)
     {
-        return GetMatrixInvTRS(position, glm::quat(euler), scale);
+        return GetMatrixInvTRS(position, math::quat::fromEuler(euler), scale);
     }
 
     float4x4 GetMatrixTransposeAffineInverse(const float3x4& matrix)
@@ -311,7 +311,7 @@ namespace PK::Math
             auto w = aabbs[i].GetWidth();
             auto h = aabbs[i].GetHeight();
             auto c = float2(aabbs[i].GetCenter().xy);
-            auto offset = glm::mod(c, float2(w / info.resolution, h / info.resolution));
+            auto offset = math::mod(c, float2(w / info.resolution, h / info.resolution));
 
             aabbs[i].min.x -= offset.x;
             aabbs[i].min.y -= offset.y;
@@ -334,7 +334,7 @@ namespace PK::Math
             auto znear = minNear + info.nearPlaneOffset;
             auto zfar = aabbs[i].max.z;
             // Ensure that z direction is retained in case near plane offset is beyond cascade z range (can happen when cascade has no shadow casters).
-            zfar = glm::max(znear + 1e-4f, zfar);
+            zfar = math::max(znear + 1e-4f, zfar);
             outMatrices[i] = GetOrtho(aabbs[i].min.x, aabbs[i].max.x, aabbs[i].min.y, aabbs[i].max.y, znear, zfar) * info.worldToLocal;
         }
     }

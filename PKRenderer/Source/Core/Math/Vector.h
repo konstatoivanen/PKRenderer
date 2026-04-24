@@ -1,5 +1,6 @@
 #pragma once
 #include "Scalar.h"
+#include "MathFwd.h"
 
 namespace PK::math
 {
@@ -63,14 +64,11 @@ namespace PK::math
     // stripped down glm vector & matrix types
     // removed most code to reduce binary size
 
-    template<typename T, int N> struct vector {};
-    template<typename T, int C, int R> struct matrix {};
-
     template<typename T, int N>
     struct swizzle_0
     {
         inline T& elem(size_t i) { return (reinterpret_cast<T*>(buffer))[i]; }
-        inline T const& elem(size_t i) const { return (reinterpret_cast<const T*>(buffer))[i]; }
+        inline const T& elem(size_t i) const { return (reinterpret_cast<const T*>(buffer))[i]; }
         char buffer[1];
     };
 
@@ -89,9 +87,9 @@ namespace PK::math
         struct op_div { inline void operator() (T& e, T& t) const { e /= t; } };
         inline swizzle_2& operator= (T v) { for (int i = 0; i < N; ++i) (*this)[i] = v; return *this; }
         inline swizzle_2& operator= (const vector<T,N>& that) { apply_op(that, op_equal()); return *this; }
-        inline void operator -= (const vector<T, N>& that) { apply_op(that, op_minus()); }
-        inline void operator += (const vector<T, N>& that) { apply_op(that, op_plus()); }
-        inline void operator *= (vector<T, N> const& that) { apply_op(that, op_mul()); }
+        inline void operator -= (const vector<T,N>& that) { apply_op(that, op_minus()); }
+        inline void operator += (const vector<T,N>& that) { apply_op(that, op_plus()); }
+        inline void operator *= (const vector<T,N>& that) { apply_op(that, op_mul()); }
         inline void operator /= (const vector<T,N>& that) { apply_op(that, op_div()); }
         inline void operator -= (T v) { for (int i = 0; i < N; ++i) (*this)[i] -= v; }
         inline void operator += (T v) { for (int i = 0; i < N; ++i) (*this)[i] += v; }
@@ -659,7 +657,7 @@ namespace PK::math
         {
             struct { T x, y; };
             struct { T r, g; };
-            struct alignas(2 * sizeof(T)) storage { T data[2]; } data;
+            struct storage { T data[2]; } data;
             PK_SWIZZLE_MEMBERS_22(T, x, y)
             PK_SWIZZLE_MEMBERS_22(T, r, g)
             PK_SWIZZLE_MEMBERS_23(T, x, y)
@@ -670,17 +668,19 @@ namespace PK::math
         
         constexpr vector() = default;
         constexpr vector(const vector& v) = default;
-        constexpr explicit vector(T scalar) : x(scalar), y(scalar) {}
+        constexpr explicit vector(T s) : x(s), y(s) {}
+        constexpr explicit vector(const T* ptr) : x(ptr[0]), y(ptr[1]) {}
         constexpr vector(T _x, T _y) : x(_x), y(_y) {}
         template<typename X, typename Y> constexpr vector(X _x, Y _y) : x(static_cast<T>(_x)), y(static_cast<T>(_y)) {}
-        template<typename U> constexpr vector(const vector<U, 2>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)) {}
-        template<typename U> constexpr vector(const vector<U, 3>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)) {}
-        template<typename U> constexpr vector(const vector<U, 4>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)) {}
-        template<int E0, int E1> constexpr vector(const swizzle<T, 2, E0, E1, -1, -2>& that) { *this = that(); }
+        template<typename U> constexpr vector(const vector<U,2>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)) {}
+        template<typename U> constexpr vector(const vector<U,3>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)) {}
+        template<typename U> constexpr vector(const vector<U,4>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)) {}
+        template<int E0, int E1> constexpr vector(const swizzle<T, 2, E0, E1, -1, -2>& s) { *this = s(); }
 
         constexpr T& operator[](int i) { switch (i) { default: case 0: return x; case 1: return y; } }
         constexpr const T& operator[](int i) const { switch (i) { default: case 0: return x; case 1: return y; }}
         constexpr vector<T,2>& operator=(const vector& v) = default;
+        template<int E0,int E1> constexpr vector<T,2>& operator=(const swizzle<T,2,E0,E1,-1,-2>& s) { *this = s(); return *this; }
         template<typename U> constexpr vector<T,2>& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); return *this; }
         template<typename U> constexpr vector<T,2>& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); return *this; }
         template<typename U> constexpr vector<T,2>& operator-=(U s) { x -= static_cast<T>(s); y -= static_cast<T>(s); return *this; }
@@ -748,8 +748,9 @@ namespace PK::math
     template<typename T> constexpr vector<bool,2> operator> (const vector<T,2>& a, const vector<T,2>& b) { return vector<bool,2>(a.x >  b.x, a.y >  b.y); }
     template<typename T> constexpr vector<bool,2> operator<=(const vector<T,2>& a, const vector<T,2>& b) { return vector<bool,2>(a.x <= b.x, a.y <= b.y); }
     template<typename T> constexpr vector<bool,2> operator>=(const vector<T,2>& a, const vector<T,2>& b) { return vector<bool,2>(a.x >= b.x, a.y >= b.y); }
-    constexpr vector<bool,2> operator&&(const vector<bool,2>& a, const vector<bool,2>& b) { return vector<bool,2>(a.x && b.x, a.y && b.y); }
-    constexpr vector<bool,2> operator||(const vector<bool,2>& a, const vector<bool,2>& b) { return vector<bool,2>(a.x || b.x, a.y || b.y); }
+    constexpr inline vector<bool,2> operator!(const vector<bool,2>& v) { return vector<bool,2>(!v.x, !v.y); }
+    constexpr inline vector<bool,2> operator&&(const vector<bool,2>& a, const vector<bool,2>& b) { return vector<bool,2>(a.x && b.x, a.y && b.y); }
+    constexpr inline vector<bool,2> operator||(const vector<bool,2>& a, const vector<bool,2>& b) { return vector<bool,2>(a.x || b.x, a.y || b.y); }
 
 
     template<typename T>
@@ -770,20 +771,22 @@ namespace PK::math
 
         constexpr vector() = default;
         constexpr vector(const vector& v) = default;
-        constexpr explicit vector(T scalar) : x(scalar), y(scalar), z(scalar) {}
+        constexpr explicit vector(T s) : x(s), y(s), z(s) {}
+        constexpr explicit vector(const T* ptr) : x(ptr[0]), y(ptr[1]), z(ptr[2]) {}
         constexpr vector(T _x, T _y, T _z) : x(_x), y(_y), z(_z) {}
         template<typename X, typename Y, typename Z> constexpr vector(X _x, Y _y, Z _z) : x(static_cast<T>(_x)), y(static_cast<T>(_y)), z(static_cast<T>(_z)) {}
         template<typename XY, typename Z> constexpr vector(const vector<XY,2>& _xy, Z _z) : x(static_cast<T>(_xy.x)), y(static_cast<T>(_xy.y)), z(static_cast<T>(_z)) {}
         template<typename X, typename YZ> constexpr vector(X _x, const vector<YZ,2>& _yz) : x(static_cast<T>(_x)), y(static_cast<T>(_yz.x)), z(static_cast<T>(_yz.y)) {}
         template<typename U> constexpr explicit vector(const vector<U,3>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)), z(static_cast<T>(v.z)) {}
         template<typename U> constexpr explicit vector(const vector<U,4>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)), z(static_cast<T>(v.z)) {}
-        template<int E0,int E1,int E2> constexpr vector(const swizzle<T,3,E0,E1,E2,-1>& that) { *this = that(); }
-        template<int E0,int E1> constexpr vector(const swizzle<T,2,E0,E1,-1,-2>& v, const T& scalar) { *this = vector(v(), scalar); }
-        template<int E0,int E1> constexpr vector(const T& scalar, const swizzle<T,2,E0,E1,-1,-2>& v) { *this = vector(scalar, v()); }
+        template<int E0,int E1,int E2> constexpr vector(const swizzle<T,3,E0,E1,E2,-1>& s) { *this = s(); }
+        template<int E0,int E1> constexpr vector(const swizzle<T,2,E0,E1,-1,-2>& v, T s) { *this = vector(v(), s); }
+        template<int E0,int E1> constexpr vector(T s, const swizzle<T,2,E0,E1,-1,-2>& v) { *this = vector(s, v()); }
 
         constexpr T& operator[](int i) { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; } }
         constexpr const T& operator[](int i) const { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; } }
         constexpr vector<T,3>& operator=(const vector<T,3>& v) = default;
+        template<int E0,int E1,int E2> constexpr vector<T,3>& operator=(const swizzle<T,3,E0,E1,E2,-1>& s) { *this = s(); return *this; }
         template<typename U> constexpr vector<T,3>& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); z = static_cast<T>(s); return *this; }
         template<typename U> constexpr vector<T,3>& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); z += static_cast<T>(s); return *this; }
         template<typename U> constexpr vector<T,3>& operator-=(U s) { x -= static_cast<T>(s); y -= static_cast<T>(s); z -= static_cast<T>(s); return *this; }
@@ -851,8 +854,9 @@ namespace PK::math
     template<typename T> constexpr vector<bool,3> operator> (const vector<T,3>& a, const vector<T,3>& b) { return vector<bool,3>(a.x >  b.x, a.y >  b.y, a.z >  b.z); }
     template<typename T> constexpr vector<bool,3> operator<=(const vector<T,3>& a, const vector<T,3>& b) { return vector<bool,3>(a.x <= b.x, a.y <= b.y, a.z <= b.z); }
     template<typename T> constexpr vector<bool,3> operator>=(const vector<T,3>& a, const vector<T,3>& b) { return vector<bool,3>(a.x >= b.x, a.y >= b.y, a.z >= b.z); }
-    constexpr vector<bool,3> operator&&(const vector<bool,3>& a, const vector<bool,3>& b) { return vector<bool,3>(a.x && b.x, a.y && b.y, a.z && b.z); }
-    constexpr vector<bool,3> operator||(const vector<bool,3>& a, const vector<bool,3>& b) { return vector<bool,3>(a.x || b.x, a.y || b.y, a.z || b.z); }
+    constexpr inline vector<bool,3> operator!(const vector<bool,3>& v) { return vector<bool,3>(!v.x, !v.y, !v.z); }
+    constexpr inline vector<bool,3> operator&&(const vector<bool,3>& a, const vector<bool,3>& b) { return vector<bool,3>(a.x && b.x, a.y && b.y, a.z && b.z); }
+    constexpr inline vector<bool,3> operator||(const vector<bool,3>& a, const vector<bool,3>& b) { return vector<bool,3>(a.x || b.x, a.y || b.y, a.z || b.z); }
 
 
     template<typename T>
@@ -862,7 +866,7 @@ namespace PK::math
         {
             struct { T x, y, z, w; };
             struct { T r, g, b, a; };
-            struct alignas(4 * sizeof(T)) storage { T data[4]; } data;
+            struct storage { T data[4]; } data;
             PK_SWIZZLE_MEMBERS_42(T, x, y, z, w)
             PK_SWIZZLE_MEMBERS_42(T, r, g, b, a)
             PK_SWIZZLE_MEMBERS_43(T, x, y, z, w)
@@ -873,7 +877,8 @@ namespace PK::math
 
         constexpr vector() = default;
         constexpr vector(const vector<T,4>& v) = default;
-        constexpr explicit vector(T scalar) : x(scalar), y(scalar), z(scalar), w(scalar) {}
+        constexpr explicit vector(T s) : x(s), y(s), z(s), w(s) {}
+        constexpr explicit vector(const T* ptr) : x(ptr[0]), y(ptr[1]), z(ptr[2]), w(ptr[3]) {}
         constexpr vector(T _x, T _y, T _z, T _w) : x(_x), y(_y), z(_z), w(_w) {}
         template<typename X, typename Y, typename Z, typename W> constexpr vector(X _x, Y _y, Z _z, W _w) : x(static_cast<T>(_x)), y(static_cast<T>(_y)), z(static_cast<T>(_z)), w(static_cast<T>(_w)) {}
         template<typename XY, typename Z, typename W> constexpr vector(const vector<XY,2>& _xy, Z _z, W _w) : x(static_cast<T>(_xy.x)), y(static_cast<T>(_xy.y)), z(static_cast<T>(_z)), w(static_cast<T>(_w)) {}
@@ -883,17 +888,18 @@ namespace PK::math
         template<typename X, typename YZW> constexpr vector(X _x, const vector<YZW,3>& _yzw) : x(static_cast<T>(_x)), y(static_cast<T>(_yzw.x)), z(static_cast<T>(_yzw.y)), w(static_cast<T>(_yzw.z)) {}
         template<typename XY, typename ZW> constexpr vector(const vector<XY,2>& _xy, const vector<ZW,2>& _zw) : x(static_cast<T>(_xy.x)), y(static_cast<T>(_xy.y)), z(static_cast<T>(_zw.x)), w(static_cast<T>(_zw.y)) {}
         template<typename U> constexpr explicit vector(const vector<U,4>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)), z(static_cast<T>(v.z)), w(static_cast<T>(v.w)) {}
-        template<int E0,int E1,int E2,int E3> constexpr vector(const swizzle<T,4,E0,E1,E2,E3>& that) { *this = that(); }
+        template<int E0,int E1,int E2,int E3> constexpr vector(const swizzle<T,4,E0,E1,E2,E3>& s) { *this = s(); }
         template<int E0,int E1,int F0,int F1> constexpr vector(const swizzle<T,2,E0,E1,-1,-2>& v, const swizzle<T,2, F0, F1, -1, -2>& u) { *this = vector<T,4>(v(), u()); }
-        template<int E0,int E1> constexpr vector(const T& x, const T& y, const swizzle<T,2,E0,E1,-1,-2>& v) { *this = vector<T,4>(x, y, v()); }
-        template<int E0,int E1> constexpr vector(const T& x, const swizzle<T,2,E0,E1,-1,-2>& v, const T& w) { *this = vector<T,4>(x, v(), w); }
-        template<int E0,int E1> constexpr vector(const swizzle<T,2, E0, E1, -1, -2>& v, const T& z, const T& w) { *this = vector<T,4>(v(), z, w); }
-        template<int E0,int E1,int E2> constexpr vector(const swizzle<T,4,E0,E1,E2,-1>& v, const T& w) { *this = vector<T,4>(v(), w); }
-        template<int E0,int E1,int E2> constexpr vector(const T& x, const swizzle<T,4,E0,E1,E2,-1>& v) { *this = vector<T,4>(x, v()); }
+        template<int E0,int E1> constexpr vector(T x, T y, const swizzle<T,2,E0,E1,-1,-2>& v) { *this = vector<T,4>(x, y, v()); }
+        template<int E0,int E1> constexpr vector(T x, const swizzle<T,2,E0,E1,-1,-2>& v, T w) { *this = vector<T,4>(x, v(), w); }
+        template<int E0,int E1> constexpr vector(const swizzle<T,2, E0, E1, -1, -2>& v, T z, T w) { *this = vector<T,4>(v(), z, w); }
+        template<int E0,int E1,int E2> constexpr vector(const swizzle<T,3,E0,E1,E2,-1>& v, T w) { *this = vector<T,4>(v(), w); }
+        template<int E0,int E1,int E2> constexpr vector(T x, const swizzle<T,3,E0,E1,E2,-1>& v) { *this = vector<T,4>(x, v()); }
 
         constexpr T& operator[](int i) { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; case 3: return w; } }
         constexpr const T& operator[](int i) const { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; case 3: return w; } }
         constexpr vector<T,4>& operator=(const vector<T,4>& v) = default;
+        template<int E0,int E1,int E2,int E3> constexpr vector<T,4>& operator=(const swizzle<T,4,E0,E1,E2,E3>& s) { *this = s(); return *this; }
         template<typename U> constexpr vector<T,4>& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); z = static_cast<T>(s); w = static_cast<T>(s); return *this; }
         template<typename U> constexpr vector<T,4>& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); z += static_cast<T>(s); w += static_cast<T>(s); return *this; }
         template<typename U> constexpr vector<T,4>& operator-=(U s) { x -= static_cast<T>(s); y -= static_cast<T>(s); z -= static_cast<T>(s); w -= static_cast<T>(s); return *this; }
@@ -961,8 +967,9 @@ namespace PK::math
     template<typename T> constexpr vector<bool,4> operator> (const vector<T,4>& a, const vector<T,4>& b) { return vector<bool,4>(a.x >  b.x, a.y >  b.y, a.z >  b.z, a.w >  b.w); }
     template<typename T> constexpr vector<bool,4> operator<=(const vector<T,4>& a, const vector<T,4>& b) { return vector<bool,4>(a.x <= b.x, a.y <= b.y, a.z <= b.z, a.w <= b.w); }
     template<typename T> constexpr vector<bool,4> operator>=(const vector<T,4>& a, const vector<T,4>& b) { return vector<bool,4>(a.x >= b.x, a.y >= b.y, a.z >= b.z, a.w >= b.w); }
-    constexpr vector<bool,4> operator&&(const vector<bool,4>& a, const vector<bool,4>& b) { return vector<bool,4>(a.x && b.x, a.y && b.y, a.z && b.z, a.w && b.w); }
-    constexpr vector<bool,4> operator||(const vector<bool,4>& a, const vector<bool,4>& b) { return vector<bool,4>(a.x || b.x, a.y || b.y, a.z || b.z, a.w || b.w); }
+    constexpr inline vector<bool,4> operator!(const vector<bool,4>& v) { return vector<bool,4>(!v.x, !v.y, !v.z, !v.w); }
+    constexpr inline vector<bool,4> operator&&(const vector<bool,4>& a, const vector<bool,4>& b) { return vector<bool,4>(a.x && b.x, a.y && b.y, a.z && b.z, a.w && b.w); }
+    constexpr inline vector<bool,4> operator||(const vector<bool,4>& a, const vector<bool,4>& b) { return vector<bool,4>(a.x || b.x, a.y || b.y, a.z || b.z, a.w || b.w); }
 
 
     template<typename T>
@@ -1069,8 +1076,8 @@ namespace PK::math
     template<typename T> matrix<T,2,2> operator/(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { matrix<T,2,2> m1_copy(m1); return m1_copy /= m2; }
     template<typename T> typename matrix<T,2,2>::col_type operator/(const matrix<T,2,2>& m, const typename matrix<T,2,2>::row_type& v) { return inverse(m) * v; }
     template<typename T> typename matrix<T,2,2>::row_type operator/(const typename matrix<T,2,2>::col_type& v, const matrix<T,2,2>& m) { return v * inverse(m); }
-    template<typename T> bool operator==(matrix<T,2,2> const& m1, matrix<T,2,2> const& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]); }
-    template<typename T> bool operator!=(matrix<T,2,2> const& m1, matrix<T,2,2> const& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]); }
+    template<typename T> bool operator==(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]); }
+    template<typename T> bool operator!=(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]); }
 
 
     template<typename T>
@@ -1084,7 +1091,7 @@ namespace PK::math
         constexpr matrix(const matrix& m) = default;
         constexpr explicit matrix(T s) : columns{ col_type(s, 0, 0), col_type(0, s, 0) } { }
         constexpr matrix(T x0, T y0, T z0, T x1, T y1, T z1 ) : columns{ col_type(x0, y0, z0), col_type(x1, y1, z1) } {}
-        constexpr matrix(col_type const& v0, col_type const& v1) : columns{ col_type(v0), col_type(v1) } {}
+        constexpr matrix(const col_type& v0, const col_type& v1) : columns{ col_type(v0), col_type(v1) } {}
         template<typename X0, typename Y0, typename Z0, typename X1, typename Y1, typename Z1> constexpr matrix(X0 x0, Y0 y0, Z0 z0, X1 x1, Y1 y1, Z1 z1) : columns{ col_type(x0, y0, z0), col_type(x1, y1, z1) } {}
         template<typename V0, typename V1> constexpr matrix(const vector<V0,3>& v0, const vector<V1,3>& v1) : columns{ col_type(v0), col_type(v1) } {}
         template<typename U> constexpr explicit matrix(const matrix<U,2,3>& m) : columns{ col_type(m[0]), col_type(m[1]) } {}
@@ -1119,7 +1126,7 @@ namespace PK::math
     }
     
     template<typename T> 
-    typename matrix<T,2,3>::row_type operator*(typename matrix<T,2,3>::col_type const& v, const matrix<T,2,3>& m) 
+    typename matrix<T,2,3>::row_type operator*(const typename matrix<T,2,3>::col_type& v, const matrix<T,2,3>& m)
     { 
         return typename matrix<T,2,3>::row_type(v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2], v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2]); 
     }
@@ -1344,13 +1351,13 @@ namespace PK::math
     };
     
     template<typename T>
-    typename matrix<T,3,2>::col_type operator*(const matrix<T,3,2>& m, typename matrix<T,3,2>::row_type const& v)
+    typename matrix<T,3,2>::col_type operator*(const matrix<T,3,2>& m, const typename matrix<T,3,2>::row_type& v)
     {
         return typename matrix<T,3,2>::col_type(m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z, m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z);
     }
 
     template<typename T>
-    typename matrix<T,3,2>::row_type operator*(typename matrix<T,3,2>::col_type const& v, const matrix<T,3,2>& m)
+    typename matrix<T,3,2>::row_type operator*(const typename matrix<T,3,2>::col_type& v, const matrix<T,3,2>& m)
     {
         return typename matrix<T,3,2>::row_type(v.x * m[0][0] + v.y * m[0][1], v.x * m[1][0] + v.y * m[1][1], v.x * m[2][0] + v.y * m[2][1]);
     }
@@ -1448,13 +1455,13 @@ namespace PK::math
     };
 
     template<typename T>
-    typename matrix<T,3,3>::col_type operator*(const matrix<T,3,3>& m, typename matrix<T,3,3>::row_type const& v)
+    typename matrix<T,3,3>::col_type operator*(const matrix<T,3,3>& m, const typename matrix<T,3,3>::row_type& v)
     {
         return typename matrix<T,3,3>::col_type(m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z, m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z, m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z);
     }
 
     template<typename T>
-    typename matrix<T,3,3>::row_type operator*(typename matrix<T,3,3>::col_type const& v, const matrix<T,3,3>& m)
+    typename matrix<T,3,3>::row_type operator*(const typename matrix<T,3,3>::col_type& v, const matrix<T,3,3>& m)
     {
         return typename matrix<T,3,3>::row_type(m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z, m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z, m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z);
     }
@@ -1517,8 +1524,8 @@ namespace PK::math
     template<typename T> matrix<T,3,3> operator/(T s, const matrix<T,3,3>& m) { return matrix<T,3,3>(s / m[0], s / m[1], s / m[2]); }
     template<typename T> matrix<T,3,3> operator+(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return matrix<T,3,3>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2]); }
     template<typename T> matrix<T,3,3> operator-(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return matrix<T,3,3>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2]); }
-    template<typename T> typename matrix<T,3,3>::col_type operator/(const matrix<T,3,3>& m, typename matrix<T,3,3>::row_type const& v) { return inverse(m) * v; }
-    template<typename T> typename matrix<T,3,3>::row_type operator/(typename matrix<T,3,3>::col_type const& v, const matrix<T,3,3>& m) { return v * inverse(m); }
+    template<typename T> typename matrix<T,3,3>::col_type operator/(const matrix<T,3,3>& m, const typename matrix<T,3,3>::row_type& v) { return inverse(m) * v; }
+    template<typename T> typename matrix<T,3,3>::row_type operator/(const typename matrix<T,3,3>::col_type& v, const matrix<T,3,3>& m) { return v * inverse(m); }
     template<typename T> matrix<T,3,3> operator/(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { matrix<T,3,3> m1_copy(m1); return m1_copy /= m2; }
     template<typename T> constexpr bool operator==(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]); }
     template<typename T> constexpr bool operator!=(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]); }
@@ -2011,6 +2018,10 @@ namespace PK::math
     template<typename T> vector<bool,3> isinf(const vector<T,3>& v) { return vector<bool,3>(isinf(v.x), isinf(v.y), isinf(v.z)); }
     template<typename T> vector<bool,4> isinf(const vector<T,4>& v) { return vector<bool,4>(isinf(v.x), isinf(v.y), isinf(v.z), isinf(v.w)); }
 
+    template<typename T> vector<bool,2> nearEqual(const vector<T, 2>& x, const vector<T, 2>& y, T e) { return vector<bool,2>(nearEqual(x.x, y.x, e), nearEqual(x.y, y.y, e)); }
+    template<typename T> vector<bool,3> nearEqual(const vector<T, 3>& x, const vector<T, 3>& y, T e) { return vector<bool,3>(nearEqual(x.x, y.x, e), nearEqual(x.y, y.y, e), nearEqual(x.z, y.z, e)); }
+    template<typename T> vector<bool,4> nearEqual(const vector<T, 4>& x, const vector<T, 4>& y, T e) { return vector<bool,4>(nearEqual(x.x, y.x, e), nearEqual(x.y, y.y, e), nearEqual(x.z, y.z, e), nearEqual(x.w, y.w, e)); }
+
     template<int N> vector<float,N> asfloat(const vector<int32_t,N>& v) { union { vector<int32_t,N> in; vector<float,N> out; } u; u.in = v; return u.out; }
     template<int N> vector<float,N> asfloat(const vector<uint32_t,N>& v) { union { vector<uint32_t,N> in; vector<float,N> out; } u; u.in = v; return u.out; }
     template<int N> vector<double,N> asdouble(const vector<int64_t,N>& v) { union { vector<int64_t,N> in; vector<double,N> out; } u; u.in = v; return u.out; }
@@ -2104,6 +2115,10 @@ namespace PK::math
     template<typename T> vector<T,3> abs(const vector<T,3>& v) { return vector<T,3>(abs(v.x), abs(v.y), abs(v.z)); }
     template<typename T> vector<T,4> abs(const vector<T,4>& v) { return vector<T,4>(abs(v.x), abs(v.y), abs(v.z), abs(v.w)); }
 
+    template<typename T> vector<T,2> round(const vector<T,2>& v) { return vector<T,2>(round(v.x), round(v.y)); }
+    template<typename T> vector<T,3> round(const vector<T,3>& v) { return vector<T,3>(round(v.x), round(v.y), round(v.z)); }
+    template<typename T> vector<T,4> round(const vector<T,4>& v) { return vector<T,4>(round(v.x), round(v.y), round(v.z), round(v.w)); }
+
     template<typename T> vector<T,2> ceil(const vector<T,2>& v) { return vector<T,2>(ceil(v.x), ceil(v.y)); }
     template<typename T> vector<T,3> ceil(const vector<T,3>& v) { return vector<T,3>(ceil(v.x), ceil(v.y), ceil(v.z)); }
     template<typename T> vector<T,4> ceil(const vector<T,4>& v) { return vector<T,4>(ceil(v.x), ceil(v.y), ceil(v.z), ceil(v.w)); }
@@ -2133,6 +2148,8 @@ namespace PK::math
     template<typename T> vector<T,2> min(const vector<T,2>& a, T b) { return vector<T, 2>(min(a.x, b), min(a.y, b)); }
     template<typename T> vector<T,3> min(const vector<T,3>& a, T b) { return vector<T, 3>(min(a.x, b), min(a.y, b), min(a.z, b)); }
     template<typename T> vector<T,4> min(const vector<T,4>& a, T b) { return vector<T, 4>(min(a.x, b), min(a.y, b), min(a.z, b), min(a.w, b)); }
+    template<typename T> T min(T a, T b, T c) { return min(min(a, b), c); }
+    template<typename T> T min(T a, T b, T c, T d) { return min(min(min(a, b), c), d); }
 
     template<typename T> vector<T,2> max(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(max(a.x, b.x), max(a.y, b.y)); }
     template<typename T> vector<T,3> max(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)); }
@@ -2140,6 +2157,16 @@ namespace PK::math
     template<typename T> vector<T,2> max(const vector<T,2>& a, T b) { return vector<T, 2>(max(a.x, b), max(a.y, b)); }
     template<typename T> vector<T,3> max(const vector<T,3>& a, T b) { return vector<T, 3>(max(a.x, b), max(a.y, b), max(a.z, b)); }
     template<typename T> vector<T,4> max(const vector<T,4>& a, T b) { return vector<T, 4>(max(a.x, b), max(a.y, b), max(a.z, b), max(a.w, b)); }
+    template<typename T> T max(T a, T b, T c) { return max(max(a, b), c); }
+    template<typename T> T max(T a, T b, T c, T d) { return max(max(max(a, b), c), d); }
+
+    template<typename T> T cmin(const vector<T,2>& v) { return min(v.x, v.y); }
+    template<typename T> T cmin(const vector<T,3>& v) { return min(min(v.x, v.y), v.z); }
+    template<typename T> T cmin(const vector<T,4>& v) { return min(min(min(v.x, v.y), v.z), v.w); }
+
+    template<typename T> T cmax(const vector<T,2>& v) { return max(v.x, v.y); }
+    template<typename T> T cmax(const vector<T,3>& v) { return max(max(v.x, v.y), v.z); }
+    template<typename T> T cmax(const vector<T,4>& v) { return max(max(max(v.x, v.y), v.z), v.w); }
 
     template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, const vector<T,N>& mi, const vector<T,N>& ma) { return max(min(v, ma), mi); }
     template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, T mi, T ma) { return max(min(v, ma), mi); }
@@ -2169,16 +2196,16 @@ namespace PK::math
     template<typename T> vector<T,3> step(T a, const vector<T,3>& b) { return vector<T,3>(step(a, b, i.x), step(a, b, i.y), step(a, b, i.z)); }
     template<typename T> vector<T,4> step(T a, const vector<T,4>& b) { return vector<T,4>(step(a, b, i.x), step(a, b, i.y), step(a, b, i.z), step(a, b, i.w)); }
 
-    template<typename T> T dot(const vector<T,2>& a, const vector<T,2>& b) { return a.x * b.x + a.y * b.y); }
-    template<typename T> T dot(const vector<T,3>& a, const vector<T,3>& b) { return a.x * b.x + a.y * b.y + a.z, b.z); }
-    template<typename T> T dot(const vector<T,4>& a, const vector<T,4>& b) { return a.x * b.x + a.y * b.y + a.z, b.z + a.w * b.w); }
+    template<typename T> T dot(const vector<T,2>& a, const vector<T,2>& b) { return a.x * b.x + a.y * b.y; }
+    template<typename T> T dot(const vector<T,3>& a, const vector<T,3>& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+    template<typename T> T dot(const vector<T,4>& a, const vector<T,4>& b) { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }
 
     template<typename T, int N> T length(const vector<T,N>& v) { return sqrt(dot(v,v)); }
     template<typename T, int N> T distance(const vector<T, N>& a, const vector<T, N>& b) { return length(a - b); }
     template<typename T, int N> vector<T,N> normalize(const vector<T,N>& v) { return v / length(v); }
     
     template<typename T> vector<T,2> cross(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(v.x * u.y - u.x * v.y); }
-    template<typename T> vector<T,3> cross(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(x.y * y.z - y.y * x.z, x.z * y.x - y.z * x.x, x.x * y.y - y.x * x.y); }
+    template<typename T> vector<T,3> cross(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(a.y * b.z - b.y * a.z, a.z * b.x - b.z * a.x, a.x * b.y - b.x * a.y); }
 
     template<typename T, int N> vector<T,N> reflect(const vector<T,N>& i, const vector<T,N>& n) { return i - n * dot(n, i) * static_cast<T>(2); }
     
@@ -2231,7 +2258,7 @@ namespace PK::math
         -(m[0][0] * m[1][2] - m[1][0] * m[0][2]) * invd,
         +(m[1][0] * m[2][1] - m[2][0] * m[1][1]) * invd,
         -(m[0][0] * m[2][1] - m[2][0] * m[0][1]) * invd,
-        +(m[0][0] * m[1][1] - m[1][0] * m[0][1]) * invd)
+        +(m[0][0] * m[1][1] - m[1][0] * m[0][1]) * invd);
     }
 
     template<typename T> matrix<T,4,4> inverse(const matrix<T,4,4>& m)
@@ -2278,6 +2305,18 @@ namespace PK::math
         vector<T,4> r0(inv[0][0], inv[1][0], inv[2][0], inv[3][0]);
         vector<T,4> d0(m[0] * r0);
         return inv * (static_cast<T>(1) / ((d0.x + d0.y) + (d0.z + d0.w)));
+    }
+
+    template<typename T> matrix<T,3,3> affineInverse(const matrix<T,3,3>& m)
+    {
+        const matrix<T,2,2> inv(inverse(matrix<T,2,2>(m)));
+        return matrix<T,3,3>(vector<T,3>(inv[0], static_cast<T>(0)), vector<T,3>(inv[1], static_cast<T>(0)), vector<T,3>(-inv * vector<T,2>(m[2]), static_cast<T>(1)));
+    }
+
+    template<typename T> matrix<T,4,4> affineInverse(const matrix<T,4,4>& m)
+    {
+        const matrix<T,3,3> inv(inverse(matrix<T,3,3>(m)));
+        return matrix<T,4,4>(vector<T,4>(inv[0], static_cast<T>(0)), vector<T,4>(inv[1], static_cast<T>(0)), vector<T,4>(inv[2], static_cast<T>(0)), vector<T,4>(-inv * vector<T,3>(m[3]), static_cast<T>(1)));
     }
 
     template<typename T> matrix<T,2,2> adjugate(const matrix<T,2,2>& m) { return matrix<T,2,2>(+m[1][1], -m[1][0], -m[0][1], +m[0][0]); }
@@ -2330,7 +2369,7 @@ namespace PK::math
                                 p.w * q.w - p.x * q.x - p.y * q.y - p.z * q.z);
         }
 
-        template<typename T> vector<T,4> mul(const vector<T,4>& q, const vector<T,3>& v) 
+        template<typename T> vector<T,3> mul(const vector<T,4>& q, const vector<T,3>& v) 
         {
             const vector<T,3> qv(q.x, q.y, q.z);
             const vector<T,3> uv(cross(qv, v));
@@ -2338,17 +2377,48 @@ namespace PK::math
             return v + ((uv * q.w) + uuv) * static_cast<T>(2);
         }
 
-        template<typename T> vector<T,4> mul(const vector<T,3>& v, const vector<T,4>& q) { return mul(inverse(q), v); }
-        template<typename T> vector<T,4> nlerp(const vector<T,4>& a, const vector<T,3>& b, T t) { return normalize(lerp(a,b,t)); }
-        template<typename T> vector<T,4> slerp(const vector<T,4>& a, const vector<T,3>& b, T t) { }
+        template<typename T> vector<T,3> mul(const vector<T,3>& v, const vector<T,4>& q) { return mul(inverse(q), v); }
 
-        template<typename T> T roll(const vector<T,4>& q) { return static_cast<T>(atan(static_cast<T>(2) * (q.x * q.y + q.w * q.z), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z)); }
+        template<typename T> vector<T,4> nlerp(const vector<T,4>& a, const vector<T,4>& b, T t) { return normalize(lerp(a,b,t)); }
+        template<typename T> vector<T,4> slerp(const vector<T,4>& x, const vector<T,4>& y, T a) 
+        {
+            vector<T,4> z = y;
+
+            T cosTheta = dot(x, y);
+
+            // If cosTheta < 0, the interpolation will take the long way around the sphere.
+            // To fix this, one quat must be negated.
+            if (cosTheta < static_cast<T>(0))
+            {
+                z = -y;
+                cosTheta = -cosTheta;
+            }
+
+            // Perform a linear interpolation when cosTheta is close to 1 to avoid side effect of sin(angle) becoming a zero denominator
+            if (cosTheta > static_cast<T>(1) - static_cast<T>(1e-6f))
+            {
+                // Linear interpolation
+                return vector<T,4>(
+                    lerp(x.x, z.x, a),
+                    lerp(x.y, z.y, a),
+                    lerp(x.z, z.z, a),
+                    lerp(x.w, z.w, a));
+            }
+            else
+            {
+                // Essential Mathematics, page 467
+                T angle = acos(cosTheta);
+                return (sin((static_cast<T>(1) - a) * angle) * x + sin(a * angle) * z) / sin(angle);
+            }
+        }
+
+        template<typename T> T roll(const vector<T,4>& q) { return static_cast<T>(atan2(static_cast<T>(2) * (q.x * q.y + q.w * q.z), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z)); }
 
         template<typename T> T pitch(const vector<T,4>& q)
         {
             const auto y = static_cast<T>(2) * (q.y * q.z + q.w * q.x);
             const auto x = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
-            return x == static_cast<T>(0) && y == static_cast<T>(0) ? static_cast<T>(static_cast<T>(2) * atan(q.x, q.w)) : static_cast<T>(atan(y, x));
+            return x == static_cast<T>(0) && y == static_cast<T>(0) ? static_cast<T>(static_cast<T>(2) * atan2(q.x, q.w)) : static_cast<T>(atan2(y, x));
         }
 
         template<typename T> T yaw(const vector<T,4>& q) { return asin(clamp(static_cast<T>(-2) * (q.x * q.z - q.w * q.y), static_cast<T>(-1), static_cast<T>(1))); }

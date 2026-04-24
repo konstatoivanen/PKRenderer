@@ -112,7 +112,7 @@ namespace PK::App
         for (auto i = 0; i < lights.count; ++i)
         {
             // auto ypos = sin(time * 2 + ((float)i * 4 / lights.count));
-            auto rotation = glm::quat(float3(0, time + float(i), 0));
+            auto rotation = math::quat::fromEuler(float3(0, time + float(i), 0));
             lights[i].transformLight->rotation = rotation;
             lights[i].transformMesh->rotation = rotation;
             //lights[i].transformLight->position.y = ypos;
@@ -160,8 +160,8 @@ namespace PK::App
         gizmos->GizmosDrawFrustrum(worldToClip);
 
         float4x4 localToWorld = Math::GetMatrixTRS(offset, float3(35, -35, 0) * PK_FLOAT_DEG2RAD, PK_FLOAT3_ONE);
-        float4x4 worldToLocal = glm::inverse(localToWorld);
-        float4x4 invvp = glm::inverse(worldToClip);
+        float4x4 worldToLocal = math::inverse(localToWorld);
+        float4x4 invvp = math::inverse(worldToClip);
         float4x4 cascades[4];
         float zplanes[5];
 
@@ -193,7 +193,7 @@ namespace PK::App
         entity->flyCamera->moveSmoothing = config->CameraMoveSmoothing;
         entity->flyCamera->rotationSmoothing = config->CameraLookSmoothing;
         entity->flyCamera->sensitivity = config->CameraLookSensitivity;
-        entity->flyCamera->snashotPosition = config->CameraStartPosition;
-        entity->flyCamera->snashotRotation = config->CameraStartRotation;
+        entity->flyCamera->snapshotPosition = config->CameraStartPosition;
+        entity->flyCamera->snapshotRotation = config->CameraStartRotation;
     }
 }

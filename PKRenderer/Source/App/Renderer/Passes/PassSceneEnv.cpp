@@ -48,8 +48,8 @@ namespace PK::App
         resources->captureIsDirty |= settings.CaptureInterval >= 0 && resources->captureCounter >= settings.CaptureInterval;
         resources->captureIsDirty |= resources->prevExposure != settings.Exposure;
         resources->captureIsDirty |= resources->prevDensity != fogSettings.Density;
-        resources->captureIsDirty |= resources->prevFogExpParams0 != exponential0;
-        resources->captureIsDirty |= resources->prevFogExpParams1 != exponential1;
+        resources->captureIsDirty |= math::any(resources->prevFogExpParams0 != exponential0);
+        resources->captureIsDirty |= math::any(resources->prevFogExpParams1 != exponential1);
 
         resources->prevExposure = settings.Exposure;
         resources->prevDensity = fogSettings.Density;
@@ -58,7 +58,7 @@ namespace PK::App
 
         resources->captureOrigin = settings.CaptureUsesViewOrigin ? view->position : PK_FLOAT3_ZERO;
         resources->captureOrigin += settings.CaptureOffset;
-        resources->captureCounter = glm::min(resources->captureCounter + 1, glm::max(0, settings.CaptureInterval));
+        resources->captureCounter = math::min(resources->captureCounter + 1, math::max(0, settings.CaptureInterval));
 
         if (RHI::ValidateBuffer<float4>(resources->sceneEnvSHBuffer, 4ull, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer"))
         {

@@ -32,8 +32,8 @@ namespace PK::App
         auto& settings = view->settings.BloomSettings;
         m_bloomLensDirtTexture = settings.LensDirtTextureAsset ? settings.LensDirtTextureAsset->GetRHI() : RHI::GetBuiltInResources()->WhiteTexture2D.get();
         view->constants.Set<float>(hash->pk_Bloom_Diffusion, settings.Diffusion);
-        view->constants.Set<float>(hash->pk_Bloom_Intensity, glm::clamp(glm::exp(settings.Intensity) - 1.0f, 0.0f, 1.0f));
-        view->constants.Set<float>(hash->pk_Bloom_DirtIntensity, glm::clamp(glm::exp(settings.LensDirtIntensity) - 1.0f, 0.0f, 1.0f));
+        view->constants.Set<float>(hash->pk_Bloom_Intensity, math::clamp(math::exp(settings.Intensity) - 1.0f, 0.0f, 1.0f));
+        view->constants.Set<float>(hash->pk_Bloom_DirtIntensity, math::clamp(math::exp(settings.LensDirtIntensity) - 1.0f, 0.0f, 1.0f));
         RHI::SetTexture(HashCache::Get()->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
     }
 

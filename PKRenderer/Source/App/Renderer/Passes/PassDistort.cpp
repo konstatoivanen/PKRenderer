@@ -31,16 +31,16 @@ namespace PK::App
         const auto distance = settings.PaniniProjectionAmount;
         const auto viewDist = 1.0f + distance;
         const auto aspect = (float)view->GetResolution().x / (float)view->GetResolution().y;
-        const auto viewExtY = glm::tan(0.5f * view->fieldOfView);
+        const auto viewExtY = math::tan(0.5f * view->fieldOfView);
         const auto viewExtX = aspect * viewExtY;
-        const auto projHyp = glm::sqrt(viewExtX * viewExtX + 1.0f);
+        const auto projHyp = math::sqrt(viewExtX * viewExtX + 1.0f);
         const auto cylDistMinusD = 1.0f / projHyp;
         const auto cylDist = cylDistMinusD + distance;
         const auto cylPos = float2(viewExtX, viewExtY) * cylDistMinusD * (viewDist / cylDist);
         const auto scaleX = cylPos.x / viewExtX;
         const auto scaleY = cylPos.y / viewExtY;
-        const auto scaleF = glm::min(scaleX, scaleY);
-        const auto scale = glm::mix(1.0f, glm::clamp(scaleF, 0.0f, 1.0f), settings.PaniniProjectionScreenFit);
+        const auto scaleF = math::min(scaleX, scaleY);
+        const auto scale = math::lerp(1.0f, math::clamp(scaleF, 0.0f, 1.0f), settings.PaniniProjectionScreenFit);
         const auto paniniParams = float4(viewExtX, viewExtY, distance, scale);
 
         view->constants.Set<float4>(hash->pk_Panini_Projection_Parameters, paniniParams);
@@ -56,8 +56,8 @@ namespace PK::App
         auto resolution = source->GetResolution();
         auto& settings = view->settings.DistortSettings;
 
-        if (glm::epsilonEqual(settings.PaniniProjectionAmount, 0.0f, 1e-4f) &&
-            glm::epsilonEqual(settings.ChromaticAberrationAmount, 0.0f, 1e-4f))
+        if (math::nearEqual(settings.PaniniProjectionAmount, 0.0f, 1e-4f) &&
+            math::nearEqual(settings.ChromaticAberrationAmount, 0.0f, 1e-4f))
         {
             resources->distortTexture = nullptr;
             return;
