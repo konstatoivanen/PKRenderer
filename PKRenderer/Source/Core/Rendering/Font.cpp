@@ -91,7 +91,7 @@ namespace PK
     
     const RHITexture* Font::GetRHI() const { return m_texture.get(); }
     
-    size_t Font::CalculateMaxRectCount(const char* text, const Font* font)
+    uint32_t Font::CalculateMaxRectCount(const char* text, const Font* font)
     {
         const auto length = strlen(text);
 
@@ -114,13 +114,13 @@ namespace PK
         return rect_count;
     }
 
-    size_t Font::CalculateRects(const char* text, const Font* font, const short4& area_rect, const short4& clip_rect, const FontStyle& style, FontRect* out_rects, size_t max_rects)
+    uint32_t Font::CalculateRects(const char* text, const Font* font, const short4& area_rect, const short4& clip_rect, const FontStyle& style, FontRect* out_rects, uint32_t max_rects)
     {
         const auto length = strlen(text);
 
         if (length == 0)
         {
-            return 0ull;
+            return 0u;
         }
 
         const auto char_h = (int32_t)math::round(font->GetLineHeight() * style.spacing.y * style.size);

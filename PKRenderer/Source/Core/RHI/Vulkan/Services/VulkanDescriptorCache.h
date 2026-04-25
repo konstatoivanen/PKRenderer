@@ -25,7 +25,7 @@ namespace PK
             bool isArray;
         };
 
-        VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, initializer_list<Pair<const VkDescriptorType, size_t>> poolSizes);
+        VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, uint32_t maxSets, initializer_list<Pair<const VkDescriptorType, uint32_t>> poolSizes);
 
         const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
             const DescriptorBinding* bindings,
@@ -58,8 +58,8 @@ namespace PK
         VkDescriptorPoolCreateInfo m_poolCreateInfo;
         const VkDevice m_device;
         const uint64_t m_pruneDelay;
-        uint64_t m_sizeMultiplier = 0ull;
         uint64_t m_currentPruneTick = 0ull;
+        uint32_t m_sizeMultiplier = 0u;
         
         VulkanDescriptorPool* m_currentPool = nullptr;
         FixedPool<VulkanDescriptorSet, PK_VK_MAX_DESCRIPTOR_SETS> m_setsPool;

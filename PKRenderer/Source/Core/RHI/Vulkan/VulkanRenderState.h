@@ -83,9 +83,9 @@ namespace PK
             constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
             constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
             constexpr VkShaderStageFlags GetPipelinePushConstantStageFlags() const { return m_pipelineKey.shader->GetPipelineLayout()->pushConstantStageFlags; }
-            constexpr const ShaderPushConstantLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetPushConstantLayout(); }
+            inline const ShaderPushConstantLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetPushConstantLayout(); }
             constexpr VkDescriptorSet GetDescriptorSet() const { return m_descritorState.descriptorSet->set; }
-            constexpr uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
+            inline uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
             const char* GetShaderName() const { return m_pipelineKey.shader->GetName(); }
             inline VkPipelineBindPoint GetPipelineBindPoint() const { return VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
             VkRenderingInfo GetRenderPassInfo() const;

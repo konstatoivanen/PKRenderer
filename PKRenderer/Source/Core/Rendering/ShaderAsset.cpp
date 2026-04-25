@@ -155,7 +155,7 @@ namespace PK
         for (auto i = 0u; i < shader->keywordCount; ++i)
         {
             auto pKeyword = pKeywords + i;
-            m_map.directives[pKeyword->directive] = pKeyword->offset;
+            m_map.directives[pKeyword->directive] = (uint8_t)pKeyword->offset;
             m_map.AddKeyword(pKeyword->name, pKeyword->directive, pKeyword->value);
             m_map.directivecount = pKeyword->directive + 1u;
         }
@@ -191,7 +191,8 @@ namespace PK
 
     const char* ShaderAsset::GetMetaInfo() const
     {
-        FixedString1024 meta;
+        static FixedString1024 meta;
+        meta.Clear();
         meta.Append("Asset Metadata: \n");
         meta.Append("   Type: Shader\n");
         meta.Append("   Name: ");

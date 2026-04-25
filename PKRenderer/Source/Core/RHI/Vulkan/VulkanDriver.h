@@ -110,11 +110,11 @@ namespace PK
         }
 
         void* vkHandle;
-        VkInstance instance;
-        VkDebugUtilsMessengerEXT debugMessenger;
-        VkPhysicalDevice physicalDevice;
-        VkDevice device;
-        VmaAllocator allocator;
+        VkInstance instance = VK_NULL_HANDLE;
+        VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+        VkDevice device = VK_NULL_HANDLE;
+        VmaAllocator allocator = VK_NULL_HANDLE;
         VulkanDriverDescriptor properties;
         VulkanPhysicalDeviceProperties physicalDeviceProperties;
         uint32_t apiVersion;

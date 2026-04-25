@@ -198,7 +198,7 @@ namespace PK::Math
     // Produces Reverse Z
     float4x4 GetPerspective(float fov, float aspect, float zNear, float zFar)
     {
-        const float tanHalfFovy = tan(fov * PK_FLOAT_DEG2RAD / 2.0f);
+        const float tanHalfFovy = math::tan(fov * PK_FLOAT_DEG2RAD / 2.0f);
         float4x4 proj(0.0f);
         proj[0][0] = 1.0f / (aspect * tanHalfFovy);
         proj[1][1] = 1.0f / (tanHalfFovy);
@@ -224,7 +224,7 @@ namespace PK::Math
     // Produces Reverse Z
     float4x4 GetOffsetPerspective(float left, float right, float bottom, float top, float fovy, float aspect, float zNear, float zFar)
     {
-        const float tanHalfFovy = tan((fovy * PK_FLOAT_DEG2RAD) / 2.0f);
+        const float tanHalfFovy = math::tan((fovy * PK_FLOAT_DEG2RAD) / 2.0f);
         const float rcpRL = 1.0f / (right - left);
         const float rcpTB = 1.0f / (top - bottom);
         const float rcpFN = 1.0f / (zFar - zNear);

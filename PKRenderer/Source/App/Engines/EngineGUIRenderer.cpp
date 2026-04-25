@@ -292,17 +292,17 @@ namespace PK::App
         {
             auto max_rects = Font::CalculateMaxRectCount(text, m_gui_font);
             
-            if (max_rects > 0)
+            if (max_rects > 0u)
             {
                 auto text_rects = PK_STACK_ALLOC(FontRect, max_rects);
                 auto rect_count = Font::CalculateRects(text, m_gui_font, rect, rect, style, text_rects, max_rects);
 
-                if (rect_count > 0)
+                if (rect_count > 0u)
                 {
                     auto idxv = m_gui_vertexCount;
                     auto idxi = m_gui_indexCount;
-                    m_gui_vertexCount += rect_count * 4;
-                    m_gui_indexCount += rect_count * 6;
+                    m_gui_vertexCount += rect_count * 4u;
+                    m_gui_indexCount += rect_count * 6u;
 
                     if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
                     {

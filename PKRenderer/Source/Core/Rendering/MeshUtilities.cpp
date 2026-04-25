@@ -163,15 +163,32 @@ namespace PK::MeshUtilities
         const auto offset_meshlets = Memory::AlignSize<PKAssets::PKMeshlet>(size);
         size = offset_meshlets + sizeof(PKAssets::PKMeshlet) * count_meshlet;
 
-        auto buffer = Memory::AllocateClear<uint8_t>(size);
+        buffer = Memory::AllocateClear<uint8_t>(size);
         indices = Memory::CastOffsetPtr<uint8_t>(buffer, offset_indices);
         vertices = Memory::CastOffsetPtr<PKAssets::PKMeshletVertex>(buffer, offset_vertices);
         meshlets = Memory::CastOffsetPtr<PKAssets::PKMeshlet>(buffer, offset_meshlets);
     }
 
+    MeshletBuildData::MeshletBuildData(MeshletBuildData&& other)
+    {
+        if (&other != this)
+        {
+            submesh = other.submesh;
+            meshlet_count = other.meshlet_count;
+            vertex_count = other.vertex_count;
+            index_count = other.index_count;
+            buffer = other.buffer;
+            indices = other.indices;
+            vertices = other.vertices;
+            meshlets = other.meshlets;
+            other.buffer = nullptr;
+        }
+    }
+
     MeshletBuildData::~MeshletBuildData()
     {
-        Memory::Free(indices);
+        Memory::Free(buffer);
+        buffer = nullptr;
     }
 
     MeshletBuildData BuildMeshletsMonotone(GeometryContext* ctx)
@@ -229,9 +246,9 @@ namespace PK::MeshUtilities
                 const auto vertex_stride_float = ctx->stridePositionsf32;
                 float3 normals[PKAssets::PK_MESHLET_MAX_TRIANGLES * 3];
                 float3 corners[PKAssets::PK_MESHLET_MAX_TRIANGLES * 3][3];
-                size_t valid_tri_count = 0;
+                uint32_t valid_tri_count = 0u;
 
-                for (size_t i = 0; i < index_count; i += 3)
+                for (auto i = 0u; i < index_count; i += 3u)
                 {
                     bool isValid = false;
                     const auto a = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 0]];
@@ -241,16 +258,16 @@ namespace PK::MeshUtilities
                     corners[valid_tri_count][0] = float3(a);
                     corners[valid_tri_count][1] = float3(b);
                     corners[valid_tri_count][2] = float3(c);
-                    valid_tri_count += (size_t)isValid;
+                    valid_tri_count += (uint32_t)isValid;
                 }
 
                 // degenerate cluster, no valid triangles => trivial reject (cone data is 0)
-                if (valid_tri_count > 0)
+                if (valid_tri_count > 0u)
                 {
-                    const auto psphere = Math::ComputeBoundingSphere(corners[0], valid_tri_count * 3);
+                    const auto psphere = Math::ComputeBoundingSphere(corners[0], valid_tri_count * 3u);
                     const auto nsphere = Math::ComputeBoundingSphere(normals, valid_tri_count);
                     const auto axis = Math::SafeNormalize(nsphere.xyz);
-                    auto aabb = Math::ComputeBoundingBox(corners[0], valid_tri_count * 3);
+                    auto aabb = Math::ComputeBoundingBox(corners[0], valid_tri_count * 3u);
                     center = aabb.GetCenter();
                     extents = aabb.GetExtents();
                     cone_cutoff_s8 = 127;
@@ -622,14 +639,14 @@ namespace PK::MeshUtilities
         for (auto lat = 0u; lat < lattc; lat++)
         {
             float a1 = PK_FLOAT_PI * (float)(lat + 1) / (lattc + 1);
-            float sin1 = sin(a1);
-            float cos1 = cos(a1);
+            float sin1 = math::sin(a1);
+            float cos1 = math::cos(a1);
 
             for (auto lon = 0u; lon <= longc; lon++)
             {
                 float a2 = PK_FLOAT_TWO_PI * (float)(lon == longc ? 0 : lon) / longc;
-                float sin2 = sin(a2);
-                float cos2 = cos(a2);
+                float sin2 = math::sin(a2);
+                float cos2 = math::cos(a2);
                 positions[lon + lat * (longc + 1) + 1] = float3(sin1 * cos2, cos1, sin1 * sin2) * radius;
             }
         }

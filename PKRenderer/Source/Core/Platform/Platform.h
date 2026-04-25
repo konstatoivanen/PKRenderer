@@ -4,11 +4,10 @@
 #define _CRT_INTERNAL_NONSTDC_NAMES 1
 
 // Compiler defines
-#if __cplusplus < 201703L
-    #error "C++ 17 support or newer required!"
-#endif
-
 #if defined(__clang__)
+    #if __cplusplus < 201703L
+        #error "C++ 17 support or newer required!"
+    #endif
     #define PK_DLLEXPORT __attribute__ ((__visibility__ ("default")))
     #define PK_DLLIMPORT
     #define PK_THREADLOCAL __thread
@@ -45,33 +44,6 @@
     #error "Unsupported compiler!"
 #endif
 
-// SIMD defines
-#if defined(__i386__) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64) || defined(__SSE2__)
-    #define PK_PLATFORM_SIMD_SSE2 1
-#if defined(__SSE3__)
-    #define PK_PLATFORM_SIMD_SSE3 1
-#endif
-#if defined(__SSE4__)
-    #define PK_PLATFORM_SIMD_SSE4 1
-#endif
-#if defined(__SSE4_1__)
-    #define PK_PLATFORM_SIMD_SSE4_1 1
-#endif
-#if defined(__SSE4_2__)
-    #define PK_PLATFORM_SIMD_SSE4_2 1
-#endif
-#endif
-
-#if defined(_M_ARM) || defined(__ARM_NEON__) || defined(__ARM_NEON)
-    #define PK_PLATFORM_SIMD_NEON 1
-#endif
-
-#if defined(_M_PPC) || defined(__CELLOS_LV2__)
-    #define PK_PLATFORM_SIMD_VMX 1
-#endif
-
-#define PK_PLATFORM_SIMD (PK_PLATFORM_SIMD_SSE2 || PK_PLATFORM_SIMD_SSE3 || PK_PLATFORM_SIMD_SSE4 || PK_PLATFORM_SIMD_NEON || PK_PLATFORM_SIMD_VMX)
-
 #if defined(_WIN32) && defined(_WIN64)
     #define PK_PLATFORM_WINDOWS 1
 #else
@@ -84,7 +56,7 @@
     #define PK_PLATFORM_LINUX 0
 #endif
 
-#include "Core/Math/MathFwd.h"
+#include "Core/Math/Forward.h"
 
 namespace PK
 {

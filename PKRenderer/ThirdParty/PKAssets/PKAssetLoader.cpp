@@ -181,7 +181,7 @@ namespace PKAssets
 
     int StreamData(PKAssetStream* stream, void* dst, size_t offset, size_t size)
     {
-        auto seekret = fseek(reinterpret_cast<FILE*>(stream->stream), offset, SEEK_SET);
+        auto seekret = fseek(reinterpret_cast<FILE*>(stream->stream), (long)offset, SEEK_SET);
         auto readret = fread(dst, size, 1u, reinterpret_cast<FILE*>(stream->stream));
         return seekret == 0 && readret != 0 ? 0 : -1;
     }

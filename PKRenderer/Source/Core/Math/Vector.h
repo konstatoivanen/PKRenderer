@@ -1,6 +1,5 @@
 #pragma once
 #include "Scalar.h"
-#include "MathFwd.h"
 
 namespace PK::math
 {
@@ -28,29 +27,6 @@ namespace PK::math
         Restrictions:
          By making use of the Software for military purposes, you choose to make a
          Bunny unhappy.
-        
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-        THE SOFTWARE.
-        
-        ================================================================================
-        The MIT License
-        --------------------------------------------------------------------------------
-        Copyright (c) 2005 - G-Truc Creation
-        
-        Permission is hereby granted, free of charge, to any person obtaining a copy
-        of this software and associated documentation files (the "Software"), to deal
-        in the Software without restriction, including without limitation the rights
-        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-        copies of the Software, and to permit persons to whom the Software is
-        furnished to do so, subject to the following conditions:
-        
-        The above copyright notice and this permission notice shall be included in
-        all copies or substantial portions of the Software.
         
         THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
         IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -2192,9 +2168,9 @@ namespace PK::math
     template<typename T> vector<T,2> step(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(step(a.x, b.x), step(a.y, b.y)); }
     template<typename T> vector<T,3> step(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(step(a.x, b.x), step(a.y, b.y), step(a.z, b.z)); }
     template<typename T> vector<T,4> step(const vector<T,4>& a, const vector<T,4>& b) { return vector<T,4>(step(a.x, b.x), step(a.y, b.y), step(a.z, b.z), step(a.w, b.w)); }
-    template<typename T> vector<T,2> step(T a, const vector<T,2>& b) { return vector<T,2>(step(a, b, i.x), step(a, b, i.y)); }
-    template<typename T> vector<T,3> step(T a, const vector<T,3>& b) { return vector<T,3>(step(a, b, i.x), step(a, b, i.y), step(a, b, i.z)); }
-    template<typename T> vector<T,4> step(T a, const vector<T,4>& b) { return vector<T,4>(step(a, b, i.x), step(a, b, i.y), step(a, b, i.z), step(a, b, i.w)); }
+    template<typename T> vector<T,2> step(T a, const vector<T,2>& b) { return vector<T,2>(step(a, b.x), step(a, b.y)); }
+    template<typename T> vector<T,3> step(T a, const vector<T,3>& b) { return vector<T,3>(step(a, b.x), step(a, b.y), step(a, b.z)); }
+    template<typename T> vector<T,4> step(T a, const vector<T,4>& b) { return vector<T,4>(step(a, b.x), step(a, b.y), step(a, b.z), step(a, b.w)); }
 
     constexpr inline ushort2 f32tof16(const float2& v) { return ushort2(f32tof16(v.x), f32tof16(v.y)); }
     constexpr inline ushort3 f32tof16(const float3& v) { return ushort3(f32tof16(v.x), f32tof16(v.y), f32tof16(v.z)); }
@@ -2208,7 +2184,7 @@ namespace PK::math
     template<typename T, int N> T distance(const vector<T, N>& a, const vector<T, N>& b) { return length(a - b); }
     template<typename T, int N> vector<T,N> normalize(const vector<T,N>& v) { return v / length(v); }
     
-    template<typename T> vector<T,2> cross(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(v.x * u.y - u.x * v.y); }
+    template<typename T> vector<T,2> cross(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(a.x * b.y - b.x * a.y); }
     template<typename T> vector<T,3> cross(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(a.y * b.z - b.y * a.z, a.z * b.x - b.z * a.x, a.x * b.y - b.x * a.y); }
 
     template<typename T, int N> vector<T,N> reflect(const vector<T,N>& i, const vector<T,N>& n) { return i - n * dot(n, i) * static_cast<T>(2); }
@@ -2483,14 +2459,14 @@ namespace PK::math
 
         template<typename T> vector<T,4> tangentBasis(const vector<T,3>& t, const vector<T,3>& b)
         {
-            auto forward = normalize(t - b * dot(t, b) / dot(b, b));
-            auto right = cross(up, forward);
+            auto tn = normalize(t - b * dot(t, b) / dot(b, b));
+            auto n = cross(b, tn);
             vector<T,4> ret;
-            ret.w = sqrt(1.0f + right.x + up.y + forward.z) * 0.5f;
+            ret.w = sqrt(1.0f + n.x + b.y + tn.z) * 0.5f;
             float w4_recip = 1.0f / (4.0f * ret.w);
-            ret.x = (up.z - forward.y) * w4_recip;
-            ret.y = (forward.x - right.z) * w4_recip;
-            ret.z = (right.y - up.x) * w4_recip;
+            ret.x = (b.z - tn.y) * w4_recip;
+            ret.y = (tn.x - n.z) * w4_recip;
+            ret.z = (n.y - b.x) * w4_recip;
             return ret;
         }
 

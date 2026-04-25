@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Math/MathFwd.h"
+#include "Core/Math/Forward.h"
 #include "Core/ECS/EGID.h"
 #include "Core/Rendering/Material.h"
 #include "App/Renderer/EntityEnums.h"

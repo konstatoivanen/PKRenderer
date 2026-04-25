@@ -36,7 +36,7 @@ namespace PK
         ShaderAsset(const char* filepath);
         ~ShaderAsset() { ReleaseVariants(); }
 
-        constexpr ShaderStageFlags GetStageFlags() const { return m_shaders[0]->GetStageFlags(); }
+        inline ShaderStageFlags GetStageFlags() const { return m_shaders[0]->GetStageFlags(); }
         constexpr const FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
 
         inline uint32_t GetRHIIndex(const NameID* keywords, uint32_t count) const { return m_map.GetIndex(keywords, count); }
@@ -47,13 +47,13 @@ namespace PK
         inline const RHIShader* GetRHI(const NameID* keywords, uint32_t count) const { return m_shaders[GetRHIIndex(keywords, count)].get(); }
         inline const RHIShader* GetRHI(uint32_t index) const { return m_shaders[index].get(); }
         inline const RHIShader* GetRHI(const PropertyBlock* keywords) const { return m_shaders[GetRHIIndex(keywords)].get(); }
-        constexpr uint32_t GetRHICount() const { return m_shaders.GetCount(); }
+        constexpr uint32_t GetRHICount() const { return (uint32_t)m_shaders.GetCount(); }
 
         inline bool SupportsKeyword(const NameID keywords) const { return m_map.SupportsKeyword(keywords); }
         inline bool SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_map.SupportsKeywords(keywords, count); }
         inline bool SupportsMaterials() const { return m_materialPropertyLayout.GetCount() > 0; }
 
-        constexpr const uint3 GetGroupSize() const { return m_shaders[0]->GetGroupSize(); }
+        inline const uint3 GetGroupSize() const { return m_shaders[0]->GetGroupSize(); }
         constexpr const ShaderPropertyLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
 
         const char* GetMetaInfo() const final;

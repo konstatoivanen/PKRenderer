@@ -14,12 +14,13 @@ namespace PK::MeshUtilities
         uint32_t vertex_count = 0u;
         uint32_t index_count = 0u;
         
+        void* buffer = nullptr;
         uint8_t* indices;
         PKAssets::PKMeshletVertex* vertices;
         PKAssets::PKMeshlet* meshlets;
 
         MeshletBuildData(size_t count_meshlet);
-        MeshletBuildData(MeshletBuildData&& other) = default;
+        MeshletBuildData(MeshletBuildData&& other);
         MeshletBuildData(MeshletBuildData const&) = delete;
         ~MeshletBuildData();
         MeshletBuildData& operator=(MeshletBuildData const&) = delete;

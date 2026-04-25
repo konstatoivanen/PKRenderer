@@ -1,6 +1,7 @@
 #pragma once
-#include "Core/Math/MathFwd.h"
+#include "Core/Math/Forward.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "Core/RHI/RHInterfaces.h"
 #include "Core/Utilities/InitializerList.h"
 
 namespace PK

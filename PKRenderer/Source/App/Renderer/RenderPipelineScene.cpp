@@ -32,7 +32,7 @@ namespace PK::App
         m_autoExposure(assetDatabase),
         m_passPostEffectsComposite(assetDatabase)
     {
-        PK_LOG_VERBOSE_FUNC("");
+        PK_LOG_VERBOSE_FUNC();
 
         m_sceneStructure = RHI::CreateAccelerationStructure("Scene");
 

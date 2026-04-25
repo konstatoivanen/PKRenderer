@@ -18,14 +18,14 @@ namespace PK
     constexpr static const uint64_t PK_VK_MAX_RAW_BUFFERS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_ACCELERATION_STRUCTURES = 1024ull;
 
-    constexpr static const uint64_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SETS = 256ull;
-    constexpr static const uint64_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLERS = 32ull;
-    constexpr static const uint64_t PK_VK_DESCRIPTOR_INITIAL_COUNT_STORAGE_BUFFER = 128ull;
-    constexpr static const uint64_t PK_VK_DESCRIPTOR_INITIAL_COUNT_UNIFORM_BUFFER = 128ull;
-    constexpr static const uint64_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLED_IMAGE = 128ull;
-    constexpr static const uint64_t PK_VK_DESCRIPTOR_INITIAL_COUNT_STORAGE_IMAGE = 128ull;
-    constexpr static const uint64_t PK_VK_DESCRIPTOR_INITIAL_COUNT_COMBINED_IMAGE = 128ull;
-    constexpr static const uint64_t PK_VK_DESCRIPTOR_INITIAL_COUNT_ACCELERATION_STRUCTURE = 16ull;
+    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SETS = 256u;
+    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLERS = 32u;
+    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_STORAGE_BUFFER = 128u;
+    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_UNIFORM_BUFFER = 128u;
+    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLED_IMAGE = 128u;
+    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_STORAGE_IMAGE = 128u;
+    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_COMBINED_IMAGE = 128u;
+    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_ACCELERATION_STRUCTURE = 16u;
 
     constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_TYPE_POOL_SIZES = 32ull;
     constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_SETS = 1024ull;

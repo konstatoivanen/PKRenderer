@@ -81,8 +81,8 @@ namespace PK
 
         inline InputType GetInputType() final { return InputType::KeyboardAndMouse; }
 
-        constexpr int2 GetSize() const { return GetRect().zw; }
-        constexpr int2 GetPosition() const { return GetRect().xy; }
+        inline int2 GetSize() const { return GetRect().zw; }
+        inline int2 GetPosition() const { return GetRect().xy; }
         inline void SetSize(const int2& size) { SetRect({ GetPosition(), size }); }
         inline void SetPosition(const int2& position) { SetRect({ position, GetSize() }); }
         inline void SetCursorPosToCenter() { SetCursorPosition(GetSize() / 2); }

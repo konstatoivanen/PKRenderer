@@ -1,4 +1,5 @@
 #pragma once
+#include "Forward.h"
 #include <math.h>
 #include <stdint.h>
 #include <float.h>
@@ -77,8 +78,13 @@ namespace PK::math
     
     inline float log2(float v) { return ::log2f(v); }
     inline double log2(double v) { return ::log2(v); }
+    #if defined(__clang__)
     inline uint32_t log2(uint32_t v) { uint32_t y; asm("\tbsr %1, %0\n" : "=r"(y) : "r" (v)); return y; }
     inline uint64_t log2(uint64_t v) { return static_cast<uint64_t>(63 - __builtin_clzll(v)); }
+    #else
+    inline uint32_t log2(uint32_t v) { auto index = 0ul; return _BitScanReverse(&index, v) ? static_cast<uint32_t>(index) : 0u; }
+    inline uint64_t log2(uint64_t v) { auto index = 0ul; return _BitScanReverse64(&index, v) ? static_cast<uint64_t>(index) : 0ull; }
+    #endif
 
     inline float sqrt(float v) { return ::sqrtf(v); }
     inline double sqrt(double v) { return ::sqrt(v); }
@@ -181,8 +187,8 @@ namespace PK::math
     inline uint32_t lerp(uint32_t a, uint32_t b, bool i) { return i ? b : a; }
     inline uint64_t lerp(uint64_t a, uint64_t b, bool i) { return i ? b : a; }
 
-    inline float sign(float v) { return (v > 0) - (v < 0); }
-    inline double sign(double v) { return (v > 0) - (v < 0); }
+    inline float sign(float v) { return static_cast<float>((v > 0) - (v < 0)); }
+    inline double sign(double v) { return static_cast<double>((v > 0) - (v < 0)); }
     inline int8_t sign(int8_t v) { return (v > 0) - (v < 0); }
     inline int16_t sign(int16_t v) { return (v > 0) - (v < 0); }
     inline int32_t sign(int32_t v) { return (v > 0) - (v < 0); }
@@ -193,22 +199,8 @@ namespace PK::math
     inline double smoothstep(double a, double b, double i) { auto t = saturate((i - a) / (b - a)); return t * t * (3.0 - 2.0 * t); }
 
     inline float step(float a, float b) { return lerp(1.0f, 0.0f, b < a); }
-    inline double step(double a, double b) { return lerp(1.0f, 0.0f, b < a); }
+    inline double step(double a, double b) { return lerp(1.0, 0.0, b < a); }
 
-    inline uint16_t f32tof16(float v) 
-    {
-        const auto u0 = asuint(v);
-        const auto u1 = u0 & 0x7FFFF000u;
-        const auto u2 = (asuint(min(asfloat(u1) * 1.92592994e-34f, 260042752.0f)) + 0x1000u) >> 13u;
-        return (u1 >= 0x7f800000u ? u1 > 0x7f800000u ? 0x7e00u : 0x7c00u : u2) | (u0 & ~0x7FFFF000u) >> 16u;
-    }
-
-    inline float f16tof32(uint16_t x) 
-    {
-        uint32_t uf = (x & 0x7fffu) << 13u;
-        uint32_t e = uf & 0xf800000u;
-        uf += e == 0xf800000u ? 0x70000000u : 0x38000000u;
-        uf = e == 0 ? asuint(asfloat(uf + (1 << 23)) - 6.10351563e-05f) : uf;
-        return asfloat(uf | (x & 0x8000) << 16);
-    }
+    uint16_t f32tof16(float v);
+    float f16tof32(uint16_t x);
 }

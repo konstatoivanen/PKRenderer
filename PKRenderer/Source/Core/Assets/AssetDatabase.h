@@ -142,7 +142,7 @@ namespace PK
             auto object = CreateAssetObject<T>(assetId, CacheMode::Persistent);
             constexpr auto name = pk_base_type_name<T>();
             PK_FATAL_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
-            PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, assetId.c_str());
+            PK_LOG_VERBOSE_FUNC_FMT("%.*s, %s", name.count, name.data, assetId.c_str());
             object->ConstructVirtual(PK::Forward<Args>(args)...);
             return object->GetReference();
         }
@@ -172,7 +172,7 @@ namespace PK
         void LoadDirectory(const char* directory, bool forceReload = false)
         {
             constexpr auto name = pk_base_type_name<T>();
-            PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, directory);
+            PK_LOG_VERBOSE_FUNC_FMT("%.*s, %s", name.count, name.data, directory);
             SearchContext ctx{ this, forceReload };
             FileIO::FindFiles(&ctx, directory, Asset::GetExtension<T>(), false, [](void* ctx, const char* path)
             {
@@ -182,19 +182,19 @@ namespace PK
         }
 
         template<typename T>
-        void ReloadDirectoryByType(const char* directory) { ReloadDirectoryByType(pk_base_type_index<T>()), directory); }
+        void ReloadDirectoryByType(const char* directory) { ReloadDirectoryByType(pk_base_type_index<T>(), directory); }
        
         template<typename T>
         void ReloadByType() { ReloadByType(pk_base_type_index<T>()); }
 
         template<typename T>
-        void UnloadDirectoryByType(const char* directory) { UnloadDirectoryByType(pk_base_type_index<T>()), directory); }
+        void UnloadDirectoryByType(const char* directory) { UnloadDirectoryByType(pk_base_type_index<T>(), directory); }
        
         template<typename T>
         void UnloadByType() { UnloadByType(pk_base_type_index<T>()); }
 
         template<typename T>
-        void LogDirectoryByType(const char* directory) { LogDirectoryByType(pk_base_type_index<T>()), directory); }
+        void LogDirectoryByType(const char* directory) { LogDirectoryByType(pk_base_type_index<T>(), directory); }
        
         template<typename T>
         void LogByType() { LogByType(pk_base_type_index<T>()); }

@@ -26,8 +26,8 @@ namespace PK
             }
         }
 
-        T* GetData() { return IsSmallBuffer(m_count) ? reinterpret_cast<T*>(&m_data) : m_data.buffer; }
-        T const* GetData() const { return IsSmallBuffer(m_count) ? reinterpret_cast<T const*>(&m_data) : m_data.buffer; }
+        inline T* GetData() { return IsSmallBuffer(m_count) ? reinterpret_cast<T*>(&m_data) : m_data.buffer; }
+        inline T const* GetData() const { return IsSmallBuffer(m_count) ? reinterpret_cast<T const*>(&m_data) : m_data.buffer; }
 
         constexpr size_t GetCount() const { return m_count; }
         constexpr size_t GetSize() const { return m_count * sizeof(T); }

@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Math/MathFwd.h"
+#include "Core/Math/Forward.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Rendering/RenderingFwd.h"
 

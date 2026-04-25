@@ -488,7 +488,7 @@ namespace PK
                 binding->count = element.count;
                 binding->type = element.type;
                 binding->handle = handle;
-                binding->version = handle->Version();
+                binding->version = (uint32_t)handle->Version();
                 binding->isArray = false;
             }
         }
@@ -515,7 +515,7 @@ namespace PK
         if (m_descritorState.bindingCount != resourceLayout.GetCount())
         {
             m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-            m_descritorState.bindingCount = resourceLayout.GetCount();
+            m_descritorState.bindingCount = (uint32_t)resourceLayout.GetCount();
         }
 
         m_services.descriptorCache->SetDescriptorSetFence(m_descritorState.descriptorSet, fence);

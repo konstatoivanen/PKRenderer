@@ -1,6 +1,38 @@
 #pragma once
 #include <stdint.h>
 
+// SIMD defines
+#if defined(__i386__) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64) || defined(__SSE2__)
+    #define PK_MATH_SIMD_SSE2 1
+    #include <emmintrin.h>
+    #if defined(__SSE3__)
+        #define PK_MATH_SIMD_SSE3 1
+        #include <pmmintrin.h>
+    #endif
+    #if defined(__SSSE3__)
+        #define PK_MATH_SIMD_SSSE3 1
+        #include <tmmintrin.h>
+    #endif
+    #if defined(__SSE4_1__)
+        #define PK_MATH_SIMD_SSE4_1 1
+        #include <smmintrin.h>
+    #endif
+    #if defined(__SSE4_2__)
+        #define PK_MATH_SIMD_SSE4_2 1
+        #if defined(__clang__)
+            #include <popcntintrin.h>
+        #endif
+        #include <nmmintrin.h>
+    #endif
+#endif
+
+#if defined(_M_ARM) || defined(__ARM_NEON__) || defined(__ARM_NEON)
+    #define PK_MATH_SIMD_NEON 1
+    #include "neon.h"
+#endif
+
+#define PK_MATH_SIMD (PK_MATH_SIMD_SSE2 || PK_MATH_SIMD_SSE3 || PK_MATH_SIMD_SSSE3 || PK_MATH_SIMD_SSE4_1 || PK_MATH_SIMD_SSE4_2 || PK_MATH_SIMD_NEON)
+
 namespace PK
 {
     namespace math

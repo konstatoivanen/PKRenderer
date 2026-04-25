@@ -31,7 +31,7 @@ namespace PK
         descriptor.resolution[0] = texture.resolution[0];
         descriptor.resolution[1] = texture.resolution[1];
         descriptor.resolution[2] = texture.resolution[2];
-        descriptor.levels = texture.levels;
+        descriptor.levels = (uint8_t)texture.levels;
         descriptor.layers = texture.layers;
         descriptor.format = texture.format;
         descriptor.type = texture.type;

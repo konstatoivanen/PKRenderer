@@ -66,6 +66,7 @@
 #define STRICT
 
 #include <Windows.h>
+#include <intrin0.inl.h>
 
 #undef MemoryBarrier
 #undef DeleteFile

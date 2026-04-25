@@ -15,7 +15,7 @@ namespace PK::App
 {
     BatcherMeshStatic::BatcherMeshStatic() : m_transforms(1024u, 3u)
     {
-        PK_LOG_VERBOSE_FUNC("");
+        PK_LOG_VERBOSE_FUNC();
         m_textures2D = RHI::CreateBindSet<RHITexture>(PK_RHI_MAX_UNBOUNDED_SIZE);
         m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::PersistentStorage, "Batching.Matrices");
         m_indices = RHI::CreateBuffer<PKAssets::PKDrawInfo>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
@@ -71,7 +71,7 @@ namespace PK::App
 
             if (shaderBatch->GetSize() > 0)
             {
-                shaderBatch->materialFirstIndex = (size_t)ceil((double)buffsize / shaderBatch->materialStride);
+                shaderBatch->materialFirstIndex = (uint32_t)((buffsize + shaderBatch->materialStride - 1ull) / shaderBatch->materialStride);
                 buffsize = shaderBatch->GetOffset();
                 buffsize += shaderBatch->GetSize();
             }

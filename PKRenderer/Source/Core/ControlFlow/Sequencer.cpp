@@ -9,7 +9,7 @@ namespace PK
 
         for (auto& pair : initializer)
         {
-            count += pair.second.size();
+            count += (uint32_t)pair.second.size();
         }
 
         // Allocate for worst case where all are unique.

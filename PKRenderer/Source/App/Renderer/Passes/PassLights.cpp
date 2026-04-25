@@ -98,7 +98,7 @@ namespace PK::App
 
     PassLights::PassLights(AssetDatabase* assetDatabase) 
     {
-        PK_LOG_VERBOSE_FUNC("");
+        PK_LOG_VERBOSE_FUNC();
 
         m_computeLightAssignment = assetDatabase->Find<ShaderAsset>("CS_LightAssignment").get();
         m_computeCopyCubeShadow = assetDatabase->Find<ShaderAsset>("CS_CopyCubeShadow").get();

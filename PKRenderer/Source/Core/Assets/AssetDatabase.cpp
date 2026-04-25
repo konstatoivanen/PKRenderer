@@ -44,7 +44,7 @@ namespace PK
 
     void AssetDatabase::Reload(AssetID assetId)
     {
-        PK_LOG_VERBOSE_FUNC("%s", assetId.c_str());
+        PK_LOG_VERBOSE_FUNC_FMT("%s", assetId.c_str());
 
         auto index = m_assets.GetHashIndex((size_t)assetId);
 
@@ -56,7 +56,7 @@ namespace PK
 
     void AssetDatabase::ReloadDirectory(const char* directory)
     {
-        PK_LOG_VERBOSE_FUNC("%s", directory);
+        PK_LOG_VERBOSE_FUNC_FMT("%s", directory);
 
         if (FileIO::DirectoryExists(directory))
         {
@@ -74,7 +74,7 @@ namespace PK
 
     void AssetDatabase::ReloadDirectoryByType(uint32_t typeIndex, const char* directory)
     {
-        PK_LOG_VERBOSE_FUNC("%s", directory);
+        PK_LOG_VERBOSE_FUNC_FMT("%s", directory);
 
         if (FileIO::DirectoryExists(directory))
         {
@@ -113,7 +113,7 @@ namespace PK
 
     void AssetDatabase::Unload(AssetID assetId)
     {
-        PK_LOG_VERBOSE_FUNC("%s", assetId.c_str());
+        PK_LOG_VERBOSE_FUNC_FMT("%s", assetId.c_str());
 
         auto index = m_assets.GetHashIndex((size_t)assetId);
 
@@ -125,7 +125,7 @@ namespace PK
     
     void AssetDatabase::UnloadDirectory(const char* directory)
     {
-        PK_LOG_VERBOSE_FUNC("%s", directory);
+        PK_LOG_VERBOSE_FUNC_FMT("%s", directory);
 
         if (FileIO::DirectoryExists(directory))
         {
@@ -143,7 +143,7 @@ namespace PK
 
     void AssetDatabase::UnloadDirectoryByType(uint32_t typeIndex, const char* directory)
     {
-        PK_LOG_VERBOSE_FUNC("%s", directory);
+        PK_LOG_VERBOSE_FUNC_FMT("%s", directory);
 
         if (FileIO::DirectoryExists(directory))
         {
@@ -197,7 +197,7 @@ namespace PK
 
     void AssetDatabase::LogDirectory(const char* directory)
     {
-        PK_LOG_HEADER_FUNC("%s", directory);
+        PK_LOG_HEADER_FUNC_FMT("%s", directory);
 
         if (FileIO::DirectoryExists(directory))
         {
@@ -215,7 +215,7 @@ namespace PK
 
     void AssetDatabase::LogDirectoryByType(uint32_t typeIndex, const char* directory)
     {
-        PK_LOG_HEADER_FUNC("%s", directory);
+        PK_LOG_HEADER_FUNC_FMT("%s", directory);
 
         if (FileIO::DirectoryExists(directory))
         {
@@ -263,7 +263,7 @@ namespace PK
         if (!object->isVirtual && (!object->isLoaded || isReload))
         {
             FixedString128 filepath = object->assetId.c_str();
-            PK_LOG_VERBOSE_FUNC(": %.*s, %s", object->typeInfo->nameLength, object->typeInfo->name, filepath.c_str());
+            PK_LOG_VERBOSE_FUNC_FMT(": %.*s, %s", object->typeInfo->nameLength, object->typeInfo->name, filepath.c_str());
             object->DestructAsset();
             object->ConstructAsset(this, filepath);
         }

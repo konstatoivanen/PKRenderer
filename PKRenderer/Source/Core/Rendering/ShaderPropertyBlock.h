@@ -98,7 +98,7 @@ namespace PK
         ShaderPropertyBlock(ShaderProperty* elements, size_t count);
         ShaderPropertyBlock(initializer_list<ShaderProperty> elements);
         constexpr const ShaderPropertyLayout& GetLayout() const { return m_layout; }
-        constexpr const void* GetData() const { return m_properties.GetData(); }
+        inline const void* GetData() const { return m_properties.GetData(); }
     private:
         ShaderPropertyLayout m_layout;
         FastBuffer<uint8_t> m_properties;

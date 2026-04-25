@@ -18,7 +18,7 @@ namespace PK::App
 {
     PassSceneEnv::PassSceneEnv(AssetDatabase* assetDatabase)
     {
-        PK_LOG_VERBOSE_FUNC("");
+        PK_LOG_VERBOSE_FUNC();
 
         auto hash = HashCache::Get();
         m_backgroundShader = assetDatabase->Find<ShaderAsset>("VS_SceneEnv_Background").get();

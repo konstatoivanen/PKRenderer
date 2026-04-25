@@ -11,7 +11,7 @@ namespace PK
     {
         List() {}
         List(size_t capacity) { Reserve(capacity); }
-        List(List&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); }
+        List(List&& other) noexcept { Move(PK::Forward<List>(other)); }
         List(const List& other) noexcept { Copy(other); }
         List(initializer_list<T>&& other) noexcept { Move(PK::Forward<initializer_list<T>>(other)); }
         List(const initializer_list<T>& other) noexcept { Copy(other); }
@@ -49,7 +49,7 @@ namespace PK
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
 
-        List& operator=(List&& other) noexcept { Move(PK::Forward<FastBuffer>(other)); return *this; }
+        List& operator=(List&& other) noexcept { Move(PK::Forward<List>(other)); return *this; }
 
         void Copy(const List& other)
         {
@@ -106,7 +106,7 @@ namespace PK
             }
 
             m_data.buffer = buffer;
-            m_capacity = capacity;
+            m_capacity = (uint32_t)capacity;
             return true;
         }
 

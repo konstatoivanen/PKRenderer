@@ -16,7 +16,7 @@ namespace PK::App
 {
     PassVolumetricFog::PassVolumetricFog(AssetDatabase* assetDatabase)
     {
-        PK_LOG_VERBOSE_FUNC("");
+        PK_LOG_VERBOSE_FUNC();
         m_compute = assetDatabase->Find<ShaderAsset>("CS_VolumetricFog").get();
     }
 

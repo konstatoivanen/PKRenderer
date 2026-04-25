@@ -103,8 +103,8 @@ namespace PK
             bool TryGetAccelerationStructureGeometryInfo(uint32_t globalSubmeshIndex, AccelerationStructureGeometryInfo* outInfo) const;
 
         private:
-            FixedPool<MeshStatic, 4096> m_staticMeshes;
-            FixedPool<SubMeshStatic, 8192> m_staticSubmeshes;
+            FixedPool<MeshStatic, 4096ull> m_staticMeshes;
+            FixedPool<SubMeshStatic, 8192ull> m_staticSubmeshes;
 
             uint32_t m_submeshCount = 0u;
             uint32_t m_meshletCount = 0u;

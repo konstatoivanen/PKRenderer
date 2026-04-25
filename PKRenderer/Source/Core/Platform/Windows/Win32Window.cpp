@@ -768,8 +768,8 @@ namespace PK
                     pos.x += (int32_t)((rawInput->data.mouse.lLastX / 65535.f) * width);
                     pos.y += (int32_t)((rawInput->data.mouse.lLastY / 65535.f) * height);
                     ::ScreenToClient(m_handle, &pos);
-                    dx = pos.x - m_cursorpos.x;
-                    dy = pos.y - m_cursorpos.y;
+                    dx = pos.x - (int32_t)m_cursorpos.x;
+                    dy = pos.y - (int32_t)m_cursorpos.y;
                 }
                 else
                 {

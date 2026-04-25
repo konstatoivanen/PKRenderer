@@ -1347,7 +1347,7 @@
     <ClInclude Include="Source\Core\Rendering\CommandBufferExt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Math\MathFwd.h">
+    <ClInclude Include="Source\Core\Math\Forward.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\RHI.h">
@@ -2429,6 +2429,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Scalar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -31,7 +31,7 @@ namespace PK
             return { nullptr, 0ull };
         }
 
-        for (int32_t i = length, h = 0, s = 0; i > 0; --i)
+        for (int32_t i = static_cast<int32_t>(length), h = 0, s = 0; i > 0; --i)
         {
             if (name[i - 1] == ')')
             {
@@ -57,7 +57,7 @@ namespace PK
 
         int32_t s = 0;
 
-        for (int32_t i = length, h = 0; i > 0; --i)
+        for (int32_t i = static_cast<int32_t>(length), h = 0; i > 0; --i)
         {
             if (name[i - 1] == '>')
             {
@@ -81,7 +81,7 @@ namespace PK
             ++s;
         }
 
-        for (int32_t i = length - s; i > 0; --i)
+        for (int32_t i = static_cast<int32_t>(length) - s; i > 0; --i)
         {
             if (!((name[i - 1] >= '0' && name[i - 1] <= '9') || (name[i - 1] >= 'a' && name[i - 1] <= 'z') || (name[i - 1] >= 'A' && name[i - 1] <= 'Z') || (name[i - 1] == '_')))
             {
@@ -93,7 +93,7 @@ namespace PK
 
         length -= s;
 
-        if (length > 0 && ((name[0] >= 'a' && name[0] <= 'z') || (name[0] >= 'A' && name[0] <= 'Z') || (name[0] == '_')))
+        if (length > 0ull && ((name[0] >= 'a' && name[0] <= 'z') || (name[0] >= 'A' && name[0] <= 'Z') || (name[0] == '_')))
         {
             return { name, length };
         }

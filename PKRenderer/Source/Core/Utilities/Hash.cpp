@@ -3,25 +3,25 @@
 
 namespace PK::Hash
 {
-    constexpr static const int32_t MaxPrimeArrayLength = 0x7FEFFFFD;
-    constexpr static const int32_t HashPrime = 101;
-    constexpr static const int32_t PrimesLength = 72;
-    constexpr static const int32_t Primes[PrimesLength] = {
-        3, 7, 11, 17, 23, 29, 37, 47, 59, 71, 89, 107, 131, 163, 197, 239, 293, 353, 431, 521, 631, 761, 919,
-        1103, 1327, 1597, 1931, 2333, 2801, 3371, 4049, 4861, 5839, 7013, 8419, 10103, 12143, 14591,
-        17519, 21023, 25229, 30293, 36353, 43627, 52361, 62851, 75431, 90523, 108631, 130363, 156437,
-        187751, 225307, 270371, 324449, 389357, 467237, 560689, 672827, 807403, 968897, 1162687, 1395263,
-        1674319, 2009191, 2411033, 2893249, 3471899, 4166287, 4999559, 5999471, 7199369 };
+    constexpr static const uint32_t MaxPrimeArrayLength = 0x7FEFFFFDu;
+    constexpr static const uint32_t HashPrime = 101u;
+    constexpr static const uint32_t PrimesLength = 72u;
+    constexpr static const uint32_t Primes[PrimesLength] = {
+        3u, 7u, 11u, 17u, 23u, 29u, 37u, 47u, 59u, 71u, 89u, 107u, 131u, 163u, 197u, 239u, 293u, 353u, 431u, 521u, 631u, 761u, 919u,
+        1103u, 1327u, 1597u, 1931u, 2333u, 2801u, 3371u, 4049u, 4861u, 5839u, 7013u, 8419u, 10103u, 12143u, 14591u,
+        17519u, 21023u, 25229u, 30293u, 36353u, 43627u, 52361u, 62851u, 75431u, 90523u, 108631u, 130363u, 156437u,
+        187751u, 225307u, 270371u, 324449u, 389357u, 467237u, 560689u, 672827u, 807403u, 968897u, 1162687u, 1395263u,
+        1674319u, 2009191u, 2411033u, 2893249u, 3471899u, 4166287u, 4999559u, 5999471u, 7199369u };
 
-    bool IsPrime(int32_t candidate)
+    static bool IsPrime(uint32_t candidate)
     {
-        if ((candidate & 1) != 0)
+        if ((candidate & 1u) != 0u)
         {
-            auto limit = (int32_t)sqrt(candidate);
+            auto limit = (uint32_t)sqrt(candidate);
 
-            for (int32_t divisor = 3; divisor <= limit; divisor += 2)
+            for (uint32_t divisor = 3u; divisor <= limit; divisor += 2u)
             {
-                if ((candidate % divisor) == 0)
+                if ((candidate % divisor) == 0u)
                 {
                     return false;
                 }
@@ -30,25 +30,19 @@ namespace PK::Hash
             return true;
         }
 
-        return (candidate == 2);
+        return candidate == 2u;
     }
 
-    int32_t GetPrime(int32_t min)
+    static uint32_t GetPrime(uint32_t min)
     {
-        if (min < 0)
+        if (min == 0u)
         {
-            // Invalid argument
-            return -1;
+            return 0u;
         }
 
-        if (min == 0)
+        for (uint32_t i = 0u; i < PrimesLength; ++i)
         {
-            return 0;
-        }
-
-        for (int32_t i = 0; i < PrimesLength; ++i)
-        {
-            int32_t prime = Primes[i];
+            uint32_t prime = Primes[i];
 
             if (prime >= min)
             {
@@ -56,13 +50,11 @@ namespace PK::Hash
             }
         }
 
-        //outside of our predefined table. 
-        //compute the hard way. 
-        const auto maxvalue = 2147483647;
+        const auto maxvalue = 2147483647ull;
 
-        for (int32_t i = (min | 1); i < maxvalue; i += 2)
+        for (uint32_t i = (min | 1u); i < maxvalue; i += 2u)
         {
-            if (IsPrime(i) && ((i - 1) % HashPrime != 0))
+            if (IsPrime(i) && ((i - 1u) % HashPrime != 0u))
             {
                 return i;
             }
@@ -73,22 +65,8 @@ namespace PK::Hash
 
     uint32_t ExpandPrime(uint32_t oldSize)
     {
-        int32_t newSize = 2 * oldSize;
-
-        // Allow the hashtables to grow to maximum possible size (~2G elements) before encoutering capacity overflow.
-        // Note that this check works even when _items.Length overflowed thanks to the (uint) cast
-        if ((uint32_t)newSize > MaxPrimeArrayLength && MaxPrimeArrayLength > oldSize)
-        {
-            if (MaxPrimeArrayLength != GetPrime(MaxPrimeArrayLength))
-            {
-                // Invalid MaxPrimeArrayLength;
-                return oldSize * 2;
-            }
-
-            return MaxPrimeArrayLength;
-        }
-
-        return (uint32_t)GetPrime(newSize);
+        uint32_t newSize = 2u * oldSize;
+        return newSize > MaxPrimeArrayLength && MaxPrimeArrayLength > oldSize ? MaxPrimeArrayLength : GetPrime(newSize);
     }
 
     uint32_t ExpandSize(uint32_t capacity, uint32_t size)

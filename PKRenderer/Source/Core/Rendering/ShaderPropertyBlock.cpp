@@ -5,9 +5,9 @@
 
 namespace PK
 {
-    ShaderPropertyLayout::ShaderPropertyLayout(ShaderProperty* elements, size_t count) : TBase(count, 1u)
+    ShaderPropertyLayout::ShaderPropertyLayout(ShaderProperty* elements, size_t count) : TBase((uint32_t)count, 1u)
     {
-        for (auto i = 0u; i < count; ++i)
+        for (auto i = 0ull; i < count; ++i)
         {
             Add(elements[i]);
         }
@@ -15,7 +15,7 @@ namespace PK
         CalculateOffsetsAndStride();
     }
 
-    ShaderPropertyLayout::ShaderPropertyLayout(initializer_list<ShaderProperty> elements) : TBase(elements.size(), 1u)
+    ShaderPropertyLayout::ShaderPropertyLayout(initializer_list<ShaderProperty> elements) : TBase((uint32_t)elements.size(), 1u)
     {
         for (auto& element : elements)
         {

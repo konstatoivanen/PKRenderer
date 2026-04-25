@@ -52,7 +52,7 @@ namespace PK
         template<typename TType>
         constexpr FixedUnique<TType>* GetInstance()
         {
-            if constexpr (__is_same(TType, T))
+            if constexpr (TIsSame<TType, T>)
             {
                 return &m_instance;
             }

@@ -38,16 +38,16 @@ namespace PK
         virtual const char* GetDebugName() const = 0;
         virtual void* GetNativeHandle() const = 0;
 
-        constexpr TextureFormat GetFormat() const { return GetDescriptor().format; }
-        constexpr TextureUsage GetUsage() const { return GetDescriptor().usage; }
-        constexpr bool IsConcurrent() const { return (GetUsage() & TextureUsage::Concurrent) != 0; }
-        constexpr bool IsTracked() const { return (GetUsage() & TextureUsage::ReadOnly) == 0; }
-        constexpr const SamplerDescriptor& GetSamplerDescriptor() const { return GetDescriptor().sampler; }
-        constexpr uint4 GetRect() const { return { 0, 0, GetDescriptor().resolution.x, GetDescriptor().resolution.y }; }
-        constexpr uint3 GetResolution() const { return GetDescriptor().resolution; }
-        constexpr float3 GetTexelSize() const { return 1.0f / float3(GetDescriptor().resolution); }
-        constexpr uint32_t GetLevels() const { return GetDescriptor().levels; }
-        constexpr uint32_t GetLayers() const { return GetDescriptor().layers; }
+        inline TextureFormat GetFormat() const { return GetDescriptor().format; }
+        inline TextureUsage GetUsage() const { return GetDescriptor().usage; }
+        inline bool IsConcurrent() const { return (GetUsage() & TextureUsage::Concurrent) != 0; }
+        inline bool IsTracked() const { return (GetUsage() & TextureUsage::ReadOnly) == 0; }
+        inline const SamplerDescriptor& GetSamplerDescriptor() const { return GetDescriptor().sampler; }
+        inline uint4 GetRect() const { return { 0, 0, GetDescriptor().resolution.x, GetDescriptor().resolution.y }; }
+        inline uint3 GetResolution() const { return GetDescriptor().resolution; }
+        inline float3 GetTexelSize() const { return 1.0f / float3(GetDescriptor().resolution); }
+        inline uint32_t GetLevels() const { return GetDescriptor().levels; }
+        inline uint32_t GetLayers() const { return GetDescriptor().layers; }
 
         template<typename T>
         constexpr T GetNativeHandle() const { return static_cast<T>(GetNativeHandle()); }
@@ -70,13 +70,13 @@ namespace PK
         virtual void SparseDeallocate(const BufferIndexRange& range) = 0;
 
         template<typename T>
-        constexpr size_t GetCount() const { return GetSize() / sizeof(T); }
-        constexpr bool IsSparse() const { return (GetUsage() & BufferUsage::Sparse) != 0; }
-        constexpr bool IsConcurrent() const { return (GetUsage() & BufferUsage::Concurrent) != 0u; }
-        constexpr BufferIndexRange GetFullRange() const { return { 0ull, GetSize() }; }
+        inline size_t GetCount() const { return GetSize() / sizeof(T); }
+        inline bool IsSparse() const { return (GetUsage() & BufferUsage::Sparse) != 0; }
+        inline bool IsConcurrent() const { return (GetUsage() & BufferUsage::Concurrent) != 0u; }
+        inline BufferIndexRange GetFullRange() const { return { 0ull, GetSize() }; }
 
         template<typename T>
-        constexpr T GetNativeHandle() const { return static_cast<T>(GetNativeHandle()); }
+        inline T GetNativeHandle() const { return static_cast<T>(GetNativeHandle()); }
 
         template<typename T>
         ConstBufferView<T> BeginRead() const
@@ -105,7 +105,12 @@ namespace PK
     template<typename T>
     struct RHIBindSet : public NoCopy
     {
+        // @TODO MSVC doesnt allow this to be specialized but clang does?
+        #if defined(__clang__)
         virtual ~RHIBindSet() = 0;
+        #else
+        virtual ~RHIBindSet() {};
+        #endif
         virtual int32_t Add(T* value, void* bindInfo) = 0;
         virtual int32_t Add(T* value) = 0;
 

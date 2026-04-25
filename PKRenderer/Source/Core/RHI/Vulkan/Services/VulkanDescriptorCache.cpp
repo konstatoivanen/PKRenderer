@@ -7,8 +7,8 @@ namespace PK
 {
     VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device,
         uint64_t pruneDelay,
-        size_t maxSets,
-        initializer_list<Pair<const VkDescriptorType, size_t>> poolSizes) :
+        uint32_t maxSets,
+        initializer_list<Pair<const VkDescriptorType, uint32_t>> poolSizes) :
         m_device(device),
         m_pruneDelay(pruneDelay)
     {
@@ -16,7 +16,7 @@ namespace PK
         m_poolCreateInfo.pNext = nullptr;
         m_poolCreateInfo.maxSets = maxSets;
         m_poolCreateInfo.pPoolSizes = m_poolSizes;
-        m_poolCreateInfo.poolSizeCount = poolSizes.size();
+        m_poolCreateInfo.poolSizeCount = (uint32_t)poolSizes.size();
         m_poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
         auto index = 0u;

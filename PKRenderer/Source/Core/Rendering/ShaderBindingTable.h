@@ -12,7 +12,7 @@ namespace PK
         RHIBufferRef buffer = nullptr;
         ShaderBindingTableInfo tableInfo{};
         uint64_t pipelineHash = 0ull;
-        uint64_t currentVariantIndex = 0ull;
+        uint32_t currentVariantIndex = 0u;
         void Validate(CommandBufferExt cmd, ShaderAsset* shader, int32_t variantIndex = -1);
     };
 }

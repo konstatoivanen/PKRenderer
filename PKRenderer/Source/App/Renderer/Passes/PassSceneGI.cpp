@@ -19,7 +19,7 @@ namespace PK::App
 
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase) 
     {
-        PK_LOG_VERBOSE_FUNC("");
+        PK_LOG_VERBOSE_FUNC();
 
         m_computeVolume = assetDatabase->Find<ShaderAsset>("CS_GI_VolumeUpdate").get();
         m_computeAccumulate = assetDatabase->Find<ShaderAsset>("CS_GI_Accumulate").get();
@@ -78,8 +78,8 @@ namespace PK::App
         const auto volumeOrigin = float3(-76.8f, -6.0f, -76.8f);
 
         const auto angle = PK_FLOAT_PI / 3.0f;
-        const auto levelscale = 2.0f * tan(angle / 2.0f) / voxelSize;
-        const auto correctionAngle = tan(angle / 8.0f);
+        const auto levelscale = 2.0f * math::tan(angle / 2.0f) / voxelSize;
+        const auto correctionAngle = math::tan(angle / 8.0f);
         const auto stepSize = (1.0f + correctionAngle) / (1.0f - correctionAngle) * voxelSize / 2.0f;
         const auto volumeOriginQuantized = math::round(volumeOrigin / voxelSize) * voxelSize;
 
@@ -91,7 +91,7 @@ namespace PK::App
         view->constants.Set<uint3>(hash->pk_GI_VX_Swizzle, swizzles[m_rasterAxis]);
         view->constants.Set<float>(hash->pk_GI_VX_LevelScale, levelscale);
         view->constants.Set<float4>(hash->pk_GI_VX_ST, float4(volumeOriginQuantized, 1.0f / voxelSize));
-        view->constants.Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21(frameIndexSinceResize / 64u));
+        view->constants.Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21((uint32_t)frameIndexSinceResize / 64u));
 
         RHI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_settings.checkerboardTrace);
         RHI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", m_settings.specularVirtualReproject);

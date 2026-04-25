@@ -6,8 +6,7 @@ namespace PK::Math
 {
     void NormalizePlane(float4* plane)
     {
-        float mag;
-        mag = sqrt(plane->x * plane->x + plane->y * plane->y + plane->z * plane->z);
+        float mag = math::sqrt(plane->x * plane->x + plane->y * plane->y + plane->z * plane->z);
         plane->x = plane->x / mag;
         plane->y = plane->y / mag;
         plane->z = plane->z / mag;

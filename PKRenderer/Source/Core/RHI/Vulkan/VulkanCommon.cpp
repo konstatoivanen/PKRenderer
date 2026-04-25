@@ -68,7 +68,7 @@ namespace PK
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
     {
-        PK_LOG_INFO_FUNC("");
+        PK_LOG_INFO_FUNC();
 
         bool missingFeatures = false;
 
@@ -770,7 +770,7 @@ namespace PK
     {
         if (WaitResults(timeout))
         {
-            VK_ASSERT_RESULT_CTX(vkGetQueryPoolResults(device, pool, first, count, count * stride, outBuffer, stride, flags), "Failed to get query results!");
+            VK_ASSERT_RESULT_CTX(vkGetQueryPoolResults(device, pool, (uint32_t)first, (uint32_t)count, count * stride, outBuffer, stride, flags), "Failed to get query results!");
             return true;
         }
 
@@ -1132,7 +1132,7 @@ namespace PK
             }
 
             {
-                PK_LOG_INFO_FUNC("from '%u' Physical Devices:", deviceCount);
+                PK_LOG_INFO_FUNC_FMT("from '%u' Physical Devices:", deviceCount);
                 PK_LOG_INFO("Name: %s", properties.core.deviceName);
                 PK_LOG_INFO("Vendor: %i", properties.core.vendorID);
                 PK_LOG_INFO("Device: %i", properties.core.deviceID);

@@ -115,7 +115,7 @@ namespace PK
         {
             if (m_capacity < capacity)
             {
-                m_capacity = m_capacity == 0 ? capacity : Hash::ExpandPrime(capacity);
+                m_capacity = m_capacity == 0 ? capacity : (uint32_t)Hash::ExpandPrime(capacity);
                 // Use offset 1 for bucket count & stride to have valid zeroed memory state without construction.
                 m_bucketCount = (m_bucketStride + 1u) * m_capacity - 1u;
                 
@@ -224,7 +224,7 @@ namespace PK
         constexpr uint32_t GetCount() const { return TBase::m_count; }
         constexpr uint32_t GetCapacity() const { return TBase::m_capacity; }
         constexpr const TValue* GetValues() const { return TBase::m_values; }
-        TValue* GetValues() { return m_values; }
+        TValue* GetValues() { return TBase::m_values; }
         constexpr TValue const* begin() const { return TBase::m_values; }
         constexpr TValue const* end() const { return TBase::m_values + TBase::m_count; }
         const TValue& operator[](uint32_t index) const { return TBase::m_values[index]; }
@@ -404,8 +404,8 @@ namespace PK
                     TBase::m_nodes[previous].next = index;
                 }
 
-                TBase::m_nodes[index] = TBase::m_nodes[m_count];
-                TBase::m_values[index] = TBase::m_values[m_count];
+                TBase::m_nodes[index] = TBase::m_nodes[TBase::m_count];
+                TBase::m_values[index] = TBase::m_values[TBase::m_count];
             }
 
             return true;

@@ -13,7 +13,7 @@ namespace PK::App
 {
     PassFilmGrain::PassFilmGrain(AssetDatabase* assetDatabase)
     {
-        PK_LOG_VERBOSE_FUNC("");
+        PK_LOG_VERBOSE_FUNC();
 
         m_computeFilmGrain = assetDatabase->Find<ShaderAsset>("CS_FilmGrain").get();
 

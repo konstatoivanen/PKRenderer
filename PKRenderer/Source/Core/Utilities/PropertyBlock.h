@@ -1,6 +1,7 @@
 #pragma once
 #include "NoCopy.h"
 #include "Memory.h"
+#include "Hash.h"
 #include "TypeIndex.h"
 
 namespace PK
@@ -29,12 +30,12 @@ namespace PK
             };
 
         public:
-            PropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties);
+            PropertyBlock(uint64_t capacityBytes, uint32_t capacityProperties);
             ~PropertyBlock();
 
             void Copy(PropertyBlock& from);
             void Clear();
-            void ClearAndReserve(uint64_t capacityBytes, uint64_t capacityProperties);
+            void ClearAndReserve(uint64_t capacityBytes, uint32_t capacityProperties);
 
             template<typename T>
             const T* Get(const uint32_t hashId, size_t* size) const

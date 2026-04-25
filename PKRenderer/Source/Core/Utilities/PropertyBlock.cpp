@@ -5,7 +5,7 @@
 
 namespace PK
 {
-    PropertyBlock::PropertyBlock(uint64_t byteCapacity, uint64_t propertyCapacity)
+    PropertyBlock::PropertyBlock(uint64_t byteCapacity, uint32_t propertyCapacity)
     {
         ReserveMemory(byteCapacity, propertyCapacity);
     }
@@ -47,7 +47,7 @@ namespace PK
         m_propertyCount = 0;
     }
 
-    void PropertyBlock::ClearAndReserve(uint64_t byteCapacity, uint64_t propertyCapacity)
+    void PropertyBlock::ClearAndReserve(uint64_t byteCapacity, uint32_t propertyCapacity)
     {
         Clear();
         ReserveMemory(byteCapacity, propertyCapacity);
@@ -105,7 +105,7 @@ namespace PK
 
         m_properties[index].key = key;
         m_properties[index].offset = (uint32_t)m_bufferHead;
-        m_properties[index].size = size;
+        m_properties[index].size = (uint16_t)size;
         m_bufferHead += size;
 
         if (!resized)

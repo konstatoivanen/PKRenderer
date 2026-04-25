@@ -6,7 +6,7 @@
 
 PK::BuiltInResources::BuiltInResources()
 {
-    PK_LOG_RHI_FUNC("");
+    PK_LOG_RHI_FUNC();
 
     TextureDescriptor textureDesc{};
     textureDesc.resolution = { 2u, 2u, 1u };

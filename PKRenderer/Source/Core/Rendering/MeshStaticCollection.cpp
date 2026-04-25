@@ -48,7 +48,7 @@ namespace PK
 
     MeshStatic* MeshStaticCollection::Allocate(MeshStaticDescriptor* desc)
     {
-        PK_LOG_VERBOSE_FUNC("sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u",
+        PK_LOG_VERBOSE_FUNC_FMT("sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u",
             desc->meshlet.submeshCount,
             desc->meshlet.meshletCount,
             desc->meshlet.vertexCount,

@@ -154,9 +154,9 @@ namespace PK
                 auto head = views.head;
                 auto count = 1u + head / viewSize;
                 auto capacity = views.buffer.GetCount() / viewSize;
-                views.buffer.Reserve((size_t)Hash::ExpandSize(capacity, count) * viewSize);
+                views.buffer.Reserve(Hash::ExpandSize(capacity, count) * viewSize);
                 view.container = group.container;
-                view.offset = head;
+                view.offset = (uint32_t)head;
                 views.head += viewSize;
                 reinterpret_cast<TView*>(views.buffer.GetData() + view.offset)->GID = egid;
             }

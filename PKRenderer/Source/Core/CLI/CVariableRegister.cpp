@@ -110,7 +110,7 @@ namespace PK
         auto binding = &m_variables[index].value;
         
         PK_FATAL_ASSERT(!isNew || !binding->variable, "CVar is already bound! (%s)", name.c_str());
-        PK_LOG_VERBOSE_FUNC("%s", name.c_str());
+        PK_LOG_VERBOSE_FUNC_FMT("%s", name.c_str());
         
         binding->variable = variable;
         binding->variable->flags = flags | FLAG_IS_BOUND;

@@ -203,7 +203,7 @@ namespace PK
 
     void VulkanSwapchain::Rebuild(const SwapchainDescriptor& descriptor)
     {
-        PK_LOG_INFO_FUNC("");
+        PK_LOG_INFO_FUNC();
 
         // Wait for last present so that we can safely release this.
         WaitForPresent(0u, UINT64_MAX);

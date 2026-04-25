@@ -47,19 +47,23 @@ namespace PK::Memory
 
     inline void* AllocateAligned(size_t size, size_t align = PK_SYSTEM_DEFAULT_ALIGN) noexcept { return PK_SYSTEM_ALIGNED_ALLOC(size, align); }
 
+
+    template<typename T>
+    T* Memcpy(T* dst, const T* src, size_t count) noexcept { return static_cast<T*>(memcpy(dst, src, count * sizeof(T))); }
+
+    template<typename T>
+    T* Memmove(T* dst, const T* src, size_t count) noexcept { return static_cast<T*>(memmove(dst, src, count * sizeof(T))); }
+
+    template<typename T>
+    T* Memset(T* dst, int value, size_t count) noexcept { return static_cast<T*>(memset(dst, value, count * sizeof(T))); }
+
+
     template<typename T>
     T* Allocate(size_t count) noexcept { return static_cast<T*>(PK_SYSTEM_ALIGNED_ALLOC(count * sizeof(T), PK_SYSTEM_DEFAULT_ALIGN)); }
 
     // Slower than calloc but allows for aligned alloc.
     template<typename T>
     T* AllocateClear(size_t count) noexcept { return Memset<T>(Allocate<T>(count), 0, count); }
-
-    
-    template<typename T, typename ... Args>
-    T* New(Args&& ... args) { return Construct<T>(Allocate<T>(1u), PK::Forward<Args>(args)...); }
-
-    template<typename T>
-    void Delete(T* ptr) { if (ptr) Free(Destruct<T>(ptr)); }
 
 
     template<typename T, typename ... Args>
@@ -93,15 +97,12 @@ namespace PK::Memory
         return ptr; 
     }
 
+    
+    template<typename T, typename ... Args>
+    T* New(Args&& ... args) { return Construct<T>(Allocate<T>(1u), PK::Forward<Args>(args)...); }
 
     template<typename T>
-    T* Memcpy(T* dst, const T* src, size_t count) noexcept { return static_cast<T*>(memcpy(dst, src, count * sizeof(T))); }
-
-    template<typename T>
-    T* Memmove(T* dst, const T* src, size_t count) noexcept { return static_cast<T*>(memmove(dst, src, count * sizeof(T))); }
-
-    template<typename T>
-    T* Memset(T* dst, int value, size_t count) noexcept { return static_cast<T*>(memset(dst, value, count * sizeof(T))); }
+    void Delete(T* ptr) { if (ptr) Free(Destruct<T>(ptr)); }
 
 
     template<typename T>

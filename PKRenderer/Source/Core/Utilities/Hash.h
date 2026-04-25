@@ -4,10 +4,10 @@
 
 namespace PK::Hash
 {
-    bool IsPrime(int32_t candidate);
-    int32_t GetPrime(int32_t min);
     uint32_t ExpandPrime(uint32_t oldSize);
     uint32_t ExpandSize(uint32_t capacity, uint32_t size);
+    inline size_t ExpandPrime(size_t oldSize) { return ExpandPrime((uint32_t)oldSize); }
+    inline size_t ExpandSize(size_t capacity, size_t size) { return ExpandSize((uint32_t)capacity, (uint32_t)size); }
 
     uint32_t ByteArrayHash(const void* data, size_t count);
     uint64_t MurmurHash(const void* data, size_t count, uint64_t seed);

@@ -5,7 +5,7 @@
 
 namespace PK
 {
-    VulkanBindSet::VulkanBindSet(size_t capacity) : m_set(capacity, 1ull)
+    VulkanBindSet::VulkanBindSet(size_t capacity) : m_set((uint32_t)capacity, 1u)
     {
     }
 

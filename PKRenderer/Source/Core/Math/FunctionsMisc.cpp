@@ -30,7 +30,7 @@ namespace PK::Math
         // Snap z ranges to tile indices to make shader branching more coherent
         for (auto i = 1; i < (int32_t)(count - 1u); ++i)
         {
-            float zcoord = round(ViewToClipDepthExp(cascades[i], zAlignParams));
+            float zcoord = math::round(ViewToClipDepthExp(cascades[i], zAlignParams));
             cascades[i] = ClipToViewDepthExp(zcoord, zAlignParams);
         }
     }
@@ -59,17 +59,17 @@ namespace PK::Math
 
     float ViewToClipDepthExp(float viewz, const float3& params)
     {
-        return log2(viewz * params.x + params.y) * params.z;
+        return math::log2(viewz * params.x + params.y) * params.z;
     }
 
     float ClipToViewDepthExp(float clipz, const float3& params)
     {
-        return (exp2(clipz / params.z) - params.y) / params.x;
+        return (math::exp2(clipz / params.z) - params.y) / params.x;
     }
 
     float Cot(float value)
     {
-        return cos(value) / sin(value);
+        return math::cos(value) / math::sin(value);
     }
 
     float RandomFloat()

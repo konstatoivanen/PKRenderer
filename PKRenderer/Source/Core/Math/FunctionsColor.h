@@ -1,5 +1,5 @@
 #pragma once
-#include "MathFwd.h"
+#include "Forward.h"
 
 namespace PK::Math
 {

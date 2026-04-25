@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Input/InputKey.h"
-#include "Core/Math/MathFwd.h"
+#include "Core/Math/Forward.h"
 
 namespace PK
 {

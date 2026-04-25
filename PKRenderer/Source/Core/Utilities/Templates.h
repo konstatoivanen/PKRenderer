@@ -2,6 +2,15 @@
 
 namespace PK
 {
+    #if defined(__clang__)
+    template <typename T0, typename T1> constexpr bool TIsSame = __is_same(T0, T1);
+    #else
+    template <typename, typename> constexpr bool TIsSame = false;
+    template <typename T> constexpr bool TIsSame<T, T> = true;
+    #endif 
+
+    template <typename TFrom, typename TTo> inline constexpr bool TIsConvertible = __is_convertible_to(TFrom, TTo);
+
     template <typename>                inline constexpr bool TIsArray = false;
     template <typename T, size_t size> inline constexpr bool TIsArray<T[size]> = true;
     template <typename T>              inline constexpr bool TIsArray<T[]> = true;

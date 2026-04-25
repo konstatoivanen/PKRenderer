@@ -9,6 +9,22 @@
 
 namespace PK
 {
+    namespace String
+    {
+        inline wchar_t* Copy(wchar_t* dst, const wchar_t* src, size_t size) { return wcsncpy(dst, src, size); }
+        inline char* Copy(char* dst, const char* src, size_t size) { return strncpy(dst, src, size); }
+        inline const wchar_t* Chr(const wchar_t* str0, wchar_t c) { return wcschr(str0, c); }
+        inline const char* Chr(const char* str0, char c) { return strchr(str0, c); }
+        inline size_t Format(wchar_t* dst, size_t size, const wchar_t* format, va_list args) { return static_cast<size_t>(vswprintf(dst, size, format, args)); }
+        inline size_t Format(char* dst, size_t size, const char* format, va_list args) { return static_cast<size_t>(vsnprintf(dst, size, format, args)); }
+        inline size_t Length(const wchar_t* str) { return wcslen(str); }
+        inline size_t Length(const char* str) { return strlen(str); }
+        inline int32_t Cmp(const wchar_t* str0, const wchar_t* str1) { return wcscmp(str0, str1); }
+        inline int32_t Cmp(const char* str0, const char* str1) { return strcmp(str0, str1); }
+        inline size_t ToWide(wchar_t* dst, const char* src, size_t size) { return mbstowcs(dst, src, size); }
+        inline size_t ToNarrow(char* dst, const wchar_t* src, size_t size) { return wcstombs(dst, src, size); }
+    }
+
     template<typename TChar, size_t capacity>
     struct IFixedString
     {
@@ -27,15 +43,15 @@ namespace PK
             {
                 m_length = max_length > length ? length : max_length;
 
-                if constexpr (__is_same(TOther, TChar))
+                if constexpr (TIsSame<TOther, TChar>)
                 {
                     String::Copy(m_string, str, m_length);
                 }
-                else if constexpr (__is_same(TOther, wchar_t))
+                else if constexpr (TIsSame<TOther, wchar_t>)
                 {
                     String::ToNarrow(m_string, str, m_length);
                 }
-                else if constexpr (__is_same(TOther, char))
+                else if constexpr (TIsSame<TOther, char>)
                 {
                     String::ToWide(m_string, str, m_length);
                 }
@@ -91,7 +107,7 @@ namespace PK
         constexpr TChar Back() const { return m_string[m_length > 0ull ? m_length - 1ull : 0u]; }
         constexpr bool IsFull() const { return m_length == max_length; }
 
-        int64_t Find(size_t offset, TChar c) const { return reinterpret_cast<int64_t>(String::Chr(m_string + offset, c) - m_string); }
+        int64_t Find(size_t offset, TChar c) const { return static_cast<int64_t>(String::Chr(m_string + offset, c) - m_string); }
         IFixedString Slice(size_t offset, size_t count = max_length) const { return IFixedString(offset + count > m_length ? m_length - offset : count, m_string + offset); }
 
         void AppendFormat(const TChar* format, ...)
@@ -185,19 +201,6 @@ namespace PK
 
     namespace String
     {
-        inline wchar_t* Copy(wchar_t* dst, const wchar_t* src, size_t size) { return wcsncpy(dst, src, size); }
-        inline char* Copy(char* dst, const char* src, size_t size) { return strncpy(dst, src, size); }
-        inline const wchar_t* Chr(const wchar_t* str0, wchar_t c) { return wcschr(str0, c); }
-        inline const char* Chr(const char* str0, char c) { return strchr(str0, c); }
-        inline size_t Format(wchar_t* dst, size_t size, const wchar_t* format, va_list args) { return static_cast<size_t>(vswprintf(dst, size, format, args)); }
-        inline size_t Format(char* dst, size_t size, const char* format, va_list args) { return static_cast<size_t>(vsnprintf(dst, size, format, args)); }
-        inline size_t Length(const wchar_t* str) { return wcslen(str); }
-        inline size_t Length(const char* str) { return strlen(str); }
-        inline int32_t Cmp(const wchar_t* str0, const wchar_t* str1) { return wcscmp(str0, str1); }
-        inline int32_t Cmp(const char* str0, const char* str1) { return strcmp(str0, str1); }
-        inline size_t ToWide(wchar_t* dst, const char* src, size_t size) { return mbstowcs(dst, src, size); }
-        inline size_t ToNarrow(char* dst, const wchar_t* src, size_t size) { return wcstombs(dst, src, size); }
-
         template<typename T> inline T To(const char* str) { return T(); }
         template<> inline uint8_t To(const char* str) { return (uint8_t)atoi(str); }
         template<> inline int8_t To(const char* str) { return (int8_t)atoi(str); }
@@ -291,7 +294,7 @@ namespace PK
                 return FixedString<capacity>("0B");
             }
 
-            auto mag = (int)(log(bytes) / log(1024));
+            auto mag = (int)(log((double)bytes) / log(1024.0));
             mag = mag < 2 ? 2 : mag;
 
             auto adjustedSize = (double)bytes / (1L << (mag * 10));

@@ -11,9 +11,18 @@ namespace PK
         for (size_t i = 0ull; i < size; ++i)
         {
             auto j = buffer[i];
+            // These evaluate to roughly the same asm but __builtin_popcountll isnt available in msvc.
+            #if defined(_M_IX86) || (defined(_M_X64) && !defined(_M_ARM64EC))
+            #if defined(__clang__)
+            j = static_cast<uint64_t>(__builtin_popcountll(j));
+            #else
+            j = static_cast<uint64_t>(__popcnt64(j));
+            #endif
+            #else
             j = j - ((j >> 1) & 0x5555555555555555);
             j = (j & 0x3333333333333333) + ((j >> 2) & 0x3333333333333333);
             j = (((j + (j >> 4)) & 0xF0F0F0F0F0F0F0F) * 0x101010101010101) >> 56;
+            #endif
             count += j;
         }
 

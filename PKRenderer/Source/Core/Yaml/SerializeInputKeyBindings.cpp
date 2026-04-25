@@ -9,7 +9,7 @@ namespace PK::YAML
     bool Read<CommandInputKeyBindingMap>(const ConstNode& node, CommandInputKeyBindingMap* rhs)
     {
         auto& map = *rhs;
-        map.Reserve(node.num_children());
+        map.Reserve((uint32_t)node.num_children());
 
         for (auto const ch : node.children())
         {
