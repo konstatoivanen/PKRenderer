@@ -196,10 +196,10 @@ namespace PK::App
                 m_gui_indexView[idxi++] = idxv + 2;
                 m_gui_indexView[idxi++] = idxv + 3;
                 m_gui_indexView[idxi++] = idxv + 0;
-                m_gui_vertexView[idxv++] = { color, sminmax.xy, Math::PackHalf(tminmax.xy * texelSize), textureIndex, 0u };
-                m_gui_vertexView[idxv++] = { color, sminmax.xw, Math::PackHalf(tminmax.xw * texelSize), textureIndex, 0u };
-                m_gui_vertexView[idxv++] = { color, sminmax.zw, Math::PackHalf(tminmax.zw * texelSize), textureIndex, 0u };
-                m_gui_vertexView[idxv++] = { color, sminmax.zy, Math::PackHalf(tminmax.zy * texelSize), textureIndex, 0u };
+                m_gui_vertexView[idxv++] = { color, sminmax.xy, math::f32tof16(tminmax.xy * texelSize), textureIndex, 0u };
+                m_gui_vertexView[idxv++] = { color, sminmax.xw, math::f32tof16(tminmax.xw * texelSize), textureIndex, 0u };
+                m_gui_vertexView[idxv++] = { color, sminmax.zw, math::f32tof16(tminmax.zw * texelSize), textureIndex, 0u };
+                m_gui_vertexView[idxv++] = { color, sminmax.zy, math::f32tof16(tminmax.zy * texelSize), textureIndex, 0u };
             }
         }
     }
@@ -319,10 +319,10 @@ namespace PK::App
                             m_gui_indexView[idxi++] = idxv + 2;
                             m_gui_indexView[idxi++] = idxv + 3;
                             m_gui_indexView[idxi++] = idxv + 0;
-                            m_gui_vertexView[idxv++] = { color, sminmax.xy, Math::PackHalf(tminmax.xy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-                            m_gui_vertexView[idxv++] = { color, sminmax.xw, Math::PackHalf(tminmax.xw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-                            m_gui_vertexView[idxv++] = { color, sminmax.zw, Math::PackHalf(tminmax.zw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-                            m_gui_vertexView[idxv++] = { color, sminmax.zy, Math::PackHalf(tminmax.zy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
+                            m_gui_vertexView[idxv++] = { color, sminmax.xy, math::f32tof16(tminmax.xy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
+                            m_gui_vertexView[idxv++] = { color, sminmax.xw, math::f32tof16(tminmax.xw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
+                            m_gui_vertexView[idxv++] = { color, sminmax.zw, math::f32tof16(tminmax.zw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
+                            m_gui_vertexView[idxv++] = { color, sminmax.zy, math::f32tof16(tminmax.zy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
 
                             text_area_min.x = math::min(text_area_min.x, sminmax.x, sminmax.z);
                             text_area_min.y = math::min(text_area_min.y, sminmax.y, sminmax.w);

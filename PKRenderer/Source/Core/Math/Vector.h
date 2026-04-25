@@ -2196,6 +2196,10 @@ namespace PK::math
     template<typename T> vector<T,3> step(T a, const vector<T,3>& b) { return vector<T,3>(step(a, b, i.x), step(a, b, i.y), step(a, b, i.z)); }
     template<typename T> vector<T,4> step(T a, const vector<T,4>& b) { return vector<T,4>(step(a, b, i.x), step(a, b, i.y), step(a, b, i.z), step(a, b, i.w)); }
 
+    constexpr inline ushort2 f32tof16(const float2& v) { return ushort2(f32tof16(v.x), f32tof16(v.y)); }
+    constexpr inline ushort3 f32tof16(const float3& v) { return ushort3(f32tof16(v.x), f32tof16(v.y), f32tof16(v.z)); }
+    constexpr inline ushort4 f32tof16(const float4& v) { return ushort4(f32tof16(v.x), f32tof16(v.y), f32tof16(v.z), f32tof16(v.w)); }
+
     template<typename T> T dot(const vector<T,2>& a, const vector<T,2>& b) { return a.x * b.x + a.y * b.y; }
     template<typename T> T dot(const vector<T,3>& a, const vector<T,3>& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
     template<typename T> T dot(const vector<T,4>& a, const vector<T,4>& b) { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }

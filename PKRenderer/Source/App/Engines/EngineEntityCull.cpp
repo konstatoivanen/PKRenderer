@@ -203,7 +203,7 @@ namespace PK::App
         for (auto i = 0u; i < culledCount; ++i)
         {
             auto& info = entityInfos[i];
-            auto nearOffset = Math::UnPackHalf(info.depth);
+            auto nearOffset = math::f16tof32(info.depth);
             auto fixedDepth = math::min(0xFFFFu, (uint32_t)((nearOffset - cullingMinDepth) * cullingInvRange));
             info.depth = fixedDepth;
         }

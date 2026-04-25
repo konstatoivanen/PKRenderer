@@ -131,16 +131,7 @@ namespace PK::Math
 
     ushort PackHalf(float v)
     {
-        if (v < -65536.0f)
-        {
-            v = -65536.0f;
-        }
-
-        if (v > 65536.0f)
-        {
-            v = 65536.0f;
-        }
-
+        v = math::clamp(v, -65536.0f, 65536.0f);
         v *= 1.925930e-34f;
         int32_t i = *(int32_t*)&v;
         uint32_t ui = (uint32_t)i;
@@ -231,32 +222,9 @@ namespace PK::Math
         return start;
     }
 
-    uint32_t GetMaxMipLevelPow2(uint32_t resolution)
-    {
-        return math::log2(resolution);
-    }
-
-    uint32_t GetMaxMipLevelPow2(const uint2& resolution)
-    {
-        return math::log2(math::cmin(resolution));
-    }
-
-    uint32_t GetMaxMipLevelPow2(const uint3& resolution)
-    {
-        return math::log2(math::cmin(resolution));
-    }
-
     uint32_t GetMaxMipLevel(uint32_t resolution)
     {
-        uint32_t level = 1;
-
-        while (resolution > 1)
-        {
-            ++level;
-            resolution >>= 1;
-        }
-
-        return level;
+        return resolution > 0u ? math::log2(resolution) + 1u : 0u;
     }
 
     uint32_t GetMaxMipLevel(const uint2& resolution)

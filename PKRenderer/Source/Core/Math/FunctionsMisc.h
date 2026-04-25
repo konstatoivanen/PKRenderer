@@ -35,9 +35,6 @@ namespace PK::Math
     uint4 FloatAsUint(const float4& v);
     float3 SafeNormalize(const float3& v);
     size_t GetNextExponentialSize(size_t start, size_t min);
-    uint32_t GetMaxMipLevelPow2(uint32_t resolution);
-    uint32_t GetMaxMipLevelPow2(const uint2& resolution);
-    uint32_t GetMaxMipLevelPow2(const uint3& resolution);
     uint32_t GetMaxMipLevel(uint32_t resolution);
     uint32_t GetMaxMipLevel(const uint2& resolution);
     uint32_t GetMaxMipLevel(const uint3& resolution);

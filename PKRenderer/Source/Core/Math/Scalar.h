@@ -77,12 +77,7 @@ namespace PK::math
     
     inline float log2(float v) { return ::log2f(v); }
     inline double log2(double v) { return ::log2(v); }
-    inline uint32_t log2(uint32_t v)
-    {
-        uint32_t y;
-        asm("\tbsr %1, %0\n" : "=r"(y) : "r" (v));
-        return y;
-    }
+    inline uint32_t log2(uint32_t v) { uint32_t y; asm("\tbsr %1, %0\n" : "=r"(y) : "r" (v)); return y; }
     inline uint64_t log2(uint64_t v) { return static_cast<uint64_t>(63 - __builtin_clzll(v)); }
 
     inline float sqrt(float v) { return ::sqrtf(v); }
@@ -160,21 +155,21 @@ namespace PK::math
     inline float lerp(float a, float b, float i) { return fmaf(i, b, (1.0f - i) * a); }
     inline double lerp(double a, double b, double i) { return fma(i, b, (1.0 - i) * a); }
     inline int8_t lerp(int8_t a, int8_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
-    inline int16_t lerp(int16_t a, int16_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
-    inline int32_t lerp(int32_t a, int32_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
-    inline int64_t lerp(int64_t a, int64_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
-    inline uint8_t lerp(uint8_t a, uint8_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
-    inline uint16_t lerp(uint16_t a, uint16_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
-    inline uint32_t lerp(uint32_t a, uint32_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
-    inline uint64_t lerp(uint64_t a, uint64_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
+    inline int16_t lerp(int16_t a, int16_t b, float i) { return (int16_t)(i * b + (1.0f - i) * a); }
+    inline int32_t lerp(int32_t a, int32_t b, float i) { return (int32_t)(i * b + (1.0f - i) * a); }
+    inline int64_t lerp(int64_t a, int64_t b, float i) { return (int64_t)(i * b + (1.0f - i) * a); }
+    inline uint8_t lerp(uint8_t a, uint8_t b, float i) { return (uint8_t)(i * b + (1.0f - i) * a); }
+    inline uint16_t lerp(uint16_t a, uint16_t b, float i) { return (uint16_t)(i * b + (1.0f - i) * a); }
+    inline uint32_t lerp(uint32_t a, uint32_t b, float i) { return (uint32_t)(i * b + (1.0f - i) * a); }
+    inline uint64_t lerp(uint64_t a, uint64_t b, float i) { return (uint64_t)(i * b + (1.0f - i) * a); }
     inline int8_t lerp(int8_t a, int8_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
-    inline int16_t lerp(int16_t a, int16_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
-    inline int32_t lerp(int32_t a, int32_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
-    inline int64_t lerp(int64_t a, int64_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
-    inline uint8_t lerp(uint8_t a, uint8_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
-    inline uint16_t lerp(uint16_t a, uint16_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
-    inline uint32_t lerp(uint32_t a, uint32_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
-    inline uint64_t lerp(uint64_t a, uint64_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
+    inline int16_t lerp(int16_t a, int16_t b, double i) { return (int16_t)(i * b + (1.0 - i) * a); }
+    inline int32_t lerp(int32_t a, int32_t b, double i) { return (int32_t)(i * b + (1.0 - i) * a); }
+    inline int64_t lerp(int64_t a, int64_t b, double i) { return (int64_t)(i * b + (1.0 - i) * a); }
+    inline uint8_t lerp(uint8_t a, uint8_t b, double i) { return (uint8_t)(i * b + (1.0 - i) * a); }
+    inline uint16_t lerp(uint16_t a, uint16_t b, double i) { return (uint16_t)(i * b + (1.0 - i) * a); }
+    inline uint32_t lerp(uint32_t a, uint32_t b, double i) { return (uint32_t)(i * b + (1.0 - i) * a); }
+    inline uint64_t lerp(uint64_t a, uint64_t b, double i) { return (uint64_t)(i * b + (1.0 - i) * a); }
     inline float lerp(float a, float b, bool i) { return i ? b : a; }
     inline double lerp(double a, double b, bool i) { return i ? b : a; }
     inline int8_t lerp(int8_t a, int8_t b, bool i) { return i ? b : a; }
@@ -199,4 +194,21 @@ namespace PK::math
 
     inline float step(float a, float b) { return lerp(1.0f, 0.0f, b < a); }
     inline double step(double a, double b) { return lerp(1.0f, 0.0f, b < a); }
+
+    inline uint16_t f32tof16(float v) 
+    {
+        const auto u0 = asuint(v);
+        const auto u1 = u0 & 0x7FFFF000u;
+        const auto u2 = (asuint(min(asfloat(u1) * 1.92592994e-34f, 260042752.0f)) + 0x1000u) >> 13u;
+        return (u1 >= 0x7f800000u ? u1 > 0x7f800000u ? 0x7e00u : 0x7c00u : u2) | (u0 & ~0x7FFFF000u) >> 16u;
+    }
+
+    inline float f16tof32(uint16_t x) 
+    {
+        uint32_t uf = (x & 0x7fffu) << 13u;
+        uint32_t e = uf & 0xf800000u;
+        uf += e == 0xf800000u ? 0x70000000u : 0x38000000u;
+        uf = e == 0 ? asuint(asfloat(uf + (1 << 23)) - 6.10351563e-05f) : uf;
+        return asfloat(uf | (x & 0x8000) << 16);
+    }
 }
