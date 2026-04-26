@@ -19,7 +19,7 @@ namespace PK
             }
         }
 
-        FixedArray(initializer_list<T> elements) : FixedArray(elements.begin(), (size_t)(elements.end() - elements.begin()))
+        FixedArray(initializer_list<T> elements) : FixedArray(elements.begin(), elements.size())
         {
         }
 

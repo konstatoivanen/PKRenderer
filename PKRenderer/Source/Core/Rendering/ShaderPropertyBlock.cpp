@@ -52,7 +52,7 @@ namespace PK
             {
                 auto alignment = RHIEnumConvert::Alignment(element.format);
 
-                m_stride = Math::Align(m_stride, alignment);
+                m_stride = math::align(m_stride, (uint16_t)alignment);
                 element.offset = m_stride;
                 element.offsetHandle = 0u;
                 m_stride += element.GetSize();
@@ -65,8 +65,8 @@ namespace PK
         }
 
         // As per std140 a structure has a base alignment equal to the largest base alignment of any of its members, rounded up to a multiple of 16.
-        maxAlignment = Math::Align(maxAlignment, 16u);
-        m_stridePadded = Math::Align(m_stride, maxAlignment);
+        maxAlignment = math::align(maxAlignment, 16u);
+        m_stridePadded = math::align(m_stride, (uint16_t)maxAlignment);
         m_hash = Hash::FNV1AHash(m_values, GetCount() * sizeof(ShaderProperty));
 
         // Material binding specific layout info.
@@ -78,7 +78,7 @@ namespace PK
 
             if (element.format == ElementType::Keyword)
             {
-                keywordsStride = Math::Align(keywordsStride, 1u);
+                keywordsStride = math::align(keywordsStride, (uint16_t)1u);
                 element.offset = keywordsStride;
                 keywordsStride += 1ull;
             }
@@ -92,7 +92,7 @@ namespace PK
 
             if (RHIEnumConvert::IsResourceHandle(element.format))
             {
-                m_strideMaterial = Math::Align(m_strideMaterial, 8u);
+                m_strideMaterial = math::align(m_strideMaterial, 8u);
                 element.offsetHandle = m_strideMaterial;
                 m_strideMaterial += 8ull;
             }

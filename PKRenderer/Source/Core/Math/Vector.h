@@ -40,6 +40,23 @@ namespace PK::math
     // stripped down glm vector & matrix types
     // removed most code to reduce binary size
 
+    template<typename T, int N> struct storage { typedef struct type { T data[N]; } type; };
+
+    #if defined(PK_MATH_SIMD_SSE2)
+    template<> struct storage<float,4> { typedef simd_f32vec4 type; };
+    template<> struct storage<double,2> { typedef simd_f64vec2 type; };
+    template<> struct storage<int32_t,4> { typedef simd_i32vec4 type; };
+    template<> struct storage<uint32_t,4> { typedef simd_u32vec4 type; };
+    template<> struct storage<int64_t,2> { typedef simd_i64vec2 type; };
+    template<> struct storage<uint64_t,2> { typedef simd_u64vec2 type; };
+    #endif
+
+    #if defined(PK_MATH_SIMD_NEON)
+    template<> struct storage<float,4> { typedef simd_f32vec4 type; };
+    template<> struct storage<int32_t,4> { typedef simd_i32vec4 type; };
+    template<> struct storage<uint32_t,4> { typedef glm_u32vec4 type; };
+    #endif
+
     template<typename T, int N>
     struct swizzle_0
     {
@@ -633,7 +650,7 @@ namespace PK::math
         {
             struct { T x, y; };
             struct { T r, g; };
-            struct storage { T data[2]; } data;
+            storage<T,2> data;
             PK_SWIZZLE_MEMBERS_22(T, x, y)
             PK_SWIZZLE_MEMBERS_22(T, r, g)
             PK_SWIZZLE_MEMBERS_23(T, x, y)
@@ -736,7 +753,7 @@ namespace PK::math
         {
             struct { T x, y, z; };
             struct { T r, g, b; };
-            struct storage { T data[3]; } data;
+            storage<T,3> data;
             PK_SWIZZLE_MEMBERS_32(T, x, y, z)
             PK_SWIZZLE_MEMBERS_32(T, r, g, b)
             PK_SWIZZLE_MEMBERS_33(T, x, y, z)
@@ -842,7 +859,7 @@ namespace PK::math
         {
             struct { T x, y, z, w; };
             struct { T r, g, b, a; };
-            struct storage { T data[4]; } data;
+            storage<T,4> data;
             PK_SWIZZLE_MEMBERS_42(T, x, y, z, w)
             PK_SWIZZLE_MEMBERS_42(T, r, g, b, a)
             PK_SWIZZLE_MEMBERS_43(T, x, y, z, w)
@@ -974,35 +991,36 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> matrix& operator=(const matrix<U,2,2>& m) { columns[0] = m[0]; columns[1] = m[1]; return *this; }
-        template<typename U> matrix& operator+=(U s) { columns[0] += s; columns[1] += s; return *this; }
-        template<typename U> matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; return *this; }
-        template<typename U> matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; return *this; }
-        template<typename U> matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; return *this; }
-        template<typename U> matrix& operator+=(const matrix<U,2,2>& m) { columns[0] += m[0]; columns[1] += m[1]; return *this; }
-        template<typename U> matrix& operator-=(const matrix<U,2,2>& m) { columns[0] -= m[0]; columns[1] -= m[1]; return *this; }
-        template<typename U> matrix& operator*=(const matrix<U,2,2>& m) { return (*this = *this * m); }
+        template<typename U> constexpr matrix& operator=(const matrix<U,2,2>& m) { columns[0] = m[0]; columns[1] = m[1]; return *this; }
+        template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; return *this; }
+        template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; return *this; }
+        template<typename U> constexpr matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; return *this; }
+        template<typename U> constexpr matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; return *this; }
+        template<typename U> constexpr matrix& operator+=(const matrix<U,2,2>& m) { columns[0] += m[0]; columns[1] += m[1]; return *this; }
+        template<typename U> constexpr matrix& operator-=(const matrix<U,2,2>& m) { columns[0] -= m[0]; columns[1] -= m[1]; return *this; }
+        template<typename U> constexpr matrix& operator*=(const matrix<U,2,2>& m) { return (*this = *this * m); }
         template<typename U> matrix& operator/=(const matrix<U,2,2>& m) { return *this *= inverse(m); }
-        matrix& operator++() { ++columns[0]; ++columns[1]; return *this; }
-        matrix& operator--() { --columns[0]; --columns[1]; return *this; }
-        matrix operator++(int) { matrix<T,2,2> Result(*this); ++* this; return Result; }
-        matrix operator--(int) { matrix<T,2,2> Result(*this); --* this; return Result; }
+        constexpr matrix& operator++() { ++columns[0]; ++columns[1]; return *this; }
+        constexpr matrix& operator--() { --columns[0]; --columns[1]; return *this; }
+        constexpr matrix operator++(int) { matrix<T,2,2> Result(*this); ++* this; return Result; }
+        constexpr matrix operator--(int) { matrix<T,2,2> Result(*this); --* this; return Result; }
     };
     
-    template<typename T> 
-    typename matrix<T,2,2>::col_type operator*(const matrix<T,2,2>& m, const typename matrix<T,2,2>::row_type& v)
+    template<typename T> constexpr typename matrix<T,2,2>::col_type operator*(const matrix<T,2,2>& m, const typename matrix<T,2,2>::row_type& v)
     { 
-        return typename matrix<T,2,2>::col_type(m[0][0] * v.x + m[1][0] * v.y, m[0][1] * v.x + m[1][1] * v.y); 
+        return typename matrix<T,2,2>::col_type(
+            m[0][0] * v.x + m[1][0] * v.y, 
+            m[0][1] * v.x + m[1][1] * v.y); 
     }
 
-    template<typename T> 
-    typename matrix<T,2,2>::row_type operator*(const typename matrix<T,2,2>::col_type& v, const matrix<T,2,2>& m) 
+    template<typename T> constexpr typename matrix<T,2,2>::row_type operator*(const typename matrix<T,2,2>::col_type& v, const matrix<T,2,2>& m)
     { 
-        return typename matrix<T,2,2>::row_type(v.x * m[0][0] + v.y * m[0][1], v.x * m[1][0] + v.y * m[1][1]); 
+        return typename matrix<T,2,2>::row_type(
+            v.x * m[0][0] + v.y * m[0][1], 
+            v.x * m[1][0] + v.y * m[1][1]); 
     }
 
-    template<typename T> 
-    matrix<T,2,2> operator*(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2)
+    template<typename T> constexpr matrix<T,2,2> operator*(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2)
     { 
             return matrix<T,2,2>( 
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1],
@@ -1011,8 +1029,7 @@ namespace PK::math
             m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1]);
     }
 
-    template<typename T>
-    matrix<T,3,2> operator*(const matrix<T,2,2>& m1, const matrix<T,3,2>& m2)
+    template<typename T> constexpr matrix<T,3,2> operator*(const matrix<T,2,2>& m1, const matrix<T,3,2>& m2)
     {
         return matrix<T,3,2>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1],
@@ -1023,8 +1040,7 @@ namespace PK::math
             m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1]);
     }
 
-    template<typename T>
-    matrix<T,4,2> operator*(const matrix<T,2,2>& m1, const matrix<T,4,2>& m2)
+    template<typename T> constexpr matrix<T,4,2> operator*(const matrix<T,2,2>& m1, const matrix<T,4,2>& m2)
     {
         return matrix<T,4,2>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1],
@@ -1037,23 +1053,23 @@ namespace PK::math
             m1[0][1] * m2[3][0] + m1[1][1] * m2[3][1]);
     }
 
-    template<typename T> matrix<T,2,2> operator+(const matrix<T,2,2>& m) { return m; }
-    template<typename T> matrix<T,2,2> operator-(const matrix<T,2,2>& m) { return matrix<T,2,2>(-m[0], -m[1]); }
-    template<typename T> matrix<T,2,2> operator+(const matrix<T,2,2>& m, T s) { return matrix<T,2,2>(m[0] + s, m[1] + s); }
-    template<typename T> matrix<T,2,2> operator-(const matrix<T,2,2>& m, T s) { return matrix<T,2,2>(m[0] - s, m[1] - s); }
-    template<typename T> matrix<T,2,2> operator*(const matrix<T,2,2>& m, T s) { return matrix<T,2,2>(m[0] * s, m[1] * s); }
-    template<typename T> matrix<T,2,2> operator/(const matrix<T,2,2>& m, T s) { return matrix<T,2,2>(m[0] / s, m[1] / s);}
-    template<typename T> matrix<T,2,2> operator+(T s, const matrix<T,2,2>& m) { return matrix<T,2,2>(m[0] + s, m[1] + s); }
-    template<typename T> matrix<T,2,2> operator-(T s, const matrix<T,2,2>& m) { return matrix<T,2,2>(s - m[0], s - m[1]); }
-    template<typename T> matrix<T,2,2> operator*(T s, const matrix<T,2,2>& m) { return matrix<T,2,2>(m[0] * s, m[1] * s); }
-    template<typename T> matrix<T,2,2> operator/(T s, const matrix<T,2,2>& m) { return matrix<T,2,2>(s / m[0], s / m[1]); }
-    template<typename T> matrix<T,2,2> operator+(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return matrix<T,2,2>(m1[0] + m2[0], m1[1] + m2[1]); }
-    template<typename T> matrix<T,2,2> operator-(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return matrix<T,2,2>(m1[0] - m2[0], m1[1] - m2[1]); }
-    template<typename T> matrix<T,2,2> operator/(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { matrix<T,2,2> m1_copy(m1); return m1_copy /= m2; }
+    template<typename T> constexpr matrix<T,2,2> operator+(const matrix<T,2,2>& m) { return m; }
+    template<typename T> constexpr matrix<T,2,2> operator-(const matrix<T,2,2>& m) { return matrix<T,2,2>(-m[0], -m[1]); }
+    template<typename T> constexpr matrix<T,2,2> operator+(const matrix<T,2,2>& m, T s) { return matrix<T,2,2>(m[0] + s, m[1] + s); }
+    template<typename T> constexpr matrix<T,2,2> operator-(const matrix<T,2,2>& m, T s) { return matrix<T,2,2>(m[0] - s, m[1] - s); }
+    template<typename T> constexpr matrix<T,2,2> operator*(const matrix<T,2,2>& m, T s) { return matrix<T,2,2>(m[0] * s, m[1] * s); }
+    template<typename T> constexpr matrix<T,2,2> operator/(const matrix<T,2,2>& m, T s) { return matrix<T,2,2>(m[0] / s, m[1] / s);}
+    template<typename T> constexpr matrix<T,2,2> operator+(T s, const matrix<T,2,2>& m) { return matrix<T,2,2>(m[0] + s, m[1] + s); }
+    template<typename T> constexpr matrix<T,2,2> operator-(T s, const matrix<T,2,2>& m) { return matrix<T,2,2>(s - m[0], s - m[1]); }
+    template<typename T> constexpr matrix<T,2,2> operator*(T s, const matrix<T,2,2>& m) { return matrix<T,2,2>(m[0] * s, m[1] * s); }
+    template<typename T> constexpr matrix<T,2,2> operator/(T s, const matrix<T,2,2>& m) { return matrix<T,2,2>(s / m[0], s / m[1]); }
+    template<typename T> constexpr matrix<T,2,2> operator+(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return matrix<T,2,2>(m1[0] + m2[0], m1[1] + m2[1]); }
+    template<typename T> constexpr matrix<T,2,2> operator-(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return matrix<T,2,2>(m1[0] - m2[0], m1[1] - m2[1]); }
+    template<typename T> constexpr matrix<T,2,2> operator/(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { matrix<T,2,2> m1_copy(m1); return m1_copy /= m2; }
     template<typename T> typename matrix<T,2,2>::col_type operator/(const matrix<T,2,2>& m, const typename matrix<T,2,2>::row_type& v) { return inverse(m) * v; }
     template<typename T> typename matrix<T,2,2>::row_type operator/(const typename matrix<T,2,2>::col_type& v, const matrix<T,2,2>& m) { return v * inverse(m); }
-    template<typename T> bool operator==(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]); }
-    template<typename T> bool operator!=(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]); }
+    template<typename T> constexpr bool operator==(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]); }
+    template<typename T> constexpr bool operator!=(const matrix<T,2,2>& m1, const matrix<T,2,2>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]); }
 
 
     template<typename T>
@@ -1082,33 +1098,35 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> matrix& operator=(const matrix<U,2,3>& m) { columns[0] = m[0]; columns[1] = m[1]; return *this; }
-        template<typename U> matrix& operator+=(U s) { columns[0] += s; columns[1] += s; return *this; }
-        template<typename U> matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; return *this; }
-        template<typename U> matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; return *this; }
-        template<typename U> matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; return *this; }
-        template<typename U> matrix& operator+=(const matrix<U,2,3>& m) { columns[0] += m[0]; columns[1] += m[1]; return *this; }
-        template<typename U> matrix& operator-=(const matrix<U,2,3>& m) { columns[0] -= m[0]; columns[1] -= m[1]; return *this; }
-        matrix& operator++() { ++columns[0]; ++columns[1]; return *this; }
-        matrix& operator--() { --columns[0]; --columns[1]; return *this; }
-        matrix operator++(int) { matrix<T,2,3> Result(*this); ++* this; return Result; }
-        matrix operator--(int) { matrix<T,2,3> Result(*this); --* this; return Result; }
+        template<typename U> constexpr matrix& operator=(const matrix<U,2,3>& m) { columns[0] = m[0]; columns[1] = m[1]; return *this; }
+        template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; return *this; }
+        template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; return *this; }
+        template<typename U> constexpr matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; return *this; }
+        template<typename U> constexpr matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; return *this; }
+        template<typename U> constexpr matrix& operator+=(const matrix<U,2,3>& m) { columns[0] += m[0]; columns[1] += m[1]; return *this; }
+        template<typename U> constexpr matrix& operator-=(const matrix<U,2,3>& m) { columns[0] -= m[0]; columns[1] -= m[1]; return *this; }
+        constexpr matrix& operator++() { ++columns[0]; ++columns[1]; return *this; }
+        constexpr matrix& operator--() { --columns[0]; --columns[1]; return *this; }
+        constexpr matrix operator++(int) { matrix<T,2,3> Result(*this); ++* this; return Result; }
+        constexpr matrix operator--(int) { matrix<T,2,3> Result(*this); --* this; return Result; }
     };
     
-    template<typename T> 
-    typename matrix<T,2,3>::col_type operator*(const matrix<T,2,3>& m, const typename matrix<T,2,3>::row_type& v)
+    template<typename T> constexpr typename matrix<T,2,3>::col_type operator*(const matrix<T,2,3>& m, const typename matrix<T,2,3>::row_type& v)
     { 
-        return typename matrix<T,2,3>::col_type(m[0][0] * v.x + m[1][0] * v.y, m[0][1] * v.x + m[1][1] * v.y, m[0][2] * v.x + m[1][2] * v.y); 
+        return typename matrix<T,2,3>::col_type(
+            m[0][0] * v.x + m[1][0] * v.y, 
+            m[0][1] * v.x + m[1][1] * v.y, 
+            m[0][2] * v.x + m[1][2] * v.y); 
     }
     
-    template<typename T> 
-    typename matrix<T,2,3>::row_type operator*(const typename matrix<T,2,3>::col_type& v, const matrix<T,2,3>& m)
+    template<typename T> constexpr typename matrix<T,2,3>::row_type operator*(const typename matrix<T,2,3>::col_type& v, const matrix<T,2,3>& m)
     { 
-        return typename matrix<T,2,3>::row_type(v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2], v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2]); 
+        return typename matrix<T,2,3>::row_type(
+            v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2], 
+            v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2]); 
     }
     
-    template<typename T>
-    matrix<T,2,3>operator*(const matrix<T,2,3>& m1, const matrix<T,2, 2>& m2)
+    template<typename T> constexpr matrix<T,2,3>operator*(const matrix<T,2,3>& m1, const matrix<T,2, 2>& m2)
     {
         return matrix<T,2,3>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1],
@@ -1119,24 +1137,21 @@ namespace PK::math
             m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1]);
     }
 
-    template<typename T>
-    matrix<T,3,3> operator*(const matrix<T,2,3>& m1, const matrix<T,3,2>& m2)
+    template<typename T> constexpr matrix<T,3,3> operator*(const matrix<T,2,3>& m1, const matrix<T,3,2>& m2)
     {
-        matrix<T,3,3> Result;
-        Result[0][0] = m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1];
-        Result[0][1] = m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1];
-        Result[0][2] = m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1];
-        Result[1][0] = m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1];
-        Result[1][1] = m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1];
-        Result[1][2] = m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1];
-        Result[2][0] = m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1];
-        Result[2][1] = m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1];
-        Result[2][2] = m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1];
-        return Result;
+        return matrix<T,3,3>(
+            m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1],
+            m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1],
+            m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1],
+            m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1],
+            m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1],
+            m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1],
+            m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1],
+            m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1],
+            m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1]);
     }
 
-    template<typename T>
-    matrix<T,4,3> operator*(const matrix<T,2,3>& m1, const matrix<T,4,2>& m2)
+    template<typename T> constexpr matrix<T,4,3> operator*(const matrix<T,2,3>& m1, const matrix<T,4,2>& m2)
     {
         return matrix<T,4,3>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1],
@@ -1153,18 +1168,18 @@ namespace PK::math
             m1[0][2] * m2[3][0] + m1[1][2] * m2[3][1]);
     }
 
-    template<typename T> matrix<T,2,3> operator+(const matrix<T,2,3>& m) { return m; }
-    template<typename T> matrix<T,2,3> operator-(const matrix<T,2,3>& m) { return matrix<T,2,3>(-m[0], -m[1]); }
-    template<typename T> matrix<T,2,3> operator+(const matrix<T,2,3>& m, T s) { return matrix<T,2,3>(m[0] + s, m[1] + s); }
-    template<typename T> matrix<T,2,3> operator-(const matrix<T,2,3>& m, T s) { return matrix<T,2,3>(m[0] - s, m[1] - s); }
-    template<typename T> matrix<T,2,3> operator*(const matrix<T,2,3>& m, T s) { return matrix<T,2,3>(m[0] * s, m[1] * s); }
-    template<typename T> matrix<T,2,3> operator/(const matrix<T,2,3>& m, T s) { return matrix<T,2,3>(m[0] / s, m[1] / s); }
-    template<typename T> matrix<T,2,3> operator*(T s, const matrix<T,2,3>& m) { return matrix<T,2,3>(m[0] * s, m[1] * s); }
-    template<typename T> matrix<T,2,3> operator/(T s, const matrix<T,2,3>& m) { return matrix<T,2,3>(s / m[0], s / m[1]); }
-    template<typename T> matrix<T,2,3> operator+(const matrix<T,2,3>& m1, const matrix<T,2,3>& m2) { return matrix<T,2,3>(m1[0] + m2[0], m1[1] + m2[1]); }
-    template<typename T> matrix<T,2,3> operator-(const matrix<T,2,3>& m1, const matrix<T,2,3>& m2) { return matrix<T,2,3>(m1[0] - m2[0], m1[1] - m2[1]); }
-    template<typename T> bool operator==(const matrix<T,2,3>& m1, const matrix<T,2,3>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]); }
-    template<typename T> bool operator!=(const matrix<T,2,3>& m1, const matrix<T,2,3>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]); }
+    template<typename T> constexpr matrix<T,2,3> operator+(const matrix<T,2,3>& m) { return m; }
+    template<typename T> constexpr matrix<T,2,3> operator-(const matrix<T,2,3>& m) { return matrix<T,2,3>(-m[0], -m[1]); }
+    template<typename T> constexpr matrix<T,2,3> operator+(const matrix<T,2,3>& m, T s) { return matrix<T,2,3>(m[0] + s, m[1] + s); }
+    template<typename T> constexpr matrix<T,2,3> operator-(const matrix<T,2,3>& m, T s) { return matrix<T,2,3>(m[0] - s, m[1] - s); }
+    template<typename T> constexpr matrix<T,2,3> operator*(const matrix<T,2,3>& m, T s) { return matrix<T,2,3>(m[0] * s, m[1] * s); }
+    template<typename T> constexpr matrix<T,2,3> operator/(const matrix<T,2,3>& m, T s) { return matrix<T,2,3>(m[0] / s, m[1] / s); }
+    template<typename T> constexpr matrix<T,2,3> operator*(T s, const matrix<T,2,3>& m) { return matrix<T,2,3>(m[0] * s, m[1] * s); }
+    template<typename T> constexpr matrix<T,2,3> operator/(T s, const matrix<T,2,3>& m) { return matrix<T,2,3>(s / m[0], s / m[1]); }
+    template<typename T> constexpr matrix<T,2,3> operator+(const matrix<T,2,3>& m1, const matrix<T,2,3>& m2) { return matrix<T,2,3>(m1[0] + m2[0], m1[1] + m2[1]); }
+    template<typename T> constexpr matrix<T,2,3> operator-(const matrix<T,2,3>& m1, const matrix<T,2,3>& m2) { return matrix<T,2,3>(m1[0] - m2[0], m1[1] - m2[1]); }
+    template<typename T> constexpr bool operator==(const matrix<T,2,3>& m1, const matrix<T,2,3>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]); }
+    template<typename T> constexpr bool operator!=(const matrix<T,2,3>& m1, const matrix<T,2,3>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]); }
 
 
     template<typename T>
@@ -1193,56 +1208,57 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> matrix& operator=(const matrix<U,2,4>& m) { columns[0] = m[0]; columns[1] = m[1]; return *this; }
-        template<typename U> matrix& operator+=(U s) { columns[0] += s; columns[1] += s; return *this; }
-        template<typename U> matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; return *this; }
-        template<typename U> matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; return *this; }
-        template<typename U> matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; return *this; }
-        template<typename U> matrix& operator+=(const matrix<U,2,4>& m) { columns[0] += m[0]; columns[1] += m[1]; return *this; }
-        template<typename U> matrix& operator-=(const matrix<U,2,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; return *this; }
-        matrix& operator++() { ++columns[0]; ++columns[1]; return *this; }
-        matrix& operator--() { --columns[0]; --columns[1]; return *this; }
-        matrix operator++(int) { matrix<T,2,4> Result(*this); ++* this; return Result; }
-        matrix operator--(int) { matrix<T,2,4> Result(*this); --* this; return Result; }
+        template<typename U> constexpr matrix& operator=(const matrix<U,2,4>& m) { columns[0] = m[0]; columns[1] = m[1]; return *this; }
+        template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; return *this; }
+        template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; return *this; }
+        template<typename U> constexpr matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; return *this; }
+        template<typename U> constexpr matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; return *this; }
+        template<typename U> constexpr matrix& operator+=(const matrix<U,2,4>& m) { columns[0] += m[0]; columns[1] += m[1]; return *this; }
+        template<typename U> constexpr matrix& operator-=(const matrix<U,2,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; return *this; }
+        constexpr matrix& operator++() { ++columns[0]; ++columns[1]; return *this; }
+        constexpr matrix& operator--() { --columns[0]; --columns[1]; return *this; }
+        constexpr matrix operator++(int) { matrix<T,2,4> Result(*this); ++* this; return Result; }
+        constexpr matrix operator--(int) { matrix<T,2,4> Result(*this); --* this; return Result; }
     };
     
-    template<typename T> 
-    typename matrix<T,2,4>::col_type operator*(const matrix<T,2,4>& m, const typename matrix<T,2,4>::row_type& v) 
+    template<typename T> constexpr typename matrix<T,2,4>::col_type operator*(const matrix<T,2,4>& m, const typename matrix<T,2,4>::row_type& v)
     { 
-        return typename matrix<T,2,4>::col_type(m[0][0] * v.x + m[1][0] * v.y, m[0][1] * v.x + m[1][1] * v.y, m[0][2] * v.x + m[1][2] * v.y, m[0][3] * v.x + m[1][3] * v.y); 
+        return typename matrix<T,2,4>::col_type(
+            m[0][0] * v.x + m[1][0] * v.y, 
+            m[0][1] * v.x + m[1][1] * v.y, 
+            m[0][2] * v.x + m[1][2] * v.y, 
+            m[0][3] * v.x + m[1][3] * v.y); 
     }
 
-    template<typename T>
-    typename matrix<T,2,4>::row_type operator*(const typename matrix<T,2,4>::col_type& v, const matrix<T,2,4>& m)
+    template<typename T> constexpr typename matrix<T,2,4>::row_type operator*(const typename matrix<T,2,4>::col_type& v, const matrix<T,2,4>& m)
     {
-        return typename matrix<T,2,4>::row_type(v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2] + v.w * m[0][3], v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2] + v.w * m[1][3]);
+        return typename matrix<T,2,4>::row_type(
+            v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2] + v.w * m[0][3], 
+            v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2] + v.w * m[1][3]);
     }
 
-    template<typename T>
-    matrix<T,4,4> operator*(const matrix<T,2,4>& m1, const matrix<T,4,2>& m2)
+    template<typename T> constexpr matrix<T,4,4> operator*(const matrix<T,2,4>& m1, const matrix<T,4,2>& m2)
     {
-        matrix<T,4, 4> Result;
-        Result[0][0] = m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1];
-        Result[0][1] = m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1];
-        Result[0][2] = m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1];
-        Result[0][3] = m1[0][3] * m2[0][0] + m1[1][3] * m2[0][1];
-        Result[1][0] = m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1];
-        Result[1][1] = m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1];
-        Result[1][2] = m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1];
-        Result[1][3] = m1[0][3] * m2[1][0] + m1[1][3] * m2[1][1];
-        Result[2][0] = m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1];
-        Result[2][1] = m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1];
-        Result[2][2] = m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1];
-        Result[2][3] = m1[0][3] * m2[2][0] + m1[1][3] * m2[2][1];
-        Result[3][0] = m1[0][0] * m2[3][0] + m1[1][0] * m2[3][1];
-        Result[3][1] = m1[0][1] * m2[3][0] + m1[1][1] * m2[3][1];
-        Result[3][2] = m1[0][2] * m2[3][0] + m1[1][2] * m2[3][1];
-        Result[3][3] = m1[0][3] * m2[3][0] + m1[1][3] * m2[3][1];
-        return Result;
+        return matrix<T,4,4>(
+            m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1],
+            m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1],
+            m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1],
+            m1[0][3] * m2[0][0] + m1[1][3] * m2[0][1],
+            m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1],
+            m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1],
+            m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1],
+            m1[0][3] * m2[1][0] + m1[1][3] * m2[1][1],
+            m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1],
+            m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1],
+            m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1],
+            m1[0][3] * m2[2][0] + m1[1][3] * m2[2][1],
+            m1[0][0] * m2[3][0] + m1[1][0] * m2[3][1],
+            m1[0][1] * m2[3][0] + m1[1][1] * m2[3][1],
+            m1[0][2] * m2[3][0] + m1[1][2] * m2[3][1],
+            m1[0][3] * m2[3][0] + m1[1][3] * m2[3][1]);
     }
 
-    template<typename T>
-    matrix<T,2,4> operator*(const matrix<T,2,4>& m1, const matrix<T,2,2>& m2)
+    template<typename T> constexpr matrix<T,2,4> operator*(const matrix<T,2,4>& m1, const matrix<T,2,2>& m2)
     {
         return matrix<T,2,4>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1],
@@ -1255,8 +1271,7 @@ namespace PK::math
             m1[0][3] * m2[1][0] + m1[1][3] * m2[1][1]);
     }
 
-    template<typename T>
-    matrix<T,3,4> operator*(const matrix<T,2,4>& m1, const matrix<T,3,2>& m2)
+    template<typename T> constexpr matrix<T,3,4> operator*(const matrix<T,2,4>& m1, const matrix<T,3,2>& m2)
     {
         return matrix<T,3,4>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1],
@@ -1273,18 +1288,18 @@ namespace PK::math
             m1[0][3] * m2[2][0] + m1[1][3] * m2[2][1]);
     }
 
-    template<typename T> matrix<T,2,4> operator+(const matrix<T,2,4>& m) { return m; }
-    template<typename T> matrix<T,2,4> operator-(const matrix<T,2,4>& m) { return matrix<T,2,4>(-m[0], -m[1]); }
-    template<typename T> matrix<T,2,4> operator+(const matrix<T,2,4>& m, T s) { return matrix<T,2,4>(m[0] + s, m[1] + s); }
-    template<typename T> matrix<T,2,4> operator-(const matrix<T,2,4>& m, T s) { return matrix<T,2,4>(m[0] - s, m[1] - s); }
-    template<typename T> matrix<T,2,4> operator*(const matrix<T,2,4>& m, T s) { return matrix<T,2,4>(m[0] * s, m[1] * s); }
-    template<typename T> matrix<T,2,4> operator/(const matrix<T,2,4>& m, T s) { return matrix<T,2,4>(m[0] / s, m[1] / s); }
-    template<typename T> matrix<T,2,4> operator*(T s, const matrix<T,2,4>& m) { return matrix<T,2,4>(m[0] * s, m[1] * s); }
-    template<typename T> matrix<T,2,4> operator/(T s, const matrix<T,2,4>& m) { return matrix<T,2,4>(s / m[0], s / m[1]); }
-    template<typename T> matrix<T,2,4> operator+(const matrix<T,2,4>& m1, const matrix<T,2,4>& m2) { return matrix<T,2,4>(m1[0] + m2[0], m1[1] + m2[1]); }
-    template<typename T> matrix<T,2,4> operator-(const matrix<T,2,4>& m1, const matrix<T,2,4>& m2) { return matrix<T,2,4>(m1[0] - m2[0], m1[1] - m2[1]); }
-    template<typename T> bool operator==(const matrix<T,2,4>& m1, const matrix<T,2,4>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]); }
-    template<typename T> bool operator!=(const matrix<T,2,4>& m1, const matrix<T,2,4>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]); }
+    template<typename T> constexpr matrix<T,2,4> operator+(const matrix<T,2,4>& m) { return m; }
+    template<typename T> constexpr matrix<T,2,4> operator-(const matrix<T,2,4>& m) { return matrix<T,2,4>(-m[0], -m[1]); }
+    template<typename T> constexpr matrix<T,2,4> operator+(const matrix<T,2,4>& m, T s) { return matrix<T,2,4>(m[0] + s, m[1] + s); }
+    template<typename T> constexpr matrix<T,2,4> operator-(const matrix<T,2,4>& m, T s) { return matrix<T,2,4>(m[0] - s, m[1] - s); }
+    template<typename T> constexpr matrix<T,2,4> operator*(const matrix<T,2,4>& m, T s) { return matrix<T,2,4>(m[0] * s, m[1] * s); }
+    template<typename T> constexpr matrix<T,2,4> operator/(const matrix<T,2,4>& m, T s) { return matrix<T,2,4>(m[0] / s, m[1] / s); }
+    template<typename T> constexpr matrix<T,2,4> operator*(T s, const matrix<T,2,4>& m) { return matrix<T,2,4>(m[0] * s, m[1] * s); }
+    template<typename T> constexpr matrix<T,2,4> operator/(T s, const matrix<T,2,4>& m) { return matrix<T,2,4>(s / m[0], s / m[1]); }
+    template<typename T> constexpr matrix<T,2,4> operator+(const matrix<T,2,4>& m1, const matrix<T,2,4>& m2) { return matrix<T,2,4>(m1[0] + m2[0], m1[1] + m2[1]); }
+    template<typename T> constexpr matrix<T,2,4> operator-(const matrix<T,2,4>& m1, const matrix<T,2,4>& m2) { return matrix<T,2,4>(m1[0] - m2[0], m1[1] - m2[1]); }
+    template<typename T> constexpr bool operator==(const matrix<T,2,4>& m1, const matrix<T,2,4>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]); }
+    template<typename T> constexpr bool operator!=(const matrix<T,2,4>& m1, const matrix<T,2,4>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]); }
 
 
     template<typename T>
@@ -1313,44 +1328,44 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }    
-        template<typename U> matrix& operator=(const matrix<U,3,2>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; return *this; }
-        template<typename U> matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; return *this; }
-        template<typename U> matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; return *this; }
-        template<typename U> matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; return *this; }
-        template<typename U> matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; return *this; }
-        template<typename U> matrix& operator+=(const matrix<U,3,2>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; return *this; }
-        template<typename U> matrix& operator-=(const matrix<U,3,2>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; return *this; }
-        matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; return *this; }
-        matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; return *this; }
-        matrix operator++(int) { matrix<T,3,2> Result(*this); ++* this; return Result; }
-        matrix operator--(int) { matrix<T,3,2> Result(*this); --* this; return Result; }
+        template<typename U> constexpr matrix& operator=(const matrix<U,3,2>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; return *this; }
+        template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; return *this; }
+        template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; return *this; }
+        template<typename U> constexpr matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; return *this; }
+        template<typename U> constexpr matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; return *this; }
+        template<typename U> constexpr matrix& operator+=(const matrix<U,3,2>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; return *this; }
+        template<typename U> constexpr matrix& operator-=(const matrix<U,3,2>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; return *this; }
+        constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; return *this; }
+        constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; return *this; }
+        constexpr matrix operator++(int) { matrix<T,3,2> Result(*this); ++* this; return Result; }
+        constexpr matrix operator--(int) { matrix<T,3,2> Result(*this); --* this; return Result; }
     };
     
-    template<typename T>
-    typename matrix<T,3,2>::col_type operator*(const matrix<T,3,2>& m, const typename matrix<T,3,2>::row_type& v)
+    template<typename T> constexpr typename matrix<T,3,2>::col_type operator*(const matrix<T,3,2>& m, const typename matrix<T,3,2>::row_type& v)
     {
-        return typename matrix<T,3,2>::col_type(m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z, m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z);
+        return typename matrix<T,3,2>::col_type(
+            m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z, 
+            m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z);
     }
 
-    template<typename T>
-    typename matrix<T,3,2>::row_type operator*(const typename matrix<T,3,2>::col_type& v, const matrix<T,3,2>& m)
+    template<typename T> constexpr typename matrix<T,3,2>::row_type operator*(const typename matrix<T,3,2>::col_type& v, const matrix<T,3,2>& m)
     {
-        return typename matrix<T,3,2>::row_type(v.x * m[0][0] + v.y * m[0][1], v.x * m[1][0] + v.y * m[1][1], v.x * m[2][0] + v.y * m[2][1]);
+        return typename matrix<T,3,2>::row_type(
+            v.x * m[0][0] + v.y * m[0][1], 
+            v.x * m[1][0] + v.y * m[1][1], 
+            v.x * m[2][0] + v.y * m[2][1]);
     }
 
-    template<typename T>
-    matrix<T,2,2> operator*(const matrix<T,3,2>& m1, const matrix<T,2,3>& m2)
+    template<typename T> constexpr matrix<T,2,2> operator*(const matrix<T,3,2>& m1, const matrix<T,2,3>& m2)
     {
-        matrix<T,2,2> Result;
-        Result[0][0] = m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2];
-        Result[0][1] = m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2];
-        Result[1][0] = m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2];
-        Result[1][1] = m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2];
-        return Result;
+        return matrix<T,2,2>(
+            m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2],
+            m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2],
+            m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2],
+            m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2]);
     }
 
-    template<typename T>
-    matrix<T,3,2> operator*(const matrix<T,3,2>& m1, const matrix<T,3,3>& m2)
+    template<typename T> constexpr matrix<T,3,2> operator*(const matrix<T,3,2>& m1, const matrix<T,3,3>& m2)
     {
         return matrix<T,3,2>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2],
@@ -1361,8 +1376,7 @@ namespace PK::math
             m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1] + m1[2][1] * m2[2][2]);
     }
 
-    template<typename T>
-    matrix<T,4,2> operator*(const matrix<T,3,2>& m1, const matrix<T,4,3>& m2)
+    template<typename T> constexpr matrix<T,4,2> operator*(const matrix<T,3,2>& m1, const matrix<T,4,3>& m2)
     {
         return matrix<T,4,2>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2],
@@ -1375,18 +1389,18 @@ namespace PK::math
             m1[0][1] * m2[3][0] + m1[1][1] * m2[3][1] + m1[2][1] * m2[3][2]);
     }
 
-    template<typename T> matrix<T,3,2> operator+(const matrix<T,3,2>& m) { return m;}
-    template<typename T> matrix<T,3,2> operator-(const matrix<T,3,2>& m) { return matrix<T,3,2>(-m[0], -m[1], -m[2]); }
-    template<typename T> matrix<T,3,2> operator+(const matrix<T,3,2>& m, T s) { return matrix<T,3,2>(m[0] + s, m[1] + s, m[2] + s); }
-    template<typename T> matrix<T,3,2> operator-(const matrix<T,3,2>& m, T s) { return matrix<T,3,2>(m[0] - s, m[1] - s, m[2] - s); }
-    template<typename T> matrix<T,3,2> operator*(const matrix<T,3,2>& m, T s) { return matrix<T,3,2>(m[0] * s, m[1] * s, m[2] * s); }
-    template<typename T> matrix<T,3,2> operator/(const matrix<T,3,2>& m, T s) { return matrix<T,3,2>(m[0] / s, m[1] / s, m[2] / s); }
-    template<typename T> matrix<T,3,2> operator*(T s, const matrix<T,3,2>& m) { return matrix<T,3,2>(m[0] * s, m[1] * s, m[2] * s); }
-    template<typename T> matrix<T,3,2> operator/(T s, const matrix<T,3,2>& m) { return matrix<T,3,2>(s / m[0], s / m[1], s / m[2]); }
-    template<typename T> matrix<T,3,2> operator+(const matrix<T,3,2>& m1, const matrix<T,3,2>& m2) { return matrix<T,3,2>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2]); }
-    template<typename T> matrix<T,3,2> operator-(const matrix<T,3,2>& m1, const matrix<T,3,2>& m2) { return matrix<T,3,2>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2]); }
-    template<typename T> bool operator==(const matrix<T,3,2>& m1, const matrix<T,3,2>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]); }
-    template<typename T> bool operator!=(const matrix<T,3,2>& m1, const matrix<T,3,2>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]); }
+    template<typename T> constexpr matrix<T,3,2> operator+(const matrix<T,3,2>& m) { return m;}
+    template<typename T> constexpr matrix<T,3,2> operator-(const matrix<T,3,2>& m) { return matrix<T,3,2>(-m[0], -m[1], -m[2]); }
+    template<typename T> constexpr matrix<T,3,2> operator+(const matrix<T,3,2>& m, T s) { return matrix<T,3,2>(m[0] + s, m[1] + s, m[2] + s); }
+    template<typename T> constexpr matrix<T,3,2> operator-(const matrix<T,3,2>& m, T s) { return matrix<T,3,2>(m[0] - s, m[1] - s, m[2] - s); }
+    template<typename T> constexpr matrix<T,3,2> operator*(const matrix<T,3,2>& m, T s) { return matrix<T,3,2>(m[0] * s, m[1] * s, m[2] * s); }
+    template<typename T> constexpr matrix<T,3,2> operator/(const matrix<T,3,2>& m, T s) { return matrix<T,3,2>(m[0] / s, m[1] / s, m[2] / s); }
+    template<typename T> constexpr matrix<T,3,2> operator*(T s, const matrix<T,3,2>& m) { return matrix<T,3,2>(m[0] * s, m[1] * s, m[2] * s); }
+    template<typename T> constexpr matrix<T,3,2> operator/(T s, const matrix<T,3,2>& m) { return matrix<T,3,2>(s / m[0], s / m[1], s / m[2]); }
+    template<typename T> constexpr matrix<T,3,2> operator+(const matrix<T,3,2>& m1, const matrix<T,3,2>& m2) { return matrix<T,3,2>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2]); }
+    template<typename T> constexpr matrix<T,3,2> operator-(const matrix<T,3,2>& m1, const matrix<T,3,2>& m2) { return matrix<T,3,2>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2]); }
+    template<typename T> constexpr bool operator==(const matrix<T,3,2>& m1, const matrix<T,3,2>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]); }
+    template<typename T> constexpr bool operator!=(const matrix<T,3,2>& m1, const matrix<T,3,2>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]); }
 
 
     template<typename T>
@@ -1415,51 +1429,52 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> matrix& operator=(const matrix<U,3,3>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; return *this; }
-        template<typename U> matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; return *this; }
-        template<typename U> matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; return *this; }
-        template<typename U> matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; return *this; }
-        template<typename U> matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; return *this; }
-        template<typename U> matrix& operator+=(const matrix<U,3,3>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; return *this; }
-        template<typename U> matrix& operator-=(const matrix<U,3,3>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; return *this; }
-        template<typename U> matrix& operator*=(const matrix<U,3,3>& m) { return (*this = *this * m); }
-        template<typename U> matrix& operator/=(const matrix<U,3,3>& m) { return *this *= inverse(m); }
-        matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; return *this; }
-        matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; return *this; }
-        matrix operator++(int) { matrix<T,3,3> Result(*this); ++* this; return Result; }
-        matrix operator--(int) { matrix<T,3,3> Result(*this); --* this; return Result; }
+        template<typename U> constexpr matrix& operator=(const matrix<U,3,3>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; return *this; }
+        template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; return *this; }
+        template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; return *this; }
+        template<typename U> constexpr matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; return *this; }
+        template<typename U> constexpr matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; return *this; }
+        template<typename U> constexpr matrix& operator+=(const matrix<U,3,3>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; return *this; }
+        template<typename U> constexpr matrix& operator-=(const matrix<U,3,3>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; return *this; }
+        template<typename U> constexpr matrix& operator*=(const matrix<U,3,3>& m) { return (*this = *this * m); }
+        template<typename U> constexpr matrix& operator/=(const matrix<U,3,3>& m) { return *this *= inverse(m); }
+        constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; return *this; }
+        constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; return *this; }
+        constexpr matrix operator++(int) { matrix<T,3,3> Result(*this); ++* this; return Result; }
+        constexpr matrix operator--(int) { matrix<T,3,3> Result(*this); --* this; return Result; }
     };
 
-    template<typename T>
-    typename matrix<T,3,3>::col_type operator*(const matrix<T,3,3>& m, const typename matrix<T,3,3>::row_type& v)
+    template<typename T> constexpr typename matrix<T,3,3>::col_type operator*(const matrix<T,3,3>& m, const typename matrix<T,3,3>::row_type& v)
     {
-        return typename matrix<T,3,3>::col_type(m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z, m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z, m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z);
+        return typename matrix<T,3,3>::col_type(
+            m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z, 
+            m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z, 
+            m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z);
     }
 
-    template<typename T>
-    typename matrix<T,3,3>::row_type operator*(const typename matrix<T,3,3>::col_type& v, const matrix<T,3,3>& m)
+    template<typename T> constexpr typename matrix<T,3,3>::row_type operator*(const typename matrix<T,3,3>::col_type& v, const matrix<T,3,3>& m)
     {
-        return typename matrix<T,3,3>::row_type(m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z, m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z, m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z);
+        return typename matrix<T,3,3>::row_type(
+            m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z, 
+            m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z, 
+            m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z);
     }
 
-    template<typename T>
-    matrix<T,3,3> operator*(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2)
+    template<typename T> constexpr matrix<T,3,3> operator*(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2)
     {
-        matrix<T,3,3> Result;
-        Result[0][0] = m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2];
-        Result[0][1] = m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2];
-        Result[0][2] = m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1] + m1[2][2] * m2[0][2];
-        Result[1][0] = m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2];
-        Result[1][1] = m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2];
-        Result[1][2] = m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1] + m1[2][2] * m2[1][2];
-        Result[2][0] = m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1] + m1[2][0] * m2[2][2];
-        Result[2][1] = m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1] + m1[2][1] * m2[2][2];
-        Result[2][2] = m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1] + m1[2][2] * m2[2][2];
-        return Result;
+        return matrix<T,3,3>(
+            m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2],
+            m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2],
+            m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1] + m1[2][2] * m2[0][2],
+            m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2],
+            m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2],
+            m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1] + m1[2][2] * m2[1][2],
+            m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1] + m1[2][0] * m2[2][2],
+            m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1] + m1[2][1] * m2[2][2],
+            m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1] + m1[2][2] * m2[2][2]);
     }
 
-    template<typename T>
-    matrix<T,2,3> operator*(const matrix<T,3,3>& m1, const matrix<T,2,3>& m2)
+    template<typename T> constexpr matrix<T,2,3> operator*(const matrix<T,3,3>& m1, const matrix<T,2,3>& m2)
     {
         return matrix<T,2,3>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2],
@@ -1470,8 +1485,7 @@ namespace PK::math
             m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1] + m1[2][2] * m2[1][2]);
     }
 
-    template<typename T>
-    matrix<T,4,3> operator*(const matrix<T,3,3>& m1, const matrix<T,4,3>& m2)
+    template<typename T> constexpr matrix<T,4,3> operator*(const matrix<T,3,3>& m1, const matrix<T,4,3>& m2)
     {
         return matrix<T,4,3>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2],
@@ -1488,21 +1502,21 @@ namespace PK::math
             m1[0][2] * m2[3][0] + m1[1][2] * m2[3][1] + m1[2][2] * m2[3][2]);
     }
 
-    template<typename T> matrix<T,3,3> operator+(const matrix<T,3,3>& m) { return m; }
-    template<typename T> matrix<T,3,3> operator-(const matrix<T,3,3>& m) { return matrix<T,3,3>(-m[0], -m[1], -m[2]); }
-    template<typename T> matrix<T,3,3> operator+(const matrix<T,3,3>& m, T s) { return matrix<T,3,3>(m[0] + s, m[1] + s, m[2] + s); }
-    template<typename T> matrix<T,3,3> operator-(const matrix<T,3,3>& m, T s) { return matrix<T,3,3>(m[0] - s, m[1] - s, m[2] - s); }
-    template<typename T> matrix<T,3,3> operator*(const matrix<T,3,3>& m, T s) { return matrix<T,3,3>(m[0] * s, m[1] * s, m[2] * s); }
-    template<typename T> matrix<T,3,3> operator/(const matrix<T,3,3>& m, T s) { return matrix<T,3,3>(m[0] / s, m[1] / s, m[2] / s); }
-    template<typename T> matrix<T,3,3> operator+(T s, const matrix<T,3,3>& m) { return matrix<T,3,3>(m[0] + s, m[1] + s, m[2] + s); }
-    template<typename T> matrix<T,3,3> operator-(T s, const matrix<T,3,3>& m) { return matrix<T,3,3>(s - m[0], s - m[1], s - m[2]); }
-    template<typename T> matrix<T,3,3> operator*(T s, const matrix<T,3,3>& m) { return matrix<T,3,3>(m[0] * s, m[1] * s, m[2] * s); }
-    template<typename T> matrix<T,3,3> operator/(T s, const matrix<T,3,3>& m) { return matrix<T,3,3>(s / m[0], s / m[1], s / m[2]); }
-    template<typename T> matrix<T,3,3> operator+(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return matrix<T,3,3>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2]); }
-    template<typename T> matrix<T,3,3> operator-(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return matrix<T,3,3>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2]); }
+    template<typename T> constexpr matrix<T,3,3> operator+(const matrix<T,3,3>& m) { return m; }
+    template<typename T> constexpr matrix<T,3,3> operator-(const matrix<T,3,3>& m) { return matrix<T,3,3>(-m[0], -m[1], -m[2]); }
+    template<typename T> constexpr matrix<T,3,3> operator+(const matrix<T,3,3>& m, T s) { return matrix<T,3,3>(m[0] + s, m[1] + s, m[2] + s); }
+    template<typename T> constexpr matrix<T,3,3> operator-(const matrix<T,3,3>& m, T s) { return matrix<T,3,3>(m[0] - s, m[1] - s, m[2] - s); }
+    template<typename T> constexpr matrix<T,3,3> operator*(const matrix<T,3,3>& m, T s) { return matrix<T,3,3>(m[0] * s, m[1] * s, m[2] * s); }
+    template<typename T> constexpr matrix<T,3,3> operator/(const matrix<T,3,3>& m, T s) { return matrix<T,3,3>(m[0] / s, m[1] / s, m[2] / s); }
+    template<typename T> constexpr matrix<T,3,3> operator+(T s, const matrix<T,3,3>& m) { return matrix<T,3,3>(m[0] + s, m[1] + s, m[2] + s); }
+    template<typename T> constexpr matrix<T,3,3> operator-(T s, const matrix<T,3,3>& m) { return matrix<T,3,3>(s - m[0], s - m[1], s - m[2]); }
+    template<typename T> constexpr matrix<T,3,3> operator*(T s, const matrix<T,3,3>& m) { return matrix<T,3,3>(m[0] * s, m[1] * s, m[2] * s); }
+    template<typename T> constexpr matrix<T,3,3> operator/(T s, const matrix<T,3,3>& m) { return matrix<T,3,3>(s / m[0], s / m[1], s / m[2]); }
+    template<typename T> constexpr matrix<T,3,3> operator+(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return matrix<T,3,3>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2]); }
+    template<typename T> constexpr matrix<T,3,3> operator-(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return matrix<T,3,3>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2]); }
     template<typename T> typename matrix<T,3,3>::col_type operator/(const matrix<T,3,3>& m, const typename matrix<T,3,3>::row_type& v) { return inverse(m) * v; }
     template<typename T> typename matrix<T,3,3>::row_type operator/(const typename matrix<T,3,3>::col_type& v, const matrix<T,3,3>& m) { return v * inverse(m); }
-    template<typename T> matrix<T,3,3> operator/(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { matrix<T,3,3> m1_copy(m1); return m1_copy /= m2; }
+    template<typename T> constexpr matrix<T,3,3> operator/(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { matrix<T,3,3> m1_copy(m1); return m1_copy /= m2; }
     template<typename T> constexpr bool operator==(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]); }
     template<typename T> constexpr bool operator!=(const matrix<T,3,3>& m1, const matrix<T,3,3>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]); }
 
@@ -1534,56 +1548,58 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> matrix& operator=(const matrix<U,3,4>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; return *this; }
-        template<typename U> matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; return *this; }
-        template<typename U> matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; return *this; }
-        template<typename U> matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; return *this; }
-        template<typename U> matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; return *this; }
-        template<typename U> matrix& operator+=(const matrix<U,3,4>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; return *this; }
-        template<typename U> matrix& operator-=(const matrix<U,3,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; return *this; }
-        matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; return *this; }
-        matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; return *this; }
-        matrix operator++(int) { matrix<T,3,4> Result(*this); ++* this; return Result; }
-        matrix operator--(int) { matrix<T,3,4> Result(*this); --* this; return Result; }
+        template<typename U> constexpr matrix& operator=(const matrix<U,3,4>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; return *this; }
+        template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; return *this; }
+        template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; return *this; }
+        template<typename U> constexpr matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; return *this; }
+        template<typename U> constexpr matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; return *this; }
+        template<typename U> constexpr matrix& operator+=(const matrix<U,3,4>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; return *this; }
+        template<typename U> constexpr matrix& operator-=(const matrix<U,3,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; return *this; }
+        constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; return *this; }
+        constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; return *this; }
+        constexpr matrix operator++(int) { matrix<T,3,4> Result(*this); ++* this; return Result; }
+        constexpr matrix operator--(int) { matrix<T,3,4> Result(*this); --* this; return Result; }
     };
     
-    template<typename T>
-    typename matrix<T,3,4>::col_type operator*(const matrix<T,3,4>& m, const typename matrix<T,3,4>::row_type& v)
+    template<typename T> constexpr typename matrix<T,3,4>::col_type operator*(const matrix<T,3,4>& m, const typename matrix<T,3,4>::row_type& v)
     {
-        return typename matrix<T,3,4>::col_type(m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z, m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z, m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z, m[0][3] * v.x + m[1][3] * v.y + m[2][3] * v.z);
+        return typename matrix<T,3,4>::col_type(
+            m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z, 
+            m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z, 
+            m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z, 
+            m[0][3] * v.x + m[1][3] * v.y + m[2][3] * v.z);
     }
 
-    template<typename T>
-    typename matrix<T,3,4>::row_type operator*(const typename matrix<T,3,4>::col_type& v, const matrix<T,3,4>& m)
+    template<typename T> constexpr typename matrix<T,3,4>::row_type operator*(const typename matrix<T,3,4>::col_type& v, const matrix<T,3,4>& m)
     {
-        return typename matrix<T,3,4>::row_type(v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2] + v.w * m[0][3], v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2] + v.w * m[1][3], v.x * m[2][0] + v.y * m[2][1] + v.z * m[2][2] + v.w * m[2][3]);
+        return typename matrix<T,3,4>::row_type(
+            v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2] + v.w * m[0][3], 
+            v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2] + v.w * m[1][3], 
+            v.x * m[2][0] + v.y * m[2][1] + v.z * m[2][2] + v.w * m[2][3]);
     }
 
-    template<typename T>
-    matrix<T,4,4> operator*(const matrix<T,3,4>& m1, const matrix<T,4,3>& m2)
+    template<typename T> constexpr matrix<T,4,4> operator*(const matrix<T,3,4>& m1, const matrix<T,4,3>& m2)
     {
-        matrix<T,4,4> Result;
-        Result[0][0] = m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2];
-        Result[0][1] = m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2];
-        Result[0][2] = m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1] + m1[2][2] * m2[0][2];
-        Result[0][3] = m1[0][3] * m2[0][0] + m1[1][3] * m2[0][1] + m1[2][3] * m2[0][2];
-        Result[1][0] = m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2];
-        Result[1][1] = m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2];
-        Result[1][2] = m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1] + m1[2][2] * m2[1][2];
-        Result[1][3] = m1[0][3] * m2[1][0] + m1[1][3] * m2[1][1] + m1[2][3] * m2[1][2];
-        Result[2][0] = m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1] + m1[2][0] * m2[2][2];
-        Result[2][1] = m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1] + m1[2][1] * m2[2][2];
-        Result[2][2] = m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1] + m1[2][2] * m2[2][2];
-        Result[2][3] = m1[0][3] * m2[2][0] + m1[1][3] * m2[2][1] + m1[2][3] * m2[2][2];
-        Result[3][0] = m1[0][0] * m2[3][0] + m1[1][0] * m2[3][1] + m1[2][0] * m2[3][2];
-        Result[3][1] = m1[0][1] * m2[3][0] + m1[1][1] * m2[3][1] + m1[2][1] * m2[3][2];
-        Result[3][2] = m1[0][2] * m2[3][0] + m1[1][2] * m2[3][1] + m1[2][2] * m2[3][2];
-        Result[3][3] = m1[0][3] * m2[3][0] + m1[1][3] * m2[3][1] + m1[2][3] * m2[3][2];
-        return Result;
+        return matrix<T,4,4>(
+            m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2],
+            m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2],
+            m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1] + m1[2][2] * m2[0][2],
+            m1[0][3] * m2[0][0] + m1[1][3] * m2[0][1] + m1[2][3] * m2[0][2],
+            m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2],
+            m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2],
+            m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1] + m1[2][2] * m2[1][2],
+            m1[0][3] * m2[1][0] + m1[1][3] * m2[1][1] + m1[2][3] * m2[1][2],
+            m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1] + m1[2][0] * m2[2][2],
+            m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1] + m1[2][1] * m2[2][2],
+            m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1] + m1[2][2] * m2[2][2],
+            m1[0][3] * m2[2][0] + m1[1][3] * m2[2][1] + m1[2][3] * m2[2][2],
+            m1[0][0] * m2[3][0] + m1[1][0] * m2[3][1] + m1[2][0] * m2[3][2],
+            m1[0][1] * m2[3][0] + m1[1][1] * m2[3][1] + m1[2][1] * m2[3][2],
+            m1[0][2] * m2[3][0] + m1[1][2] * m2[3][1] + m1[2][2] * m2[3][2],
+            m1[0][3] * m2[3][0] + m1[1][3] * m2[3][1] + m1[2][3] * m2[3][2]);
     }
 
-    template<typename T>
-    matrix<T,2,4> operator*(const matrix<T,3,4>& m1, const matrix<T,2,3>& m2)
+    template<typename T> constexpr matrix<T,2,4> operator*(const matrix<T,3,4>& m1, const matrix<T,2,3>& m2)
     {
         return matrix<T,2,4>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2],
@@ -1596,8 +1612,7 @@ namespace PK::math
             m1[0][3] * m2[1][0] + m1[1][3] * m2[1][1] + m1[2][3] * m2[1][2]);
     }
 
-    template<typename T>
-    matrix<T,3,4> operator*(const matrix<T,3,4>& m1, const matrix<T,3,3>& m2)
+    template<typename T> constexpr matrix<T,3,4> operator*(const matrix<T,3,4>& m1, const matrix<T,3,3>& m2)
     {
         return matrix<T,3,4>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2],
@@ -1614,18 +1629,18 @@ namespace PK::math
             m1[0][3] * m2[2][0] + m1[1][3] * m2[2][1] + m1[2][3] * m2[2][2]);
     }
 
-    template<typename T> matrix<T,3,4> operator+(const matrix<T,3,4>& m) { return m; }
-    template<typename T> matrix<T,3,4> operator-(const matrix<T,3,4>& m) { return matrix<T,3,4>(-m[0], -m[1], -m[2]); }
-    template<typename T> matrix<T,3,4> operator+(const matrix<T,3,4>& m, T s) { return matrix<T,3,4>(m[0] + s, m[1] + s, m[2] + s); }
-    template<typename T> matrix<T,3,4> operator-(const matrix<T,3,4>& m, T s) { return matrix<T,3,4>(m[0] - s, m[1] - s, m[2] - s); }
-    template<typename T> matrix<T,3,4> operator*(const matrix<T,3,4>& m, T s) { return matrix<T,3,4>(m[0] * s, m[1] * s, m[2] * s); }
-    template<typename T> matrix<T,3,4> operator/(const matrix<T,3,4>& m, T s) { return matrix<T,3,4>(m[0] / s, m[1] / s, m[2] / s); }
-    template<typename T> matrix<T,3,4> operator*(T s, const matrix<T,3,4>& m) { return matrix<T,3,4>(m[0] * s, m[1] * s, m[2] * s); }
-    template<typename T> matrix<T,3,4> operator/(T s, const matrix<T,3,4>& m) { return matrix<T,3,4>(s / m[0], s / m[1], s / m[2]); }
-    template<typename T> matrix<T,3,4> operator+(const matrix<T,3,4>& m1, const matrix<T,3,4>& m2) { return matrix<T,3,4>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2]); }
-    template<typename T> matrix<T,3,4> operator-(const matrix<T,3,4>& m1, const matrix<T,3,4>& m2) { return matrix<T,3,4>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2]); }
-    template<typename T> bool operator==(const matrix<T,3,4>& m1, const matrix<T,3,4>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]); }
-    template<typename T> bool operator!=(const matrix<T,3,4>& m1, const matrix<T,3,4>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]); }
+    template<typename T> constexpr matrix<T,3,4> operator+(const matrix<T,3,4>& m) { return m; }
+    template<typename T> constexpr matrix<T,3,4> operator-(const matrix<T,3,4>& m) { return matrix<T,3,4>(-m[0], -m[1], -m[2]); }
+    template<typename T> constexpr matrix<T,3,4> operator+(const matrix<T,3,4>& m, T s) { return matrix<T,3,4>(m[0] + s, m[1] + s, m[2] + s); }
+    template<typename T> constexpr matrix<T,3,4> operator-(const matrix<T,3,4>& m, T s) { return matrix<T,3,4>(m[0] - s, m[1] - s, m[2] - s); }
+    template<typename T> constexpr matrix<T,3,4> operator*(const matrix<T,3,4>& m, T s) { return matrix<T,3,4>(m[0] * s, m[1] * s, m[2] * s); }
+    template<typename T> constexpr matrix<T,3,4> operator/(const matrix<T,3,4>& m, T s) { return matrix<T,3,4>(m[0] / s, m[1] / s, m[2] / s); }
+    template<typename T> constexpr matrix<T,3,4> operator*(T s, const matrix<T,3,4>& m) { return matrix<T,3,4>(m[0] * s, m[1] * s, m[2] * s); }
+    template<typename T> constexpr matrix<T,3,4> operator/(T s, const matrix<T,3,4>& m) { return matrix<T,3,4>(s / m[0], s / m[1], s / m[2]); }
+    template<typename T> constexpr matrix<T,3,4> operator+(const matrix<T,3,4>& m1, const matrix<T,3,4>& m2) { return matrix<T,3,4>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2]); }
+    template<typename T> constexpr matrix<T,3,4> operator-(const matrix<T,3,4>& m1, const matrix<T,3,4>& m2) { return matrix<T,3,4>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2]); }
+    template<typename T> constexpr bool operator==(const matrix<T,3,4>& m1, const matrix<T,3,4>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]); }
+    template<typename T> constexpr bool operator!=(const matrix<T,3,4>& m1, const matrix<T,3,4>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]); }
 
 
     template<typename T>
@@ -1657,44 +1672,43 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> matrix& operator=(const matrix<U,4,2>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
-        template<typename U> matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
-        template<typename U> matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
-        template<typename U> matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
-        template<typename U> matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
-        template<typename U> matrix& operator+=(const matrix<U,4,2>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
-        template<typename U> matrix& operator-=(const matrix<U,4,2>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
-        matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
-        matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
-        matrix operator++(int) { matrix<T,4,2> Result(*this); ++* this; return Result; }
-        matrix operator--(int) { matrix<T,4,2> Result(*this); --* this; return Result; }
+        template<typename U> constexpr matrix& operator=(const matrix<U,4,2>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
+        template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
+        template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
+        template<typename U> constexpr matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
+        template<typename U> constexpr matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
+        template<typename U> constexpr matrix& operator+=(const matrix<U,4,2>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
+        template<typename U> constexpr matrix& operator-=(const matrix<U,4,2>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
+        constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
+        constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
+        constexpr matrix operator++(int) { matrix<T,4,2> Result(*this); ++* this; return Result; }
+        constexpr matrix operator--(int) { matrix<T,4,2> Result(*this); --* this; return Result; }
     };
     
-    template<typename T> 
-    typename matrix<T,4,2>::col_type operator*(const matrix<T,4,2>& m, const typename matrix<T,4,2>::row_type& v)
+    template<typename T> constexpr typename matrix<T,4,2>::col_type operator*(const matrix<T,4,2>& m, const typename matrix<T,4,2>::row_type& v)
     {
-        return typename matrix<T,4,2>::col_type(m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z + m[3][0] * v.w, m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z + m[3][1] * v.w);
+        return typename matrix<T,4,2>::col_type(
+            m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z + m[3][0] * v.w, 
+            m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z + m[3][1] * v.w);
     }
 
-    template<typename T>
-    typename matrix<T,4,2>::row_type operator*(const typename matrix<T,4,2>::col_type& v, const matrix<T,4,2>& m)
+    template<typename T> constexpr typename matrix<T,4,2>::row_type operator*(const typename matrix<T,4,2>::col_type& v, const matrix<T,4,2>& m)
     {
-        return typename matrix<T,4,2>::row_type(v.x * m[0][0] + v.y * m[0][1], v.x * m[1][0] + v.y * m[1][1], v.x * m[2][0] + v.y * m[2][1], v.x * m[3][0] + v.y * m[3][1]);
+        return typename matrix<T,4,2>::row_type(
+            v.x * m[0][0] + v.y * m[0][1], v.x * m[1][0] + v.y * m[1][1], 
+            v.x * m[2][0] + v.y * m[2][1], v.x * m[3][0] + v.y * m[3][1]);
     }
 
-    template<typename T>
-    matrix<T,2,2> operator*(const matrix<T,4,2>& m1, const matrix<T,2,4>& m2)
+    template<typename T> constexpr matrix<T,2,2> operator*(const matrix<T,4,2>& m1, const matrix<T,2,4>& m2)
     {
-        matrix<T,2,2> Result;
-        Result[0][0] = m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3];
-        Result[0][1] = m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2] + m1[3][1] * m2[0][3];
-        Result[1][0] = m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2] + m1[3][0] * m2[1][3];
-        Result[1][1] = m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2] + m1[3][1] * m2[1][3];
-        return Result;
+        return matrix<T,2,2>(
+            m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3],
+            m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2] + m1[3][1] * m2[0][3],
+            m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2] + m1[3][0] * m2[1][3],
+            m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2] + m1[3][1] * m2[1][3]);
     }
 
-    template<typename T>
-    matrix<T,3,2> operator*(const matrix<T,4,2>& m1, const matrix<T,3,4>& m2)
+    template<typename T> constexpr matrix<T,3,2> operator*(const matrix<T,4,2>& m1, const matrix<T,3,4>& m2)
     {
         return matrix<T,3,2>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3],
@@ -1705,8 +1719,7 @@ namespace PK::math
             m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1] + m1[2][1] * m2[2][2] + m1[3][1] * m2[2][3]);
     }
 
-    template<typename T>
-    matrix<T,4,2> operator*(const matrix<T,4,2>& m1, const matrix<T,4,4>& m2)
+    template<typename T> constexpr matrix<T,4,2> operator*(const matrix<T,4,2>& m1, const matrix<T,4,4>& m2)
     {
         return matrix<T,4,2>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3],
@@ -1719,18 +1732,18 @@ namespace PK::math
             m1[0][1] * m2[3][0] + m1[1][1] * m2[3][1] + m1[2][1] * m2[3][2] + m1[3][1] * m2[3][3]);
     }
 
-    template<typename T> matrix<T,4,2> operator+(const matrix<T,4,2>& m) { return m; }
-    template<typename T> matrix<T,4,2> operator-(const matrix<T,4,2>& m) { return matrix<T,4,2>(-m[0], -m[1], -m[2], -m[3]); }
-    template<typename T> matrix<T,4,2> operator+(const matrix<T,4,2>& m, T s) { return matrix<T,4,2>(m[0] + s, m[1] + s, m[2] + s, m[3] + s); }
-    template<typename T> matrix<T,4,2> operator-(const matrix<T,4,2>& m, T s) { return matrix<T,4,2>(m[0] - s, m[1] - s, m[2] - s, m[3] - s); }
-    template<typename T> matrix<T,4,2> operator*(const matrix<T,4,2>& m, T s) { return matrix<T,4,2>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
-    template<typename T> matrix<T,4,2> operator/(const matrix<T,4,2>& m, T s) { return matrix<T,4,2>(m[0] / s, m[1] / s, m[2] / s, m[3] / s); }
-    template<typename T> matrix<T,4,2> operator*(T s, const matrix<T,4,2>& m) { return matrix<T,4,2>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
-    template<typename T> matrix<T,4,2> operator/(T s, const matrix<T,4,2>& m) { return matrix<T,4,2>(s / m[0], s / m[1], s / m[2], s / m[3]); }
-    template<typename T> matrix<T,4,2> operator+(const matrix<T,4,2>& m1, const matrix<T,4,2>& m2) { return matrix<T,4,2>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2], m1[3] + m2[3]); }
-    template<typename T> matrix<T,4,2> operator-(const matrix<T,4,2>& m1, const matrix<T,4,2>& m2) { return matrix<T,4,2>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2], m1[3] - m2[3]); }
-    template<typename T> bool operator==(const matrix<T,4,2>& m1, const matrix<T,4,2>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]) && (m1[3] == m2[3]); }
-    template<typename T> bool operator!=(const matrix<T,4,2>& m1, const matrix<T,4,2>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]) || (m1[3] != m2[3]); }
+    template<typename T> constexpr matrix<T,4,2> operator+(const matrix<T,4,2>& m) { return m; }
+    template<typename T> constexpr matrix<T,4,2> operator-(const matrix<T,4,2>& m) { return matrix<T,4,2>(-m[0], -m[1], -m[2], -m[3]); }
+    template<typename T> constexpr matrix<T,4,2> operator+(const matrix<T,4,2>& m, T s) { return matrix<T,4,2>(m[0] + s, m[1] + s, m[2] + s, m[3] + s); }
+    template<typename T> constexpr matrix<T,4,2> operator-(const matrix<T,4,2>& m, T s) { return matrix<T,4,2>(m[0] - s, m[1] - s, m[2] - s, m[3] - s); }
+    template<typename T> constexpr matrix<T,4,2> operator*(const matrix<T,4,2>& m, T s) { return matrix<T,4,2>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
+    template<typename T> constexpr matrix<T,4,2> operator/(const matrix<T,4,2>& m, T s) { return matrix<T,4,2>(m[0] / s, m[1] / s, m[2] / s, m[3] / s); }
+    template<typename T> constexpr matrix<T,4,2> operator*(T s, const matrix<T,4,2>& m) { return matrix<T,4,2>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
+    template<typename T> constexpr matrix<T,4,2> operator/(T s, const matrix<T,4,2>& m) { return matrix<T,4,2>(s / m[0], s / m[1], s / m[2], s / m[3]); }
+    template<typename T> constexpr matrix<T,4,2> operator+(const matrix<T,4,2>& m1, const matrix<T,4,2>& m2) { return matrix<T,4,2>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2], m1[3] + m2[3]); }
+    template<typename T> constexpr matrix<T,4,2> operator-(const matrix<T,4,2>& m1, const matrix<T,4,2>& m2) { return matrix<T,4,2>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2], m1[3] - m2[3]); }
+    template<typename T> constexpr bool operator==(const matrix<T,4,2>& m1, const matrix<T,4,2>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]) && (m1[3] == m2[3]); }
+    template<typename T> constexpr bool operator!=(const matrix<T,4,2>& m1, const matrix<T,4,2>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]) || (m1[3] != m2[3]); }
 
 
     template<typename T>
@@ -1762,33 +1775,37 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> matrix<T,4,3>& operator=(const matrix<U,4,3>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
-        template<typename U> matrix<T,4,3>& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
-        template<typename U> matrix<T,4,3>& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
-        template<typename U> matrix<T,4,3>& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
-        template<typename U> matrix<T,4,3>& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
-        template<typename U> matrix<T,4,3>& operator+=(const matrix<U,4,3>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
-        template<typename U> matrix<T,4,3>& operator-=(const matrix<U,4,3>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
-        matrix<T,4,3>& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
-        matrix<T,4,3>& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
-        matrix<T,4,3> operator++(int) { matrix<T,4,3> Result(*this); ++* this; return Result; }
-        matrix<T,4,3> operator--(int) { matrix<T,4,3> Result(*this); --* this; return Result; }
+        template<typename U> constexpr matrix<T,4,3>& operator=(const matrix<U,4,3>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
+        template<typename U> constexpr matrix<T,4,3>& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
+        template<typename U> constexpr matrix<T,4,3>& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
+        template<typename U> constexpr matrix<T,4,3>& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
+        template<typename U> constexpr matrix<T,4,3>& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
+        template<typename U> constexpr matrix<T,4,3>& operator+=(const matrix<U,4,3>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
+        template<typename U> constexpr matrix<T,4,3>& operator-=(const matrix<U,4,3>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
+        constexpr matrix<T,4,3>& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
+        constexpr matrix<T,4,3>& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
+        constexpr matrix<T,4,3> operator++(int) { matrix<T,4,3> Result(*this); ++* this; return Result; }
+        constexpr matrix<T,4,3> operator--(int) { matrix<T,4,3> Result(*this); --* this; return Result; }
     };
 
-    template<typename T>
-    typename matrix<T,4,3>::col_type operator*(const matrix<T,4,3>& m, const typename matrix<T,4,3>::row_type& v)
+    template<typename T> constexpr typename matrix<T,4,3>::col_type operator*(const matrix<T,4,3>& m, const typename matrix<T,4,3>::row_type& v)
     {
-        return typename matrix<T,4,3>::col_type(m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z + m[3][0] * v.w, m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z + m[3][1] * v.w, m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z + m[3][2] * v.w);
+        return typename matrix<T,4,3>::col_type(
+            m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z + m[3][0] * v.w, 
+            m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z + m[3][1] * v.w, 
+            m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z + m[3][2] * v.w);
     }
 
-    template<typename T>
-    typename matrix<T,4,3>::row_type operator*(const typename matrix<T,4,3>::col_type& v, const matrix<T,4,3>& m) 
+    template<typename T> constexpr typename matrix<T,4,3>::row_type operator*(const typename matrix<T,4,3>::col_type& v, const matrix<T,4,3>& m)
     {
-        return typename matrix<T,4,3>::row_type(v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2], v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2], v.x * m[2][0] + v.y * m[2][1] + v.z * m[2][2], v.x * m[3][0] + v.y * m[3][1] + v.z * m[3][2]);
+        return typename matrix<T,4,3>::row_type(
+            v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2], 
+            v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2], 
+            v.x * m[2][0] + v.y * m[2][1] + v.z * m[2][2], 
+            v.x * m[3][0] + v.y * m[3][1] + v.z * m[3][2]);
     }
 
-    template<typename T>
-    matrix<T,2,3> operator*(const matrix<T,4,3>& m1, const matrix<T,2,4>& m2)
+    template<typename T> constexpr matrix<T,2,3> operator*(const matrix<T,4,3>& m1, const matrix<T,2,4>& m2)
     {
         return matrix<T,2,3>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3],
@@ -1799,24 +1816,21 @@ namespace PK::math
             m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1] + m1[2][2] * m2[1][2] + m1[3][2] * m2[1][3]);
     }
 
-    template<typename T>
-    matrix<T,3,3> operator*(const matrix<T,4,3>& m1, const matrix<T,3,4>& m2)
+    template<typename T> constexpr matrix<T,3,3> operator*(const matrix<T,4,3>& m1, const matrix<T,3,4>& m2)
     {
-        matrix<T,3,3> Result;
-        Result[0][0] = m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3];
-        Result[0][1] = m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2] + m1[3][1] * m2[0][3];
-        Result[0][2] = m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1] + m1[2][2] * m2[0][2] + m1[3][2] * m2[0][3];
-        Result[1][0] = m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2] + m1[3][0] * m2[1][3];
-        Result[1][1] = m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2] + m1[3][1] * m2[1][3];
-        Result[1][2] = m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1] + m1[2][2] * m2[1][2] + m1[3][2] * m2[1][3];
-        Result[2][0] = m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1] + m1[2][0] * m2[2][2] + m1[3][0] * m2[2][3];
-        Result[2][1] = m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1] + m1[2][1] * m2[2][2] + m1[3][1] * m2[2][3];
-        Result[2][2] = m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1] + m1[2][2] * m2[2][2] + m1[3][2] * m2[2][3];
-        return Result;
+        return matrix<T,3,3>(
+            m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3],
+            m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2] + m1[3][1] * m2[0][3],
+            m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1] + m1[2][2] * m2[0][2] + m1[3][2] * m2[0][3],
+            m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2] + m1[3][0] * m2[1][3],
+            m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2] + m1[3][1] * m2[1][3],
+            m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1] + m1[2][2] * m2[1][2] + m1[3][2] * m2[1][3],
+            m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1] + m1[2][0] * m2[2][2] + m1[3][0] * m2[2][3],
+            m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1] + m1[2][1] * m2[2][2] + m1[3][1] * m2[2][3],
+            m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1] + m1[2][2] * m2[2][2] + m1[3][2] * m2[2][3]);
     }
 
-    template<typename T>
-    matrix<T,4,3> operator*(const matrix<T,4,3>& m1, const matrix<T,4,4>& m2)
+    template<typename T> constexpr matrix<T,4,3> operator*(const matrix<T,4,3>& m1, const matrix<T,4,4>& m2)
     {
         return matrix<T,4,3>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3],
@@ -1833,18 +1847,18 @@ namespace PK::math
             m1[0][2] * m2[3][0] + m1[1][2] * m2[3][1] + m1[2][2] * m2[3][2] + m1[3][2] * m2[3][3]);
     }
     
-    template<typename T> matrix<T,4,3> operator+(const matrix<T,4,3>& m) { return m; }
-    template<typename T> matrix<T,4,3> operator-(const matrix<T,4,3>& m) { return matrix<T,4,3>(-m[0], -m[1], -m[2], -m[3]); }
-    template<typename T> matrix<T,4,3> operator+(const matrix<T,4,3>& m, T s) { return matrix<T,4,3>(m[0] + s, m[1] + s, m[2] + s, m[3] + s); }
-    template<typename T> matrix<T,4,3> operator-(const matrix<T,4,3>& m, T s) { return matrix<T,4,3>(m[0] - s, m[1] - s, m[2] - s, m[3] - s); }
-    template<typename T> matrix<T,4,3> operator*(const matrix<T,4,3>& m, T s) { return matrix<T,4,3>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
-    template<typename T> matrix<T,4,3> operator/(const matrix<T,4,3>& m, T s) { return matrix<T,4,3>(m[0] / s, m[1] / s, m[2] / s, m[3] / s); }
-    template<typename T> matrix<T,4,3> operator*(T s, const matrix<T,4,3>& m) { return matrix<T,4,3>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
-    template<typename T> matrix<T,4,3> operator/(T s, const matrix<T,4,3>& m) { return matrix<T,4,3>(s / m[0], s / m[1], s / m[2], s / m[3]); }
-    template<typename T> matrix<T,4,3> operator+(const matrix<T,4,3>& m1, const matrix<T,4,3>& m2) { return matrix<T,4,3>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2], m1[3] + m2[3]); }
-    template<typename T> matrix<T,4,3> operator-(const matrix<T,4,3>& m1, const matrix<T,4,3>& m2) { return matrix<T,4,3>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2], m1[3] - m2[3]); }
-    template<typename T> bool operator==(const matrix<T,4,3>& m1, const matrix<T,4,3>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]) && (m1[3] == m2[3]); }
-    template<typename T> bool operator!=(const matrix<T,4,3>& m1, const matrix<T,4,3>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]) || (m1[3] != m2[3]); }
+    template<typename T> constexpr matrix<T,4,3> operator+(const matrix<T,4,3>& m) { return m; }
+    template<typename T> constexpr matrix<T,4,3> operator-(const matrix<T,4,3>& m) { return matrix<T,4,3>(-m[0], -m[1], -m[2], -m[3]); }
+    template<typename T> constexpr matrix<T,4,3> operator+(const matrix<T,4,3>& m, T s) { return matrix<T,4,3>(m[0] + s, m[1] + s, m[2] + s, m[3] + s); }
+    template<typename T> constexpr matrix<T,4,3> operator-(const matrix<T,4,3>& m, T s) { return matrix<T,4,3>(m[0] - s, m[1] - s, m[2] - s, m[3] - s); }
+    template<typename T> constexpr matrix<T,4,3> operator*(const matrix<T,4,3>& m, T s) { return matrix<T,4,3>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
+    template<typename T> constexpr matrix<T,4,3> operator/(const matrix<T,4,3>& m, T s) { return matrix<T,4,3>(m[0] / s, m[1] / s, m[2] / s, m[3] / s); }
+    template<typename T> constexpr matrix<T,4,3> operator*(T s, const matrix<T,4,3>& m) { return matrix<T,4,3>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
+    template<typename T> constexpr matrix<T,4,3> operator/(T s, const matrix<T,4,3>& m) { return matrix<T,4,3>(s / m[0], s / m[1], s / m[2], s / m[3]); }
+    template<typename T> constexpr matrix<T,4,3> operator+(const matrix<T,4,3>& m1, const matrix<T,4,3>& m2) { return matrix<T,4,3>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2], m1[3] + m2[3]); }
+    template<typename T> constexpr matrix<T,4,3> operator-(const matrix<T,4,3>& m1, const matrix<T,4,3>& m2) { return matrix<T,4,3>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2], m1[3] - m2[3]); }
+    template<typename T> constexpr bool operator==(const matrix<T,4,3>& m1, const matrix<T,4,3>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]) && (m1[3] == m2[3]); }
+    template<typename T> constexpr bool operator!=(const matrix<T,4,3>& m1, const matrix<T,4,3>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]) || (m1[3] != m2[3]); }
 
 
     template<typename T>
@@ -1876,23 +1890,22 @@ namespace PK::math
         
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> matrix<T,4,4>& operator=(const matrix<T,4,4>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
-        template<typename U> matrix<T,4,4>& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
-        template<typename U> matrix<T,4,4>& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
-        template<typename U> matrix<T,4,4>& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
-        template<typename U> matrix<T,4,4>& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
-        template<typename U> matrix<T,4,4>& operator+=(const matrix<U,4,4>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
-        template<typename U> matrix<T,4,4>& operator-=(const matrix<U,4,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
-        template<typename U> matrix<T,4,4>& operator*=(const matrix<U,4,4>& m) { return (*this = *this * m); }
-        template<typename U> matrix<T,4,4>& operator/=(const matrix<U,4,4>& m) { return *this *= inverse(m); }
-        matrix<T,4,4>& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
-        matrix<T,4,4>& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
-        matrix<T,4,4> operator++(int) { matrix<T,4,4> Result(*this); ++* this; return Result; }
-        matrix<T,4,4> operator--(int) { matrix<T,4,4> Result(*this); --* this; return Result; }
+        template<typename U> constexpr matrix<T,4,4>& operator=(const matrix<T,4,4>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
+        template<typename U> constexpr matrix<T,4,4>& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
+        template<typename U> constexpr matrix<T,4,4>& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
+        template<typename U> constexpr matrix<T,4,4>& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
+        template<typename U> constexpr matrix<T,4,4>& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
+        template<typename U> constexpr matrix<T,4,4>& operator+=(const matrix<U,4,4>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
+        template<typename U> constexpr matrix<T,4,4>& operator-=(const matrix<U,4,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
+        template<typename U> constexpr matrix<T,4,4>& operator*=(const matrix<U,4,4>& m) { return (*this = *this * m); }
+        template<typename U> constexpr matrix<T,4,4>& operator/=(const matrix<U,4,4>& m) { return *this *= inverse(m); }
+        constexpr matrix<T,4,4>& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
+        constexpr matrix<T,4,4>& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
+        constexpr matrix<T,4,4> operator++(int) { matrix<T,4,4> ret(*this); ++* this; return ret; }
+        constexpr matrix<T,4,4> operator--(int) { matrix<T,4,4> ret(*this); --* this; return ret; }
     };
 
-    template<typename T> 
-    typename matrix<T,4,4>::col_type operator*(const matrix<T,4,4>& m, const typename matrix<T,4,4>::row_type& v)
+    template<typename T> constexpr typename matrix<T,4,4>::col_type operator*(const matrix<T,4,4>& m, const typename matrix<T,4,4>::row_type& v)
     {
         typename matrix<T,4,4>::col_type const Mov0(v[0]);
         typename matrix<T,4,4>::col_type const Mov1(v[1]);
@@ -1908,8 +1921,7 @@ namespace PK::math
         return Add2;
     }
 
-    template<typename T>
-    typename matrix<T,4,4>::row_type operator*(const typename matrix<T,4,4>::col_type& v, const matrix<T,4,4>& m)
+    template<typename T> constexpr typename matrix<T,4,4>::row_type operator*(const typename matrix<T,4,4>::col_type& v, const matrix<T,4,4>& m)
     {
         return typename matrix<T,4,4>::row_type(
             m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2] + m[0][3] * v[3],
@@ -1918,8 +1930,7 @@ namespace PK::math
             m[3][0] * v[0] + m[3][1] * v[1] + m[3][2] * v[2] + m[3][3] * v[3]);
     }
 
-    template<typename T>
-    matrix<T,2,4> operator*(const matrix<T,4,4>& m1, const matrix<T,2,4>& m2)
+    template<typename T> constexpr matrix<T,2,4> operator*(const matrix<T,4,4>& m1, const matrix<T,2,4>& m2)
     {
         return matrix<T,2,4>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3],
@@ -1932,8 +1943,7 @@ namespace PK::math
             m1[0][3] * m2[1][0] + m1[1][3] * m2[1][1] + m1[2][3] * m2[1][2] + m1[3][3] * m2[1][3]);
     }
 
-    template<typename T>
-    matrix<T,3,4> operator*(const matrix<T,4,4>& m1, const matrix<T,3,4>& m2)
+    template<typename T> constexpr matrix<T,3,4> operator*(const matrix<T,4,4>& m1, const matrix<T,3,4>& m2)
     {
         return matrix<T,3,4>(
             m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2] + m1[3][0] * m2[0][3],
@@ -1950,41 +1960,39 @@ namespace PK::math
             m1[0][3] * m2[2][0] + m1[1][3] * m2[2][1] + m1[2][3] * m2[2][2] + m1[3][3] * m2[2][3]);
     }
 
-    template<typename T>
-    matrix<T,4,4> operator*(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2)
+    template<typename T> constexpr matrix<T,4,4> operator*(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2)
     {
-        matrix<T,4,4> Result;
-        Result[0] = m1[0] * m2[0][0] + m1[1] * m2[0][1] + m1[2] * m2[0][2] + m1[3] * m2[0][3];
-        Result[1] = m1[0] * m2[1][0] + m1[1] * m2[1][1] + m1[2] * m2[1][2] + m1[3] * m2[1][3];
-        Result[2] = m1[0] * m2[2][0] + m1[1] * m2[2][1] + m1[2] * m2[2][2] + m1[3] * m2[2][3];
-        Result[3] = m1[0] * m2[3][0] + m1[1] * m2[3][1] + m1[2] * m2[3][2] + m1[3] * m2[3][3];
-        return Result;
+        return matrix<T,4,4>(
+            m1[0] * m2[0][0] + m1[1] * m2[0][1] + m1[2] * m2[0][2] + m1[3] * m2[0][3],
+            m1[0] * m2[1][0] + m1[1] * m2[1][1] + m1[2] * m2[1][2] + m1[3] * m2[1][3],
+            m1[0] * m2[2][0] + m1[1] * m2[2][1] + m1[2] * m2[2][2] + m1[3] * m2[2][3],
+            m1[0] * m2[3][0] + m1[1] * m2[3][1] + m1[2] * m2[3][2] + m1[3] * m2[3][3]);
     }
 
-    template<typename T> matrix<T,4,4> operator+(const matrix<T,4,4>& m) { return m; }
-    template<typename T> matrix<T,4,4> operator-(const matrix<T,4,4>& m) { return matrix<T,4,4>(-m[0], -m[1], -m[2], -m[3]); }
-    template<typename T> matrix<T,4,4> operator+(const matrix<T,4,4>& m, T s) { return matrix<T,4,4>(m[0] + s, m[1] + s, m[2] + s, m[3] + s); }
-    template<typename T> matrix<T,4,4> operator-(const matrix<T,4,4>& m, T s) { return matrix<T,4,4>(m[0] - s, m[1] - s, m[2] - s, m[3] - s); }
-    template<typename T> matrix<T,4,4> operator*(const matrix<T,4,4>& m, T s) { return matrix<T,4,4>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
-    template<typename T> matrix<T,4,4> operator/(const matrix<T,4,4>& m, T s) { return matrix<T,4,4>(m[0] / s, m[1] / s, m[2] / s, m[3] / s); }
-    template<typename T> matrix<T,4,4> operator+(T s, const matrix<T,4,4>& m) { return matrix<T,4,4>(m[0] + s, m[1] + s, m[2] + s, m[3] + s); }
-    template<typename T> matrix<T,4,4> operator-(T s, const matrix<T,4,4>& m) { return matrix<T,4,4>(s - m[0], s - m[1], s - m[2], s - m[3]); }
-    template<typename T> matrix<T,4,4> operator*(T s, const matrix<T,4,4>& m) { return matrix<T,4,4>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
-    template<typename T> matrix<T,4,4> operator/(T s, const matrix<T,4,4>& m) { return matrix<T,4,4>(s / m[0], s / m[1], s / m[2], s / m[3]); }
-    template<typename T> matrix<T,4,4> operator+(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { return matrix<T,4,4>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2], m1[3] + m2[3]); }
-    template<typename T> matrix<T,4,4> operator-(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { return matrix<T,4,4>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2], m1[3] - m2[3]); }
+    template<typename T> constexpr matrix<T,4,4> operator+(const matrix<T,4,4>& m) { return m; }
+    template<typename T> constexpr matrix<T,4,4> operator-(const matrix<T,4,4>& m) { return matrix<T,4,4>(-m[0], -m[1], -m[2], -m[3]); }
+    template<typename T> constexpr matrix<T,4,4> operator+(const matrix<T,4,4>& m, T s) { return matrix<T,4,4>(m[0] + s, m[1] + s, m[2] + s, m[3] + s); }
+    template<typename T> constexpr matrix<T,4,4> operator-(const matrix<T,4,4>& m, T s) { return matrix<T,4,4>(m[0] - s, m[1] - s, m[2] - s, m[3] - s); }
+    template<typename T> constexpr matrix<T,4,4> operator*(const matrix<T,4,4>& m, T s) { return matrix<T,4,4>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
+    template<typename T> constexpr matrix<T,4,4> operator/(const matrix<T,4,4>& m, T s) { return matrix<T,4,4>(m[0] / s, m[1] / s, m[2] / s, m[3] / s); }
+    template<typename T> constexpr matrix<T,4,4> operator+(T s, const matrix<T,4,4>& m) { return matrix<T,4,4>(m[0] + s, m[1] + s, m[2] + s, m[3] + s); }
+    template<typename T> constexpr matrix<T,4,4> operator-(T s, const matrix<T,4,4>& m) { return matrix<T,4,4>(s - m[0], s - m[1], s - m[2], s - m[3]); }
+    template<typename T> constexpr matrix<T,4,4> operator*(T s, const matrix<T,4,4>& m) { return matrix<T,4,4>(m[0] * s, m[1] * s, m[2] * s, m[3] * s); }
+    template<typename T> constexpr matrix<T,4,4> operator/(T s, const matrix<T,4,4>& m) { return matrix<T,4,4>(s / m[0], s / m[1], s / m[2], s / m[3]); }
+    template<typename T> constexpr matrix<T,4,4> operator+(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { return matrix<T,4,4>(m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2], m1[3] + m2[3]); }
+    template<typename T> constexpr matrix<T,4,4> operator-(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { return matrix<T,4,4>(m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2], m1[3] - m2[3]); }
     template<typename T> typename matrix<T,4,4>::col_type operator/(const matrix<T,4,4>& m, const typename matrix<T,4,4>::row_type& v) { return inverse(m) * v; }
     template<typename T> typename matrix<T,4,4>::row_type operator/(const typename matrix<T,4,4>::col_type& v, const matrix<T,4,4>& m) { return v * inverse(m); }
-    template<typename T> matrix<T,4,4> operator/(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { matrix<T,4,4> m1_copy(m1); return m1_copy /= m2; }
-    template<typename T> bool operator==(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]) && (m1[3] == m2[3]); }
-    template<typename T> bool operator!=(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]) || (m1[3] != m2[3]); }  
+    template<typename T> constexpr matrix<T,4,4> operator/(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { matrix<T,4,4> m1_copy(m1); return m1_copy /= m2; }
+    template<typename T> constexpr bool operator==(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]) && (m1[3] == m2[3]); }
+    template<typename T> constexpr bool operator!=(const matrix<T,4,4>& m1, const matrix<T,4,4>& m2) { return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]) || (m1[3] != m2[3]); }  
 
-    inline bool all(const vector<bool, 2>& v) { return v.x && v.y; }
-    inline bool all(const vector<bool, 3>& v) { return v.x && v.y && v.z; }
-    inline bool all(const vector<bool, 4>& v) { return v.x && v.y && v.z && v.w; }
-    inline bool any(const vector<bool, 2>& v) { return v.x || v.y; }
-    inline bool any(const vector<bool, 3>& v) { return v.x || v.y || v.z; }
-    inline bool any(const vector<bool, 4>& v) { return v.x || v.y || v.z || v.w; }
+    constexpr bool all(const vector<bool, 2>& v) { return v.x && v.y; }
+    constexpr bool all(const vector<bool, 3>& v) { return v.x && v.y && v.z; }
+    constexpr bool all(const vector<bool, 4>& v) { return v.x && v.y && v.z && v.w; }
+    constexpr bool any(const vector<bool, 2>& v) { return v.x || v.y; }
+    constexpr bool any(const vector<bool, 3>& v) { return v.x || v.y || v.z; }
+    constexpr bool any(const vector<bool, 4>& v) { return v.x || v.y || v.z || v.w; }
 
     template<typename T> vector<bool,2> isnan(const vector<T,2>& v) { return vector<bool,2>(isnan(v.x), isnan(v.y)); }
     template<typename T> vector<bool,3> isnan(const vector<T,3>& v) { return vector<bool,3>(isnan(v.x), isnan(v.y), isnan(v.z)); }
@@ -1994,27 +2002,43 @@ namespace PK::math
     template<typename T> vector<bool,3> isinf(const vector<T,3>& v) { return vector<bool,3>(isinf(v.x), isinf(v.y), isinf(v.z)); }
     template<typename T> vector<bool,4> isinf(const vector<T,4>& v) { return vector<bool,4>(isinf(v.x), isinf(v.y), isinf(v.z), isinf(v.w)); }
 
-    template<typename T> vector<bool,2> nearEqual(const vector<T, 2>& x, const vector<T, 2>& y, T e) { return vector<bool,2>(nearEqual(x.x, y.x, e), nearEqual(x.y, y.y, e)); }
-    template<typename T> vector<bool,3> nearEqual(const vector<T, 3>& x, const vector<T, 3>& y, T e) { return vector<bool,3>(nearEqual(x.x, y.x, e), nearEqual(x.y, y.y, e), nearEqual(x.z, y.z, e)); }
-    template<typename T> vector<bool,4> nearEqual(const vector<T, 4>& x, const vector<T, 4>& y, T e) { return vector<bool,4>(nearEqual(x.x, y.x, e), nearEqual(x.y, y.y, e), nearEqual(x.z, y.z, e), nearEqual(x.w, y.w, e)); }
+    template<typename T> vector<bool,2> nearEqual(const vector<T,2>& x, const vector<T,2>& y, T e) { return vector<bool,2>(nearEqual(x.x, y.x, e), nearEqual(x.y, y.y, e)); }
+    template<typename T> vector<bool,3> nearEqual(const vector<T,3>& x, const vector<T,3>& y, T e) { return vector<bool,3>(nearEqual(x.x, y.x, e), nearEqual(x.y, y.y, e), nearEqual(x.z, y.z, e)); }
+    template<typename T> vector<bool,4> nearEqual(const vector<T,4>& x, const vector<T,4>& y, T e) { return vector<bool,4>(nearEqual(x.x, y.x, e), nearEqual(x.y, y.y, e), nearEqual(x.z, y.z, e), nearEqual(x.w, y.w, e)); }
 
-    template<int N> vector<float,N> asfloat(const vector<int32_t,N>& v) { union { vector<int32_t,N> in; vector<float,N> out; } u; u.in = v; return u.out; }
-    template<int N> vector<float,N> asfloat(const vector<uint32_t,N>& v) { union { vector<uint32_t,N> in; vector<float,N> out; } u; u.in = v; return u.out; }
-    template<int N> vector<double,N> asdouble(const vector<int64_t,N>& v) { union { vector<int64_t,N> in; vector<double,N> out; } u; u.in = v; return u.out; }
-    template<int N> vector<double,N> asdouble(const vector<uint64_t,N>& v) { union { vector<uint64_t,N> in; vector<double,N> out; } u; u.in = v; return u.out; }
+    template<int N> constexpr vector<float,N> asfloat(const vector<int32_t,N>& v) { union { vector<int32_t,N> in; vector<float,N> out; } u; u.in = v; return u.out; }
+    template<int N> constexpr vector<float,N> asfloat(const vector<uint32_t,N>& v) { union { vector<uint32_t,N> in; vector<float,N> out; } u; u.in = v; return u.out; }
+    template<int N> constexpr vector<double,N> asdouble(const vector<int64_t,N>& v) { union { vector<int64_t,N> in; vector<double,N> out; } u; u.in = v; return u.out; }
+    template<int N> constexpr vector<double,N> asdouble(const vector<uint64_t,N>& v) { union { vector<uint64_t,N> in; vector<double,N> out; } u; u.in = v; return u.out; }
 
-    template<int N> vector<int32_t,N> asint(const vector<float,N>& v) { union { vector<float,N> in; vector<int32_t,N> out; } u; u.in = v; return u.out; }
-    template<int N> vector<uint32_t,N> asuint(const vector<float,N>& v) { union { vector<float,N> in; vector<uint32_t,N> out; } u; u.in = v; return u.out; }
-    template<int N> vector<int64_t,N> asint(const vector<double,N>& v) { union { vector<double,N> in; vector<int64_t,N> out; } u; u.in = v; return u.out; }
-    template<int N> vector<uint64_t,N> asuint(const vector<double,N>& v) { union { vector<double,N> in; vector<uint64_t,N> out; } u; u.in = v; return u.out; }
+    template<int N> constexpr vector<int32_t,N> asint(const vector<float,N>& v) { union { vector<float,N> in; vector<int32_t,N> out; } u; u.in = v; return u.out; }
+    template<int N> constexpr vector<uint32_t,N> asuint(const vector<float,N>& v) { union { vector<float,N> in; vector<uint32_t,N> out; } u; u.in = v; return u.out; }
+    template<int N> constexpr vector<int64_t,N> asint(const vector<double,N>& v) { union { vector<double,N> in; vector<int64_t,N> out; } u; u.in = v; return u.out; }
+    template<int N> constexpr vector<uint64_t,N> asuint(const vector<double,N>& v) { union { vector<double,N> in; vector<uint64_t,N> out; } u; u.in = v; return u.out; }
+
+    template<typename T> uint2 bitcount(const vector<T,2>& v) { return uint2(bitcount(v.x), bitcount(v.y)); }
+    template<typename T> uint3 bitcount(const vector<T,3>& v) { return uint3(bitcount(v.x), bitcount(v.y), bitcount(v.z)); }
+    template<typename T> uint4 bitcount(const vector<T,4>& v) { return uint4(bitcount(v.x), bitcount(v.y), bitcount(v.z), bitcount(v.w)); }
+
+    constexpr ushort2 f32tof16(const float2& v) { return ushort2(f32tof16(v.x), f32tof16(v.y)); }
+    constexpr ushort3 f32tof16(const float3& v) { return ushort3(f32tof16(v.x), f32tof16(v.y), f32tof16(v.z)); }
+    constexpr ushort4 f32tof16(const float4& v) { return ushort4(f32tof16(v.x), f32tof16(v.y), f32tof16(v.z), f32tof16(v.w)); }
+    constexpr float2 f16tof32(const ushort2& v) { return float2(f16tof32(v.x), f16tof32(v.y)); }
+    constexpr float3 f16tof32(const ushort3& v) { return float3(f16tof32(v.x), f16tof32(v.y), f16tof32(v.z)); }
+    constexpr float4 f16tof32(const ushort4& v) { return float4(f16tof32(v.x), f16tof32(v.y), f16tof32(v.z), f16tof32(v.w)); }
+
+    constexpr uint32_t f32tof16_pack(const float2& v) { return static_cast<uint32_t>(f32tof16(v.x)) | (static_cast<uint32_t>(f32tof16(v.y)) << 16u); }
+    constexpr uint64_t f32tof16_pack(const float4& v) { return static_cast<uint64_t>(f32tof16(v.x)) | (static_cast<uint64_t>(f32tof16(v.y)) << 16ull) | (static_cast<uint64_t>(f32tof16(v.y)) << 32ull) | (static_cast<uint64_t>(f32tof16(v.y)) << 48ull); }
+    constexpr float2 f16tof32_upack(uint32_t v) { return float2(f16tof32(v & 0xFFFFu), f16tof32((v >> 16u) & 0xFFFFu)); }
+    constexpr float4 f16tof32_upack(uint64_t v) { return float4(f16tof32(v & 0xFFFFu), f16tof32((v >> 16u) & 0xFFFFu), f16tof32((v >> 32u) & 0xFFFFu), f16tof32((v >> 48u) & 0xFFFFu)); }
 
     template<typename T> vector<T,2> sin(const vector<T,2>& v) { return vector<T,2>(sin(v.x), sin(v.y)); }
     template<typename T> vector<T,3> sin(const vector<T,3>& v) { return vector<T,3>(sin(v.x), sin(v.y), sin(v.z)); }
     template<typename T> vector<T,4> sin(const vector<T,4>& v) { return vector<T,4>(sin(v.x), sin(v.y), sin(v.z), sin(v.w)); }
 
-    template<typename T> vector<T,2> cos(const vector<T, 2>& v) { return vector<T,2>(cos(v.x), cos(v.y)); }
-    template<typename T> vector<T,3> cos(const vector<T, 3>& v) { return vector<T,3>(cos(v.x), cos(v.y), cos(v.z)); }
-    template<typename T> vector<T,4> cos(const vector<T, 4>& v) { return vector<T,3>(cos(v.x), cos(v.y), cos(v.z), cos(v.w)); }
+    template<typename T> vector<T,2> cos(const vector<T,2>& v) { return vector<T,2>(cos(v.x), cos(v.y)); }
+    template<typename T> vector<T,3> cos(const vector<T,3>& v) { return vector<T,3>(cos(v.x), cos(v.y), cos(v.z)); }
+    template<typename T> vector<T,4> cos(const vector<T,4>& v) { return vector<T,3>(cos(v.x), cos(v.y), cos(v.z), cos(v.w)); }
 
     template<typename T> vector<T,2> tan(const vector<T,2>& v) { return vector<T,2>(tan(v.x), tan(v.y)); }
     template<typename T> vector<T,3> tan(const vector<T,3>& v) { return vector<T,3>(tan(v.x), tan(v.y), tan(v.z)); }
@@ -2056,12 +2080,16 @@ namespace PK::math
     template<typename T> vector<T,3> atanh(const vector<T,3>& v) { return vector<T,3>(atanh(v.x), atanh(v.y), atanh(v.z)); }
     template<typename T> vector<T,4> atanh(const vector<T,4>& v) { return vector<T,4>(atanh(v.x), atanh(v.y), atanh(v.z), atanh(v.w)); }
 
+    template<typename T> vector<T,2> cot(const vector<T,2>& v) { return vector<T,2>(cot(v.x), cot(v.y)); }
+    template<typename T> vector<T,3> cot(const vector<T,3>& v) { return vector<T,3>(cot(v.x), cot(v.y), cot(v.z)); }
+    template<typename T> vector<T,4> cot(const vector<T,4>& v) { return vector<T,4>(cot(v.x), cot(v.y), cot(v.z), cot(v.w)); }
+
     template<typename T> vector<T,2> pow(const vector<T,2>& v, const vector<T,2>& p) { return vector<T,2>(pow(v.x, p.x), pow(v.y, p.y)); }
     template<typename T> vector<T,3> pow(const vector<T,3>& v, const vector<T,3>& p) { return vector<T,3>(pow(v.x, p.x), pow(v.y, p.y), pow(v.z, p.z)); }
     template<typename T> vector<T,3> pow(const vector<T,4>& v, const vector<T,4>& p) { return vector<T,4>(pow(v.x, p.x), pow(v.y, p.y), pow(v.z, p.z), pow(v.w, p.w)); }
-    template<typename T> vector<T,2> pow(const vector<T, 2>& v, T p) { return vector<T,2>(pow(v.x, p), pow(v.y, p)); }
-    template<typename T> vector<T,3> pow(const vector<T, 3>& v, T p) { return vector<T,3>(pow(v.x, p), pow(v.y, p), pow(v.z, p)); }
-    template<typename T> vector<T,4> pow(const vector<T, 4>& v, T p) { return vector<T,4>(pow(v.x, p), pow(v.y, p), pow(v.z, p), pow(v.w, p)); }
+    template<typename T> vector<T,2> pow(const vector<T,2>& v, T p) { return vector<T,2>(pow(v.x, p), pow(v.y, p)); }
+    template<typename T> vector<T,3> pow(const vector<T,3>& v, T p) { return vector<T,3>(pow(v.x, p), pow(v.y, p), pow(v.z, p)); }
+    template<typename T> vector<T,4> pow(const vector<T,4>& v, T p) { return vector<T,4>(pow(v.x, p), pow(v.y, p), pow(v.z, p), pow(v.w, p)); }
 
     template<typename T> vector<T,2> exp(const vector<T,2>& v) { return vector<T,2>(exp(v.x), exp(v.y)); }
     template<typename T> vector<T,3> exp(const vector<T,3>& v) { return vector<T,3>(exp(v.x), exp(v.y), exp(v.z)); }
@@ -2110,31 +2138,38 @@ namespace PK::math
     template<typename T> vector<T,2> mod(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(mod(a.x, b.x), mod(a.y, b.y)); }
     template<typename T> vector<T,3> mod(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(mod(a.x, b.x), mod(a.y, b.y), mod(a.z, b.z)); }
     template<typename T> vector<T,4> mod(const vector<T,4>& a, const vector<T,4>& b) { return vector<T,4>(mod(a.x, b.x), mod(a.y, b.y), mod(a.z, b.z), mod(a.w, b.w)); }
-    template<typename T> vector<T,2> mod(const vector<T, 2>& a, T b) { return vector<T, 2>(mod(a.x, b), mod(a.y, b)); }
-    template<typename T> vector<T,3> mod(const vector<T, 3>& a, T b) { return vector<T, 3>(mod(a.x, b), mod(a.y, b), mod(a.z, b)); }
-    template<typename T> vector<T,4> mod(const vector<T, 4>& a, T b) { return vector<T, 4>(mod(a.x, b), mod(a.y, b), mod(a.z, b), mod(a.w, b)); }
+    template<typename T> vector<T,2> mod(const vector<T,2>& a, T b) { return vector<T,2>(mod(a.x, b), mod(a.y, b)); }
+    template<typename T> vector<T,3> mod(const vector<T,3>& a, T b) { return vector<T,3>(mod(a.x, b), mod(a.y, b), mod(a.z, b)); }
+    template<typename T> vector<T,4> mod(const vector<T,4>& a, T b) { return vector<T,4>(mod(a.x, b), mod(a.y, b), mod(a.z, b), mod(a.w, b)); }
 
     template<typename T> vector<T,2> fma(const vector<T,2>& a, const vector<T,2>& b, const vector<T,2>& c) { return vector<T,2>(fma(a.x, b.x, c.x), fma(a.y, b.y, c.y)); }
     template<typename T> vector<T,3> fma(const vector<T,3>& a, const vector<T,3>& b, const vector<T,3>& c) { return vector<T,3>(fma(a.x, b.x, c.x), fma(a.y, b.y, c.y), fma(a.z, b.z, c.z)); }
     template<typename T> vector<T,4> fma(const vector<T,4>& a, const vector<T,4>& b, const vector<T,4>& c) { return vector<T,4>(fma(a.x, b.x, c.x), fma(a.y, b.y, c.y), fma(a.z, b.z, c.z), fma(a.w, b.w, c.w)); }
 
+    template<typename T> vector<T,2> align(const vector<T,2>& v, T a) { return vector<T,2>(align(v.x, a), align(v.y, a)); }
+    template<typename T> vector<T,3> align(const vector<T,3>& v, T a) { return vector<T,3>(align(v.x, a), align(v.y, a), align(v.z, a)); }
+    template<typename T> vector<T,4> align(const vector<T,4>& v, T a) { return vector<T,4>(align(v.x, a), align(v.y, a), align(v.z, a), align(v.w, a)); }
+
     template<typename T> vector<T,2> min(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(min(a.x, b.x), min(a.y, b.y)); }
     template<typename T> vector<T,3> min(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)); }
     template<typename T> vector<T,4> min(const vector<T,4>& a, const vector<T,4>& b) { return vector<T,4>(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w)); }
-    template<typename T> vector<T,2> min(const vector<T,2>& a, T b) { return vector<T, 2>(min(a.x, b), min(a.y, b)); }
-    template<typename T> vector<T,3> min(const vector<T,3>& a, T b) { return vector<T, 3>(min(a.x, b), min(a.y, b), min(a.z, b)); }
-    template<typename T> vector<T,4> min(const vector<T,4>& a, T b) { return vector<T, 4>(min(a.x, b), min(a.y, b), min(a.z, b), min(a.w, b)); }
+    template<typename T> vector<T,2> min(const vector<T,2>& a, T b) { return vector<T,2>(min(a.x, b), min(a.y, b)); }
+    template<typename T> vector<T,3> min(const vector<T,3>& a, T b) { return vector<T,3>(min(a.x, b), min(a.y, b), min(a.z, b)); }
+    template<typename T> vector<T,4> min(const vector<T,4>& a, T b) { return vector<T,4>(min(a.x, b), min(a.y, b), min(a.z, b), min(a.w, b)); }
     template<typename T> T min(T a, T b, T c) { return min(min(a, b), c); }
     template<typename T> T min(T a, T b, T c, T d) { return min(min(min(a, b), c), d); }
 
     template<typename T> vector<T,2> max(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(max(a.x, b.x), max(a.y, b.y)); }
     template<typename T> vector<T,3> max(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)); }
     template<typename T> vector<T,4> max(const vector<T,4>& a, const vector<T,4>& b) { return vector<T,4>(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w)); }
-    template<typename T> vector<T,2> max(const vector<T,2>& a, T b) { return vector<T, 2>(max(a.x, b), max(a.y, b)); }
-    template<typename T> vector<T,3> max(const vector<T,3>& a, T b) { return vector<T, 3>(max(a.x, b), max(a.y, b), max(a.z, b)); }
-    template<typename T> vector<T,4> max(const vector<T,4>& a, T b) { return vector<T, 4>(max(a.x, b), max(a.y, b), max(a.z, b), max(a.w, b)); }
+    template<typename T> vector<T,2> max(const vector<T,2>& a, T b) { return vector<T,2>(max(a.x, b), max(a.y, b)); }
+    template<typename T> vector<T,3> max(const vector<T,3>& a, T b) { return vector<T,3>(max(a.x, b), max(a.y, b), max(a.z, b)); }
+    template<typename T> vector<T,4> max(const vector<T,4>& a, T b) { return vector<T,4>(max(a.x, b), max(a.y, b), max(a.z, b), max(a.w, b)); }
     template<typename T> T max(T a, T b, T c) { return max(max(a, b), c); }
     template<typename T> T max(T a, T b, T c, T d) { return max(max(max(a, b), c), d); }
+
+    template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, const vector<T,N>& mi, const vector<T,N>& ma) { return max(min(v, ma), mi); }
+    template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, T mi, T ma) { return max(min(v, ma), mi); }
 
     template<typename T> T cmin(const vector<T,2>& v) { return min(v.x, v.y); }
     template<typename T> T cmin(const vector<T,3>& v) { return min(min(v.x, v.y), v.z); }
@@ -2144,8 +2179,9 @@ namespace PK::math
     template<typename T> T cmax(const vector<T,3>& v) { return max(max(v.x, v.y), v.z); }
     template<typename T> T cmax(const vector<T,4>& v) { return max(max(max(v.x, v.y), v.z), v.w); }
 
-    template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, const vector<T,N>& mi, const vector<T,N>& ma) { return max(min(v, ma), mi); }
-    template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, T mi, T ma) { return max(min(v, ma), mi); }
+    template<typename T> constexpr T csum(const vector<T, 2>& v) { return v.x + v.y; }
+    template<typename T> constexpr T csum(const vector<T, 3>& v) { return v.x + v.y + v.z; }
+    template<typename T> constexpr T csum(const vector<T, 4>& v) { return v.x + v.y + v.z + v.w; }
 
     template<typename T> vector<T,2> lerp(const vector<T,2>& a, const vector<T,2>& b, const vector<T,2>& i) { return vector<T,2>(lerp(a.x, b.x, i.x), lerp(a.y, b.y, i.y)); }
     template<typename T> vector<T,3> lerp(const vector<T,3>& a, const vector<T,3>& b, const vector<T,3>& i) { return vector<T,3>(lerp(a.x, b.x, i.x), lerp(a.y, b.y, i.y), lerp(a.z, b.z, i.z)); }
@@ -2154,9 +2190,9 @@ namespace PK::math
     template<typename T> vector<T,3> lerp(const vector<T,3>& a, const vector<T,3>& b, T i) { return vector<T,3>(lerp(a.x, b.x, i), lerp(a.y, b.y, i), lerp(a.z, b.z, i)); }
     template<typename T> vector<T,4> lerp(const vector<T,4>& a, const vector<T,4>& b, T i) { return vector<T,4>(lerp(a.x, b.x, i), lerp(a.y, b.y, i), lerp(a.z, b.z, i), lerp(a.w, b.w, i)); }
 
-    template<typename T> vector<T,2> sign(const vector<T,2>& v) { return vector<T,2>(sign(v.x), sign(v.y)); }
-    template<typename T> vector<T,3> sign(const vector<T,3>& v) { return vector<T,3>(sign(v.x), sign(v.y), sign(v.z)); }
-    template<typename T> vector<T,4> sign(const vector<T,4>& v) { return vector<T,4>(sign(v.x), sign(v.y), sign(v.z), sign(v.w)); }
+    template<typename T> constexpr vector<T,2> sign(const vector<T,2>& v) { return vector<T,2>(sign(v.x), sign(v.y)); }
+    template<typename T> constexpr vector<T,3> sign(const vector<T,3>& v) { return vector<T,3>(sign(v.x), sign(v.y), sign(v.z)); }
+    template<typename T> constexpr vector<T,4> sign(const vector<T,4>& v) { return vector<T,4>(sign(v.x), sign(v.y), sign(v.z), sign(v.w)); }
 
     template<typename T> vector<T,2> smoothstep(const vector<T,2>& a, const vector<T,2>& b, const vector<T,2>& i) { return vector<T,2>(smoothstep(a.x, b.x, i.x), smoothstep(a.y, b.y, i.y)); }
     template<typename T> vector<T,3> smoothstep(const vector<T,3>& a, const vector<T,3>& b, const vector<T,3>& i) { return vector<T,3>(smoothstep(a.x, b.x, i.x), smoothstep(a.y, b.y, i.y), smoothstep(a.z, b.z, i.z)); }
@@ -2165,20 +2201,15 @@ namespace PK::math
     template<typename T> vector<T,3> smoothstep(T a, T b, const vector<T,3>& i) { return vector<T,3>(smoothstep(a, b, i.x), smoothstep(a, b, i.y), smoothstep(a, b, i.z)); }
     template<typename T> vector<T,4> smoothstep(T a, T b, const vector<T,4>& i) { return vector<T,4>(smoothstep(a, b, i.x), smoothstep(a, b, i.y), smoothstep(a, b, i.z), smoothstep(a, b, i.w)); }
 
-    template<typename T> vector<T,2> step(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(step(a.x, b.x), step(a.y, b.y)); }
-    template<typename T> vector<T,3> step(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(step(a.x, b.x), step(a.y, b.y), step(a.z, b.z)); }
-    template<typename T> vector<T,4> step(const vector<T,4>& a, const vector<T,4>& b) { return vector<T,4>(step(a.x, b.x), step(a.y, b.y), step(a.z, b.z), step(a.w, b.w)); }
-    template<typename T> vector<T,2> step(T a, const vector<T,2>& b) { return vector<T,2>(step(a, b.x), step(a, b.y)); }
-    template<typename T> vector<T,3> step(T a, const vector<T,3>& b) { return vector<T,3>(step(a, b.x), step(a, b.y), step(a, b.z)); }
-    template<typename T> vector<T,4> step(T a, const vector<T,4>& b) { return vector<T,4>(step(a, b.x), step(a, b.y), step(a, b.z), step(a, b.w)); }
-
-    constexpr inline ushort2 f32tof16(const float2& v) { return ushort2(f32tof16(v.x), f32tof16(v.y)); }
-    constexpr inline ushort3 f32tof16(const float3& v) { return ushort3(f32tof16(v.x), f32tof16(v.y), f32tof16(v.z)); }
-    constexpr inline ushort4 f32tof16(const float4& v) { return ushort4(f32tof16(v.x), f32tof16(v.y), f32tof16(v.z), f32tof16(v.w)); }
-
-    template<typename T> T dot(const vector<T,2>& a, const vector<T,2>& b) { return a.x * b.x + a.y * b.y; }
-    template<typename T> T dot(const vector<T,3>& a, const vector<T,3>& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-    template<typename T> T dot(const vector<T,4>& a, const vector<T,4>& b) { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }
+    template<typename T> constexpr vector<T,2> step(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(step(a.x, b.x), step(a.y, b.y)); }
+    template<typename T> constexpr vector<T,3> step(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(step(a.x, b.x), step(a.y, b.y), step(a.z, b.z)); }
+    template<typename T> constexpr vector<T,4> step(const vector<T,4>& a, const vector<T,4>& b) { return vector<T,4>(step(a.x, b.x), step(a.y, b.y), step(a.z, b.z), step(a.w, b.w)); }
+    template<typename T> constexpr vector<T,2> step(T a, const vector<T,2>& b) { return vector<T,2>(step(a, b.x), step(a, b.y)); }
+    template<typename T> constexpr vector<T,3> step(T a, const vector<T,3>& b) { return vector<T,3>(step(a, b.x), step(a, b.y), step(a, b.z)); }
+    template<typename T> constexpr vector<T,4> step(T a, const vector<T,4>& b) { return vector<T,4>(step(a, b.x), step(a, b.y), step(a, b.z), step(a, b.w)); }
+    template<typename T> constexpr T dot(const vector<T,2>& a, const vector<T,2>& b) { return a.x * b.x + a.y * b.y; }
+    template<typename T> constexpr T dot(const vector<T,3>& a, const vector<T,3>& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+    template<typename T> constexpr T dot(const vector<T,4>& a, const vector<T,4>& b) { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }
 
     template<typename T, int N> T length(const vector<T,N>& v) { return sqrt(dot(v,v)); }
     template<typename T, int N> T distance(const vector<T, N>& a, const vector<T, N>& b) { return length(a - b); }
@@ -2196,19 +2227,19 @@ namespace PK::math
         return (k >= static_cast<T>(0)) ? (eta * i - (eta * dt + sqrt(k)) * n) : vector<T,N>(0);
     }
 
-    template<typename T> matrix<T,2,2> transpose(const matrix<T,2,2>& m) { return matrix<T,2,2>(m[0][0], m[1][0], m[0][1], m[1][1]); }
-    template<typename T> matrix<T,3,2> transpose(const matrix<T,2,3>& m) { return matrix<T,3,2>(m[0][0], m[1][0], m[0][1], m[1][1], m[0][2], m[1][2]); }
-    template<typename T> matrix<T,4,2> transpose(const matrix<T,2,4>& m) { return matrix<T,4,2>(m[0][0], m[1][0], m[0][1], m[1][1], m[0][2], m[1][2], m[0][3], m[1][3]); }
-    template<typename T> matrix<T,2,3> transpose(const matrix<T,3,2>& m) { return matrix<T,2,3>(m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1]); }
-    template<typename T> matrix<T,3,3> transpose(const matrix<T,3,3>& m) { return matrix<T,3,3>(m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1], m[0][2], m[1][2], m[2][2]); }
-    template<typename T> matrix<T,4,3> transpose(const matrix<T,3,4>& m) { return matrix<T,3,4>(m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1], m[0][2], m[1][2], m[2][2], m[0][3], m[1][3], m[2][3]); }
-    template<typename T> matrix<T,2,4> transpose(const matrix<T,4,2>& m) { return matrix<T,2,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1]); }
-    template<typename T> matrix<T,3,4> transpose(const matrix<T,4,3>& m) { return matrix<T,3,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2]); }
-    template<typename T> matrix<T,4,4> transpose(const matrix<T,4,4>& m) { return matrix<T,4,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2], m[0][3], m[1][3], m[2][3], m[3][3]); }
+    template<typename T> constexpr matrix<T,2,2> transpose(const matrix<T,2,2>& m) { return matrix<T,2,2>(m[0][0], m[1][0], m[0][1], m[1][1]); }
+    template<typename T> constexpr matrix<T,3,2> transpose(const matrix<T,2,3>& m) { return matrix<T,3,2>(m[0][0], m[1][0], m[0][1], m[1][1], m[0][2], m[1][2]); }
+    template<typename T> constexpr matrix<T,4,2> transpose(const matrix<T,2,4>& m) { return matrix<T,4,2>(m[0][0], m[1][0], m[0][1], m[1][1], m[0][2], m[1][2], m[0][3], m[1][3]); }
+    template<typename T> constexpr matrix<T,2,3> transpose(const matrix<T,3,2>& m) { return matrix<T,2,3>(m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1]); }
+    template<typename T> constexpr matrix<T,3,3> transpose(const matrix<T,3,3>& m) { return matrix<T,3,3>(m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1], m[0][2], m[1][2], m[2][2]); }
+    template<typename T> constexpr matrix<T,4,3> transpose(const matrix<T,3,4>& m) { return matrix<T,3,4>(m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1], m[0][2], m[1][2], m[2][2], m[0][3], m[1][3], m[2][3]); }
+    template<typename T> constexpr matrix<T,2,4> transpose(const matrix<T,4,2>& m) { return matrix<T,2,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1]); }
+    template<typename T> constexpr matrix<T,3,4> transpose(const matrix<T,4,3>& m) { return matrix<T,3,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2]); }
+    template<typename T> constexpr matrix<T,4,4> transpose(const matrix<T,4,4>& m) { return matrix<T,4,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2], m[0][3], m[1][3], m[2][3], m[3][3]); }
 
-    template<typename T> T determinant(const matrix<T,2,2>& m) { return m[0][0] * m[1][1] - m[1][0] * m[0][1]; }
-    template<typename T> T determinant(const matrix<T,3,3>& m) { return m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) - m[1][0] * (m[0][1] * m[2][2] - m[2][1] * m[0][2]) + m[2][0] * (m[0][1] * m[1][2] - m[1][1] * m[0][2]); }
-    template<typename T> T determinant(const matrix<T,4,4>& m)
+    template<typename T> constexpr T determinant(const matrix<T,2,2>& m) { return m[0][0] * m[1][1] - m[1][0] * m[0][1]; }
+    template<typename T> constexpr T determinant(const matrix<T,3,3>& m) { return m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) - m[1][0] * (m[0][1] * m[2][2] - m[2][1] * m[0][2]) + m[2][0] * (m[0][1] * m[1][2] - m[1][1] * m[0][2]); }
+    template<typename T> constexpr T determinant(const matrix<T,4,4>& m)
     { 
         const auto f00 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
         const auto f01 = m[2][1] * m[3][3] - m[3][1] * m[2][3];
@@ -2339,6 +2370,7 @@ namespace PK::math
     namespace quat
     {
         template<typename T> vector<T,4> conjugate(const vector<T,4>& q) { return vector<T,4>(-q.x,-q.y,-q.z,q.w); }
+
         template<typename T> vector<T,4> inverse(const vector<T,4>& q) { return rcp(dot(q,q)) * q * static_cast<T>(-1); }
        
         template<typename T> vector<T,4> mul(const vector<T,4>& q, const vector<T,4>& p)
@@ -2360,6 +2392,7 @@ namespace PK::math
         template<typename T> vector<T,3> mul(const vector<T,3>& v, const vector<T,4>& q) { return mul(inverse(q), v); }
 
         template<typename T> vector<T,4> nlerp(const vector<T,4>& a, const vector<T,4>& b, T t) { return normalize(lerp(a,b,t)); }
+
         template<typename T> vector<T,4> slerp(const vector<T,4>& x, const vector<T,4>& y, T a) 
         {
             vector<T,4> z = y;
@@ -2375,7 +2408,7 @@ namespace PK::math
             }
 
             // Perform a linear interpolation when cosTheta is close to 1 to avoid side effect of sin(angle) becoming a zero denominator
-            if (cosTheta > static_cast<T>(1) - static_cast<T>(1e-6f))
+            if (cosTheta > static_cast<T>(1) - static_cast<T>(1e-4f))
             {
                 // Linear interpolation
                 return vector<T,4>(
@@ -2457,17 +2490,12 @@ namespace PK::math
 
         template<typename T> vector<T,3> toEuler(const vector<T,4>& q) { return vector<T,3>(pitch(q), yaw(q), roll(q)); }
 
-        template<typename T> vector<T,4> tangentBasis(const vector<T,3>& t, const vector<T,3>& b)
+        template<typename T> vector<T,4> tangentBasis(const vector<T,3>& f, const vector<T,3>& b)
         {
-            auto tn = normalize(t - b * dot(t, b) / dot(b, b));
-            auto n = cross(b, tn);
-            vector<T,4> ret;
-            ret.w = sqrt(1.0f + n.x + b.y + tn.z) * 0.5f;
-            float w4_recip = 1.0f / (4.0f * ret.w);
-            ret.x = (b.z - tn.y) * w4_recip;
-            ret.y = (tn.x - n.z) * w4_recip;
-            ret.z = (n.y - b.x) * w4_recip;
-            return ret;
+            const auto t = normalize(f - b * dot(f, b) / dot(b, b));
+            const auto n = cross(b, t);
+            const auto w = sqrt(1.0f + n.x + b.y + t.z) * 0.5f;
+            return vector<T,4>((b.z - t.y) / (4.0f * w), (t.x - n.z) / (4.0f * w), (n.y - b.x) / (4.0f * w), w);
         }
 
         template<typename T> vector<T,4> lookAt(const vector<T,3>& v) { return tangentBasis(v, vector<T,3>(static_cast<T>(0),static_cast<T>(1), static_cast<T>(0))); }

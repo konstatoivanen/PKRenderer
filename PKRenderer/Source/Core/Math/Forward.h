@@ -39,6 +39,21 @@ namespace PK
     {
         template<typename T, int N> struct vector {};
         template<typename T, int C, int R> struct matrix {};
+    
+        #if defined(PK_MATH_SIMD_SSE2)
+        typedef __m128	simd_f32vec4;
+        typedef __m128i	simd_i32vec4;
+        typedef __m128i	simd_u32vec4;
+        typedef __m128d	simd_f64vec2;
+        typedef __m128i	simd_i64vec2;
+        typedef __m128i	simd_u64vec2;
+        #endif
+        
+        #if defined(PK_MATH_SIMD_NEON)
+        typedef float32x4_t	simd_f32vec4;
+        typedef int32x4_t	simd_i32vec4;
+        typedef uint32x4_t	simd_u32vec4;
+        #endif
     }
 
     typedef uint16_t ushort;

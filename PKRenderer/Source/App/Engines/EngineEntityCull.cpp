@@ -188,7 +188,7 @@ namespace PK::App
                         {
                             auto minDistLocal = Math::PlaneMinDistanceToAABB(cullingCascadePlanes[j].near, entityBounds);
                             cullingMinDepth = math::min(cullingMinDepth, minDistLocal);
-                            frameArena->Emplace<CulledEntityInfo>({ entityId, Math::PackHalf(minDistLocal), (uint16_t)j });
+                            frameArena->Emplace<CulledEntityInfo>({ entityId, math::f32tof16(minDistLocal), (uint16_t)j });
                         }
                     }
                 }

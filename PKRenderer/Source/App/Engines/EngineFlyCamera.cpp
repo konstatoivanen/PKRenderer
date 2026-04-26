@@ -65,8 +65,8 @@ namespace PK::App
                 {
                     auto fov0 = projection->fieldOfView;
                     auto fov1 = projection->fieldOfView + fovDelta;
-                    auto fd0 = Math::Cot(fov0 * PK_FLOAT_DEG2RAD * 0.5f);
-                    auto fd1 = Math::Cot(fov1 * PK_FLOAT_DEG2RAD * 0.5f);
+                    auto fd0 = math::cot(fov0 * PK_FLOAT_DEG2RAD * 0.5f);
+                    auto fd1 = math::cot(fov1 * PK_FLOAT_DEG2RAD * 0.5f);
                     auto zoomOffset = math::quat::mul(targetRotation, float3(0, 0, fd0 - fd1));
 
                     camera->targetPosition += zoomOffset;

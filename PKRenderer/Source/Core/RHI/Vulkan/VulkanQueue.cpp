@@ -40,7 +40,7 @@ namespace PK
                 continue;
             }
 
-            auto value = Math::CountBits(properties.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
+            auto value = math::bitcount(properties.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
 
             if (value > heuristic)
             {
@@ -60,7 +60,7 @@ namespace PK
                 continue;
             }
 
-            auto value = Math::CountBits(properties.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
+            auto value = math::bitcount(properties.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
 
             if (preferSeparate)
             {

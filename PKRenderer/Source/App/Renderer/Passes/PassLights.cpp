@@ -72,17 +72,17 @@ namespace PK::App
         }
 
         PackedLight packed{};
-        const auto radiusfp16 = (uint32_t)Math::PackHalf(light.radius);
+        const auto radiusfp16 = (uint32_t)math::f32tof16(light.radius);
         const auto typeAndMaskIndex = (uint32_t)light.light_type | (uint32_t)(light.index_mask << 4u);
-        packed.packed0.xyz = Math::FloatAsUint(light.position);
+        packed.packed0.xyz = math::asuint(light.position);
         packed.packed0.w = (radiusfp16 & 0xFFFFu) | (typeAndMaskIndex << 16u);
-        packed.packed1.x = Math::PackHalfToUint(light.color.xy);
-        packed.packed1.y = Math::PackHalfToUint({ light.color.z, light.source_radius });
-        packed.packed1.z = Math::PackHalfToUint(spotAngles);
+        packed.packed1.x = math::f32tof16_pack(light.color.xy);
+        packed.packed1.y = math::f32tof16_pack({ light.color.z, light.source_radius });
+        packed.packed1.z = math::f32tof16_pack(spotAngles);
         packed.packed1.w = light.index_shadow;// | (light.index_matrix << 16u);
-        packed.packed2.x = Math::PackHalfToUint(light.rotation.xy);
-        packed.packed2.y = Math::PackHalfToUint(light.rotation.zw);
-        packed.packed2.z = Math::PackHalfToUint({ light.near_clip, light.exponent});
+        packed.packed2.x = math::f32tof16_pack(light.rotation.xy);
+        packed.packed2.y = math::f32tof16_pack(light.rotation.zw);
+        packed.packed2.z = math::f32tof16_pack({ light.near_clip, light.exponent});
         packed.packed2.w = 0u; // unused atm.
         return packed;
     }

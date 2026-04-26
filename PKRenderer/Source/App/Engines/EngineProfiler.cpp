@@ -76,12 +76,12 @@ namespace PK::App
         gui->GUIDrawWireRect(COLOR_FG, rectWindow, 1);
         auto area_text = short4(rectWindow.xy + short2(padding * 2, padding + 2), 0, 16);
         area_text = gui->GUIDrawText(COLOR_FPS_AVG, area_text, textFramerateCur.c_str(), FontStyle().SetSize(16.0f).SetClip(false));
-        area_text = gui->GUIDrawText(COLOR_FPS_AVG, short4(Math::Align(area_text.x + area_text.z + padding * 4, (uint32_t)fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateAvg.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_FPS_MIN, short4(Math::Align(area_text.x + area_text.z + padding * 4, (uint32_t)fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMin.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_FPS_MAX, short4(Math::Align(area_text.x + area_text.z + padding * 4, (uint32_t)fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMax.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_VRAM,    short4(Math::Align(area_text.x + area_text.z + padding * 4, (uint32_t)fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryVram.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_ERAM,    short4(Math::Align(area_text.x + area_text.z + padding * 4, (uint32_t)fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryEram.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_IRAM,    short4(Math::Align(area_text.x + area_text.z + padding * 4, (uint32_t)fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryIram.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->GUIDrawText(COLOR_FPS_AVG, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateAvg.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->GUIDrawText(COLOR_FPS_MIN, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMin.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->GUIDrawText(COLOR_FPS_MAX, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMax.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->GUIDrawText(COLOR_VRAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryVram.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->GUIDrawText(COLOR_ERAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryEram.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->GUIDrawText(COLOR_IRAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryIram.c_str(), FontStyle().SetSize(fontSize));
 
         for (auto i = 0ull; i < sampleCountMin; ++i)
         {

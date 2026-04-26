@@ -201,7 +201,7 @@ namespace PK
             m_count = count;
         }
 
-        FixedList(initializer_list<T> elements) : FixedList(elements.begin(), (size_t)(elements.end() - elements.begin()))
+        FixedList(initializer_list<T> elements) : FixedList(elements.begin(), elements.size())
         {
         }
 

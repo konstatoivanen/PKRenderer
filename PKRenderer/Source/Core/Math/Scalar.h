@@ -15,15 +15,48 @@ namespace PK::math
     inline bool nearEqual(float x, float y, float e) { return ::fabsf(x - y) < e; }
     inline bool nearEqual(double x, double y, double e) { return ::fabs(x - y) < e; }
 
-    inline float asfloat(uint32_t v) { union { uint32_t in; float out; } u; u.in = v; return u.out; }
-    inline float asfloat(int32_t v) { union { uint32_t in; float out; } u; u.in = v; return u.out; }
-    inline double asdouble(uint64_t v) { union { uint64_t in; double out; } u; u.in = v; return u.out; }
-    inline double asdouble(int64_t v) { union { uint64_t in; double out; } u; u.in = v; return u.out; }
+    constexpr float asfloat(uint32_t v) { union { uint32_t in; float out; } u{v}; return u.out; }
+    constexpr float asfloat(int32_t v) { union { int32_t in; float out; } u{v}; return u.out; }
+    constexpr double asdouble(uint64_t v) { union { uint64_t in; double out; } u{v}; return u.out; }
+    constexpr double asdouble(int64_t v) { union { int64_t in; double out; } u{v}; return u.out; }
 
-    inline int32_t asint(float v) { union { float in; int32_t out; } u; u.in = v; return u.out; }
-    inline uint32_t asuint(float v) { union { float in; uint32_t out; } u; u.in = v; return u.out; }
-    inline int64_t asint(double v) { union { double in; int64_t out; } u; u.in = v; return u.out; }
-    inline uint64_t asuint(double v) { union { double in; uint64_t out; } u; u.in = v; return u.out; }
+    constexpr int32_t asint(float v) { union { float in; int32_t out; } u{v}; return u.out; }
+    constexpr uint32_t asuint(float v) { union { float in; uint32_t out; } u{v}; return u.out; }
+    constexpr int64_t asint(double v) { union { double in; int64_t out; } u{v}; return u.out; }
+    constexpr uint64_t asuint(double v) { union { double in; uint64_t out; } u{v}; return u.out; }
+
+     #if defined(__clang__)
+    inline uint32_t bitcount(uint32_t v) { return static_cast<uint32_t>(__builtin_popcount(v)); }
+    inline uint32_t bitcount(uint64_t v) { return static_cast<uint32_t>(__builtin_popcountll(v)); }
+    #else
+    inline uint32_t bitcount(uint32_t v) { return static_cast<uint32_t>(__popcnt(v)); }
+    inline uint32_t bitcount(uint64_t v) { return static_cast<uint32_t>(__popcnt64(v)); }
+    #endif
+
+    inline uint32_t bitcount(float v) { return bitcount(asuint(v)); }
+    inline uint32_t bitcount(double v) { return bitcount(asuint(v)); }
+    inline uint32_t bitcount(int32_t v) { return bitcount(static_cast<uint32_t>(v)); }
+    inline uint32_t bitcount(int64_t v) { return bitcount(static_cast<uint64_t>(v)); }
+    constexpr uint32_t bitcount(uint8_t v) { uint32_t n = v * 0x08040201u; return (((n >> 3u) & 0x11111111u) * 0x11111111u) >> 28u; }
+    constexpr uint32_t bitcount(uint16_t v) { v = v - ((v >> 1u) & 0x5555u); v = (v & 0x3333u) + ((v >> 2u) & 0x3333u); v = (v + (v >> 4u)) & 0x0F0Fu; return (v * 0x0101u) >> 8u; }
+
+    constexpr uint16_t f32tof16(float v)
+    {
+        // @TODO add support for intrinsics conversions where available.
+        const auto u0 = asuint(v);
+        const auto u1 = u0 & 0x7FFFF000u;
+        const auto u2 = (asuint(::fminf(asfloat(u1) * 1.92592994e-34f, 260042752.0f)) + 0x1000u) >> 13u;
+        return (u1 >= 0x7f800000u ? u1 > 0x7f800000u ? 0x7e00u : 0x7c00u : u2) | (u0 & ~0x7FFFF000u) >> 16u;
+    }
+
+    constexpr float f16tof32(uint16_t x)
+    {
+        uint32_t uf = (x & 0x7fffu) << 13u;
+        uint32_t e = uf & 0xf800000u;
+        uf += e == 0xf800000u ? 0x70000000u : 0x38000000u;
+        uf = e == 0 ? asuint(asfloat(uf + (1 << 23)) - 6.10351563e-05f) : uf;
+        return asfloat(uf | (x & 0x8000) << 16);
+    }
 
     inline float sin(float v) { return ::sinf(v); }
     inline double sin(double v) { return ::sin(v); }
@@ -64,6 +97,9 @@ namespace PK::math
     inline float atanh(float v) { return ::atanhf(v); }
     inline double atanh(double v) { return ::atanh(v); }
 
+    inline float cot(float v) { return cos(v) / sin(v); }
+    inline double cot(double v) { return cos(v) / sin(v); }
+
     inline float pow(float v, float p) { return ::powf(v,p); }
     inline double pow(double v, double p) { return ::pow(v,p); }
     
@@ -91,9 +127,19 @@ namespace PK::math
     
     inline float rsqrt(float v) { return 1.0f / ::sqrtf(v); }
     inline double rsqrt(double v) { return 1.0 / ::sqrt(v); }
+
+    constexpr float sign(float v) { return static_cast<float>((v > 0) - (v < 0)); }
+    constexpr double sign(double v) { return static_cast<double>((v > 0) - (v < 0)); }
+    constexpr int8_t sign(int8_t v) { return (v > 0) - (v < 0); }
+    constexpr int16_t sign(int16_t v) { return (v > 0) - (v < 0); }
+    constexpr int32_t sign(int32_t v) { return (v > 0) - (v < 0); }
+    constexpr int64_t sign(int64_t v) { return (v > 0ll) - (v < 0ll); }
+    constexpr long sign(long v) { return (v > 0l) - (v < 0l); }
     
     inline float abs(float v) { return ::fabsf(v); }
     inline double abs(double v) { return ::fabs(v); }
+    constexpr int8_t abs(int8_t v) { return v < 0 ? -v : v; }
+    constexpr int16_t abs(int16_t v) { return v < 0 ? -v : v; }
     inline int32_t abs(int32_t v) { return ::abs(v); }
     inline int64_t abs(int64_t v) { return ::llabs(v); }
     inline long abs(long v) { return ::labs(v); }
@@ -116,31 +162,42 @@ namespace PK::math
     inline float fma(float a, float b, float c) { return ::fmaf(a, b, c); }
     inline double fma(double a, double b, double c) { return ::fma(a, b, c); }
 
+    inline float align(float v, float a) { return ceil(v / a) * a; }
+    inline double align(double v, double a) { return ceil(v / a) * a; }
+    constexpr uint8_t align(uint8_t v, uint8_t a) { return ((v + a - 1u) / a) * a; }
+    constexpr uint16_t align(uint16_t v, uint16_t a) { return ((v + a - 1u) / a) * a; }
+    constexpr uint32_t align(uint32_t v, uint32_t a) { return ((v + a - 1u) / a) * a; }
+    constexpr uint64_t align(uint64_t v, uint64_t a) { return ((v + a - 1ull) / a) * a; }
+    constexpr int8_t align(int8_t v, int8_t a) { return ((v + a - 1) / a) * a; }
+    constexpr int16_t align(int16_t v, int16_t a) { return ((v + a - 1) / a) * a; }
+    constexpr int32_t align(int32_t v, int32_t a) { return ((v + a - 1) / a) * a; }
+    constexpr int64_t align(int64_t v, int64_t a) { return ((v + a - 1ll) / a) * a; }
+
     inline float min(float a, float b) { return ::fminf(a, b); }
     inline double min(double a, double b) { return ::fmin(a, b); }
-    inline int8_t min(int8_t a, int8_t b) { return a < b ? a : b; }
-    inline int16_t min(int16_t a, int16_t b) { return a < b ? a : b; }
-    inline int32_t min(int32_t a, int32_t b) { return a < b ? a : b; }
-    inline int64_t min(int64_t a, int64_t b) { return a < b ? a : b; }
-    inline uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
-    inline uint16_t min(uint16_t a, uint16_t b) { return a < b ? a : b; }
-    inline uint32_t min(uint32_t a, uint32_t b) { return a < b ? a : b; }
-    inline uint64_t min(uint64_t a, uint64_t b) { return a < b ? a : b; }
-    inline unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : b; }
-    inline long min(long a, long b) { return a < b ? a : b; }
+    constexpr int8_t min(int8_t a, int8_t b) { return a < b ? a : b; }
+    constexpr int16_t min(int16_t a, int16_t b) { return a < b ? a : b; }
+    constexpr int32_t min(int32_t a, int32_t b) { return a < b ? a : b; }
+    constexpr int64_t min(int64_t a, int64_t b) { return a < b ? a : b; }
+    constexpr uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
+    constexpr uint16_t min(uint16_t a, uint16_t b) { return a < b ? a : b; }
+    constexpr uint32_t min(uint32_t a, uint32_t b) { return a < b ? a : b; }
+    constexpr uint64_t min(uint64_t a, uint64_t b) { return a < b ? a : b; }
+    constexpr unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : b; }
+    constexpr long min(long a, long b) { return a < b ? a : b; }
 
     inline float max(float a, float b) { return ::fmaxf(a, b); }
     inline double max(double a, double b) { return ::fmax(a, b); }
-    inline int8_t max(int8_t a, int8_t b) { return a > b ? a : b; }
-    inline int16_t max(int16_t a, int16_t b) { return a > b ? a : b; }
-    inline int32_t max(int32_t a, int32_t b) { return a > b ? a : b; }
-    inline int64_t max(int64_t a, int64_t b) { return a > b ? a : b; }
-    inline uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
-    inline uint16_t max(uint16_t a, uint16_t b) { return a > b ? a : b; }
-    inline uint32_t max(uint32_t a, uint32_t b) { return a > b ? a : b; }
-    inline uint64_t max(uint64_t a, uint64_t b) { return a > b ? a : b; }
-    inline unsigned long max(unsigned long a, unsigned long b) { return a > b ? a : b; }
-    inline long max(long a, long b) { return a > b ? a : b; }
+    constexpr int8_t max(int8_t a, int8_t b) { return a > b ? a : b; }
+    constexpr int16_t max(int16_t a, int16_t b) { return a > b ? a : b; }
+    constexpr int32_t max(int32_t a, int32_t b) { return a > b ? a : b; }
+    constexpr int64_t max(int64_t a, int64_t b) { return a > b ? a : b; }
+    constexpr uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
+    constexpr uint16_t max(uint16_t a, uint16_t b) { return a > b ? a : b; }
+    constexpr uint32_t max(uint32_t a, uint32_t b) { return a > b ? a : b; }
+    constexpr uint64_t max(uint64_t a, uint64_t b) { return a > b ? a : b; }
+    constexpr unsigned long max(unsigned long a, unsigned long b) { return a > b ? a : b; }
+    constexpr long max(long a, long b) { return a > b ? a : b; }
 
     inline float clamp(float v, float mi, float ma) { return min(max(v, mi), ma); }
     inline double clamp(double v, double mi, double ma) { return min(max(v, mi), ma); }
@@ -160,47 +217,36 @@ namespace PK::math
 
     inline float lerp(float a, float b, float i) { return fmaf(i, b, (1.0f - i) * a); }
     inline double lerp(double a, double b, double i) { return fma(i, b, (1.0 - i) * a); }
-    inline int8_t lerp(int8_t a, int8_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
-    inline int16_t lerp(int16_t a, int16_t b, float i) { return (int16_t)(i * b + (1.0f - i) * a); }
-    inline int32_t lerp(int32_t a, int32_t b, float i) { return (int32_t)(i * b + (1.0f - i) * a); }
-    inline int64_t lerp(int64_t a, int64_t b, float i) { return (int64_t)(i * b + (1.0f - i) * a); }
-    inline uint8_t lerp(uint8_t a, uint8_t b, float i) { return (uint8_t)(i * b + (1.0f - i) * a); }
-    inline uint16_t lerp(uint16_t a, uint16_t b, float i) { return (uint16_t)(i * b + (1.0f - i) * a); }
-    inline uint32_t lerp(uint32_t a, uint32_t b, float i) { return (uint32_t)(i * b + (1.0f - i) * a); }
-    inline uint64_t lerp(uint64_t a, uint64_t b, float i) { return (uint64_t)(i * b + (1.0f - i) * a); }
-    inline int8_t lerp(int8_t a, int8_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
-    inline int16_t lerp(int16_t a, int16_t b, double i) { return (int16_t)(i * b + (1.0 - i) * a); }
-    inline int32_t lerp(int32_t a, int32_t b, double i) { return (int32_t)(i * b + (1.0 - i) * a); }
-    inline int64_t lerp(int64_t a, int64_t b, double i) { return (int64_t)(i * b + (1.0 - i) * a); }
-    inline uint8_t lerp(uint8_t a, uint8_t b, double i) { return (uint8_t)(i * b + (1.0 - i) * a); }
-    inline uint16_t lerp(uint16_t a, uint16_t b, double i) { return (uint16_t)(i * b + (1.0 - i) * a); }
-    inline uint32_t lerp(uint32_t a, uint32_t b, double i) { return (uint32_t)(i * b + (1.0 - i) * a); }
-    inline uint64_t lerp(uint64_t a, uint64_t b, double i) { return (uint64_t)(i * b + (1.0 - i) * a); }
-    inline float lerp(float a, float b, bool i) { return i ? b : a; }
-    inline double lerp(double a, double b, bool i) { return i ? b : a; }
-    inline int8_t lerp(int8_t a, int8_t b, bool i) { return i ? b : a; }
-    inline int16_t lerp(int16_t a, int16_t b, bool i) { return i ? b : a; }
-    inline int32_t lerp(int32_t a, int32_t b, bool i) { return i ? b : a; }
-    inline int64_t lerp(int64_t a, int64_t b, bool i) { return i ? b : a; }
-    inline uint8_t lerp(uint8_t a, uint8_t b, bool i) { return i ? b : a; }
-    inline uint16_t lerp(uint16_t a, uint16_t b, bool i) { return i ? b : a; }
-    inline uint32_t lerp(uint32_t a, uint32_t b, bool i) { return i ? b : a; }
-    inline uint64_t lerp(uint64_t a, uint64_t b, bool i) { return i ? b : a; }
-
-    inline float sign(float v) { return static_cast<float>((v > 0) - (v < 0)); }
-    inline double sign(double v) { return static_cast<double>((v > 0) - (v < 0)); }
-    inline int8_t sign(int8_t v) { return (v > 0) - (v < 0); }
-    inline int16_t sign(int16_t v) { return (v > 0) - (v < 0); }
-    inline int32_t sign(int32_t v) { return (v > 0) - (v < 0); }
-    inline int64_t sign(int64_t v) { return (v > 0ll) - (v < 0ll); }
-    inline long sign(long v) { return (v > 0l) - (v < 0l); }
+    constexpr int8_t lerp(int8_t a, int8_t b, float i) { return (int8_t)(i * b + (1.0f - i) * a); }
+    constexpr int16_t lerp(int16_t a, int16_t b, float i) { return (int16_t)(i * b + (1.0f - i) * a); }
+    constexpr int32_t lerp(int32_t a, int32_t b, float i) { return (int32_t)(i * b + (1.0f - i) * a); }
+    constexpr int64_t lerp(int64_t a, int64_t b, float i) { return (int64_t)(i * b + (1.0f - i) * a); }
+    constexpr uint8_t lerp(uint8_t a, uint8_t b, float i) { return (uint8_t)(i * b + (1.0f - i) * a); }
+    constexpr uint16_t lerp(uint16_t a, uint16_t b, float i) { return (uint16_t)(i * b + (1.0f - i) * a); }
+    constexpr uint32_t lerp(uint32_t a, uint32_t b, float i) { return (uint32_t)(i * b + (1.0f - i) * a); }
+    constexpr uint64_t lerp(uint64_t a, uint64_t b, float i) { return (uint64_t)(i * b + (1.0f - i) * a); }
+    constexpr int8_t lerp(int8_t a, int8_t b, double i) { return (int8_t)(i * b + (1.0 - i) * a); }
+    constexpr int16_t lerp(int16_t a, int16_t b, double i) { return (int16_t)(i * b + (1.0 - i) * a); }
+    constexpr int32_t lerp(int32_t a, int32_t b, double i) { return (int32_t)(i * b + (1.0 - i) * a); }
+    constexpr int64_t lerp(int64_t a, int64_t b, double i) { return (int64_t)(i * b + (1.0 - i) * a); }
+    constexpr uint8_t lerp(uint8_t a, uint8_t b, double i) { return (uint8_t)(i * b + (1.0 - i) * a); }
+    constexpr uint16_t lerp(uint16_t a, uint16_t b, double i) { return (uint16_t)(i * b + (1.0 - i) * a); }
+    constexpr uint32_t lerp(uint32_t a, uint32_t b, double i) { return (uint32_t)(i * b + (1.0 - i) * a); }
+    constexpr uint64_t lerp(uint64_t a, uint64_t b, double i) { return (uint64_t)(i * b + (1.0 - i) * a); }
+    constexpr float lerp(float a, float b, bool i) { return i ? b : a; }
+    constexpr double lerp(double a, double b, bool i) { return i ? b : a; }
+    constexpr int8_t lerp(int8_t a, int8_t b, bool i) { return i ? b : a; }
+    constexpr int16_t lerp(int16_t a, int16_t b, bool i) { return i ? b : a; }
+    constexpr int32_t lerp(int32_t a, int32_t b, bool i) { return i ? b : a; }
+    constexpr int64_t lerp(int64_t a, int64_t b, bool i) { return i ? b : a; }
+    constexpr uint8_t lerp(uint8_t a, uint8_t b, bool i) { return i ? b : a; }
+    constexpr uint16_t lerp(uint16_t a, uint16_t b, bool i) { return i ? b : a; }
+    constexpr uint32_t lerp(uint32_t a, uint32_t b, bool i) { return i ? b : a; }
+    constexpr uint64_t lerp(uint64_t a, uint64_t b, bool i) { return i ? b : a; }
 
     inline float smoothstep(float a, float b, float i) { auto t = saturate((i - a) / (b - a)); return t * t * (3.0f - 2.0f * t); }
     inline double smoothstep(double a, double b, double i) { auto t = saturate((i - a) / (b - a)); return t * t * (3.0 - 2.0 * t); }
 
-    inline float step(float a, float b) { return lerp(1.0f, 0.0f, b < a); }
-    inline double step(double a, double b) { return lerp(1.0, 0.0, b < a); }
-
-    uint16_t f32tof16(float v);
-    float f16tof32(uint16_t x);
+    constexpr float step(float a, float b) { return lerp(1.0f, 0.0f, b < a); }
+    constexpr double step(double a, double b) { return lerp(1.0, 0.0, b < a); }
 }

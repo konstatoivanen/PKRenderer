@@ -2431,9 +2431,6 @@
     <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Math\Scalar.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="ThirdParty\vulkan\Binaries\vulkan-1.lib" />

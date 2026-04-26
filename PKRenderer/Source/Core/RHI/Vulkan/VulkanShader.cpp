@@ -126,7 +126,7 @@ namespace PK
         const auto tableAlignment = deviceProperties.rayTracing.shaderGroupBaseAlignment;
 
         info.handleSize = handleSize;
-        info.handleSizeAligned = Math::Align(handleSize, handleAlignment);
+        info.handleSizeAligned = math::align(handleSize, handleAlignment);
         info.tableAlignment = tableAlignment;
         info.totalTableSize = 0u;
 
@@ -139,7 +139,7 @@ namespace PK
                 if (PK_RHI_SHADER_STAGE_RAYTRACING_GROUP[i] != currentGroup)
                 {
                     currentGroup = PK_RHI_SHADER_STAGE_RAYTRACING_GROUP[i];
-                    info.totalTableSize = Math::Align(info.totalTableSize, tableAlignment);
+                    info.totalTableSize = math::align(info.totalTableSize, (uint16_t)tableAlignment);
                     info.byteOffsets[(uint32_t)currentGroup] = info.totalTableSize;
                     info.byteStrides[(uint32_t)currentGroup] = info.handleSizeAligned;
                     info.offsets[(uint32_t)currentGroup] = (uint8_t)info.totalHandleCount;

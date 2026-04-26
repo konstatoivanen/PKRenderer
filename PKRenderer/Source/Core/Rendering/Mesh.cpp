@@ -35,7 +35,7 @@ namespace PK
 
         for (auto i = 0u; i < mesh->submeshCount; ++i)
         {
-            auto bounds = BoundingBox::MinMax(Math::ToFloat3(pSubmeshes[i].bbmin), Math::ToFloat3(pSubmeshes[i].bbmax));
+            auto bounds = BoundingBox::MinMax(float3(pSubmeshes[i].bbmin), float3(pSubmeshes[i].bbmax));
             submeshes[i] = { 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds };
             Math::BoundsEncapsulate(&m_fullRange.bounds, bounds);
         }

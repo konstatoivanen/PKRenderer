@@ -67,11 +67,6 @@ namespace PK::Math
         return (math::exp2(clipz / params.z) - params.y) / params.x;
     }
 
-    float Cot(float value)
-    {
-        return math::cos(value) / math::sin(value);
-    }
-
     float RandomFloat()
     {
         return (float)rand() / (float)RAND_MAX;
@@ -124,102 +119,10 @@ namespace PK::Math
         return float3(RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f));
     }
 
-    float3 ToFloat3(float* ptr)
-    { 
-        return Memory::BitCast<float, float3>(ptr);
-    }
-
-    ushort PackHalf(float v)
-    {
-        v = math::clamp(v, -65536.0f, 65536.0f);
-        v *= 1.925930e-34f;
-        int32_t i = *(int32_t*)&v;
-        uint32_t ui = (uint32_t)i;
-        return ((i >> 16) & (int)0xffff8000) | ((int)(ui >> 13));
-    }
-
-    ushort2 PackHalf(const float2& v)
-    {
-        return { PackHalf(v.x), PackHalf(v.y) };
-    }
-
-    ushort3 PackHalf(const float3& v)
-    {
-        return { PackHalf(v.x), PackHalf(v.y), PackHalf(v.z) };
-    }
-
-    ushort4 PackHalf(const float4& v)
-    {
-        return { PackHalf(v.x), PackHalf(v.y), PackHalf(v.z), PackHalf(v.w) };
-    }
-
-    uint PackHalfToUint(const float2& v)
-    {
-        auto p = PackHalf(v);
-        return (p.x & 0xFFFFu) | (p.y << 16u);
-    }
-
-    float UnPackHalf(ushort v)
-    {
-        int32_t iv = v;
-        int32_t i = (iv & 0x47fff) << 13;
-        return *(float*)&i * 5.192297e+33f;
-    }
-
-    float2 UnPackHalf(const ushort2& v)
-    {
-        return { UnPackHalf(v.x), UnPackHalf(v.y) };
-    }
-
-    float3 UnPackHalf(const ushort3& v)
-    {
-        return { UnPackHalf(v.x), UnPackHalf(v.y), UnPackHalf(v.z) };
-    }
-
-    float4 UnPackHalf(const ushort4& v)
-    {
-        return { UnPackHalf(v.x), UnPackHalf(v.y), UnPackHalf(v.z), UnPackHalf(v.w) };
-    }
-
-    uint FloatAsUint(float v)
-    {
-        return Memory::BitCast<float, uint>(v);
-    }
-
-    uint2 FloatAsUint(const float2& v)
-    {
-        return Memory::BitCast<uint2, float2>(v);
-    }
-
-    uint3 FloatAsUint(const float3& v)
-    {
-        return Memory::BitCast<float3, uint3>(v);
-    }
-
-    uint4 FloatAsUint(const float4& v)
-    {
-        return Memory::BitCast<float4, uint4>(v);
-    }
-
     float3 SafeNormalize(const float3& v)
     {
         float length = math::length(v);
         return v * (length == 0.0f ? 0.0f : (1.0f / length));
-    }
-
-    size_t GetNextExponentialSize(size_t start, size_t min)
-    {
-        if (start < 1)
-        {
-            start = 1;
-        }
-
-        while (start < min)
-        {
-            start <<= 1;
-        }
-
-        return start;
     }
 
     uint32_t GetMaxMipLevel(uint32_t resolution)
@@ -243,67 +146,6 @@ namespace PK::Math
         {
             dst[i] = (uint32_t)src[i];
         }
-    }
-
-    uint32_t Align(uint32_t value, uint32_t alignment)
-    {
-        const auto remainder = value % alignment;
-        return value + (remainder ? (alignment - remainder) : 0u);
-    }
-
-    uint64_t Align(uint64_t value, uint64_t alignment)
-    {
-        const auto remainder = value % alignment;
-        return value + (remainder ? (alignment - remainder) : 0ull);
-    }
-
-    uint2 Align(const uint2& resolution, uint32_t alignment)
-    {
-        return
-        {
-            Align(resolution.x, alignment),
-            Align(resolution.y, alignment),
-        };
-    }
-
-    uint3 Align(const uint3& resolution, uint32_t alignment)
-    {
-        return
-        {
-            Align(resolution.x, alignment),
-            Align(resolution.y, alignment),
-            Align(resolution.z, alignment)
-        };
-    }
-
-    uint4 Align(const uint4& value, uint32_t alignment)
-    {
-        return
-        {
-            Align(value.x, alignment),
-            Align(value.y, alignment),
-            Align(value.z, alignment),
-            Align(value.w, alignment)
-        };
-    }
-
-    uint3 AlignXY(const uint3& resolution, uint32_t alignment)
-    {
-        return
-        {
-            Align(resolution.x, alignment),
-            Align(resolution.y, alignment),
-            resolution.z
-        };
-    }
-
-    uint32_t CountBits(uint32_t value)
-    {
-        value = value - ((value >> 1) & 0x55555555);
-        value = (value & 0x33333333) + ((value >> 2) & 0x33333333);
-        value = (value + (value >> 4)) & 0x0F0F0F0F;
-        value *= 0x01010101;
-        return value >> 24;
     }
 
     uint4 MurmurHash41(uint32_t seed)

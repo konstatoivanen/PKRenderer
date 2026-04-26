@@ -8,11 +8,7 @@ namespace PK::App
 {
     IRenderViewResources::~IRenderViewResources() = default;
 
-    uint2 GBuffers::AlignResolution(const uint2& resolution)
-    {
-        return Math::Align(resolution, RESOLUTION_ALIGNMENT);
-    }
-
+    uint2 GBuffers::AlignResolution(const uint2& resolution) { return math::align(resolution, RESOLUTION_ALIGNMENT); }
     uint3 GBuffers::GetResolution() const { return color->GetResolution(); }
     float GBuffers::GetAspectRatio() const { return float(color->GetResolution().x) / float(color->GetResolution().y); }
     GBuffers::View GBuffers::GetView() { return { color.get(), normals.get(), depthBiased.get(), depth.get() }; }
