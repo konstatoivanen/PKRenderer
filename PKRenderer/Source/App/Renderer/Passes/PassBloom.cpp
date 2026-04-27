@@ -49,7 +49,7 @@ namespace PK::App
         resolution.x >>= 1u;
         resolution.y >>= 1u;
 
-        auto levelCount = Math::GetMaxMipLevel(uint2(resolution.x, resolution.y));
+        auto levelCount = math::levels(uint2(resolution.x, resolution.y));
 
         {
             TextureDescriptor descriptor{};

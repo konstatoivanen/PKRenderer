@@ -38,7 +38,7 @@ namespace PK::App
         hzbDesc.sampler.filterMin = FilterMode::Bilinear;
         hzbDesc.sampler.filterMag = FilterMode::Bilinear;
         hzbDesc.resolution = resolution;
-        hzbDesc.levels = (uint8_t)math::min(13u, Math::GetMaxMipLevel(uint2(resolution.x, resolution.y)));
+        hzbDesc.levels = (uint8_t)math::min(13u, math::levels(uint2(resolution.x, resolution.y)));
         hzbDesc.layers = 2u;
         hzbDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         RHI::ValidateTexture(resources->hierarchicalDepth, hzbDesc, "Scene.HierarchicalDepth");

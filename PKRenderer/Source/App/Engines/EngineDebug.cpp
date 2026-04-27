@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/ECS/EntityDatabase.h"
+#include "Core/Math/Random.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Math/FunctionsColor.h"
 #include "Core/Math/FunctionsMatrix.h"
@@ -49,27 +50,27 @@ namespace PK::App
 
         for (auto i = 0; i < 128; ++i)
         {
-            auto submesh = Math::RandomRangeUint(0, submeshCount);
-            auto pos = Math::RandomRangeFloat3(minpos, maxpos);
-            auto rot = Math::RandomEuler() * PK_FLOAT_DEG2RAD;
-            auto size = Math::RandomRangeFloat(1.0f, 3.0f);
-            EntityBuilders::CreateEntityMeshStatic(m_entityDb, rocksMesh->GetMeshStatic(), { {materialMarble,submesh} }, pos, rot, size);
+            auto submesh = math::random_range(0u, submeshCount);
+            auto pos = math::halton(i, uint3(7,11,17)) * (maxpos - minpos) + minpos;
+            auto rot = math::random_radian_float3();
+            auto size = math::random_range(1.0f, 3.0f);
+            EntityBuilders::CreateEntityMeshStatic(m_entityDb, rocksMesh->GetMeshStatic(), { { materialMarble,submesh} }, pos, rot, size);
         }
 
         for (auto i = 0; i < 128; ++i)
         {
-            auto submesh = Math::RandomRangeUint(0, submeshCount);
-            auto pos = Math::RandomRangeFloat3(minpos, maxpos);
-            auto rot = Math::RandomEuler() * PK_FLOAT_DEG2RAD;
-            auto size = Math::RandomRangeFloat(1.0f, 3.0f);
+            auto submesh = math::random_range(0u, submeshCount);
+            auto pos = math::halton(i + 128, uint3(7,11,17)) * (maxpos - minpos) + minpos;
+            auto rot = math::random_radian_float3();
+            auto size = math::random_range(1.0f, 3.0f);
             EntityBuilders::CreateEntityMeshStatic(m_entityDb, rocksMesh->GetMeshStatic(), { {materialPlaster,submesh} }, pos, rot, size);
         }
 
         for (uint32_t i = 0u; i < config->LightCount; ++i)
         {
-            auto pos = Math::RandomRangeFloat3(minpos, maxpos) + PK_FLOAT3_UP * 4.0f;
+            auto pos = math::random_range(minpos, maxpos) + PK_FLOAT3_UP * 4.0f;
             auto type = i % 2 == 0 ? LightType::Spot : LightType::Point;
-            auto color = Math::HueToRGB(Math::RandomRangeFloat(0.0f, 1.0f)) * Math::RandomRangeFloat(8.0f, 128.0f);
+            auto color = Math::HueToRGB(math::random_range(0.0f, 1.0f)) * math::random_range(8.0f, 128.0f);
             EntityBuilders::CreateEntityLightSphere(m_entityDb, m_assetDatabase, pos, type, LightCookie::Circle0, color, true);
         }
 

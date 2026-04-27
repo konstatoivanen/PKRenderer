@@ -263,6 +263,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Input\InputStateCollection.h" />
     <ClInclude Include="Source\Core\Input\InputDevice.h" />
     <ClInclude Include="Source\Core\Input\InputState.h" />
+    <ClInclude Include="Source\Core\Math\Random.h" />
     <ClInclude Include="Source\Core\Math\Scalar.h" />
     <ClInclude Include="Source\Core\Math\Vector.h" />
     <ClInclude Include="Source\Core\Platform\Platform.h" />
@@ -1047,6 +1048,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp" />
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
+    <ClCompile Include="Source\Core\Math\Random.cpp" />
     <ClCompile Include="Source\Core\Platform\Platform.cpp" />
     <ClCompile Include="Source\Core\Platform\Windows\Win32Platform.cpp" />
     <ClCompile Include="Source\Core\Platform\Windows\Win32Window.cpp" />

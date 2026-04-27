@@ -40,21 +40,21 @@ namespace PK::math
     // stripped down glm vector & matrix types
     // removed most code to reduce binary size
 
-    template<typename T, int N> struct storage { typedef struct type { T data[N]; } type; };
+    template<typename T, int N> struct storage { constexpr static const bool is_simd = false; typedef struct type { T data[N]; } type; };
 
     #if defined(PK_MATH_SIMD_SSE2)
-    template<> struct storage<float,4> { typedef simd_f32vec4 type; };
-    template<> struct storage<double,2> { typedef simd_f64vec2 type; };
-    template<> struct storage<int32_t,4> { typedef simd_i32vec4 type; };
-    template<> struct storage<uint32_t,4> { typedef simd_u32vec4 type; };
-    template<> struct storage<int64_t,2> { typedef simd_i64vec2 type; };
-    template<> struct storage<uint64_t,2> { typedef simd_u64vec2 type; };
+    template<> struct storage<float,4> { constexpr static const bool is_simd = true; typedef simd_f32vec4 type; };
+    template<> struct storage<double,2> { constexpr static const bool is_simd = true; typedef simd_f64vec2 type; };
+    template<> struct storage<int32_t,4> { constexpr static const bool is_simd = true; typedef simd_i32vec4 type; };
+    template<> struct storage<uint32_t,4> { constexpr static const bool is_simd = true; typedef simd_u32vec4 type; };
+    template<> struct storage<int64_t,2> { constexpr static const bool is_simd = true; typedef simd_i64vec2 type; };
+    template<> struct storage<uint64_t,2> { constexpr static const bool is_simd = true; typedef simd_u64vec2 type; };
     #endif
 
     #if defined(PK_MATH_SIMD_NEON)
-    template<> struct storage<float,4> { typedef simd_f32vec4 type; };
-    template<> struct storage<int32_t,4> { typedef simd_i32vec4 type; };
-    template<> struct storage<uint32_t,4> { typedef glm_u32vec4 type; };
+    template<> struct storage<float,4> { constexpr static const bool is_simd = true; typedef simd_f32vec4 type; };
+    template<> struct storage<int32_t,4> { constexpr static const bool is_simd = true; typedef simd_i32vec4 type; };
+    template<> struct storage<uint32_t,4> { constexpr static const bool is_simd = true; typedef glm_u32vec4 type; };
     #endif
 
     template<typename T, int N>
@@ -2171,6 +2171,8 @@ namespace PK::math
     template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, const vector<T,N>& mi, const vector<T,N>& ma) { return max(min(v, ma), mi); }
     template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, T mi, T ma) { return max(min(v, ma), mi); }
 
+    template<typename T, int N> vector<T, N> saturate(const vector<T, N>& v) { return max(min(v, static_cast<T>(1)), mi); }
+
     template<typename T> T cmin(const vector<T,2>& v) { return min(v.x, v.y); }
     template<typename T> T cmin(const vector<T,3>& v) { return min(min(v.x, v.y), v.z); }
     template<typename T> T cmin(const vector<T,4>& v) { return min(min(min(v.x, v.y), v.z), v.w); }
@@ -2183,12 +2185,14 @@ namespace PK::math
     template<typename T> constexpr T csum(const vector<T, 3>& v) { return v.x + v.y + v.z; }
     template<typename T> constexpr T csum(const vector<T, 4>& v) { return v.x + v.y + v.z + v.w; }
 
-    template<typename T> vector<T,2> lerp(const vector<T,2>& a, const vector<T,2>& b, const vector<T,2>& i) { return vector<T,2>(lerp(a.x, b.x, i.x), lerp(a.y, b.y, i.y)); }
-    template<typename T> vector<T,3> lerp(const vector<T,3>& a, const vector<T,3>& b, const vector<T,3>& i) { return vector<T,3>(lerp(a.x, b.x, i.x), lerp(a.y, b.y, i.y), lerp(a.z, b.z, i.z)); }
-    template<typename T> vector<T,4> lerp(const vector<T,4>& a, const vector<T,4>& b, const vector<T,4>& i) { return vector<T,4>(lerp(a.x, b.x, i.x), lerp(a.y, b.y, i.y), lerp(a.z, b.z, i.z), lerp(a.w, b.w, i.w)); }
-    template<typename T> vector<T,2> lerp(const vector<T,2>& a, const vector<T,2>& b, T i) { return vector<T,2>(lerp(a.x, b.x, i), lerp(a.y, b.y, i)); }
-    template<typename T> vector<T,3> lerp(const vector<T,3>& a, const vector<T,3>& b, T i) { return vector<T,3>(lerp(a.x, b.x, i), lerp(a.y, b.y, i), lerp(a.z, b.z, i)); }
-    template<typename T> vector<T,4> lerp(const vector<T,4>& a, const vector<T,4>& b, T i) { return vector<T,4>(lerp(a.x, b.x, i), lerp(a.y, b.y, i), lerp(a.z, b.z, i), lerp(a.w, b.w, i)); }
+    template<typename T, int N> constexpr T levels(const vector<T,N>& v) { auto r = cmin(v); return r > static_cast<T>(0) ? log2(r) + static_cast<T>(1) : static_cast<T>(0); }
+
+    template<typename T, typename U> vector<T,2> lerp(const vector<T,2>& a, const vector<T,2>& b, const vector<U,2>& i) { return vector<T,2>(lerp(a.x, b.x, i.x), lerp(a.y, b.y, i.y)); }
+    template<typename T, typename U> vector<T,3> lerp(const vector<T,3>& a, const vector<T,3>& b, const vector<U,3>& i) { return vector<T,3>(lerp(a.x, b.x, i.x), lerp(a.y, b.y, i.y), lerp(a.z, b.z, i.z)); }
+    template<typename T, typename U> vector<T,4> lerp(const vector<T,4>& a, const vector<T,4>& b, const vector<U,4>& i) { return vector<T,4>(lerp(a.x, b.x, i.x), lerp(a.y, b.y, i.y), lerp(a.z, b.z, i.z), lerp(a.w, b.w, i.w)); }
+    template<typename T, typename U> vector<T,2> lerp(const vector<T,2>& a, const vector<T,2>& b, U i) { return vector<T,2>(lerp(a.x, b.x, i), lerp(a.y, b.y, i)); }
+    template<typename T, typename U> vector<T,3> lerp(const vector<T,3>& a, const vector<T,3>& b, U i) { return vector<T,3>(lerp(a.x, b.x, i), lerp(a.y, b.y, i), lerp(a.z, b.z, i)); }
+    template<typename T, typename U> vector<T,4> lerp(const vector<T,4>& a, const vector<T,4>& b, U i) { return vector<T,4>(lerp(a.x, b.x, i), lerp(a.y, b.y, i), lerp(a.z, b.z, i), lerp(a.w, b.w, i)); }
 
     template<typename T> constexpr vector<T,2> sign(const vector<T,2>& v) { return vector<T,2>(sign(v.x), sign(v.y)); }
     template<typename T> constexpr vector<T,3> sign(const vector<T,3>& v) { return vector<T,3>(sign(v.x), sign(v.y), sign(v.z)); }
@@ -2214,6 +2218,7 @@ namespace PK::math
     template<typename T, int N> T length(const vector<T,N>& v) { return sqrt(dot(v,v)); }
     template<typename T, int N> T distance(const vector<T, N>& a, const vector<T, N>& b) { return length(a - b); }
     template<typename T, int N> vector<T,N> normalize(const vector<T,N>& v) { return v / length(v); }
+    template<typename T, int N> vector<T,N> safenormalize(const vector<T,N>& v) { float l = length(v); return v * (l == static_cast<T>(0) ? static_cast<T>(0) : static_cast<T>(1) / l); }
     
     template<typename T> vector<T,2> cross(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(a.x * b.y - b.x * a.y); }
     template<typename T> vector<T,3> cross(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(a.y * b.z - b.y * a.z, a.z * b.x - b.z * a.x, a.x * b.y - b.x * a.y); }

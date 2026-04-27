@@ -266,7 +266,7 @@ namespace PK::MeshUtilities
                 {
                     const auto psphere = Math::ComputeBoundingSphere(corners[0], valid_tri_count * 3u);
                     const auto nsphere = Math::ComputeBoundingSphere(normals, valid_tri_count);
-                    const auto axis = Math::SafeNormalize(nsphere.xyz);
+                    const auto axis = math::safenormalize(nsphere.xyz());
                     auto aabb = Math::ComputeBoundingBox(corners[0], valid_tri_count * 3u);
                     center = aabb.GetCenter();
                     extents = aabb.GetExtents();

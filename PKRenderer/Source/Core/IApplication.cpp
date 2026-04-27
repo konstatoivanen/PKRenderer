@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Utilities/NameIDProviderDefault.h"
+#include "Core/Math/Random.h"
 #include "CLI/CVariableRegister.h"
 #include "CLI/Log.h"
 #include "IApplication.h"
@@ -70,7 +71,7 @@ namespace PK
 
         CVariableRegister::Create<CVariableFunc>("Application.Seed", [](const char* const* args, [[maybe_unused]] uint32_t count)
             {
-                srand(String::To<uint32_t>(args[0]));
+                math::setseed(String::To<uint32_t>(args[0]));
             }, "Random seed value used for random number generation.", 1u);
     }
 }

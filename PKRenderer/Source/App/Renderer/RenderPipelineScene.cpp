@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/FenceRef.h"
 #include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Random.h"
 #include "Core/Math/FunctionsMatrix.h"
 #include "Core/CLI/Log.h"
 #include "Core/ControlFlow/Sequencer.h"
@@ -231,8 +232,8 @@ namespace PK::App
             constants->Set<float4x4>(hash->pk_ViewToPrevClip, worldToClipPrev * viewToWorld);
             constants->Set<float4x4>(hash->pk_ClipToPrevClip_NoJitter, worldToClipNoJitterPrev * math::inverse(worldToClipNoJitter));
             constants->Set<float4>(hash->pk_Time, { (float)time / 20.0f, (float)time, (float)time * 2.0f, (float)time * 3.0f });
-            constants->Set<float4>(hash->pk_SinTime, { (float)sin(time / 8.0f), (float)sin(time / 4.0f), (float)sin(time / 2.0f), (float)sin(time) });
-            constants->Set<float4>(hash->pk_CosTime, { (float)cos(time / 8.0f), (float)cos(time / 4.0f), (float)cos(time / 2.0f), (float)cos(time) });
+            constants->Set<float4>(hash->pk_SinTime, { math::sin(time / 8.0f), math::sin(time / 4.0f), math::sin(time / 2.0f), math::sin(time) });
+            constants->Set<float4>(hash->pk_CosTime, { math::cos(time / 8.0f), math::cos(time / 4.0f), math::cos(time / 2.0f), math::cos(time) });
             constants->Set<float4>(hash->pk_DeltaTime, { (float)deltaTime, 1.0f / (float)deltaTime, (float)smoothDeltaTime, 1.0f / (float)smoothDeltaTime });
             constants->Set<float4>(hash->pk_CursorParams, { view->cursorPosition.x, view->cursorPosition.y, view->cursorPositionDelta.x, view->cursorPositionDelta.y });
             constants->Set<float4>(hash->pk_ViewWorldOrigin, viewToWorld[3]);
@@ -242,10 +243,10 @@ namespace PK::App
             constants->Set<float4>(hash->pk_ClipParamsInv, { clipToView[0][0], clipToView[1][1], clipToView[2][3], clipToView[3][3] });
             constants->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
             constants->Set<float4>(hash->pk_ProjectionJitter, projectionJitter);
-            constants->Set<uint4>(hash->pk_FrameRandom, Math::MurmurHash41((uint32_t)(frameIndex % ~0u)));
+            constants->Set<uint4>(hash->pk_FrameRandom, math::murmurhash41((uint32_t)(frameIndex % ~0u)));
             constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
             constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
-            constants->Set<int>(hash->pk_ScreenLevels, Math::GetMaxMipLevel(resolution.xy) - 1u);
+            constants->Set<int>(hash->pk_ScreenLevels, math::levels(resolution.xy()) - 1u);
             constants->Set<float4>(hash->pk_MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
 
             m_passHierarchicalDepth.SetViewConstants(view);

@@ -67,115 +67,12 @@ namespace PK::Math
         return (math::exp2(clipz / params.z) - params.y) / params.x;
     }
 
-    float RandomFloat()
-    {
-        return (float)rand() / (float)RAND_MAX;
-    }
-
-    float GetHaltonSequence(uint32_t index, uint32_t radix)
-    {
-        float result = 0.0f;
-        float fraction = 1.0f / (float)radix;
-
-        while (index > 0)
-        {
-            result += (float)(index % radix) * fraction;
-
-            index /= radix;
-            fraction /= (float)radix;
-        }
-
-        return result;
-    }
-
-    uint32_t RandomUint()
-    {
-        auto v = rand();
-        return Memory::BitCast<int32_t, uint32_t>(v);
-    }
-
-    float3 RandomFloat3()
-    {
-        return float3(RandomFloat(), RandomFloat(), RandomFloat());
-    }
-
-    uint32_t RandomRangeUint(uint32_t min, uint32_t max)
-    {
-        return  min + (RandomUint() % (max - min));
-    }
-
-    float RandomRangeFloat(float min, float max)
-    {
-        return min + (RandomFloat() * (max - min));
-    }
-
-    float3 RandomRangeFloat3(const float3& min, const float3& max)
-    {
-        return float3(RandomRangeFloat(min.x, max.x), RandomRangeFloat(min.y, max.y), RandomRangeFloat(min.z, max.z));
-    }
-
-    float3 RandomEuler()
-    {
-        return float3(RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f));
-    }
-
-    float3 SafeNormalize(const float3& v)
-    {
-        float length = math::length(v);
-        return v * (length == 0.0f ? 0.0f : (1.0f / length));
-    }
-
-    uint32_t GetMaxMipLevel(uint32_t resolution)
-    {
-        return resolution > 0u ? math::log2(resolution) + 1u : 0u;
-    }
-
-    uint32_t GetMaxMipLevel(const uint2& resolution)
-    {
-        return GetMaxMipLevel(math::cmin(resolution));
-    }
-
-    uint32_t GetMaxMipLevel(const uint3& resolution)
-    {
-        return GetMaxMipLevel(math::cmin(resolution));
-    }
-
     void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count)
     {
         for (auto i = 0u; i < count; ++i)
         {
             dst[i] = (uint32_t)src[i];
         }
-    }
-
-    uint4 MurmurHash41(uint32_t seed)
-    {
-        const uint M = 0x5bd1e995u;
-        uint4 h = uint4(1190494759u, 2147483647u, 3559788179u, 179424673u);
-        seed *= M;
-        seed ^= seed >> 24u;
-        seed *= M;
-        h *= M;
-        h ^= seed;
-        h ^= h >> 13u;
-        h *= M;
-        h ^= h >> 15u;
-        return h;
-    }
-
-    uint2 MurmurHash21(uint32_t seed)
-    {
-        const uint M = 0x5bd1e995u;
-        uint2 h = uint2(1190494759u, 2147483647u);
-        seed *= M;
-        seed ^= seed >> 24u;
-        seed *= M;
-        h *= M;
-        h ^= seed;
-        h ^= h >> 13u;
-        h *= M;
-        h ^= h >> 15u;
-        return h;
     }
 
     float2 OctaWrap(const float2& v) { return (1.0f - math::abs(float2(v.yx))) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }

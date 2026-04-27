@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Random.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
@@ -91,7 +92,7 @@ namespace PK::App
         view->constants.Set<uint3>(hash->pk_GI_VX_Swizzle, swizzles[m_rasterAxis]);
         view->constants.Set<float>(hash->pk_GI_VX_LevelScale, levelscale);
         view->constants.Set<float4>(hash->pk_GI_VX_ST, float4(volumeOriginQuantized, 1.0f / voxelSize));
-        view->constants.Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21((uint32_t)frameIndexSinceResize / 64u));
+        view->constants.Set<uint2>(hash->pk_GI_RayDither, math::murmurhash21((uint32_t)frameIndexSinceResize / 64u));
 
         RHI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_settings.checkerboardTrace);
         RHI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", m_settings.specularVirtualReproject);

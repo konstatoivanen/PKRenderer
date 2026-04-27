@@ -1512,6 +1512,9 @@
     <ClInclude Include="Source\Core\Math\Scalar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Math\Random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\glm\detail\func_common.inl">
@@ -2429,6 +2432,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

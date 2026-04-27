@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Random.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
@@ -64,12 +64,9 @@ namespace PK::App
         cmd.Dispatch(m_computeTAA, 0, { resolution.x, resolution.y, 1u });
         cmd->EndDebugScope();
 
-        m_jitter.z = m_jitter.x;
-        m_jitter.w = m_jitter.y;
-        m_jitter.x = Math::GetHaltonSequence((m_jitterSampleIndex & 1023) + 1, 2) - 0.5f;
-        m_jitter.y = Math::GetHaltonSequence((m_jitterSampleIndex & 1023) + 1, 3) - 0.5f;
-        m_jitter.x *= m_jitterSpread;
-        m_jitter.y *= m_jitterSpread;
+        m_jitter.zw = m_jitter.xy;
+        m_jitter.xy = math::halton((m_jitterSampleIndex & 1023) + 1, uint2(2,3)) - 0.5f;
+        m_jitter.xy *= m_jitterSpread;
         m_jitterSampleIndex = (m_jitterSampleIndex + 1) % JITTER_SAMPLE_COUNT;
     }
 }
