@@ -146,9 +146,9 @@ namespace PK
         }
 
     private:
-        bool m_isCreated;
         struct U { constexpr U() noexcept {} };
         union { U other; T value; };
+        bool m_isCreated;
     };
 
     struct SharedObjectBase

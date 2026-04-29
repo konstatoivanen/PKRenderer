@@ -18,12 +18,6 @@ namespace PK
         uint16_t ymax;
     };
 
-    uint32_t MaskedAdd(uint32_t x, uint32_t y)
-    {
-        auto t = (size_t)x + (size_t)y;
-        return t >= 0xFFFFFFFFu ? 0xFFFFFFFFu : (uint32_t)t;
-    }
-
     bool VulkanBarrierHandler::TInfo<VkBuffer>::IsOverlap(uint64_t a, uint64_t b)
     {
         auto ra = reinterpret_cast<urect1D*>(&a);
@@ -365,9 +359,9 @@ namespace PK
         {
             auto rb = reinterpret_cast<uint32_t*>(&(*barrier)->subresourceRange.baseMipLevel);
             rangeo.xmin = rangeo.xmin < rb[0] ? rangeo.xmin : rb[0];
-            rangeo.xmax = rangeo.xmax > MaskedAdd(rb[0], rb[1]) ? rangeo.xmax : MaskedAdd(rb[0], rb[1]);
+            rangeo.xmax = rangeo.xmax > math::uadd(rb[0], rb[1]) ? rangeo.xmax : math::uadd(rb[0], rb[1]);
             rangeo.ymin = rangeo.ymin < rb[2] ? rangeo.ymin : rb[2];
-            rangeo.ymax = rangeo.ymax > MaskedAdd(rb[2], rb[3]) ? rangeo.ymax : MaskedAdd(rb[2], rb[3]);
+            rangeo.ymax = rangeo.ymax > math::uadd(rb[2], rb[3]) ? rangeo.ymax : math::uadd(rb[2], rb[3]);
         }
 
         rangeo.xmin = rangeo.xmin > rangen.xmin ? rangeo.xmin : rangen.xmin;

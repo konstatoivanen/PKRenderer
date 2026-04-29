@@ -25,7 +25,7 @@ namespace PK::math
     constexpr int64_t asint(double v) { union { double in; int64_t out; } u{v}; return u.out; }
     constexpr uint64_t asuint(double v) { union { double in; uint64_t out; } u{v}; return u.out; }
 
-     #if defined(__clang__)
+    #if defined(__clang__)
     inline uint32_t bitcount(uint32_t v) { return static_cast<uint32_t>(__builtin_popcount(v)); }
     inline uint32_t bitcount(uint64_t v) { return static_cast<uint32_t>(__builtin_popcountll(v)); }
     #else
@@ -39,6 +39,17 @@ namespace PK::math
     inline uint32_t bitcount(int64_t v) { return bitcount(static_cast<uint64_t>(v)); }
     constexpr uint32_t bitcount(uint8_t v) { uint32_t n = v * 0x08040201u; return (((n >> 3u) & 0x11111111u) * 0x11111111u) >> 28u; }
     constexpr uint32_t bitcount(uint16_t v) { v = v - ((v >> 1u) & 0x5555u); v = (v & 0x3333u) + ((v >> 2u) & 0x3333u); v = (v + (v >> 4u)) & 0x0F0Fu; return (v * 0x0101u) >> 8u; }
+
+    inline uint8_t uadd(uint8_t a, uint8_t b) { return a > 0xFFu - b ? 0xFFu : a + b; }
+    inline uint16_t uadd(uint16_t a, uint16_t b) { return a > 0xFFFFu - b ? 0xFFFFu : a + b; }
+    inline uint32_t uadd(uint32_t a, uint32_t b) { return a > 0xFFFFFFFFu - b ? 0xFFFFFFFFu : a + b; }
+    inline uint64_t uadd(uint64_t a, uint64_t b) { return a > 0xFFFFFFFFFFFFFFFFull - b ? 0xFFFFFFFFFFFFFFFFull : a + b; }
+
+    inline uint8_t uadd(uint8_t a, int8_t b) { return b < 0 && a < (unsigned)(-b) ? 0u : b > 0 && a > 0xFFu - b ? 0xFFu : a + b; }
+    inline uint16_t uadd(uint16_t a, int16_t b) { return b < 0 && a < (unsigned)(-b) ? 0u : b > 0 && a > 0xFFFFu - b ? 0xFFFFu : a + b; }
+    inline uint32_t uadd(uint32_t a, int32_t b) { return b < 0 && a < (unsigned)(-b) ? 0u : b > 0 && a > 0xFFFFFFFFu - b ? 0xFFFFFFFFu : a + b; }
+    inline uint64_t uadd(uint64_t a, int32_t b) { return b < 0 && a < (unsigned)(-b) ? 0u : b > 0 && a > 0xFFFFFFFFFFFFFFFFull - b ? 0xFFFFFFFFFFFFFFFFull : a + b; }
+    inline uint64_t uadd(uint64_t a, int64_t b) { return b < 0 && a < (unsigned)(-b) ? 0u : b > 0 && a > 0xFFFFFFFFFFFFFFFFull - b ? 0xFFFFFFFFFFFFFFFFull : a + b; }
 
     constexpr uint16_t f32tof16(float v)
     {
@@ -57,6 +68,16 @@ namespace PK::math
         uf = e == 0 ? asuint(asfloat(uf + (1 << 23)) - 6.10351563e-05f) : uf;
         return asfloat(uf | (x & 0x8000) << 16);
     }
+
+    constexpr int8_t packSnorm8(float v) { return int8_t(((v >= -1) ? (v <= +1) ? v : +1 : -1) * 0x7F + (v >= 0 ? 0.5f : -0.5f)); }
+    constexpr int8_t packSnorm16(float v) { return int8_t(((v >= -1) ? (v <= +1) ? v : +1 : -1) * 0x7FFF + (v >= 0 ? 0.5f : -0.5f)); }
+    constexpr float unpackSnorm8(int8_t v) { return v / (float)0x7F; }
+    constexpr float unpackSnorm16(int16_t v) { return v / (float)0x7FFF; }
+
+    constexpr uint8_t packUnorm8(float v) { return uint8_t(((v >= 0) ? (v <= 1) ? v : 1 : 0) * 0xFF + 0.5f); }
+    constexpr uint16_t packUnorm16(float v) { return uint16_t(((v >= 0) ? (v <= 1) ? v : 1 : 0) * 0xFFFF + 0.5f); }
+    constexpr float unpackUnorm8(uint8_t v) { return v / (float)0xFFu; }
+    constexpr float unpackUnorm16(uint16_t v) { return v / (float)0xFFFFu; }
 
     inline float sin(float v) { return ::sinf(v); }
     inline double sin(double v) { return ::sin(v); }

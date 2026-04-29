@@ -2032,6 +2032,34 @@ namespace PK::math
     constexpr float2 f16tof32_upack(uint32_t v) { return float2(f16tof32(v & 0xFFFFu), f16tof32((v >> 16u) & 0xFFFFu)); }
     constexpr float4 f16tof32_upack(uint64_t v) { return float4(f16tof32(v & 0xFFFFu), f16tof32((v >> 16u) & 0xFFFFu), f16tof32((v >> 32u) & 0xFFFFu), f16tof32((v >> 48u) & 0xFFFFu)); }
 
+    constexpr sbyte2 packSnorm8(const float2& v) { return sbyte2(packSnorm8(v.x), packSnorm8(v.y)); }
+    constexpr sbyte3 packSnorm8(const float3& v) { return sbyte3(packSnorm8(v.x), packSnorm8(v.y), packSnorm8(v.z)); }
+    constexpr sbyte4 packSnorm8(const float4& v) { return sbyte4(packSnorm8(v.x), packSnorm8(v.y), packSnorm8(v.z), packSnorm8(v.w)); }
+    constexpr short2 packSnorm16(const float2& v) { return short2(packSnorm16(v.x), packSnorm16(v.y)); }
+    constexpr short3 packSnorm16(const float3& v) { return short3(packSnorm16(v.x), packSnorm16(v.y), packSnorm16(v.z)); }
+    constexpr short4 packSnorm16(const float4& v) { return short4(packSnorm16(v.x), packSnorm16(v.y), packSnorm16(v.z), packSnorm16(v.w)); }
+
+    constexpr float2 unpackSnorm8(const sbyte2& v) { return float2(unpackSnorm8(v.x), unpackSnorm8(v.y)); }
+    constexpr float3 unpackSnorm8(const sbyte3& v) { return float3(unpackSnorm8(v.x), unpackSnorm8(v.y), unpackSnorm8(v.z)); }
+    constexpr float4 unpackSnorm8(const sbyte4& v) { return float4(unpackSnorm8(v.x), unpackSnorm8(v.y), unpackSnorm8(v.z), unpackSnorm8(v.w)); }
+    constexpr float2 unpackSnorm16(const short2& v) { return float2(unpackSnorm16(v.x), unpackSnorm16(v.y)); }
+    constexpr float3 unpackSnorm16(const short3& v) { return float3(unpackSnorm16(v.x), unpackSnorm16(v.y), unpackSnorm16(v.z)); }
+    constexpr float4 unpackSnorm16(const short4& v) { return float4(unpackSnorm16(v.x), unpackSnorm16(v.y), unpackSnorm16(v.z), packSnorm16(v.w)); }
+
+    constexpr byte2 packUnorm8(const float2& v) { return byte2(packUnorm8(v.x), packUnorm8(v.y)); }
+    constexpr byte3 packUnorm8(const float3& v) { return byte3(packUnorm8(v.x), packUnorm8(v.y), packUnorm8(v.z)); }
+    constexpr byte4 packUnorm8(const float4& v) { return byte4(packUnorm8(v.x), packUnorm8(v.y), packUnorm8(v.z), packUnorm8(v.w)); }
+    constexpr ushort2 packUnorm16(const float2& v) { return ushort2(packUnorm16(v.x), packUnorm16(v.y)); }
+    constexpr ushort3 packUnorm16(const float3& v) { return ushort3(packUnorm16(v.x), packUnorm16(v.y), packUnorm16(v.z)); }
+    constexpr ushort4 packUnorm16(const float4& v) { return ushort4(packUnorm16(v.x), packUnorm16(v.y), packUnorm16(v.z), packUnorm16(v.w)); }
+
+    constexpr float2 unpackUnorm8(const byte2& v) { return float2(unpackUnorm8(v.x), unpackUnorm8(v.y)); }
+    constexpr float3 unpackUnorm8(const byte3& v) { return float3(unpackUnorm8(v.x), unpackUnorm8(v.y), unpackUnorm8(v.z)); }
+    constexpr float4 unpackUnorm8(const byte4& v) { return float4(unpackUnorm8(v.x), unpackUnorm8(v.y), unpackUnorm8(v.z), unpackUnorm8(v.w)); }
+    constexpr float2 unpackUnorm16(const ushort2& v) { return float2(unpackUnorm16(v.x), unpackUnorm16(v.y)); }
+    constexpr float3 unpackUnorm16(const ushort3& v) { return float3(unpackUnorm16(v.x), unpackUnorm16(v.y), unpackUnorm16(v.z)); }
+    constexpr float4 unpackUnorm16(const ushort4& v) { return float4(unpackUnorm16(v.x), unpackUnorm16(v.y), unpackUnorm16(v.z), packUnorm16(v.w)); }
+
     template<typename T> vector<T,2> sin(const vector<T,2>& v) { return vector<T,2>(sin(v.x), sin(v.y)); }
     template<typename T> vector<T,3> sin(const vector<T,3>& v) { return vector<T,3>(sin(v.x), sin(v.y), sin(v.z)); }
     template<typename T> vector<T,4> sin(const vector<T,4>& v) { return vector<T,4>(sin(v.x), sin(v.y), sin(v.z), sin(v.w)); }

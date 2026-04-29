@@ -10,13 +10,8 @@ namespace PK::Math
     float3 GetExponentialZParams(float znear, float zfar, float distribution, uint32_t size);
     float ViewToClipDepthExp(float viewz, const float3& params);
     float ClipToViewDepthExp(float viewz, const float3& params);
-    void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count);
-    inline uint64_t ULongAdd(uint64_t a, int32_t b) { return (int64_t)a + b < 0 ? 0ull : a + b; }
     float2 OctaWrap(const float2& v);
     float2 OctaEncode(const float3& n);
-    uint OctaEncodeUint(const float3& direction);
-    int32_t QuantizeSNorm(float v, int32_t n);
-    sbyte3 QuantizeSNorm(const float3& v, int32_t n);
     float3 GetTriangleNormal(const float* p0, const float* p1, const float* p2, bool& outIsValid);
     float3 GetTriangleNormal(const float3& a, const float3& b, const float3& c);
 }

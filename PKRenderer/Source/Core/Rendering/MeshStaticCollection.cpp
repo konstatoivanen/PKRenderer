@@ -149,7 +149,7 @@ namespace PK
         if (RHIEnumConvert::Size(desc->regular.indexType) == 2u && indexStride == 4u)
         {
             auto view = commandBuffer.BeginBufferWrite<uint32_t>(m_indexBuffer.get(), staticMesh->indexFirst, desc->regular.indexCount);
-            Math::ReinterpretIndex16ToIndex32(view.data, reinterpret_cast<uint16_t*>(desc->regular.pIndices), desc->regular.indexCount);
+            Memory::CopyCastArray(view.data, reinterpret_cast<uint16_t*>(desc->regular.pIndices), desc->regular.indexCount);
             commandBuffer->EndBufferWrite(m_indexBuffer.get());
         }
         else

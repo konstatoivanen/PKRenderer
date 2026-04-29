@@ -289,7 +289,7 @@ namespace PK::MeshUtilities
                         }
 
                         cone_apex = (psphere.xyz - axis) * maxt;
-                        cone_axis_s8 = Math::QuantizeSNorm(axis, 8);
+                        cone_axis_s8 = math::packSnorm8(axis);
                         const auto cone_axis_s8_e = math::abs(float3(cone_axis_s8) / 127.0f - axis);
                         const auto cone_cutoff = int(127 * (sqrtf(1.0f - minCosA * minCosA) + cone_axis_s8_e.x + cone_axis_s8_e.y + cone_axis_s8_e.z) + 1);
                         cone_cutoff_s8 = (cone_cutoff > 127) ? 127 : (signed char)(cone_cutoff);

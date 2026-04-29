@@ -238,7 +238,7 @@ namespace PK
 
                 return result == VK_SUCCESS;
             },
-            Math::ULongAdd(m_timeline.counter, timelineOffset));
+            math::uadd(m_timeline.counter, timelineOffset));
     }
 
     VulkanCommandBuffer* VulkanQueue::GetCommandBuffer()
@@ -457,7 +457,7 @@ namespace PK
                 if (timeline.semaphore == VK_NULL_HANDLE)
                 {
                     timeline = other->m_timeline;
-                    timeline.counter = Math::ULongAdd(timeline.counter, timelineOffset);
+                    timeline.counter = math::uadd(timeline.counter, timelineOffset);
                     // Wait at top of pipe as we dont know what the first op will be.
                     timeline.waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
                     break;

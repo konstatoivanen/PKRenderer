@@ -137,6 +137,15 @@ namespace PK::Memory
         }
     }
 
+    template<typename T, typename U>
+    void CopyCastArray(T* dst, const U* src, size_t count)
+    {
+        for (auto i = 0u; i < count; ++i)
+        {
+            dst[i] = static_cast<T>(src[i]);
+        }
+    }
+
     template<typename T>
     void ClearArray(T* values, size_t count)
     {

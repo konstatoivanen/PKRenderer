@@ -67,14 +67,6 @@ namespace PK::Math
         return (math::exp2(clipz / params.z) - params.y) / params.x;
     }
 
-    void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count)
-    {
-        for (auto i = 0u; i < count; ++i)
-        {
-            dst[i] = (uint32_t)src[i];
-        }
-    }
-
     float2 OctaWrap(const float2& v) { return (1.0f - math::abs(float2(v.yx))) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }
 
     float2 OctaEncode(const float3& n)
@@ -92,25 +84,6 @@ namespace PK::Math
         auto x = (uint)math::round(math::clamp(uv.x, 0.0f, 1.0f) * 65535.0f);
         auto y = (uint)math::round(math::clamp(uv.y, 0.0f, 1.0f) * 65535.0f);
         return (x & 0xFFFFu) | ((y & 0xFFFFu) << 16u);
-    }
-
-    int32_t QuantizeSNorm(float v, int32_t n)
-    {
-        const float scale = float((1 << (n - 1)) - 1);
-        float round = (v >= 0 ? 0.5f : -0.5f);
-        v = (v >= -1) ? v : -1;
-        v = (v <= +1) ? v : +1;
-        return int32_t(v * scale + round);
-    }
-
-    sbyte3 QuantizeSNorm(const float3& v, int32_t n)
-    {
-        return
-        {
-            (sbyte)(QuantizeSNorm(v.x, n)),
-            (sbyte)(QuantizeSNorm(v.y, n)),
-            (sbyte)(QuantizeSNorm(v.z, n))
-        };
     }
 
     float3 GetTriangleNormal(const float* p0, const float* p1, const float* p2, bool& outIsValid)
