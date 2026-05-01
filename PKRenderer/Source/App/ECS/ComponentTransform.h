@@ -1,5 +1,6 @@
 #pragma once
-#include "Core/Math/FunctionsMatrix.h"
+#include "Core/Math/Math.h"
+#include "Core/Math/Transform.h"
 
 namespace PK::App
 {
@@ -13,8 +14,8 @@ namespace PK::App
         float4x4 worldToLocal = PK_FLOAT4X4_IDENTITY;
         float minUniformScale = 1.0f;
 
-        inline float3x4 GetLocalToWorld() const { return Math::GetMatrixTRS3x4(position, rotation, scale); }
-        inline float4x4 GetWorldToLocal() const { return Math::GetMatrixInvTRS(position, rotation, scale); }
+        inline float3x4 GetLocalToWorld() const { return math::transformTRS3x4(position, rotation, scale); }
+        inline float4x4 GetWorldToLocal() const { return math::transformTRSInverse(position, rotation, scale); }
 
         virtual ~ComponentTransform() = default;
     };

@@ -3,7 +3,7 @@
 #include <mikktspace/mikktspace.h>
 #include "Core/Utilities/Memory.h"
 #include "Core/CLI/Log.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Extended.h"
 #include "Core/Math/FunctionsIntersect.h"
 #include "Core/Rendering/MeshStaticCollection.h"
 #include "Core/Rendering/MeshStaticAsset.h"
@@ -254,7 +254,7 @@ namespace PK::MeshUtilities
                     const auto a = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 0]];
                     const auto b = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 1]];
                     const auto c = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 2]];
-                    normals[valid_tri_count] = Math::GetTriangleNormal(a, b, c, isValid);
+                    normals[valid_tri_count] = math::triangleNormal(a, b, c, isValid);
                     corners[valid_tri_count][0] = float3(a);
                     corners[valid_tri_count][1] = float3(b);
                     corners[valid_tri_count][2] = float3(c);

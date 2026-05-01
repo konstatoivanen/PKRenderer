@@ -34,99 +34,99 @@ namespace PK::math
  
     extern thread_local pcg32_state s_thread_pcg_state;
 
-    void setseed(pcg32_state* rng, uint64_t state, uint64_t sequence);
-    void setseed(uint64_t state, uint64_t sequence);
+    void setSeed(pcg32_state* rng, uint64_t state, uint64_t sequence);
+    void setSeed(uint64_t state, uint64_t sequence);
 
-    inline void setseed(pcg32_state* rng, uint64_t seed) { setseed(rng, 0x853c49e6748fea9bull, seed); }
-    inline void setseed(uint64_t seed) { setseed(0x853c49e6748fea9bull, seed); }
+    inline void setSeed(pcg32_state* rng, uint64_t seed) { setSeed(rng, 0x853c49e6748fea9bull, seed); }
+    inline void setSeed(uint64_t seed) { setSeed(0x853c49e6748fea9bull, seed); }
 
-    uint32_t random_uint(pcg32_state* rng);
-    uint32_t random_uint();
+    uint32_t randomUint(pcg32_state* rng);
+    uint32_t randomUint();
     
-    inline uint8_t random_byte() { return static_cast<uint8_t>(random_uint()); }
-    inline uint16_t random_ushort() { return static_cast<uint16_t>(random_uint()); }
-    inline uint64_t random_ulong() { return static_cast<uint64_t>(random_uint()) | (static_cast<uint64_t>(random_uint()) << 32ull); }
-    inline int8_t random_sbyte() { return static_cast<uint8_t>(random_byte()); }
-    inline int16_t random_short() { return static_cast<int16_t>(random_ushort()); }
-    inline int32_t random_int() { return static_cast<int32_t>(random_uint()); }
-    inline int64_t random_long() { return static_cast<int64_t>(random_ulong()); }
-    inline float random_float() { return asfloat((random_uint() & 0x007fffffu) | 0x3f800000u) - 1.0f; }
-    inline double random_double() { return asdouble((random_ulong() & 0x000fffffffffffffull) | 0x3ff0000000000000ull) - 1.0; }
+    inline uint8_t randomByte() { return static_cast<uint8_t>(randomUint()); }
+    inline uint16_t randomUshort() { return static_cast<uint16_t>(randomUint()); }
+    inline uint64_t randomUlong() { return static_cast<uint64_t>(randomUint()) | (static_cast<uint64_t>(randomUint()) << 32ull); }
+    inline int8_t randomSbyte() { return static_cast<uint8_t>(randomByte()); }
+    inline int16_t randomShort() { return static_cast<int16_t>(randomUshort()); }
+    inline int32_t randomInt() { return static_cast<int32_t>(randomUint()); }
+    inline int64_t randomLong() { return static_cast<int64_t>(randomUlong()); }
+    inline float randomFloat() { return asfloat((randomUint() & 0x007fffffu) | 0x3f800000u) - 1.0f; }
+    inline double randomDouble() { return asdouble((randomUlong() & 0x000fffffffffffffull) | 0x3ff0000000000000ull) - 1.0; }
 
-    inline vector<uint8_t,2> random_byte2() { return vector<uint8_t,2>(random_byte(), random_byte()); }
-    inline vector<uint8_t,3> random_byte3() { return vector<uint8_t,3>(random_byte(), random_byte(), random_byte()); }
-    inline vector<uint8_t,4> random_byte4() { return vector<uint8_t,4>(random_byte(), random_byte(), random_byte(), random_byte()); }
+    inline vector<uint8_t,2> randomByte2() { return vector<uint8_t,2>(randomByte(), randomByte()); }
+    inline vector<uint8_t,3> randomByte3() { return vector<uint8_t,3>(randomByte(), randomByte(), randomByte()); }
+    inline vector<uint8_t,4> randomByte4() { return vector<uint8_t,4>(randomByte(), randomByte(), randomByte(), randomByte()); }
 
-    inline vector<uint16_t,2> random_ushort2() { return vector<uint16_t,2>(random_ushort(), random_ushort()); }
-    inline vector<uint16_t,3> random_ushort3() { return vector<uint16_t,3>(random_ushort(), random_ushort(), random_ushort()); }
-    inline vector<uint16_t,4> random_ushort4() { return vector<uint16_t,4>(random_ushort(), random_ushort(), random_ushort(), random_ushort()); }
+    inline vector<uint16_t,2> randomUshort2() { return vector<uint16_t,2>(randomUshort(), randomUshort()); }
+    inline vector<uint16_t,3> randomUshort3() { return vector<uint16_t,3>(randomUshort(), randomUshort(), randomUshort()); }
+    inline vector<uint16_t,4> randomUshort4() { return vector<uint16_t,4>(randomUshort(), randomUshort(), randomUshort(), randomUshort()); }
     
-    inline vector<uint32_t,2> random_uint2() { return vector<uint32_t,2>(random_uint(), random_uint()); }
-    inline vector<uint32_t,3> random_uint3() { return vector<uint32_t,3>(random_uint(), random_uint(), random_uint()); }
-    inline vector<uint32_t,4> random_uint4() { return vector<uint32_t,4>(random_uint(), random_uint(), random_uint(), random_uint()); }
+    inline vector<uint32_t,2> randomUint2() { return vector<uint32_t,2>(randomUint(), randomUint()); }
+    inline vector<uint32_t,3> randomUint3() { return vector<uint32_t,3>(randomUint(), randomUint(), randomUint()); }
+    inline vector<uint32_t,4> randomUint4() { return vector<uint32_t,4>(randomUint(), randomUint(), randomUint(), randomUint()); }
     
-    inline vector<uint64_t,2> random_ulong2() { return vector<uint64_t,2>(random_ulong(), random_ulong()); }
-    inline vector<uint64_t,3> random_ulong3() { return vector<uint64_t,3>(random_ulong(), random_ulong(), random_ulong()); }
-    inline vector<uint64_t,4> random_ulong4() { return vector<uint64_t,4>(random_ulong(), random_ulong(), random_ulong(), random_ulong()); }
+    inline vector<uint64_t,2> randomUlong2() { return vector<uint64_t,2>(randomUlong(), randomUlong()); }
+    inline vector<uint64_t,3> randomUlong3() { return vector<uint64_t,3>(randomUlong(), randomUlong(), randomUlong()); }
+    inline vector<uint64_t,4> randomUlong4() { return vector<uint64_t,4>(randomUlong(), randomUlong(), randomUlong(), randomUlong()); }
 
-    inline vector<int8_t,2> random_sbyte2() { return vector<int8_t,2>(random_sbyte(), random_sbyte()); }
-    inline vector<int8_t,3> random_sbyte3() { return vector<int8_t,3>(random_sbyte(), random_sbyte(), random_sbyte()); }
-    inline vector<int8_t,4> random_sbyte4() { return vector<int8_t,4>(random_sbyte(), random_sbyte(), random_sbyte(), random_sbyte()); }
+    inline vector<int8_t,2> randomSbyte2() { return vector<int8_t,2>(randomSbyte(), randomSbyte()); }
+    inline vector<int8_t,3> randomSbyte3() { return vector<int8_t,3>(randomSbyte(), randomSbyte(), randomSbyte()); }
+    inline vector<int8_t,4> randomSbyte4() { return vector<int8_t,4>(randomSbyte(), randomSbyte(), randomSbyte(), randomSbyte()); }
 
-    inline vector<int16_t,2> random_short2() { return vector<int16_t,2>(random_short(), random_short()); }
-    inline vector<int16_t,3> random_short3() { return vector<int16_t,3>(random_short(), random_short(), random_short()); }
-    inline vector<int16_t,4> random_short4() { return vector<int16_t,4>(random_short(), random_short(), random_short(), random_short()); }
+    inline vector<int16_t,2> randomShort2() { return vector<int16_t,2>(randomShort(), randomShort()); }
+    inline vector<int16_t,3> randomShort3() { return vector<int16_t,3>(randomShort(), randomShort(), randomShort()); }
+    inline vector<int16_t,4> randomShort4() { return vector<int16_t,4>(randomShort(), randomShort(), randomShort(), randomShort()); }
    
-    inline vector<int32_t,2> random_int2() { return vector<int32_t,2>(random_int(), random_int()); }
-    inline vector<int32_t,3> random_int3() { return vector<int32_t,3>(random_int(), random_int(), random_int()); }
-    inline vector<int32_t,4> random_int4() { return vector<int32_t,4>(random_int(), random_int(), random_int(), random_int()); }
+    inline vector<int32_t,2> randomInt2() { return vector<int32_t,2>(randomInt(), randomInt()); }
+    inline vector<int32_t,3> randomInt3() { return vector<int32_t,3>(randomInt(), randomInt(), randomInt()); }
+    inline vector<int32_t,4> randomInt4() { return vector<int32_t,4>(randomInt(), randomInt(), randomInt(), randomInt()); }
     
-    inline vector<int64_t,2> random_long2() { return vector<int64_t,2>(random_long(), random_long()); }
-    inline vector<int64_t,3> random_long3() { return vector<int64_t,3>(random_long(), random_long(), random_long()); }
-    inline vector<int64_t,4> random_long4() { return vector<int64_t,4>(random_long(), random_long(), random_long(), random_long()); }
+    inline vector<int64_t,2> randomLong2() { return vector<int64_t,2>(randomLong(), randomLong()); }
+    inline vector<int64_t,3> randomLong3() { return vector<int64_t,3>(randomLong(), randomLong(), randomLong()); }
+    inline vector<int64_t,4> randomLong4() { return vector<int64_t,4>(randomLong(), randomLong(), randomLong(), randomLong()); }
    
-    inline vector<float,2> random_float2() { return vector<float,2>(random_float(), random_float()); }
-    inline vector<float,3> random_float3() { return vector<float,3>(random_float(), random_float(), random_float()); }
-    inline vector<float,4> random_float4() { return vector<float,4>(random_float(), random_float(), random_float(), random_float()); }
+    inline vector<float,2> randomFloat2() { return vector<float,2>(randomFloat(), randomFloat()); }
+    inline vector<float,3> randomFloat3() { return vector<float,3>(randomFloat(), randomFloat(), randomFloat()); }
+    inline vector<float,4> randomFloat4() { return vector<float,4>(randomFloat(), randomFloat(), randomFloat(), randomFloat()); }
 
-    inline vector<double,2> random_doubl2() { return vector<double,2>(random_double(), random_double()); }
-    inline vector<double,3> random_doubl3() { return vector<double,3>(random_double(), random_double(), random_double()); }
-    inline vector<double,4> random_doubl4() { return vector<double,4>(random_double(), random_double(), random_double(), random_double()); }
+    inline vector<double,2> randomDouble2() { return vector<double,2>(randomDouble(), randomDouble()); }
+    inline vector<double,3> randomDouble3() { return vector<double,3>(randomDouble(), randomDouble(), randomDouble()); }
+    inline vector<double,4> randomDouble4() { return vector<double,4>(randomDouble(), randomDouble(), randomDouble(), randomDouble()); }
 
-    inline uint8_t random_range(uint8_t mi, uint8_t ma) { return static_cast<uint8_t>((random_uint() - mi) % (ma - mi + 1u)); }
-    inline uint16_t random_range(uint16_t mi, uint16_t ma) { return static_cast<uint16_t>((random_uint() - mi) % (ma - mi + 1u)); }
-    inline uint32_t random_range(uint32_t mi, uint32_t ma) { return static_cast<uint32_t>((random_uint() - mi) % (ma - mi + 1u)); }
-    inline uint64_t random_range(uint64_t mi, uint64_t ma) { return static_cast<uint64_t>((random_ulong() - mi) % (ma - mi + 1ull)); }
-    inline int8_t random_range(int8_t mi, int8_t ma) { return static_cast<int8_t>((random_int() - mi) % (ma - mi + 1)); }
-    inline int16_t random_range(int16_t mi, int16_t ma) { return static_cast<int16_t>((random_int() - mi) % (ma - mi + 1)); }
-    inline int32_t random_range(int32_t mi, int32_t ma) { return static_cast<int32_t>((random_int() - mi) % (ma - mi + 1)); }
-    inline int64_t random_range(int64_t mi, int64_t ma) { return static_cast<int64_t>((random_long() - mi) % (ma - mi + 1ll)); }
-    inline float random_range(float mi, float ma) { return fma(random_float(), ma - mi, mi); }
-    inline double random_range(double mi, double ma) { return fma(random_double(), ma - mi, mi); }
+    inline uint8_t randomRange(uint8_t mi, uint8_t ma) { return static_cast<uint8_t>((randomUint() - mi) % (ma - mi + 1u)); }
+    inline uint16_t randomRange(uint16_t mi, uint16_t ma) { return static_cast<uint16_t>((randomUint() - mi) % (ma - mi + 1u)); }
+    inline uint32_t randomRange(uint32_t mi, uint32_t ma) { return static_cast<uint32_t>((randomUint() - mi) % (ma - mi + 1u)); }
+    inline uint64_t randomRange(uint64_t mi, uint64_t ma) { return static_cast<uint64_t>((randomUlong() - mi) % (ma - mi + 1ull)); }
+    inline int8_t randomRange(int8_t mi, int8_t ma) { return static_cast<int8_t>((randomInt() - mi) % (ma - mi + 1)); }
+    inline int16_t randomRange(int16_t mi, int16_t ma) { return static_cast<int16_t>((randomInt() - mi) % (ma - mi + 1)); }
+    inline int32_t randomRange(int32_t mi, int32_t ma) { return static_cast<int32_t>((randomInt() - mi) % (ma - mi + 1)); }
+    inline int64_t randomRange(int64_t mi, int64_t ma) { return static_cast<int64_t>((randomLong() - mi) % (ma - mi + 1ll)); }
+    inline float randomRange(float mi, float ma) { return fma(randomFloat(), ma - mi, mi); }
+    inline double randomRange(double mi, double ma) { return fma(randomDouble(), ma - mi, mi); }
 
-    template<typename T> inline vector<T,2> random_range(const vector<T,2>& mi, const vector<T,2>& ma) { return vector<T,2>(random_range(mi.x, ma.x), random_range(mi.y, ma.y)); }
-    template<typename T> inline vector<T,3> random_range(const vector<T,3>& mi, const vector<T,3>& ma) { return vector<T,3>(random_range(mi.x, ma.x), random_range(mi.y, ma.y), random_range(mi.z, ma.z)); }
-    template<typename T> inline vector<T,4> random_range(const vector<T,4>& mi, const vector<T,4>& ma) { return vector<T,4>(random_range(mi.x, ma.x), random_range(mi.y, ma.y), random_range(mi.z, ma.z), random_range(mi.w, ma.w)); }
+    template<typename T> inline vector<T,2> randomRange(const vector<T,2>& mi, const vector<T,2>& ma) { return vector<T,2>(randomRange(mi.x, ma.x), randomRange(mi.y, ma.y)); }
+    template<typename T> inline vector<T,3> randomRange(const vector<T,3>& mi, const vector<T,3>& ma) { return vector<T,3>(randomRange(mi.x, ma.x), randomRange(mi.y, ma.y), randomRange(mi.z, ma.z)); }
+    template<typename T> inline vector<T,4> randomRange(const vector<T,4>& mi, const vector<T,4>& ma) { return vector<T,4>(randomRange(mi.x, ma.x), randomRange(mi.y, ma.y), randomRange(mi.z, ma.z), randomRange(mi.w, ma.w)); }
 
-    inline float random_euler_float() { return random_float() * 360.0f; }
-    inline vector<float,2> random_euler_float2() { return vector<float,2>(random_euler_float(), random_euler_float()); }
-    inline vector<float,3> random_euler_float3() { return vector<float,3>(random_euler_float(), random_euler_float(), random_euler_float()); }
-    inline vector<float,4> random_euler_float4() { return vector<float,4>(random_euler_float(), random_euler_float(), random_euler_float(), random_euler_float()); }
+    inline float randomEulerFloat() { return randomFloat() * 360.0f; }
+    inline vector<float,2> randomEulerFloat2() { return vector<float,2>(randomEulerFloat(), randomEulerFloat()); }
+    inline vector<float,3> randomEulerFloat3() { return vector<float,3>(randomEulerFloat(), randomEulerFloat(), randomEulerFloat()); }
+    inline vector<float,4> randomEulerFloat4() { return vector<float,4>(randomEulerFloat(), randomEulerFloat(), randomEulerFloat(), randomEulerFloat()); }
 
-    inline float random_radian_float() { return random_float() * 2.0f * PK_FLOAT_PI; }
-    inline vector<float,2> random_radian_float2() { return vector<float,2>(random_radian_float(), random_radian_float()); }
-    inline vector<float,3> random_radian_float3() { return vector<float,3>(random_radian_float(), random_radian_float(), random_radian_float()); }
-    inline vector<float,4> random_radian_float4() { return vector<float,4>(random_radian_float(), random_radian_float(), random_radian_float(), random_radian_float()); }
+    inline float randomRadianFloat() { return randomFloat() * 2.0f * PK_FLOAT_PI; }
+    inline vector<float,2> randomRadianFloat2() { return vector<float,2>(randomRadianFloat(), randomRadianFloat()); }
+    inline vector<float,3> randomRadianFloat3() { return vector<float,3>(randomRadianFloat(), randomRadianFloat(), randomRadianFloat()); }
+    inline vector<float,4> randomRadianFloat4() { return vector<float,4>(randomRadianFloat(), randomRadianFloat(), randomRadianFloat(), randomRadianFloat()); }
 
-    inline double random_euler_double() { return random_double() * 360.0; }
-    inline vector<double,2> random_euler_double2() { return vector<double,2>(random_euler_double(), random_euler_double()); }
-    inline vector<double,3> random_euler_double3() { return vector<double,3>(random_euler_double(), random_euler_double(), random_euler_double()); }
-    inline vector<double,4> random_euler_double4() { return vector<double,4>(random_euler_double(), random_euler_double(), random_euler_double(), random_euler_double()); }
+    inline double randomEulerDouble() { return randomDouble() * 360.0; }
+    inline vector<double,2> randomEulerDouble2() { return vector<double,2>(randomEulerDouble(), randomEulerDouble()); }
+    inline vector<double,3> randomEulerDouble3() { return vector<double,3>(randomEulerDouble(), randomEulerDouble(), randomEulerDouble()); }
+    inline vector<double,4> randomEulerDouble4() { return vector<double,4>(randomEulerDouble(), randomEulerDouble(), randomEulerDouble(), randomEulerDouble()); }
 
-    inline double random_radian_double() { return random_double() * 2.0 * PK_FLOAT_PI; }
-    inline vector<double,2> random_radian_double2() { return vector<double,2>(random_radian_double(), random_radian_double()); }
-    inline vector<double,3> random_radian_double3() { return vector<double,3>(random_radian_double(), random_radian_double(), random_radian_double()); }
-    inline vector<double,4> random_radian_double4() { return vector<double,4>(random_radian_double(), random_radian_double(), random_radian_double(), random_radian_double()); }
+    inline double randomRadianDouble() { return randomDouble() * 2.0 * PK_FLOAT_PI; }
+    inline vector<double,2> randomRadianDouble2() { return vector<double,2>(randomRadianDouble(), randomRadianDouble()); }
+    inline vector<double,3> randomRadianDouble3() { return vector<double,3>(randomRadianDouble(), randomRadianDouble(), randomRadianDouble()); }
+    inline vector<double,4> randomRadianDouble4() { return vector<double,4>(randomRadianDouble(), randomRadianDouble(), randomRadianDouble(), randomRadianDouble()); }
 
     float halton(uint32_t index, uint32_t radix);
     inline vector<float,2> halton(uint32_t index, const vector<uint32_t,2>& radix) { return vector<float,2>(halton(index, radix.x), halton(index, radix.y)); }

@@ -2,8 +2,8 @@
 #include "Core/Platform/PlatformInterfaces.h"
 #include "Core/Utilities/FixedMask.h"
 #include "Core/Utilities/FixedString.h"
-#include "Core/Math/FunctionsColor.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Color.h"
+#include "Core/Math/Extended.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/Rendering/ShaderAsset.h"
@@ -89,7 +89,7 @@ namespace PK::App
             const auto s_sample = m_timeHistory[(m_timeHistoryHead + i + 1ull) % sampleCountMin];
             const auto s_normalized = (float)((s_sample - minHistoryTime) / (maxHistoryTime - minHistoryTime));
             const auto s_height = (int)math::round(sampleHeight * s_normalized);
-            const auto s_color = Math::HueToRGB32((1.0f - s_normalized) / 3.0f);
+            const auto s_color = math::hueToRgb32((1.0f - s_normalized) / 3.0f);
             gui->GUIDrawRect(color32(s_color.r, s_color.g, s_color.b, 127), rectSample + short4(s_offset, 0, 0, -s_height));
         }
 

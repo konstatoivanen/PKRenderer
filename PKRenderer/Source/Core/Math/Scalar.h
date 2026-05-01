@@ -15,23 +15,23 @@ namespace PK::math
     inline bool nearEqual(float x, float y, float e) { return ::fabsf(x - y) < e; }
     inline bool nearEqual(double x, double y, double e) { return ::fabs(x - y) < e; }
 
-    constexpr float asfloat(uint32_t v) { union { uint32_t in; float out; } u{v}; return u.out; }
-    constexpr float asfloat(int32_t v) { union { int32_t in; float out; } u{v}; return u.out; }
-    constexpr double asdouble(uint64_t v) { union { uint64_t in; double out; } u{v}; return u.out; }
-    constexpr double asdouble(int64_t v) { union { int64_t in; double out; } u{v}; return u.out; }
+    constexpr float asfloat(uint32_t v) { union { uint32_t in; float out; } u{ v }; return u.out; }
+    constexpr float asfloat(int32_t v) { union { int32_t in; float out; } u{ v }; return u.out; }
+    constexpr double asdouble(uint64_t v) { union { uint64_t in; double out; } u{ v }; return u.out; }
+    constexpr double asdouble(int64_t v) { union { int64_t in; double out; } u{ v }; return u.out; }
 
-    constexpr int32_t asint(float v) { union { float in; int32_t out; } u{v}; return u.out; }
-    constexpr uint32_t asuint(float v) { union { float in; uint32_t out; } u{v}; return u.out; }
-    constexpr int64_t asint(double v) { union { double in; int64_t out; } u{v}; return u.out; }
-    constexpr uint64_t asuint(double v) { union { double in; uint64_t out; } u{v}; return u.out; }
+    constexpr int32_t asint(float v) { union { float in; int32_t out; } u{ v }; return u.out; }
+    constexpr uint32_t asuint(float v) { union { float in; uint32_t out; } u{ v }; return u.out; }
+    constexpr int64_t asint(double v) { union { double in; int64_t out; } u{ v }; return u.out; }
+    constexpr uint64_t asuint(double v) { union { double in; uint64_t out; } u{ v }; return u.out; }
 
-    #if defined(__clang__)
+#if defined(__clang__)
     inline uint32_t bitcount(uint32_t v) { return static_cast<uint32_t>(__builtin_popcount(v)); }
     inline uint32_t bitcount(uint64_t v) { return static_cast<uint32_t>(__builtin_popcountll(v)); }
-    #else
+#else
     inline uint32_t bitcount(uint32_t v) { return static_cast<uint32_t>(__popcnt(v)); }
     inline uint32_t bitcount(uint64_t v) { return static_cast<uint32_t>(__popcnt64(v)); }
-    #endif
+#endif
 
     inline uint32_t bitcount(float v) { return bitcount(asuint(v)); }
     inline uint32_t bitcount(double v) { return bitcount(asuint(v)); }
@@ -51,9 +51,23 @@ namespace PK::math
     inline uint64_t uadd(uint64_t a, int32_t b) { return b < 0 && a < (unsigned)(-b) ? 0u : b > 0 && a > 0xFFFFFFFFFFFFFFFFull - b ? 0xFFFFFFFFFFFFFFFFull : a + b; }
     inline uint64_t uadd(uint64_t a, int64_t b) { return b < 0 && a < (unsigned)(-b) ? 0u : b > 0 && a > 0xFFFFFFFFFFFFFFFFull - b ? 0xFFFFFFFFFFFFFFFFull : a + b; }
 
+#if defined(__F16CINTRIN_H)
+    inline uint16_t f32tof16(float v)
+    {
+        __m128 v0 = _mm_set_ss(v);
+        __m128i v1 = _mm_cvtps_ph(v0, 0);
+        return static_cast<uint16_t>(_mm_cvtsi128_si32(v1));
+    }
+
+    inline float f16tof32(uint16_t x)
+    {
+        __m128i v0 = _mm_cvtsi32_si128(static_cast<uint32_t>(x));
+        __m128 v1 = _mm_cvtph_ps(v0);
+        return _mm_cvtss_f32(v1);
+    }
+#else
     constexpr uint16_t f32tof16(float v)
     {
-        // @TODO add support for intrinsics conversions where available.
         const auto u0 = asuint(v);
         const auto u1 = u0 & 0x7FFFF000u;
         const auto u2 = (asuint(::fminf(asfloat(u1) * 1.92592994e-34f, 260042752.0f)) + 0x1000u) >> 13u;
@@ -68,6 +82,7 @@ namespace PK::math
         uf = e == 0 ? asuint(asfloat(uf + (1 << 23)) - 6.10351563e-05f) : uf;
         return asfloat(uf | (x & 0x8000) << 16);
     }
+#endif
 
     constexpr int8_t packSnorm8(float v) { return int8_t(((v >= -1) ? (v <= +1) ? v : +1 : -1) * 0x7F + (v >= 0 ? 0.5f : -0.5f)); }
     constexpr int8_t packSnorm16(float v) { return int8_t(((v >= -1) ? (v <= +1) ? v : +1 : -1) * 0x7FFF + (v >= 0 ? 0.5f : -0.5f)); }
@@ -148,6 +163,17 @@ namespace PK::math
     
     inline float rsqrt(float v) { return 1.0f / ::sqrtf(v); }
     inline double rsqrt(double v) { return 1.0 / ::sqrt(v); }
+
+    constexpr float rcp(float v) { return 1.0f / v; }
+    constexpr double rcp(double v) { return 1.0 / v; }
+    constexpr uint8_t rcp(uint8_t v) { return 1u / v; }
+    constexpr uint16_t rcp(uint16_t v) { return 1u / v; }
+    constexpr uint32_t rcp(uint32_t v) { return 1u / v; }
+    constexpr uint64_t rcp(uint64_t v) { return 1ull / v; }
+    constexpr int8_t rcp(int8_t v) { return 1 / v; }
+    constexpr int16_t rcp(int16_t v) { return 1 / v; }
+    constexpr int32_t rcp(int32_t v) { return 1 / v; }
+    constexpr int64_t rcp(int64_t v) { return 1ll / v; }
 
     constexpr float sign(float v) { return static_cast<float>((v > 0) - (v < 0)); }
     constexpr double sign(double v) { return static_cast<double>((v > 0) - (v < 0)); }

@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Math/FunctionsMisc.h"
-#include "Core/Math/FunctionsMatrix.h"
+#include "Core/Math/Extended.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
@@ -44,7 +43,7 @@ namespace PK::App
                 camera->eulerAngles.y -= input->state.cursorPositionDelta.x * sensitivity;
             }
 
-            auto targetRotation = math::quat::fromEuler(camera->eulerAngles);
+            auto targetRotation = quaternion(camera->eulerAngles);
 
             auto offset = input->state.ConsumeAxis(m_keys.Left, m_keys.Right, m_keys.Down, m_keys.Up, m_keys.Backward, m_keys.Forward);
             auto length = math::length(offset);
@@ -55,7 +54,7 @@ namespace PK::App
                 offset *= deltaTime * camera->moveSpeed;
             }
 
-            camera->targetPosition += math::quat::mul(targetRotation, offset);
+            camera->targetPosition += math::mul(targetRotation, offset);
 
             if (input->state.ConsumeKey(m_keys.FovControl))
             {
@@ -67,7 +66,7 @@ namespace PK::App
                     auto fov1 = projection->fieldOfView + fovDelta;
                     auto fd0 = math::cot(fov0 * PK_FLOAT_DEG2RAD * 0.5f);
                     auto fd1 = math::cot(fov1 * PK_FLOAT_DEG2RAD * 0.5f);
-                    auto zoomOffset = math::quat::mul(targetRotation, float3(0, 0, fd0 - fd1));
+                    auto zoomOffset = math::mul(targetRotation, float3(0, 0, fd0 - fd1));
 
                     camera->targetPosition += zoomOffset;
                     transform->position += zoomOffset;
@@ -89,7 +88,7 @@ namespace PK::App
             }
 
             transform->position = math::lerp(transform->position, camera->targetPosition, interpolantPos);
-            transform->rotation = math::quat::slerp(transform->rotation, targetRotation, interpolantRot);
+            transform->rotation = math::slerp(transform->rotation, targetRotation, interpolantRot);
 
             // Force automatic perspective projection for this view.
             view.projection->mode = ComponentProjection::Perspective;
@@ -108,7 +107,7 @@ namespace PK::App
             auto& view = views[i];
             auto transform = view.transform;
             auto position = transform->position;
-            auto rotation = math::quat::toEuler(transform->rotation);
+            auto rotation = math::euler(transform->rotation);
             PK_LOG_INFO("EngineFlyCamera.Transforms.Log: EntityId:%i Pos:[%f, %f, %f], Rot:[%f,%f,%f]", view.GID.entityID(), position.x, position.y, position.z, rotation.x, rotation.y, rotation.z);
         }
     }
@@ -125,7 +124,7 @@ namespace PK::App
 
             camera->eulerAngles = camera->snapshotRotation;
             camera->targetPosition = transform->position = camera->snapshotPosition;
-            transform->rotation = math::quat::fromEuler(camera->eulerAngles);
+            transform->rotation = quaternion(camera->eulerAngles);
             PK_LOG_INFO("EngineFlyCamera.Transforms.Reset: EntityId:%i", i);
         }
     }

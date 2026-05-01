@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Extended.h"
 #include "ShaderPropertyBlock.h"
 
 namespace PK

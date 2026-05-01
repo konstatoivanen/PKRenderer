@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Extended.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
 #include "Core/Rendering/CommandBufferExt.h"

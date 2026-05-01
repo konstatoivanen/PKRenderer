@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/FastBuffer.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Extended.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/CLI/CVariable.h"
 #include "App/Renderer/EntityEnums.h"

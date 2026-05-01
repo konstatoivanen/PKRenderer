@@ -2,7 +2,7 @@
 #include <PKAssets/PKAssetLoader.h>
 #include "Core/Utilities/Memory.h"
 #include "Core/Math/FunctionsIntersect.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Extended.h"
 #include "Core/CLI/Log.h"
 #include "Core/Rendering/MeshStaticCollection.h"
 #include "MeshStaticAsset.h"

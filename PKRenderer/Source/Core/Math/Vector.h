@@ -2029,8 +2029,8 @@ namespace PK::math
 
     constexpr uint32_t f32tof16_pack(const float2& v) { return static_cast<uint32_t>(f32tof16(v.x)) | (static_cast<uint32_t>(f32tof16(v.y)) << 16u); }
     constexpr uint64_t f32tof16_pack(const float4& v) { return static_cast<uint64_t>(f32tof16(v.x)) | (static_cast<uint64_t>(f32tof16(v.y)) << 16ull) | (static_cast<uint64_t>(f32tof16(v.y)) << 32ull) | (static_cast<uint64_t>(f32tof16(v.y)) << 48ull); }
-    constexpr float2 f16tof32_upack(uint32_t v) { return float2(f16tof32(v & 0xFFFFu), f16tof32((v >> 16u) & 0xFFFFu)); }
-    constexpr float4 f16tof32_upack(uint64_t v) { return float4(f16tof32(v & 0xFFFFu), f16tof32((v >> 16u) & 0xFFFFu), f16tof32((v >> 32u) & 0xFFFFu), f16tof32((v >> 48u) & 0xFFFFu)); }
+    constexpr float2 f16tof32_unpack(uint32_t v) { return float2(f16tof32(v & 0xFFFFu), f16tof32((v >> 16u) & 0xFFFFu)); }
+    constexpr float4 f16tof32_unpack(uint64_t v) { return float4(f16tof32(v & 0xFFFFu), f16tof32((v >> 16u) & 0xFFFFu), f16tof32((v >> 32u) & 0xFFFFu), f16tof32((v >> 48u) & 0xFFFFu)); }
 
     constexpr sbyte2 packSnorm8(const float2& v) { return sbyte2(packSnorm8(v.x), packSnorm8(v.y)); }
     constexpr sbyte3 packSnorm8(const float3& v) { return sbyte3(packSnorm8(v.x), packSnorm8(v.y), packSnorm8(v.z)); }
@@ -2143,6 +2143,8 @@ namespace PK::math
     template<typename T> vector<T,3> rsqrt(const vector<T,3>& v) { return vector<T,3>(rsqrt(v.x), rsqrt(v.y), rsqrt(v.z)); }
     template<typename T> vector<T,4> rsqrt(const vector<T,4>& v) { return vector<T,4>(rsqrt(v.x), rsqrt(v.y), rsqrt(v.z), rsqrt(v.w)); }
 
+    template<typename T, int N> vector<T,2> rcp(const vector<T,N>& v) { return static_cast<T>(1) / v; }
+
     template<typename T> vector<T,2> abs(const vector<T,2>& v) { return vector<T,2>(abs(v.x), abs(v.y)); }
     template<typename T> vector<T,3> abs(const vector<T,3>& v) { return vector<T,3>(abs(v.x), abs(v.y), abs(v.z)); }
     template<typename T> vector<T,4> abs(const vector<T,4>& v) { return vector<T,4>(abs(v.x), abs(v.y), abs(v.z), abs(v.w)); }
@@ -2199,7 +2201,7 @@ namespace PK::math
     template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, const vector<T,N>& mi, const vector<T,N>& ma) { return max(min(v, ma), mi); }
     template<typename T, int N> vector<T,N> clamp(const vector<T,N>& v, T mi, T ma) { return max(min(v, ma), mi); }
 
-    template<typename T, int N> vector<T, N> saturate(const vector<T, N>& v) { return max(min(v, static_cast<T>(1)), mi); }
+    template<typename T, int N> vector<T, N> saturate(const vector<T, N>& v) { return max(min(v, static_cast<T>(1)), static_cast<T>(0)); }
 
     template<typename T> T cmin(const vector<T,2>& v) { return min(v.x, v.y); }
     template<typename T> T cmin(const vector<T,3>& v) { return min(min(v.x, v.y), v.z); }
@@ -2246,7 +2248,7 @@ namespace PK::math
     template<typename T, int N> T length(const vector<T,N>& v) { return sqrt(dot(v,v)); }
     template<typename T, int N> T distance(const vector<T, N>& a, const vector<T, N>& b) { return length(a - b); }
     template<typename T, int N> vector<T,N> normalize(const vector<T,N>& v) { return v / length(v); }
-    template<typename T, int N> vector<T,N> safenormalize(const vector<T,N>& v) { float l = length(v); return v * (l == static_cast<T>(0) ? static_cast<T>(0) : static_cast<T>(1) / l); }
+    template<typename T, int N> vector<T,N> safenormalize(const vector<T,N>& v) { float l = length(v); return v * (l == static_cast<T>(0) ? static_cast<T>(0) : rcp(l)); }
     
     template<typename T> vector<T,2> cross(const vector<T,2>& a, const vector<T,2>& b) { return vector<T,2>(a.x * b.y - b.x * a.y); }
     template<typename T> vector<T,3> cross(const vector<T,3>& a, const vector<T,3>& b) { return vector<T,3>(a.y * b.z - b.y * a.z, a.z * b.x - b.z * a.x, a.x * b.y - b.x * a.y); }
@@ -2269,6 +2271,8 @@ namespace PK::math
     template<typename T> constexpr matrix<T,2,4> transpose(const matrix<T,4,2>& m) { return matrix<T,2,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1]); }
     template<typename T> constexpr matrix<T,3,4> transpose(const matrix<T,4,3>& m) { return matrix<T,3,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2]); }
     template<typename T> constexpr matrix<T,4,4> transpose(const matrix<T,4,4>& m) { return matrix<T,4,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2], m[0][3], m[1][3], m[2][3], m[3][3]); }
+    template<typename T> constexpr matrix<T,3,4> transpose3x4(const matrix<T,4,4>& m) { return matrix<T,3,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2]); }
+    template<typename T> constexpr matrix<T,4,4> transpose4x4(const matrix<T,3,4>& m) { return matrix<T,4,4>(m[0][0], m[1][0], m[2][0], static_cast<T>(0), m[0][1], m[1][1], m[2][1], static_cast<T>(0), m[0][2], m[1][2], m[2][2], static_cast<T>(0), m[0][3], m[1][3], m[2][3], static_cast<T>(1)); }
 
     template<typename T> constexpr T determinant(const matrix<T,2,2>& m) { return m[0][0] * m[1][1] - m[1][0] * m[0][1]; }
     template<typename T> constexpr T determinant(const matrix<T,3,3>& m) { return m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) - m[1][0] * (m[0][1] * m[2][2] - m[2][1] * m[0][2]) + m[2][0] * (m[0][1] * m[1][2] - m[1][1] * m[0][2]); }
@@ -2284,15 +2288,16 @@ namespace PK::math
         return +m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) - m[1][0] * (m[0][1] * m[2][2] - m[2][1] * m[0][2]) + m[2][0] * (m[0][1] * m[1][2] - m[1][1] * m[0][2]); 
     }
 
+
     template<typename T> matrix<T,2,2> inverse(const matrix<T,2,2>& m)
     {
-        const auto invd = static_cast<T>(1) / (+m[0][0] * m[1][1] - m[1][0] * m[0][1]);
+        const auto invd = rcp(+m[0][0] * m[1][1] - m[1][0] * m[0][1]);
         return matrix<T,2,2>(+m[1][1] * invd, -m[0][1] * invd, -m[1][0] * invd, +m[0][0] * invd);
     }
 
     template<typename T> matrix<T,3,3> inverse(const matrix<T,3,3>& m)
     {
-        const auto invd = static_cast<T>(1) / (+m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) - m[1][0] * (m[0][1] * m[2][2] - m[2][1] * m[0][2]) + m[2][0] * (m[0][1] * m[1][2] - m[1][1] * m[0][2]));
+        const auto invd = rcp(+m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) - m[1][0] * (m[0][1] * m[2][2] - m[2][1] * m[0][2]) + m[2][0] * (m[0][1] * m[1][2] - m[1][1] * m[0][2]));
         return matrix<T, 3, 3>(
         +(m[1][1] * m[2][2] - m[2][1] * m[1][2]) * invd,
         -(m[0][1] * m[2][2] - m[2][1] * m[0][2]) * invd,
@@ -2348,9 +2353,10 @@ namespace PK::math
         matrix<T,4,4> inv(i0 * sA, i1 * sB, i2 * sA, i3 * sB);
         vector<T,4> r0(inv[0][0], inv[1][0], inv[2][0], inv[3][0]);
         vector<T,4> d0(m[0] * r0);
-        return inv * (static_cast<T>(1) / ((d0.x + d0.y) + (d0.z + d0.w)));
+        return inv * rcp((d0.x + d0.y) + (d0.z + d0.w));
     }
 
+    
     template<typename T> matrix<T,3,3> affineInverse(const matrix<T,3,3>& m)
     {
         const matrix<T,2,2> inv(inverse(matrix<T,2,2>(m)));
@@ -2362,6 +2368,7 @@ namespace PK::math
         const matrix<T,3,3> inv(inverse(matrix<T,3,3>(m)));
         return matrix<T,4,4>(vector<T,4>(inv[0], static_cast<T>(0)), vector<T,4>(inv[1], static_cast<T>(0)), vector<T,4>(inv[2], static_cast<T>(0)), vector<T,4>(-inv * vector<T,3>(m[3]), static_cast<T>(1)));
     }
+
 
     template<typename T> matrix<T,2,2> adjugate(const matrix<T,2,2>& m) { return matrix<T,2,2>(+m[1][1], -m[1][0], -m[0][1], +m[0][0]); }
 
@@ -2398,139 +2405,5 @@ namespace PK::math
             +determinant(matrix<T,3,3>(m[0][0], m[0][2], m[0][3], m[1][0], m[1][2], m[1][3], m[2][0], m[2][2], m[2][3])),
             -determinant(matrix<T,3,3>(m[0][0], m[0][1], m[0][3], m[1][0], m[1][1], m[1][3], m[2][0], m[2][1], m[2][3])),
             +determinant(matrix<T,3,3>(m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2])));
-    }
-
-    namespace quat
-    {
-        template<typename T> vector<T,4> conjugate(const vector<T,4>& q) { return vector<T,4>(-q.x,-q.y,-q.z,q.w); }
-
-        template<typename T> vector<T,4> inverse(const vector<T,4>& q) { return rcp(dot(q,q)) * q * static_cast<T>(-1); }
-       
-        template<typename T> vector<T,4> mul(const vector<T,4>& q, const vector<T,4>& p)
-        {
-            return vector<T, 4>(p.w * q.x + p.x * q.w + p.y * q.z - p.z * q.y,
-                                p.w * q.y + p.y * q.w + p.z * q.x - p.x * q.z,
-                                p.w * q.z + p.z * q.w + p.x * q.y - p.y * q.x,
-                                p.w * q.w - p.x * q.x - p.y * q.y - p.z * q.z);
-        }
-
-        template<typename T> vector<T,3> mul(const vector<T,4>& q, const vector<T,3>& v) 
-        {
-            const vector<T,3> qv(q.x, q.y, q.z);
-            const vector<T,3> uv(cross(qv, v));
-            const vector<T,3> uuv(cross(qv, uv));
-            return v + ((uv * q.w) + uuv) * static_cast<T>(2);
-        }
-
-        template<typename T> vector<T,3> mul(const vector<T,3>& v, const vector<T,4>& q) { return mul(inverse(q), v); }
-
-        template<typename T> vector<T,4> nlerp(const vector<T,4>& a, const vector<T,4>& b, T t) { return normalize(lerp(a,b,t)); }
-
-        template<typename T> vector<T,4> slerp(const vector<T,4>& x, const vector<T,4>& y, T a) 
-        {
-            vector<T,4> z = y;
-
-            T cosTheta = dot(x, y);
-
-            // If cosTheta < 0, the interpolation will take the long way around the sphere.
-            // To fix this, one quat must be negated.
-            if (cosTheta < static_cast<T>(0))
-            {
-                z = -y;
-                cosTheta = -cosTheta;
-            }
-
-            // Perform a linear interpolation when cosTheta is close to 1 to avoid side effect of sin(angle) becoming a zero denominator
-            if (cosTheta > static_cast<T>(1) - static_cast<T>(1e-4f))
-            {
-                // Linear interpolation
-                return vector<T,4>(
-                    lerp(x.x, z.x, a),
-                    lerp(x.y, z.y, a),
-                    lerp(x.z, z.z, a),
-                    lerp(x.w, z.w, a));
-            }
-            else
-            {
-                // Essential Mathematics, page 467
-                T angle = acos(cosTheta);
-                return (sin((static_cast<T>(1) - a) * angle) * x + sin(a * angle) * z) / sin(angle);
-            }
-        }
-
-        template<typename T> T roll(const vector<T,4>& q) { return static_cast<T>(atan2(static_cast<T>(2) * (q.x * q.y + q.w * q.z), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z)); }
-
-        template<typename T> T pitch(const vector<T,4>& q)
-        {
-            const auto y = static_cast<T>(2) * (q.y * q.z + q.w * q.x);
-            const auto x = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
-            return x == static_cast<T>(0) && y == static_cast<T>(0) ? static_cast<T>(static_cast<T>(2) * atan2(q.x, q.w)) : static_cast<T>(atan2(y, x));
-        }
-
-        template<typename T> T yaw(const vector<T,4>& q) { return asin(clamp(static_cast<T>(-2) * (q.x * q.z - q.w * q.y), static_cast<T>(-1), static_cast<T>(1))); }
-
-        template<typename T> vector<T,4> from3x3(const matrix<T,3,3>& m)
-        {
-            const auto x = m[0][0] - m[1][1] - m[2][2];
-            const auto y = m[1][1] - m[0][0] - m[2][2];
-            const auto z = m[2][2] - m[0][0] - m[1][1];
-            const auto w = m[0][0] + m[1][1] + m[2][2];
-            
-            auto i = 0;
-            auto v = x;
-
-            if (y > v) { v = y; i = 1; }
-            if (z > v) { v = z; i = 2; }
-            if (w > v) { v = w; i = 3; }
-
-            const auto vf = sqrt(v + static_cast<T>(1)) * static_cast<T>(0.5);
-            const auto cf = static_cast<T>(0.25) / vf;
-
-            switch (i)
-            {
-                default:
-                case 0: return vector<T,4>(vf, (m[1][2] - m[2][1]) * cf, (m[2][0] - m[0][2]) * cf, (m[0][1] - m[1][0]) * cf);
-                case 1: return vector<T,4>((m[1][2] - m[2][1]) * cf, vf, (m[0][1] + m[1][0]) * cf, (m[2][0] + m[0][2]) * cf);
-                case 2: return vector<T,4>((m[2][0] - m[0][2]) * cf, (m[0][1] + m[1][0]) * cf, vf, (m[1][2] + m[2][1]) * cf);
-                case 3: return vector<T,4>((m[0][1] - m[1][0]) * cf, (m[2][0] + m[0][2]) * cf, (m[1][2] + m[2][1]) * cf, vf);
-            }
-        }
-
-        template<typename T> vector<T,4> from4x4(const matrix<T,4,4>& m) { return from3x3(matrix<T,3,3>(m)); }
-
-        template<typename T> vector<T,4> fromEuler(const vector<T,3>& e)
-        {
-            auto s = sin(e * static_cast<T>(0.5));
-            auto c = cos(e * static_cast<T>(0.5));
-            return vector<T,4>(s.x * c.y * c.z - s.y * s.z * c.x, s.y * c.x * c.z + s.x * s.z * c.y, s.z * c.x * c.y - s.x * s.y * c.z, c.x * c.y * c.z + s.y * s.z * s.x);
-        }
-
-        template<typename T> matrix<T,3,3> to3x3(const vector<T,4>& q)
-        {
-            return matrix<T,3,3>(
-                T(1) - T(2) * (q.y * q.y + q.z * q.z),
-                T(2) * (q.x * q.y + q.w * q.z),
-                T(2) * (q.x * q.z - q.w * q.y),
-                T(2) * (q.x * q.y - q.w * q.z),
-                T(1) - T(2) * (q.x * q.x + q.z * q.z),
-                T(2) * (q.y * q.z + q.w * q.x),
-                T(2) * (q.x * q.z + q.w * q.y),
-                T(2) * (q.y * q.z - q.w * q.x),
-                T(1) - T(2) * (q.x * q.x + q.y * q.y));
-        }
-
-        template<typename T> matrix<T,4,4> to4x4(const vector<T,4>& q) { return matrix<T,4,4>(to3x3(q)); }
-
-        template<typename T> vector<T,3> toEuler(const vector<T,4>& q) { return vector<T,3>(pitch(q), yaw(q), roll(q)); }
-
-        template<typename T> vector<T,4> tangentBasis(const vector<T,3>& f, const vector<T,3>& b)
-        {
-            const auto t = normalize(f - b * dot(f, b) / dot(b, b));
-            const auto n = cross(b, t);
-            const auto w = sqrt(1.0f + n.x + b.y + t.z) * 0.5f;
-            return vector<T,4>((b.z - t.y) / (4.0f * w), (t.x - n.z) / (4.0f * w), (n.y - b.x) / (4.0f * w), w);
-        }
-
-        template<typename T> vector<T,4> lookAt(const vector<T,3>& v) { return tangentBasis(v, vector<T,3>(static_cast<T>(0),static_cast<T>(1), static_cast<T>(0))); }
     }
 }

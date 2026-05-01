@@ -31,6 +31,12 @@
     #include "neon.h"
 #endif
 
+// Sadly f16c inclusion mechnism requires this :/
+// Dont bother using this with mscv as it doesn't optimize well around intrinsics anyway.
+#if defined(__clang__)
+#include <immintrin.h>
+#endif
+
 #define PK_MATH_SIMD (PK_MATH_SIMD_SSE2 || PK_MATH_SIMD_SSE3 || PK_MATH_SIMD_SSSE3 || PK_MATH_SIMD_SSE4_1 || PK_MATH_SIMD_SSE4_2 || PK_MATH_SIMD_NEON)
 
 namespace PK
@@ -39,6 +45,7 @@ namespace PK
     {
         template<typename T, int N> struct vector {};
         template<typename T, int C, int R> struct matrix {};
+        template<typename T> struct quaternion;
     
         #if defined(PK_MATH_SIMD_SSE2)
         typedef __m128	simd_f32vec4;
@@ -209,9 +216,10 @@ namespace PK
     typedef math::matrix<int64_t,4,3> long4x3;
     typedef math::matrix<int64_t,4,4> long4x4;
 
+    typedef math::quaternion<float> quaternion;
+
     typedef byte4 color32;
     typedef float4 color;
-    typedef float4 quaternion;
     struct FrustumPlanes;
     struct ShadowCascadeCreateInfo;
     struct BoundingBox;

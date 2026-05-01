@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include <algorithm>
-#include "Core/Math/FunctionsMatrix.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"

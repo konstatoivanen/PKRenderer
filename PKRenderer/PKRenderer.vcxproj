@@ -143,7 +143,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <AdditionalIncludeDirectories>$(SolutionDir)PKRenderer\Source;$(SolutionDir)PKRenderer\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
-      <AdditionalOptions>-Wno-missing-field-initializers %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Wno-missing-field-initializers -mf16c %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
@@ -220,7 +220,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalOptions>-Wno-missing-field-initializers %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Wno-missing-field-initializers -mf16c %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <StringPooling>true</StringPooling>
@@ -263,8 +263,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Input\InputStateCollection.h" />
     <ClInclude Include="Source\Core\Input\InputDevice.h" />
     <ClInclude Include="Source\Core\Input\InputState.h" />
+    <ClInclude Include="Source\Core\Math\Projection.h" />
+    <ClInclude Include="Source\Core\Math\Quaternion.h" />
     <ClInclude Include="Source\Core\Math\Random.h" />
     <ClInclude Include="Source\Core\Math\Scalar.h" />
+    <ClInclude Include="Source\Core\Math\Transform.h" />
     <ClInclude Include="Source\Core\Math\Vector.h" />
     <ClInclude Include="Source\Core\Platform\Platform.h" />
     <ClInclude Include="Source\Core\Platform\PlatformInterfaces.h" />
@@ -675,10 +678,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\ECS\EntityDatabase.h" />
     <ClInclude Include="Source\Core\ECS\IEntityImplementer.h" />
     <ClInclude Include="Source\Core\ECS\IEntityView.h" />
-    <ClInclude Include="Source\Core\Math\FunctionsColor.h" />
+    <ClInclude Include="Source\Core\Math\Color.h" />
     <ClInclude Include="Source\Core\Math\FunctionsIntersect.h" />
-    <ClInclude Include="Source\Core\Math\FunctionsMatrix.h" />
-    <ClInclude Include="Source\Core\Math\FunctionsMisc.h" />
+    <ClInclude Include="Source\Core\Math\Extended.h" />
     <ClInclude Include="Source\Core\Math\Forward.h" />
     <ClInclude Include="Source\Core\Math\Math.h" />
     <ClInclude Include="Source\PrecompiledHeader.h" />
@@ -1048,6 +1050,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp" />
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
+    <ClCompile Include="Source\Core\Math\Extended.cpp" />
     <ClCompile Include="Source\Core\Math\Random.cpp" />
     <ClCompile Include="Source\Core\Platform\Platform.cpp" />
     <ClCompile Include="Source\Core\Platform\Windows\Win32Platform.cpp" />
@@ -1122,10 +1125,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Engines\EngineScreenshot.cpp" />
     <ClCompile Include="Source\App\Engines\EngineUpdateTransforms.cpp" />
     <ClCompile Include="Source\main.cpp" />
-    <ClCompile Include="Source\Core\Math\FunctionsColor.cpp" />
     <ClCompile Include="Source\Core\Math\FunctionsIntersect.cpp" />
-    <ClCompile Include="Source\Core\Math\FunctionsMatrix.cpp" />
-    <ClCompile Include="Source\Core\Math\FunctionsMisc.cpp" />
     <ClCompile Include="Source\PrecompiledHeader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'">Create</PrecompiledHeader>

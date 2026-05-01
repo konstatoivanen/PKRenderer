@@ -5,22 +5,22 @@ namespace PK::math
 {
     thread_local pcg32_state s_thread_pcg_state;
 
-    void setseed(pcg32_state* rng, uint64_t state, uint64_t sequence)
+    void setSeed(pcg32_state* rng, uint64_t state, uint64_t sequence)
     {
         rng->state = 0U;
         rng->inc = (sequence << 1u) | 1u;
-        random_uint(rng);
+        randomUint(rng);
         rng->state += state;
-        random_uint(rng);
+        randomUint(rng);
     }
 
-    void setseed(uint64_t state, uint64_t sequence)
+    void setSeed(uint64_t state, uint64_t sequence)
     {
         srand(static_cast<uint32_t>(sequence));
-        setseed(&s_thread_pcg_state, state, sequence);
+        setSeed(&s_thread_pcg_state, state, sequence);
     }
 
-    uint32_t random_uint(pcg32_state* rng)
+    uint32_t randomUint(pcg32_state* rng)
     {
         uint64_t oldstate = rng->state;
         rng->state = oldstate * 6364136223846793005ULL + rng->inc;
@@ -29,9 +29,9 @@ namespace PK::math
         return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
     }
 
-    uint32_t random_uint()
+    uint32_t randomUint()
     { 
-        return random_uint(&s_thread_pcg_state);
+        return randomUint(&s_thread_pcg_state);
     }
 
     float halton(uint32_t index, uint32_t radix)

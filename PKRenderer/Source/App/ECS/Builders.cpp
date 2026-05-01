@@ -45,7 +45,7 @@ namespace PK::App::EntityBuilders
         entityDb->ReserveView(implementer, egid, &EntityViewTransform::bounds, &EntityViewTransform::transform);
         implementer->localAABB = localBounds;
         implementer->position = position;
-        implementer->rotation = math::quat::fromEuler(euler);
+        implementer->rotation = quaternion(euler);
         implementer->scale = scale;
     }
 
@@ -172,7 +172,7 @@ namespace PK::App::EntityBuilders
             &EntityViewFlyCamera::flyCamera);
         implementer->mode = ComponentProjection::Perspective;
         implementer->snapshotPosition = implementer->position;
-        implementer->snapshotRotation = math::quat::toEuler(implementer->rotation);
+        implementer->snapshotRotation = math::euler(implementer->rotation);
         implementer->targetPosition = implementer->snapshotPosition;
         implementer->eulerAngles = implementer->snapshotRotation;
         implementer->fieldOfView = fieldOfView;

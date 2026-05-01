@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Extended.h"
 #include "Core/Math/FunctionsIntersect.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"

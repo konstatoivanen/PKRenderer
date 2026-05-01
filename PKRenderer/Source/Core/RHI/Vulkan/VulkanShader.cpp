@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
-#include "Core/Math/FunctionsMisc.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/CLI/Log.h" 
 #include "Core/RHI/Vulkan/VulkanDriver.h"

@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Projection.h"
 #include "Core/Math/FunctionsIntersect.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/FixedArena.h"
@@ -175,8 +175,8 @@ namespace PK::App
                 renderView->worldToClip = renderView->viewToClip * renderView->worldToView;
                 renderView->forwardPlane = Math::TransformPlane(entity.transform->localToWorld, float4(0, 0, 1, 0));
                 renderView->position = entity.transform->position;
-                renderView->znear = Math::GetZNearFromClip(renderView->viewToClip);
-                renderView->zfar = Math::GetZFarFromClip(renderView->viewToClip);
+                renderView->znear = math::nearClip(renderView->viewToClip);
+                renderView->zfar = math::farClip(renderView->viewToClip);
 
                 renderView->cursorPosition = entity.input->state.cursorPosition;
                 renderView->cursorPositionDelta = entity.input->state.cursorPositionDelta;

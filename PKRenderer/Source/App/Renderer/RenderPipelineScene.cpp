@@ -1,8 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/FenceRef.h"
-#include "Core/Math/FunctionsMisc.h"
 #include "Core/Math/Random.h"
-#include "Core/Math/FunctionsMatrix.h"
+#include "Core/Math/Projection.h"
 #include "Core/CLI/Log.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -203,7 +202,7 @@ namespace PK::App
 
             const auto& viewToClipNoJitter = view->viewToClip;
             const auto& worldToView = view->worldToView;
-            const auto viewToClip = Math::GetPerspectiveJittered(viewToClipNoJitter, jitter.xy);
+            const auto viewToClip = math::perspectiveJittered(viewToClipNoJitter, jitter.xy());
             const auto clipToView = math::inverse(viewToClip);
             const auto viewToWorld = math::affineInverse(worldToView);
             const auto worldToClip = viewToClip * worldToView;
@@ -214,16 +213,16 @@ namespace PK::App
 
             const auto& viewToClipNoJitterPrev = view->viewToClipPrev;
             const auto& worldToViewPrev = view->worldToViewPrev;
-            const auto viewToClipPrev = Math::GetPerspectiveJittered(viewToClipNoJitterPrev, jitter.xy);
+            const auto viewToClipPrev = math::perspectiveJittered(viewToClipNoJitterPrev, jitter.xy());
             const auto viewToWorldPrev = math::affineInverse(worldToViewPrev);
             const auto worldToClipPrev = viewToClipPrev * worldToViewPrev;
             const auto worldToClipNoJitterPrev = viewToClipNoJitterPrev * worldToViewPrev;
 
             auto viewSpaceCameraDelta = worldToView * float4(viewToWorldPrev[3].xyz, 1.0f);
 
-            constants->Set<float3x4>(hash->pk_WorldToView, Math::TransposeTo3x4(worldToView));
-            constants->Set<float3x4>(hash->pk_ViewToWorld, Math::TransposeTo3x4(viewToWorld));
-            constants->Set<float3x4>(hash->pk_ViewToWorldPrev, Math::TransposeTo3x4(viewToWorldPrev));
+            constants->Set<float3x4>(hash->pk_WorldToView, math::transpose3x4(worldToView));
+            constants->Set<float3x4>(hash->pk_ViewToWorld, math::transpose3x4(viewToWorld));
+            constants->Set<float3x4>(hash->pk_ViewToWorldPrev, math::transpose3x4(viewToWorldPrev));
             constants->Set<float4x4>(hash->pk_ViewToClip, viewToClip);
             constants->Set<float4x4>(hash->pk_WorldToClip, worldToClip);
             constants->Set<float4x4>(hash->pk_WorldToClip_NoJitter, worldToClipNoJitter);

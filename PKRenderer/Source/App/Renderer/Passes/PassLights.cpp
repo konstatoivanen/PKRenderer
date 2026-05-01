@@ -1,8 +1,8 @@
 #include "PrecompiledHeader.h"
 #include <bend/bend_sss_cpu.h>
 #include "Core/Utilities/FixedArena.h"
+#include "Core/Math/Projection.h"
 #include "Core/Math/FunctionsIntersect.h"
-#include "Core/Math/FunctionsMisc.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -39,7 +39,7 @@ namespace PK::App
     {
         float3 position;
         float3 color;
-        float4 rotation;
+        quaternion rotation;
         float2 spot_angles;
         float radius;
         float source_radius;
@@ -104,7 +104,7 @@ namespace PK::App
         m_computeCopyCubeShadow = assetDatabase->Find<ShaderAsset>("CS_CopyCubeShadow").get();
         m_computeScreenSpaceShadow = assetDatabase->Find<ShaderAsset>("CS_ScreenspaceShadow").get();
 
-        auto shadowCubeFaceSize = (uint)sqrt((m_shadowmapSize * m_shadowmapSize) / 6);
+        auto shadowCubeFaceSize = (uint)math::sqrt((m_shadowmapSize * m_shadowmapSize) / 6.0f);
         TextureDescriptor depthDesc;
         depthDesc.type = TextureType::CubemapArray;
         depthDesc.resolution = { shadowCubeFaceSize , shadowCubeFaceSize , 1u };
@@ -161,8 +161,8 @@ namespace PK::App
     void PassLights::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        const auto tileZParams = Math::GetExponentialZParams(view->znear, view->zfar, m_tileZDistribution, LightGridSizeZ);
-        const auto shadowCascadeZSplits = Math::GetCascadeDepthsFloat4(view->znear, view->zfar, m_cascadeDistribution, tileZParams);
+        const auto tileZParams = math::exponentialZParams<float>(view->znear, view->zfar, m_tileZDistribution, LightGridSizeZ);
+        const auto shadowCascadeZSplits = math::cascadeDepths4<float>(view->znear, view->zfar, m_cascadeDistribution, tileZParams);
         view->constants.Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
         view->constants.Set<float4>(hash->pk_LightTileZParams, float4(tileZParams, 0.0f));
         RHI::GetQueues()->GetCommandBuffer(QueueType::Transfer)->Clear(m_lightsCounter.get(), 0, sizeof(uint32_t), 0u);
@@ -180,14 +180,14 @@ namespace PK::App
         }
 
         const auto clipToWorld = math::inverse(renderView->worldToClip);
-        const auto tileZParams = Math::GetExponentialZParams(renderView->znear, renderView->zfar, m_tileZDistribution, LightGridSizeZ);
+        const auto tileZParams = math::exponentialZParams<float>(renderView->znear, renderView->zfar, m_tileZDistribution, LightGridSizeZ);
         const auto shadowCasterMask = ScenePrimitiveFlags::Mesh | ScenePrimitiveFlags::CastShadows;
         const auto lightCount = (uint)culledLights.GetCount();
         auto matrixCount = 1u;
         auto shadowCount = 0u;
 
         float cascadeZSplits[5];
-        Math::GetCascadeDepths(renderView->znear, renderView->zfar, m_cascadeDistribution, cascadeZSplits, tileZParams, 5);
+        math::cascadeDepths<float, 5>(renderView->znear, renderView->zfar, m_cascadeDistribution, cascadeZSplits, tileZParams);
 
         resources->lightViews = { context->frameArena->Allocate<EntityViewLight*>(lightCount), lightCount };
         resources->shadowBatches = { context->frameArena->GetHead<ShadowbatchInfo>(), 0ull };
@@ -244,7 +244,7 @@ namespace PK::App
                 cascadeInfo.splitPlanes = cascadeZSplits;
                 cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                 cascadeInfo.count = ShadowCascadeCount;
-                Math::GetShadowCascadeMatrices(cascadeInfo, matrices);
+                math::composeShadowCascadeMatrices(cascadeInfo, matrices);
                 const auto nearPlane = Math::GetNearPlane(*matrices);
                 light.position = float3(nearPlane.xyz);
                 light.radius = nearPlane.w;
@@ -255,12 +255,12 @@ namespace PK::App
                 // Regenerate cascades as the depth range might change based on culling. 
                 shadowCasters = context->cullingProxy->CullCascades(shadowCasterMask, matrices, renderView->forwardPlane, cascadeZSplits, ShadowCascadeCount);
                 cascadeInfo.nearPlaneOffset = shadowCasters.outMinDepth;
-                Math::GetShadowCascadeMatrices(cascadeInfo, matrices);
+                math::composeShadowCascadeMatrices(cascadeInfo, matrices);
             }
 
             if (castShadows && view->light->type == LightType::Spot)
             {
-                *matrices = Math::GetPerspective(view->light->angle, 1.0f, view->light->nearClip, view->light->radius) * worldToLocal;
+                *matrices = math::perspective(view->light->angle, 1.0f, view->light->nearClip, view->light->radius) * worldToLocal;
                 shadowCasters = context->cullingProxy->CullFrustum(shadowCasterMask, *matrices);
             }
 
@@ -431,7 +431,7 @@ namespace PK::App
         // Bend screen space shadows.
         // https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/
         auto lightView = resources->lightViews[batches[0].baseLightIndex];
-        auto lightDirection = math::quat::mul(lightView->transform->rotation, PK_FLOAT3_FORWARD);
+        auto lightDirection = math::mul(lightView->transform->rotation, PK_FLOAT3_FORWARD);
         auto lightProjection = renderView->worldToClip * float4(-lightDirection, 0.0f);
         int viewMin[2] = { 0, 0 };
         int viewMax[2] = { (int)resolution.x, (int)resolution.y };

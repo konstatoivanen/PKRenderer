@@ -71,7 +71,7 @@ namespace PK
 
         CVariableRegister::Create<CVariableFunc>("Application.Seed", [](const char* const* args, [[maybe_unused]] uint32_t count)
             {
-                math::setseed(String::To<uint32_t>(args[0]));
+                math::setSeed(String::To<uint32_t>(args[0]));
             }, "Random seed value used for random number generation.", 1u);
     }
 }

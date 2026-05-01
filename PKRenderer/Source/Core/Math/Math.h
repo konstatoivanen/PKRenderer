@@ -1,5 +1,6 @@
 #pragma once
 #include "Vector.h"
+#include "Quaternion.h"
 
 namespace PK
 {

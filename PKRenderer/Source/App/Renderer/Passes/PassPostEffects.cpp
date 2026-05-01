@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Math/FunctionsColor.h"
+#include "Core/Math/Color.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -59,15 +59,19 @@ namespace PK::App
         }
 
         color lift, gamma, gain;
-        Math::GenerateLiftGammaGain(Math::HexToRGB(colorGrading.Shadows), Math::HexToRGB(colorGrading.Midtones), Math::HexToRGB(colorGrading.Highlights), &lift, &gamma, &gain);
-        view->constants.Set<float4>(hash->pk_CC_WhiteBalance, Math::GetWhiteBalance(colorGrading.TemperatureShift, colorGrading.Tint));
+        auto shadows = math::hexToRgb<float>(colorGrading.Shadows);
+        auto midtones = math::hexToRgb<float>(colorGrading.Midtones);
+        auto highlights = math::hexToRgb<float>(colorGrading.Highlights);
+        math::generateLiftGammaGain(shadows, midtones, highlights, &lift, &gamma, &gain);
+        
+        view->constants.Set<float4>(hash->pk_CC_WhiteBalance, math::whiteBalance(colorGrading.TemperatureShift, colorGrading.Tint));
         view->constants.Set<float4>(hash->pk_CC_Lift, lift);
         view->constants.Set<float4>(hash->pk_CC_Gamma, gamma);
         view->constants.Set<float4>(hash->pk_CC_Gain, gain);
         view->constants.Set<float4>(hash->pk_CC_HSV, float4((float)colorGrading.Hue, (float)colorGrading.Saturation, (float)colorGrading.Value, 1.0f));
-        view->constants.Set<float4>(hash->pk_CC_MixRed, Math::HexToRGB(colorGrading.ChannelMixerRed));
-        view->constants.Set<float4>(hash->pk_CC_MixGreen, Math::HexToRGB(colorGrading.ChannelMixerGreen));
-        view->constants.Set<float4>(hash->pk_CC_MixBlue, Math::HexToRGB(colorGrading.ChannelMixerBlue));
+        view->constants.Set<float4>(hash->pk_CC_MixRed, math::hexToRgb<float>(colorGrading.ChannelMixerRed));
+        view->constants.Set<float4>(hash->pk_CC_MixGreen, math::hexToRgb<float>(colorGrading.ChannelMixerGreen));
+        view->constants.Set<float4>(hash->pk_CC_MixBlue, math::hexToRgb<float>(colorGrading.ChannelMixerBlue));
         view->constants.Set<float>(hash->pk_CC_LumaContrast, colorGrading.Contrast);
         view->constants.Set<float>(hash->pk_CC_LumaGain, colorGrading.Gain);
         view->constants.Set<float>(hash->pk_CC_LumaGamma, 1.0f / colorGrading.Gamma);

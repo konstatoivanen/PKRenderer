@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/Projection.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -38,7 +38,7 @@ namespace PK::App
         view->constants.Set<float4>(hash->pk_Fog_Albedo, float4(settings.Albedo, 0.0f));
         view->constants.Set<float4>(hash->pk_Fog_Absorption, float4(settings.Absorption, 0.0f));
         view->constants.Set<float4>(hash->pk_Fog_WindDirSpeed, float4(settings.WindDirection, settings.WindSpeed));
-        view->constants.Set<float4>(hash->pk_Fog_ZParams, float4(Math::GetExponentialZParams01(settings.ZNear, settings.ZFar, settings.ZDistribution), settings.ZFar));
+        view->constants.Set<float4>(hash->pk_Fog_ZParams, float4(math::exponentialZParams01(settings.ZNear, settings.ZFar, settings.ZDistribution), settings.ZFar));
         view->constants.Set<float4>(hash->pk_Fog_FadeParams, float4(fadeShadowsDirect, fadeShadowsVolumetric, fadeStatic, settings.FadeGroundOcclusion));
         view->constants.Set<float4>(hash->pk_Fog_Density_ExpParams0, Memory::BitCast<float, float4>(&settings.Exponential0.Constant));
         view->constants.Set<float4>(hash->pk_Fog_Density_ExpParams1, Memory::BitCast<float, float4>(&settings.Exponential1.Constant));
