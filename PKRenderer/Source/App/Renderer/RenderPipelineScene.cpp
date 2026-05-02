@@ -306,7 +306,7 @@ namespace PK::App
         // Prune voxels & build AS.
         // These can happen before the end of last frame. 
         m_passSceneGI.PruneVoxels(cmdcompute);
-        context->cullingProxy->CullRayTracingGeometry(ScenePrimitiveFlags::DefaultMesh, BoundingBox(), false, QueueType::Compute, m_sceneStructure.get());
+        context->cullingProxy->CullRayTracingGeometry(ScenePrimitiveFlags::DefaultMesh, AABB<float3>(), false, QueueType::Compute, m_sceneStructure.get());
         RHI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
 

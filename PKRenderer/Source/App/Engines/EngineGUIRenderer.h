@@ -46,7 +46,7 @@ namespace PK::App
 
         void GizmosCollectDraws(const uint4& renderArea, const float4x4& worldToClip, CommandBufferExt& cmd);
         void GizmosDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
-        void GizmosDrawBounds(const BoundingBox& aabb) final;
+        void GizmosDrawBounds(const AABB<float3>& aabb) final;
         void GizmosDrawBox(const float3& origin, const float3& size) final;
         void GizmosDrawLine(const float3& start, const float3& end) final;
         void GizmosDrawRay(const float3& origin, const float3& vector) final;

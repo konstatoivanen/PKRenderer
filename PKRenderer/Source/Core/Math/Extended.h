@@ -1,6 +1,6 @@
 #pragma once
 #include "Math.h"
-#include "FunctionsIntersect.h"
+#include "Bounds.h"
 
 namespace PK::math
 {

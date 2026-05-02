@@ -4,7 +4,6 @@
 #include "Core/Utilities/Memory.h"
 #include "Core/CLI/Log.h"
 #include "Core/Math/Extended.h"
-#include "Core/Math/FunctionsIntersect.h"
 #include "Core/Rendering/MeshStaticCollection.h"
 #include "Core/Rendering/MeshStaticAsset.h"
 #include "Core/Rendering/Mesh.h"
@@ -264,12 +263,12 @@ namespace PK::MeshUtilities
                 // degenerate cluster, no valid triangles => trivial reject (cone data is 0)
                 if (valid_tri_count > 0u)
                 {
-                    const auto psphere = Math::ComputeBoundingSphere(corners[0], valid_tri_count * 3u);
-                    const auto nsphere = Math::ComputeBoundingSphere(normals, valid_tri_count);
+                    const auto psphere = math::pointsToSphere(corners[0], valid_tri_count * 3u);
+                    const auto nsphere = math::pointsToSphere(normals, valid_tri_count);
                     const auto axis = math::safenormalize(nsphere.xyz());
-                    auto aabb = Math::ComputeBoundingBox(corners[0], valid_tri_count * 3u);
-                    center = aabb.GetCenter();
-                    extents = aabb.GetExtents();
+                    auto aabb = math::pointsToAABB(corners[0], valid_tri_count * 3u);
+                    center = aabb.center();
+                    extents = aabb.extents();
                     cone_cutoff_s8 = 127;
 
                     auto minCosA = 1.0f;
@@ -519,7 +518,7 @@ namespace PK::MeshUtilities
         geometryContext.pIndices = indices;
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
-        geometryContext.aabb = BoundingBox::CenterExtents(offset, extents);
+        geometryContext.aabb = math::centerExtentsToAABB(offset, extents);
         return CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Box");
     }
 
@@ -557,7 +556,7 @@ namespace PK::MeshUtilities
         geometryContext.pIndices = indices;
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
-        geometryContext.aabb = BoundingBox({ min.x, min.y, 0.0f }, { max.x, max.y, 0.0f });
+        geometryContext.aabb = AABB<float3>({ min.x, min.y, 0.0f }, { max.x, max.y, 0.0f });
         return CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Box");
     }
 
@@ -613,7 +612,7 @@ namespace PK::MeshUtilities
         geometryContext.pIndices = indices;
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
-        geometryContext.aabb = BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f });
+        geometryContext.aabb = math::centerExtentsToAABB(float3(center.xy, 0.0f), float3(extents.xy, 0.0f));
         auto virtualMesh = CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Plane"); 
 
         Memory::Free(buffer);
@@ -720,7 +719,7 @@ namespace PK::MeshUtilities
         geometryContext.pIndices = indices;
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
-        geometryContext.aabb = BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius);
+        geometryContext.aabb = math::centerExtentsToAABB(offset, PK_FLOAT3_ONE * radius);
         auto virtualMesh = CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Sphere");
 
         Memory::Free(buffer);

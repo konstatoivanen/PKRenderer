@@ -679,7 +679,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\ECS\IEntityImplementer.h" />
     <ClInclude Include="Source\Core\ECS\IEntityView.h" />
     <ClInclude Include="Source\Core\Math\Color.h" />
-    <ClInclude Include="Source\Core\Math\FunctionsIntersect.h" />
+    <ClInclude Include="Source\Core\Math\Bounds.h" />
     <ClInclude Include="Source\Core\Math\Extended.h" />
     <ClInclude Include="Source\Core\Math\Forward.h" />
     <ClInclude Include="Source\Core\Math\Math.h" />
@@ -1125,7 +1125,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Engines\EngineScreenshot.cpp" />
     <ClCompile Include="Source\App\Engines\EngineUpdateTransforms.cpp" />
     <ClCompile Include="Source\main.cpp" />
-    <ClCompile Include="Source\Core\Math\FunctionsIntersect.cpp" />
     <ClCompile Include="Source\PrecompiledHeader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'">Create</PrecompiledHeader>

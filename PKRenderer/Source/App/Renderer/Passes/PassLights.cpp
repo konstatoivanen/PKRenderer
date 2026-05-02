@@ -2,7 +2,6 @@
 #include <bend/bend_sss_cpu.h>
 #include "Core/Utilities/FixedArena.h"
 #include "Core/Math/Projection.h"
-#include "Core/Math/FunctionsIntersect.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -245,7 +244,7 @@ namespace PK::App
                 cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                 cascadeInfo.count = ShadowCascadeCount;
                 math::composeShadowCascadeMatrices(cascadeInfo, matrices);
-                const auto nearPlane = Math::GetNearPlane(*matrices);
+                const auto nearPlane = math::nearPlane(*matrices);
                 light.position = float3(nearPlane.xyz);
                 light.radius = nearPlane.w;
             }

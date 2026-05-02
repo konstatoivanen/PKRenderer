@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/Projection.h"
-#include "Core/Math/FunctionsIntersect.h"
+#include "Core/Math/Bounds.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/FixedArena.h"
 #include "Core/ECS/EntityDatabase.h"
@@ -173,7 +173,7 @@ namespace PK::App
                 renderView->fieldOfView = entity.projection->fieldOfView * PK_FLOAT_DEG2RAD;
                 renderView->worldToView = entity.transform->worldToLocal;
                 renderView->worldToClip = renderView->viewToClip * renderView->worldToView;
-                renderView->forwardPlane = Math::TransformPlane(entity.transform->localToWorld, float4(0, 0, 1, 0));
+                renderView->forwardPlane = math::mulplanar(entity.transform->localToWorld, float4(0, 0, 1, 0));
                 renderView->position = entity.transform->position;
                 renderView->znear = math::nearClip(renderView->viewToClip);
                 renderView->zfar = math::farClip(renderView->viewToClip);

@@ -646,11 +646,15 @@ namespace PK::math
     template<typename T>
     struct vector<T, 2>
     {
+        constexpr static const int N = 2;
+        constexpr static const bool is_simd = storage<T,2>::is_simd;
+        typedef T scalar_type;
+
         union
         {
             struct { T x, y; };
             struct { T r, g; };
-            storage<T,2> data;
+            typename storage<T,2>::type data;
             PK_SWIZZLE_MEMBERS_22(T, x, y)
             PK_SWIZZLE_MEMBERS_22(T, r, g)
             PK_SWIZZLE_MEMBERS_23(T, x, y)
@@ -663,6 +667,7 @@ namespace PK::math
         constexpr vector(const vector& v) = default;
         constexpr explicit vector(T s) : x(s), y(s) {}
         constexpr explicit vector(const T* ptr) : x(ptr[0]), y(ptr[1]) {}
+        constexpr explicit vector(const typename storage<T,2>::type& data) : data(data) {}
         constexpr vector(T _x, T _y) : x(_x), y(_y) {}
         template<typename X, typename Y> constexpr vector(X _x, Y _y) : x(static_cast<T>(_x)), y(static_cast<T>(_y)) {}
         template<typename U> constexpr vector(const vector<U,2>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)) {}
@@ -672,34 +677,34 @@ namespace PK::math
 
         constexpr T& operator[](int i) { switch (i) { default: case 0: return x; case 1: return y; } }
         constexpr const T& operator[](int i) const { switch (i) { default: case 0: return x; case 1: return y; }}
-        constexpr vector<T,2>& operator=(const vector& v) = default;
-        template<int E0,int E1> constexpr vector<T,2>& operator=(const swizzle<T,2,E0,E1,-1,-2>& s) { *this = s(); return *this; }
-        template<typename U> constexpr vector<T,2>& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator-=(U s) { x -= static_cast<T>(s); y -= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator*=(U s) { x *= static_cast<T>(s); y *= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator/=(U s) { x /= static_cast<T>(s); y /= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator%=(U s) { x %= static_cast<T>(s); y %= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator&=(U s) { x &= static_cast<T>(s); y &= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator|=(U s) { x |= static_cast<T>(s); y |= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator^=(U s) { x ^= static_cast<T>(s); y ^= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator<<=(U s) { x <<= static_cast<T>(s); y <<= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator>>=(U s) { x >>= static_cast<T>(s); y >>= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,2>& operator=(const vector<U,2>& v) { x = static_cast<T>(v.x); y = static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator+=(const vector<U,2>& v) { x += static_cast<T>(v.x); y += static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator-=(const vector<U,2>& v) { x -= static_cast<T>(v.x); y -= static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator*=(const vector<U,2>& v) { x *= static_cast<T>(v.x); y *= static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator/=(const vector<U,2>& v) { x /= static_cast<T>(v.x); y /= static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator%=(const vector<U,2>& v) { x %= static_cast<T>(v.x); y %= static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator&=(const vector<U,2>& v) { x &= static_cast<T>(v.x); y &= static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator|=(const vector<U,2>& v) { x |= static_cast<T>(v.x); y |= static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator^=(const vector<U,2>& v) { x ^= static_cast<T>(v.x); y ^= static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator<<=(const vector<U,2>& v) { x <<= static_cast<T>(v.x); y <<= static_cast<T>(v.y); return *this; }
-        template<typename U> constexpr vector<T,2>& operator>>=(const vector<U,2>& v) { x >>= static_cast<T>(v.x); y >>= static_cast<T>(v.y); return *this; }
-        constexpr vector<T,2>& operator++() { ++x; ++y; return *this; }
-        constexpr vector<T,2>& operator--() { --x; --y; return *this; }
-        constexpr vector<T,2> operator++(int) { vector<T,2> Result(*this); ++* this; return Result; }
-        constexpr vector<T,2> operator--(int) { vector<T,2> Result(*this); --* this; return Result; }
+        constexpr vector& operator=(const vector& v) = default;
+        template<int E0,int E1> constexpr vector& operator=(const swizzle<T,2,E0,E1,-1,-2>& s) { *this = s(); return *this; }
+        template<typename U> constexpr vector& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator-=(U s) { x -= static_cast<T>(s); y -= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator*=(U s) { x *= static_cast<T>(s); y *= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator/=(U s) { x /= static_cast<T>(s); y /= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator%=(U s) { x %= static_cast<T>(s); y %= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator&=(U s) { x &= static_cast<T>(s); y &= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator|=(U s) { x |= static_cast<T>(s); y |= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator^=(U s) { x ^= static_cast<T>(s); y ^= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator<<=(U s) { x <<= static_cast<T>(s); y <<= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator>>=(U s) { x >>= static_cast<T>(s); y >>= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator=(const vector<U,2>& v) { x = static_cast<T>(v.x); y = static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator+=(const vector<U,2>& v) { x += static_cast<T>(v.x); y += static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator-=(const vector<U,2>& v) { x -= static_cast<T>(v.x); y -= static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator*=(const vector<U,2>& v) { x *= static_cast<T>(v.x); y *= static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator/=(const vector<U,2>& v) { x /= static_cast<T>(v.x); y /= static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator%=(const vector<U,2>& v) { x %= static_cast<T>(v.x); y %= static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator&=(const vector<U,2>& v) { x &= static_cast<T>(v.x); y &= static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator|=(const vector<U,2>& v) { x |= static_cast<T>(v.x); y |= static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator^=(const vector<U,2>& v) { x ^= static_cast<T>(v.x); y ^= static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator<<=(const vector<U,2>& v) { x <<= static_cast<T>(v.x); y <<= static_cast<T>(v.y); return *this; }
+        template<typename U> constexpr vector& operator>>=(const vector<U,2>& v) { x >>= static_cast<T>(v.x); y >>= static_cast<T>(v.y); return *this; }
+        constexpr vector& operator++() { ++x; ++y; return *this; }
+        constexpr vector& operator--() { --x; --y; return *this; }
+        constexpr vector operator++(int) { vector result(*this); ++* this; return result; }
+        constexpr vector operator--(int) { vector result(*this); --* this; return result; }
     };
 
     template<typename T> constexpr vector<T,2> operator+(const vector<T,2>& v) { return v; }
@@ -749,11 +754,15 @@ namespace PK::math
     template<typename T>
     struct vector<T, 3>
     {
+        constexpr static const int N = 3;
+        constexpr static const bool is_simd = storage<T,3>::is_simd;
+        typedef T scalar_type;
+
         union
         {
             struct { T x, y, z; };
             struct { T r, g, b; };
-            storage<T,3> data;
+            typename storage<T,3>::type data;
             PK_SWIZZLE_MEMBERS_32(T, x, y, z)
             PK_SWIZZLE_MEMBERS_32(T, r, g, b)
             PK_SWIZZLE_MEMBERS_33(T, x, y, z)
@@ -766,6 +775,7 @@ namespace PK::math
         constexpr vector(const vector& v) = default;
         constexpr explicit vector(T s) : x(s), y(s), z(s) {}
         constexpr explicit vector(const T* ptr) : x(ptr[0]), y(ptr[1]), z(ptr[2]) {}
+        constexpr explicit vector(const typename storage<T,3>::type& data) : data(data) {}
         constexpr vector(T _x, T _y, T _z) : x(_x), y(_y), z(_z) {}
         template<typename X, typename Y, typename Z> constexpr vector(X _x, Y _y, Z _z) : x(static_cast<T>(_x)), y(static_cast<T>(_y)), z(static_cast<T>(_z)) {}
         template<typename XY, typename Z> constexpr vector(const vector<XY,2>& _xy, Z _z) : x(static_cast<T>(_xy.x)), y(static_cast<T>(_xy.y)), z(static_cast<T>(_z)) {}
@@ -778,34 +788,34 @@ namespace PK::math
 
         constexpr T& operator[](int i) { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; } }
         constexpr const T& operator[](int i) const { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; } }
-        constexpr vector<T,3>& operator=(const vector<T,3>& v) = default;
-        template<int E0,int E1,int E2> constexpr vector<T,3>& operator=(const swizzle<T,3,E0,E1,E2,-1>& s) { *this = s(); return *this; }
-        template<typename U> constexpr vector<T,3>& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); z = static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); z += static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator-=(U s) { x -= static_cast<T>(s); y -= static_cast<T>(s); z -= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator*=(U s) { x *= static_cast<T>(s); y *= static_cast<T>(s); z *= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator/=(U s) { x /= static_cast<T>(s); y /= static_cast<T>(s); z /= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator%=(U s) { x %= static_cast<T>(s); y %= static_cast<T>(s); z %= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator&=(U s) { x &= static_cast<T>(s); y &= static_cast<T>(s); z &= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator|=(U s) { x |= static_cast<T>(s); y |= static_cast<T>(s); z |= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator^=(U s) { x ^= static_cast<T>(s); y ^= static_cast<T>(s); z ^= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator<<=(U s) { x <<= static_cast<T>(s); y <<= static_cast<T>(s); z <<= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator>>=(U s) { x >>= static_cast<T>(s); y >>= static_cast<T>(s); z >>= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,3>& operator=(const vector<U,3>& v) { x = static_cast<T>(v.x); y = static_cast<T>(v.y); z = static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator+=(const vector<U,3>& v) { x += static_cast<T>(v.x); y += static_cast<T>(v.y); z += static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator-=(const vector<U,3>& v) { x -= static_cast<T>(v.x); y -= static_cast<T>(v.y); z -= static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator*=(const vector<U,3>& v) { x *= static_cast<T>(v.x); y *= static_cast<T>(v.y); z *= static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator/=(const vector<U,3>& v) { x /= static_cast<T>(v.x); y /= static_cast<T>(v.y); z /= static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator%=(const vector<U,3>& v) { x %= static_cast<T>(v.x); y %= static_cast<T>(v.y); z %= static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator&=(const vector<U,3>& v) { x &= static_cast<T>(v.x); y &= static_cast<T>(v.y); z &= static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator|=(const vector<U,3>& v) { x |= static_cast<T>(v.x); y |= static_cast<T>(v.y); z |= static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator^=(const vector<U,3>& v) { x ^= static_cast<T>(v.x); y ^= static_cast<T>(v.y); z ^= static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator<<=(const vector<U,3>& v) { x <<= static_cast<T>(v.x); y <<= static_cast<T>(v.y); z <<= static_cast<T>(v.z); return *this; }
-        template<typename U> constexpr vector<T,3>& operator>>=(const vector<U,3>& v) { x >>= static_cast<T>(v.x); y >>= static_cast<T>(v.y); z >>= static_cast<T>(v.z); return *this; }
-        constexpr vector<T,3>& operator++() { ++x; ++y; ++z; return *this; }
-        constexpr vector<T,3>& operator--() { --x; --y; --z; return *this; }
-        constexpr vector<T,3> operator++(int) { vector<T,3> Result(*this); ++* this; return Result; }
-        constexpr vector<T,3> operator--(int) { vector<T,3> Result(*this); --* this; return Result; }
+        constexpr vector& operator=(const vector& v) = default;
+        template<int E0,int E1,int E2> constexpr vector& operator=(const swizzle<T,3,E0,E1,E2,-1>& s) { *this = s(); return *this; }
+        template<typename U> constexpr vector& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); z = static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); z += static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator-=(U s) { x -= static_cast<T>(s); y -= static_cast<T>(s); z -= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator*=(U s) { x *= static_cast<T>(s); y *= static_cast<T>(s); z *= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator/=(U s) { x /= static_cast<T>(s); y /= static_cast<T>(s); z /= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator%=(U s) { x %= static_cast<T>(s); y %= static_cast<T>(s); z %= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator&=(U s) { x &= static_cast<T>(s); y &= static_cast<T>(s); z &= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator|=(U s) { x |= static_cast<T>(s); y |= static_cast<T>(s); z |= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator^=(U s) { x ^= static_cast<T>(s); y ^= static_cast<T>(s); z ^= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator<<=(U s) { x <<= static_cast<T>(s); y <<= static_cast<T>(s); z <<= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator>>=(U s) { x >>= static_cast<T>(s); y >>= static_cast<T>(s); z >>= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator=(const vector<U,3>& v) { x = static_cast<T>(v.x); y = static_cast<T>(v.y); z = static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator+=(const vector<U,3>& v) { x += static_cast<T>(v.x); y += static_cast<T>(v.y); z += static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator-=(const vector<U,3>& v) { x -= static_cast<T>(v.x); y -= static_cast<T>(v.y); z -= static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator*=(const vector<U,3>& v) { x *= static_cast<T>(v.x); y *= static_cast<T>(v.y); z *= static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator/=(const vector<U,3>& v) { x /= static_cast<T>(v.x); y /= static_cast<T>(v.y); z /= static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator%=(const vector<U,3>& v) { x %= static_cast<T>(v.x); y %= static_cast<T>(v.y); z %= static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator&=(const vector<U,3>& v) { x &= static_cast<T>(v.x); y &= static_cast<T>(v.y); z &= static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator|=(const vector<U,3>& v) { x |= static_cast<T>(v.x); y |= static_cast<T>(v.y); z |= static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator^=(const vector<U,3>& v) { x ^= static_cast<T>(v.x); y ^= static_cast<T>(v.y); z ^= static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator<<=(const vector<U,3>& v) { x <<= static_cast<T>(v.x); y <<= static_cast<T>(v.y); z <<= static_cast<T>(v.z); return *this; }
+        template<typename U> constexpr vector& operator>>=(const vector<U,3>& v) { x >>= static_cast<T>(v.x); y >>= static_cast<T>(v.y); z >>= static_cast<T>(v.z); return *this; }
+        constexpr vector& operator++() { ++x; ++y; ++z; return *this; }
+        constexpr vector& operator--() { --x; --y; --z; return *this; }
+        constexpr vector operator++(int) { vector result(*this); ++* this; return result; }
+        constexpr vector operator--(int) { vector result(*this); --* this; return result; }
     };
 
     template<typename T> constexpr vector<T,3> operator+(const vector<T,3>& v) { return v; }
@@ -855,11 +865,15 @@ namespace PK::math
     template<typename T>
     struct vector<T, 4>
     {
+        constexpr static const int N = 4;
+        constexpr static const bool is_simd = storage<T,4>::is_simd;
+        typedef T scalar_type;
+
         union
         {
             struct { T x, y, z, w; };
             struct { T r, g, b, a; };
-            storage<T,4> data;
+           //typename storage<T,4>:type data; // @TODO cannot currently use due to unaligned vertex streams. PLEASE FIX ASAP.
             PK_SWIZZLE_MEMBERS_42(T, x, y, z, w)
             PK_SWIZZLE_MEMBERS_42(T, r, g, b, a)
             PK_SWIZZLE_MEMBERS_43(T, x, y, z, w)
@@ -872,6 +886,7 @@ namespace PK::math
         constexpr vector(const vector<T,4>& v) = default;
         constexpr explicit vector(T s) : x(s), y(s), z(s), w(s) {}
         constexpr explicit vector(const T* ptr) : x(ptr[0]), y(ptr[1]), z(ptr[2]), w(ptr[3]) {}
+      //  constexpr explicit vector(const typename storage<T,4>::type& data) : data(data) {}
         constexpr vector(T _x, T _y, T _z, T _w) : x(_x), y(_y), z(_z), w(_w) {}
         template<typename X, typename Y, typename Z, typename W> constexpr vector(X _x, Y _y, Z _z, W _w) : x(static_cast<T>(_x)), y(static_cast<T>(_y)), z(static_cast<T>(_z)), w(static_cast<T>(_w)) {}
         template<typename XY, typename Z, typename W> constexpr vector(const vector<XY,2>& _xy, Z _z, W _w) : x(static_cast<T>(_xy.x)), y(static_cast<T>(_xy.y)), z(static_cast<T>(_z)), w(static_cast<T>(_w)) {}
@@ -891,34 +906,34 @@ namespace PK::math
 
         constexpr T& operator[](int i) { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; case 3: return w; } }
         constexpr const T& operator[](int i) const { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; case 3: return w; } }
-        constexpr vector<T,4>& operator=(const vector<T,4>& v) = default;
-        template<int E0,int E1,int E2,int E3> constexpr vector<T,4>& operator=(const swizzle<T,4,E0,E1,E2,E3>& s) { *this = s(); return *this; }
-        template<typename U> constexpr vector<T,4>& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); z = static_cast<T>(s); w = static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); z += static_cast<T>(s); w += static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator-=(U s) { x -= static_cast<T>(s); y -= static_cast<T>(s); z -= static_cast<T>(s); w -= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator*=(U s) { x *= static_cast<T>(s); y *= static_cast<T>(s); z *= static_cast<T>(s); w *= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator/=(U s) { x /= static_cast<T>(s); y /= static_cast<T>(s); z /= static_cast<T>(s); w /= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator%=(U s) { x %= static_cast<T>(s); y %= static_cast<T>(s); z %= static_cast<T>(s); w %= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator&=(U s) { x &= static_cast<T>(s); y &= static_cast<T>(s); z &= static_cast<T>(s); w &= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator|=(U s) { x |= static_cast<T>(s); y |= static_cast<T>(s); z |= static_cast<T>(s); w |= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator^=(U s) { x ^= static_cast<T>(s); y ^= static_cast<T>(s); z ^= static_cast<T>(s); w ^= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator<<=(U s) { x <<= static_cast<T>(s); y <<= static_cast<T>(s); z <<= static_cast<T>(s); w <<= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator>>=(U s) { x >>= static_cast<T>(s); y >>= static_cast<T>(s); z >>= static_cast<T>(s); w >>= static_cast<T>(s); return *this; }
-        template<typename U> constexpr vector<T,4>& operator=(const vector<U,4>& v) { x = static_cast<T>(v.x); y = static_cast<T>(v.y); z = static_cast<T>(v.z); w = static_cast<T>(v.w); return *this; }
-        template<typename U> constexpr vector<T,4>& operator+=(const vector<U,4>& v) { x += static_cast<T>(v.x); y += static_cast<T>(v.y); z += static_cast<T>(v.z); w += static_cast<T>(v.w); return *this; }
-        template<typename U> constexpr vector<T,4>& operator-=(const vector<U,4>& v) { x -= static_cast<T>(v.x); y -= static_cast<T>(v.y); z -= static_cast<T>(v.z); w -= static_cast<T>(v.w); return *this; }
-        template<typename U> constexpr vector<T,4>& operator*=(const vector<U,4>& v) { x *= static_cast<T>(v.x); y *= static_cast<T>(v.y); z *= static_cast<T>(v.z); w *= static_cast<T>(v.w); return *this; }
-        template<typename U> constexpr vector<T,4>& operator/=(const vector<U,4>& v) { x /= static_cast<T>(v.x); y /= static_cast<T>(v.y); z /= static_cast<T>(v.z); w /= static_cast<T>(v.w); return *this; }
-        template<typename U> constexpr vector<T,4>& operator%=(const vector<U,4>& v) { x %= static_cast<T>(v.x); y %= static_cast<T>(v.y); z %= static_cast<T>(v.z); w %= static_cast<T>(v.w); return *this; }  
-        template<typename U> constexpr vector<T,4>& operator&=(const vector<U,4>& v) { x &= static_cast<T>(v.x); y &= static_cast<T>(v.y); z &= static_cast<T>(v.z); w &= static_cast<T>(v.w); return *this; }
-        template<typename U> constexpr vector<T,4>& operator|=(const vector<U,4>& v) { x |= static_cast<T>(v.x); y |= static_cast<T>(v.y); z |= static_cast<T>(v.z); w |= static_cast<T>(v.w); return *this; }
-        template<typename U> constexpr vector<T,4>& operator^=(const vector<U,4>& v) { x ^= static_cast<T>(v.x); y ^= static_cast<T>(v.y); z ^= static_cast<T>(v.z); w ^= static_cast<T>(v.w); return *this; }
-        template<typename U> constexpr vector<T,4>& operator<<=(const vector<U,4>& v) { x <<= static_cast<T>(v.x); y <<= static_cast<T>(v.y); z <<= static_cast<T>(v.z); w <<= static_cast<T>(v.w); return *this; }
-        template<typename U> constexpr vector<T,4>& operator>>=(const vector<U,4>& v) { x >>= static_cast<T>(v.x); y >>= static_cast<T>(v.y); z >>= static_cast<T>(v.z); w >>= static_cast<T>(v.w); return *this; }
-        constexpr vector<T,4>& operator++() { ++x; ++y; ++z; ++w; return *this; }
-        constexpr vector<T,4>& operator--() { --x; --y; --z; --w; return *this; }
-        constexpr vector<T,4> operator++(int) { vector<T,4> Result(*this); ++* this; return Result; }
-        constexpr vector<T,4> operator--(int) { vector<T,4> Result(*this); --* this; return Result; }
+        constexpr vector& operator=(const vector& v) = default;
+        template<int E0,int E1,int E2,int E3> constexpr vector& operator=(const swizzle<T,4,E0,E1,E2,E3>& s) { *this = s(); return *this; }
+        template<typename U> constexpr vector& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); z = static_cast<T>(s); w = static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); z += static_cast<T>(s); w += static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator-=(U s) { x -= static_cast<T>(s); y -= static_cast<T>(s); z -= static_cast<T>(s); w -= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator*=(U s) { x *= static_cast<T>(s); y *= static_cast<T>(s); z *= static_cast<T>(s); w *= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator/=(U s) { x /= static_cast<T>(s); y /= static_cast<T>(s); z /= static_cast<T>(s); w /= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator%=(U s) { x %= static_cast<T>(s); y %= static_cast<T>(s); z %= static_cast<T>(s); w %= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator&=(U s) { x &= static_cast<T>(s); y &= static_cast<T>(s); z &= static_cast<T>(s); w &= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator|=(U s) { x |= static_cast<T>(s); y |= static_cast<T>(s); z |= static_cast<T>(s); w |= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator^=(U s) { x ^= static_cast<T>(s); y ^= static_cast<T>(s); z ^= static_cast<T>(s); w ^= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator<<=(U s) { x <<= static_cast<T>(s); y <<= static_cast<T>(s); z <<= static_cast<T>(s); w <<= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator>>=(U s) { x >>= static_cast<T>(s); y >>= static_cast<T>(s); z >>= static_cast<T>(s); w >>= static_cast<T>(s); return *this; }
+        template<typename U> constexpr vector& operator=(const vector<U,4>& v) { x = static_cast<T>(v.x); y = static_cast<T>(v.y); z = static_cast<T>(v.z); w = static_cast<T>(v.w); return *this; }
+        template<typename U> constexpr vector& operator+=(const vector<U,4>& v) { x += static_cast<T>(v.x); y += static_cast<T>(v.y); z += static_cast<T>(v.z); w += static_cast<T>(v.w); return *this; }
+        template<typename U> constexpr vector& operator-=(const vector<U,4>& v) { x -= static_cast<T>(v.x); y -= static_cast<T>(v.y); z -= static_cast<T>(v.z); w -= static_cast<T>(v.w); return *this; }
+        template<typename U> constexpr vector& operator*=(const vector<U,4>& v) { x *= static_cast<T>(v.x); y *= static_cast<T>(v.y); z *= static_cast<T>(v.z); w *= static_cast<T>(v.w); return *this; }
+        template<typename U> constexpr vector& operator/=(const vector<U,4>& v) { x /= static_cast<T>(v.x); y /= static_cast<T>(v.y); z /= static_cast<T>(v.z); w /= static_cast<T>(v.w); return *this; }
+        template<typename U> constexpr vector& operator%=(const vector<U,4>& v) { x %= static_cast<T>(v.x); y %= static_cast<T>(v.y); z %= static_cast<T>(v.z); w %= static_cast<T>(v.w); return *this; }  
+        template<typename U> constexpr vector& operator&=(const vector<U,4>& v) { x &= static_cast<T>(v.x); y &= static_cast<T>(v.y); z &= static_cast<T>(v.z); w &= static_cast<T>(v.w); return *this; }
+        template<typename U> constexpr vector& operator|=(const vector<U,4>& v) { x |= static_cast<T>(v.x); y |= static_cast<T>(v.y); z |= static_cast<T>(v.z); w |= static_cast<T>(v.w); return *this; }
+        template<typename U> constexpr vector& operator^=(const vector<U,4>& v) { x ^= static_cast<T>(v.x); y ^= static_cast<T>(v.y); z ^= static_cast<T>(v.z); w ^= static_cast<T>(v.w); return *this; }
+        template<typename U> constexpr vector& operator<<=(const vector<U,4>& v) { x <<= static_cast<T>(v.x); y <<= static_cast<T>(v.y); z <<= static_cast<T>(v.z); w <<= static_cast<T>(v.w); return *this; }
+        template<typename U> constexpr vector& operator>>=(const vector<U,4>& v) { x >>= static_cast<T>(v.x); y >>= static_cast<T>(v.y); z >>= static_cast<T>(v.z); w >>= static_cast<T>(v.w); return *this; }
+        constexpr vector& operator++() { ++x; ++y; ++z; ++w; return *this; }
+        constexpr vector& operator--() { --x; --y; --z; --w; return *this; }
+        constexpr vector operator++(int) { vector result(*this); ++* this; return result; }
+        constexpr vector operator--(int) { vector result(*this); --* this; return result; }
     };
 
     template<typename T> constexpr vector<T,4> operator+(const vector<T,4>& v) { return v; }
@@ -1002,8 +1017,8 @@ namespace PK::math
         template<typename U> matrix& operator/=(const matrix<U,2,2>& m) { return *this *= inverse(m); }
         constexpr matrix& operator++() { ++columns[0]; ++columns[1]; return *this; }
         constexpr matrix& operator--() { --columns[0]; --columns[1]; return *this; }
-        constexpr matrix operator++(int) { matrix<T,2,2> Result(*this); ++* this; return Result; }
-        constexpr matrix operator--(int) { matrix<T,2,2> Result(*this); --* this; return Result; }
+        constexpr matrix operator++(int) { matrix result(*this); ++* this; return result; }
+        constexpr matrix operator--(int) { matrix result(*this); --* this; return result; }
     };
     
     template<typename T> constexpr typename matrix<T,2,2>::col_type operator*(const matrix<T,2,2>& m, const typename matrix<T,2,2>::row_type& v)
@@ -1107,8 +1122,8 @@ namespace PK::math
         template<typename U> constexpr matrix& operator-=(const matrix<U,2,3>& m) { columns[0] -= m[0]; columns[1] -= m[1]; return *this; }
         constexpr matrix& operator++() { ++columns[0]; ++columns[1]; return *this; }
         constexpr matrix& operator--() { --columns[0]; --columns[1]; return *this; }
-        constexpr matrix operator++(int) { matrix<T,2,3> Result(*this); ++* this; return Result; }
-        constexpr matrix operator--(int) { matrix<T,2,3> Result(*this); --* this; return Result; }
+        constexpr matrix operator++(int) { matrix result(*this); ++* this; return result; }
+        constexpr matrix operator--(int) { matrix result(*this); --* this; return result; }
     };
     
     template<typename T> constexpr typename matrix<T,2,3>::col_type operator*(const matrix<T,2,3>& m, const typename matrix<T,2,3>::row_type& v)
@@ -1217,8 +1232,8 @@ namespace PK::math
         template<typename U> constexpr matrix& operator-=(const matrix<U,2,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; return *this; }
         constexpr matrix& operator++() { ++columns[0]; ++columns[1]; return *this; }
         constexpr matrix& operator--() { --columns[0]; --columns[1]; return *this; }
-        constexpr matrix operator++(int) { matrix<T,2,4> Result(*this); ++* this; return Result; }
-        constexpr matrix operator--(int) { matrix<T,2,4> Result(*this); --* this; return Result; }
+        constexpr matrix operator++(int) { matrix result(*this); ++* this; return result; }
+        constexpr matrix operator--(int) { matrix result(*this); --* this; return result; }
     };
     
     template<typename T> constexpr typename matrix<T,2,4>::col_type operator*(const matrix<T,2,4>& m, const typename matrix<T,2,4>::row_type& v)
@@ -1337,8 +1352,8 @@ namespace PK::math
         template<typename U> constexpr matrix& operator-=(const matrix<U,3,2>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; return *this; }
         constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; return *this; }
         constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; return *this; }
-        constexpr matrix operator++(int) { matrix<T,3,2> Result(*this); ++* this; return Result; }
-        constexpr matrix operator--(int) { matrix<T,3,2> Result(*this); --* this; return Result; }
+        constexpr matrix operator++(int) { matrix result(*this); ++* this; return result; }
+        constexpr matrix operator--(int) { matrix result(*this); --* this; return result; }
     };
     
     template<typename T> constexpr typename matrix<T,3,2>::col_type operator*(const matrix<T,3,2>& m, const typename matrix<T,3,2>::row_type& v)
@@ -1440,8 +1455,8 @@ namespace PK::math
         template<typename U> constexpr matrix& operator/=(const matrix<U,3,3>& m) { return *this *= inverse(m); }
         constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; return *this; }
         constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; return *this; }
-        constexpr matrix operator++(int) { matrix<T,3,3> Result(*this); ++* this; return Result; }
-        constexpr matrix operator--(int) { matrix<T,3,3> Result(*this); --* this; return Result; }
+        constexpr matrix operator++(int) { matrix result(*this); ++* this; return result; }
+        constexpr matrix operator--(int) { matrix result(*this); --* this; return result; }
     };
 
     template<typename T> constexpr typename matrix<T,3,3>::col_type operator*(const matrix<T,3,3>& m, const typename matrix<T,3,3>::row_type& v)
@@ -1557,8 +1572,8 @@ namespace PK::math
         template<typename U> constexpr matrix& operator-=(const matrix<U,3,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; return *this; }
         constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; return *this; }
         constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; return *this; }
-        constexpr matrix operator++(int) { matrix<T,3,4> Result(*this); ++* this; return Result; }
-        constexpr matrix operator--(int) { matrix<T,3,4> Result(*this); --* this; return Result; }
+        constexpr matrix operator++(int) { matrix result(*this); ++* this; return result; }
+        constexpr matrix operator--(int) { matrix result(*this); --* this; return result; }
     };
     
     template<typename T> constexpr typename matrix<T,3,4>::col_type operator*(const matrix<T,3,4>& m, const typename matrix<T,3,4>::row_type& v)
@@ -1681,8 +1696,8 @@ namespace PK::math
         template<typename U> constexpr matrix& operator-=(const matrix<U,4,2>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
         constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
         constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
-        constexpr matrix operator++(int) { matrix<T,4,2> Result(*this); ++* this; return Result; }
-        constexpr matrix operator--(int) { matrix<T,4,2> Result(*this); --* this; return Result; }
+        constexpr matrix operator++(int) { matrix result(*this); ++* this; return result; }
+        constexpr matrix operator--(int) { matrix result(*this); --* this; return result; }
     };
     
     template<typename T> constexpr typename matrix<T,4,2>::col_type operator*(const matrix<T,4,2>& m, const typename matrix<T,4,2>::row_type& v)
@@ -1775,17 +1790,17 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> constexpr matrix<T,4,3>& operator=(const matrix<U,4,3>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
-        template<typename U> constexpr matrix<T,4,3>& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
-        template<typename U> constexpr matrix<T,4,3>& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
-        template<typename U> constexpr matrix<T,4,3>& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
-        template<typename U> constexpr matrix<T,4,3>& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
-        template<typename U> constexpr matrix<T,4,3>& operator+=(const matrix<U,4,3>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
-        template<typename U> constexpr matrix<T,4,3>& operator-=(const matrix<U,4,3>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
-        constexpr matrix<T,4,3>& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
-        constexpr matrix<T,4,3>& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
-        constexpr matrix<T,4,3> operator++(int) { matrix<T,4,3> Result(*this); ++* this; return Result; }
-        constexpr matrix<T,4,3> operator--(int) { matrix<T,4,3> Result(*this); --* this; return Result; }
+        template<typename U> constexpr matrix& operator=(const matrix<U,4,3>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
+        template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
+        template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
+        template<typename U> constexpr matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
+        template<typename U> constexpr matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
+        template<typename U> constexpr matrix& operator+=(const matrix<U,4,3>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
+        template<typename U> constexpr matrix& operator-=(const matrix<U,4,3>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
+        constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
+        constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
+        constexpr matrix operator++(int) { matrix result(*this); ++* this; return result; }
+        constexpr matrix operator--(int) { matrix result(*this); --* this; return result; }
     };
 
     template<typename T> constexpr typename matrix<T,4,3>::col_type operator*(const matrix<T,4,3>& m, const typename matrix<T,4,3>::row_type& v)
@@ -1890,19 +1905,19 @@ namespace PK::math
         
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
-        template<typename U> constexpr matrix<T,4,4>& operator=(const matrix<T,4,4>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
-        template<typename U> constexpr matrix<T,4,4>& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
-        template<typename U> constexpr matrix<T,4,4>& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
-        template<typename U> constexpr matrix<T,4,4>& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
-        template<typename U> constexpr matrix<T,4,4>& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
-        template<typename U> constexpr matrix<T,4,4>& operator+=(const matrix<U,4,4>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
-        template<typename U> constexpr matrix<T,4,4>& operator-=(const matrix<U,4,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
-        template<typename U> constexpr matrix<T,4,4>& operator*=(const matrix<U,4,4>& m) { return (*this = *this * m); }
-        template<typename U> constexpr matrix<T,4,4>& operator/=(const matrix<U,4,4>& m) { return *this *= inverse(m); }
-        constexpr matrix<T,4,4>& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
-        constexpr matrix<T,4,4>& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
-        constexpr matrix<T,4,4> operator++(int) { matrix<T,4,4> ret(*this); ++* this; return ret; }
-        constexpr matrix<T,4,4> operator--(int) { matrix<T,4,4> ret(*this); --* this; return ret; }
+        template<typename U> constexpr matrix& operator=(const matrix<U,4,4>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
+        template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
+        template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
+        template<typename U> constexpr matrix& operator*=(U s) { columns[0] *= s; columns[1] *= s; columns[2] *= s; columns[3] *= s; return *this; }
+        template<typename U> constexpr matrix& operator/=(U s) { columns[0] /= s; columns[1] /= s; columns[2] /= s; columns[3] /= s; return *this; }
+        template<typename U> constexpr matrix& operator+=(const matrix<U,4,4>& m) { columns[0] += m[0]; columns[1] += m[1]; columns[2] += m[2]; columns[3] += m[3]; return *this; }
+        template<typename U> constexpr matrix& operator-=(const matrix<U,4,4>& m) { columns[0] -= m[0]; columns[1] -= m[1]; columns[2] -= m[2]; columns[3] -= m[3]; return *this; }
+        template<typename U> constexpr matrix& operator*=(const matrix<U,4,4>& m) { return (*this = *this * m); }
+        template<typename U> constexpr matrix& operator/=(const matrix<U,4,4>& m) { return *this *= inverse(m); }
+        constexpr matrix& operator++() { ++columns[0]; ++columns[1]; ++columns[2]; ++columns[3]; return *this; }
+        constexpr matrix& operator--() { --columns[0]; --columns[1]; --columns[2]; --columns[3]; return *this; }
+        constexpr matrix operator++(int) { matrix result(*this); ++* this; return result; }
+        constexpr matrix operator--(int) { matrix result(*this); --* this; return result; }
     };
 
     template<typename T> constexpr typename matrix<T,4,4>::col_type operator*(const matrix<T,4,4>& m, const typename matrix<T,4,4>::row_type& v)

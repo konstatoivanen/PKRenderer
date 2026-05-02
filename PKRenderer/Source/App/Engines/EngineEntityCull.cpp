@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/FixedArena.h"
-#include "Core/Math/FunctionsIntersect.h"
 #include "Core/Math/Extended.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/RHI/Structs.h"
@@ -12,9 +11,9 @@ namespace PK::App
     void EngineEntityCull::Step(IArena* frameArena, RequestEntityCullFrustum* request)
     {
         auto cullingMask = request->mask;
-        auto cullingPlanes = Math::ExtractFrustrumPlanes(request->matrix, true);
+        auto cullingPlanes = FrustumPlanes(math::frustumConvex<true>(request->matrix));
 
-        auto cullingRange = cullingPlanes.near.w + cullingPlanes.far.w;
+        auto cullingRange = cullingPlanes.near().w + cullingPlanes.far().w;
         auto cullingInvRange = (float)(0xFFFF) / cullingRange;
         auto cullingMinDepth = cullingRange;
         auto cullingMaxDepth = 0.0f;
@@ -29,9 +28,9 @@ namespace PK::App
 
             if ((viewFlags & cullingMask) == cullingMask)
             {
-                if ((viewFlags & ScenePrimitiveFlags::NeverCull) != 0 || Math::IntersectPlanesAABB(cullingPlanes.array_ptr(), 6, entityView->bounds->worldAABB))
+                if ((viewFlags & ScenePrimitiveFlags::NeverCull) != 0 || math::intersectsConvex(entityView->bounds->worldAABB, cullingPlanes.array_ptr(), 6))
                 {
-                    auto depth = Math::PlaneMaxDistanceToAABB(cullingPlanes.near, entityView->bounds->worldAABB);
+                    auto depth = math::distanceToPlaneMax(entityView->bounds->worldAABB, cullingPlanes.near());
                     auto fixedDepth = math::min(0xFFFFu, (uint32_t)math::max(0.0f, depth * cullingInvRange));
                     cullingMinDepth = math::min(cullingMinDepth, depth);
                     cullingMaxDepth = math::max(cullingMaxDepth, depth);
@@ -51,11 +50,11 @@ namespace PK::App
         const float3 cubePlaneNormals[] = { {-1,1,0}, {1,1,0}, {1,0,1}, {1,0,-1}, {0,1,1}, {0,-1,1} };
         const float3 cubePlaneNormalsAbs[] = { {1,1,0}, {1,1,0}, {1,0,1}, {1,0,1}, {0,1,1}, {0,1,1} };
 
-        auto cullingBoundsCenter = request->aabb.GetCenter();
+        auto cullingBoundsCenter = request->aabb.center();
         auto cullingBounds = request->aabb;
         auto cullingMask = request->mask;
 
-        auto cullingRange = (float)math::length(request->aabb.GetExtents());
+        auto cullingRange = (float)math::length(request->aabb.extents());
         auto cullingInvRange = (float)(0xFFFF) / cullingRange;
         auto cullingMinDepth = cullingRange;
         auto cullingMaxDepth = 0.0f;
@@ -73,10 +72,10 @@ namespace PK::App
             {
                 auto entityBounds = entityView->bounds->worldAABB;
 
-                if (ignoreCulling || Math::IntersectAABB(cullingBounds, entityBounds))
+                if (ignoreCulling || math::intersects(cullingBounds, entityBounds))
                 {
-                    auto entityOffset = entityBounds.GetCenter() - cullingBoundsCenter;
-                    auto entityExtents = entityBounds.GetExtents();
+                    auto entityOffset = entityBounds.center() - cullingBoundsCenter;
+                    auto entityExtents = entityBounds.extents();
                     bool rp[6], rn[6];
 
                     // Source: https://newq.net/dl/pub/s2015_shadows.pdf
@@ -99,7 +98,7 @@ namespace PK::App
 
                     if (isVisible != 0u)
                     {
-                        auto depth = Math::ExtentsSignedDistance(entityOffset, entityExtents);
+                        auto depth = math::distanceToExtents(entityOffset, entityExtents);
                         auto fixedDepth = math::min(0xFFFFu, (uint32_t)math::max(0.0f, depth * cullingInvRange));
                         auto entityId = entityView->GID.entityID();
 
@@ -138,14 +137,14 @@ namespace PK::App
 
         for (auto i = 0u; i < cullingCascadeCount; ++i)
         {
-            cullingCascadePlanes[i] = Math::ExtractFrustrumPlanes(request->cascades[i], true);
-            cullingMaxDepth = math::max(cullingMaxDepth, cullingCascadePlanes[i].near.w + cullingCascadePlanes[i].far.w);
+            cullingCascadePlanes[i] = math::frustumConvex<true>(request->cascades[i]);
+            cullingMaxDepth = math::max(cullingMaxDepth, cullingCascadePlanes[i].near().w + cullingCascadePlanes[i].far().w);
 
             // Check against cascade splits as well. 
             // this eliminates some draws that do not contribute to the sampled portion of the shadow map.
             // Cascades should be further optimized however, as now most of the texel density is wasted by the axis aligned rect fitting
             // @TODO A potential optimization would be to find the rotations for minimum bound cascade frustums.
-            auto cascadeDirection = float3(cullingCascadePlanes[i].near.xyz);
+            auto cascadeDirection = float3(cullingCascadePlanes[i].near().xyz);
             auto offsetSign = math::dot(cascadeDirection, float3(request->viewForwardPlane.xyz)) < 0.0f ? 0 : 1;
             cullingViewPlanes[i] = request->viewForwardPlane;
             cullingViewPlanes[i].w -= request->viewZOffsets[i + offsetSign];
@@ -171,8 +170,8 @@ namespace PK::App
                 for (auto j = 0u; j < cullingCascadeCount; ++j)
                 {
                     auto visibility = ignoreCulling ||
-                        (Math::IntersectPlanesAABB(cullingCascadePlanes[j].array_ptr(), cullingCascadeTestPlaneCount, entityBounds) &&
-                         Math::IntersectPlanesAABB(&cullingViewPlanes[j], 1u, entityBounds));
+                        (math::intersectsConvex(entityBounds, cullingCascadePlanes[j].array_ptr(), cullingCascadeTestPlaneCount) &&
+                         math::intersectsConvex(entityBounds, &cullingViewPlanes[j], 1u));
 
                     isVisible |= (uint32_t)visibility << j;
                 }
@@ -185,7 +184,7 @@ namespace PK::App
                     {
                         if ((isVisible & (1 << j)) != 0u)
                         {
-                            auto minDistLocal = Math::PlaneMinDistanceToAABB(cullingCascadePlanes[j].near, entityBounds);
+                            auto minDistLocal = math::distanceToPlaneMin(entityBounds, cullingCascadePlanes[j].near());
                             cullingMinDepth = math::min(cullingMinDepth, minDistLocal);
                             frameArena->Emplace<CulledEntityInfo>({ entityId, math::f32tof16(minDistLocal), (uint16_t)j });
                         }

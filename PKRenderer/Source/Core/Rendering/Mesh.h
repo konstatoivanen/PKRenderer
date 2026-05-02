@@ -16,7 +16,7 @@ namespace PK
             uint32_t vertexCount = 0u;
             uint32_t indexFirst = 0u;
             uint32_t indexCount = 0u;
-            BoundingBox bounds = BoundingBox::GetMinBounds();
+            AABB<float3> bounds = PK_FLOAT3_MIN_AABB;
         };
 
         typedef FixedList<RHIBufferRef, PK_RHI_MAX_VERTEX_ATTRIBUTES> VertexBuffers;

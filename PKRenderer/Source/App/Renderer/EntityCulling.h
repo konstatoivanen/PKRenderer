@@ -40,7 +40,7 @@ namespace PK::App
     struct RequestEntityCullCubeFaces : public RequestEntityCullResults
     {
         ScenePrimitiveFlags mask;
-        BoundingBox aabb;
+        AABB<float3> aabb;
     };
 
     struct RequestEntityCullCascades : public RequestEntityCullResults
@@ -56,7 +56,7 @@ namespace PK::App
     struct RequestEntityCullRayTracingGeometry
     {
         ScenePrimitiveFlags mask;
-        BoundingBox bounds;
+        AABB<float3> bounds;
         bool useBounds;
         QueueType queue;
         RHIAccelerationStructure* structure;
@@ -76,8 +76,8 @@ namespace PK::App
         }
 
         RequestEntityCullResults CullFrustum(ScenePrimitiveFlags mask, const float4x4& matrix);
-        RequestEntityCullResults CullCubeFaces(ScenePrimitiveFlags mask, const BoundingBox& aabb);
+        RequestEntityCullResults CullCubeFaces(ScenePrimitiveFlags mask, const AABB<float3>& aabb);
         RequestEntityCullResults CullCascades(ScenePrimitiveFlags mask, float4x4* cascades, const float4& viewForwardPlane, const float* viewZOffsets, uint32_t count);
-        void CullRayTracingGeometry(ScenePrimitiveFlags mask, const BoundingBox& bounds, bool useBounds, QueueType queue, RHIAccelerationStructure* structure);
+        void CullRayTracingGeometry(ScenePrimitiveFlags mask, const AABB<float3>& bounds, bool useBounds, QueueType queue, RHIAccelerationStructure* structure);
     };
 }

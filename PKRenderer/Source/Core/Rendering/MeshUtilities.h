@@ -40,7 +40,7 @@ namespace PK::MeshUtilities
         uint32_t* pIndices = nullptr;
         uint32_t countVertex = 0u;
         uint32_t countIndex = 0u;
-        BoundingBox aabb;
+        AABB<float3> aabb;
     };
 
     struct Vertex_Full

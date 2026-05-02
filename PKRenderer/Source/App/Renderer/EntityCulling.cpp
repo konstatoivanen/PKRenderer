@@ -13,7 +13,7 @@ namespace PK::App
         return request;
     }
 
-    RequestEntityCullResults EntityCullSequencerProxy::CullCubeFaces(ScenePrimitiveFlags mask, const BoundingBox& aabb)
+    RequestEntityCullResults EntityCullSequencerProxy::CullCubeFaces(ScenePrimitiveFlags mask, const AABB<float3>& aabb)
     {
         RequestEntityCullCubeFaces request;
         request.mask = mask;
@@ -34,7 +34,7 @@ namespace PK::App
         return request;
     }
 
-    void EntityCullSequencerProxy::CullRayTracingGeometry(ScenePrimitiveFlags mask, const BoundingBox& bounds, bool useBounds, QueueType queue, RHIAccelerationStructure* structure)
+    void EntityCullSequencerProxy::CullRayTracingGeometry(ScenePrimitiveFlags mask, const AABB<float3>& bounds, bool useBounds, QueueType queue, RHIAccelerationStructure* structure)
     {
         RequestEntityCullRayTracingGeometry request;
         request.mask = mask;

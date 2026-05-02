@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Math/FunctionsIntersect.h"
+#include "Core/Math/Bounds.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -30,7 +30,7 @@ namespace PK::App
         for (auto i = 0u; i < entityViews.count; ++i)
         {
             auto& view = entityViews[i];
-            view.primitive->isVisibleInRayTracing = (view.primitive->flags & mask) == mask && (skipCulling || Math::IntersectAABB(aabb, view.bounds->worldAABB));
+            view.primitive->isVisibleInRayTracing = (view.primitive->flags & mask) == mask && (skipCulling || math::intersects(aabb, view.bounds->worldAABB));
 
             if (entityViews[i].primitive->isVisibleInRayTracing)
             {

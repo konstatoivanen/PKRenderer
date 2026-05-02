@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include "Core/ECS/EntityDatabase.h"
-#include "Core/Math/FunctionsIntersect.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/MeshStaticAsset.h"
@@ -20,14 +19,13 @@
 
 namespace PK::App::EntityBuilders
 {
-    static BoundingBox GetSubmeshRangeBounds(MeshStatic* mesh, const initializer_list<MaterialTarget>& materials)
+    static AABB<float3> GetSubmeshRangeBounds(MeshStatic* mesh, const initializer_list<MaterialTarget>& materials)
     {
-        auto bounds = BoundingBox::GetMinBounds();
+        auto bounds = PK_FLOAT3_MIN_AABB;
 
         for (auto& target : materials)
         {
-            auto sm = mesh->GetSubmesh(target.submesh);
-            Math::BoundsEncapsulate(&bounds, sm->bounds);
+            bounds |= mesh->GetSubmesh(target.submesh)->bounds;
         }
 
         return bounds;
@@ -40,7 +38,7 @@ namespace PK::App::EntityBuilders
         const float3& position,
         const float3& euler,
         const float3& scale,
-        const BoundingBox& localBounds)
+        const AABB<float3>& localBounds)
     {
         entityDb->ReserveView(implementer, egid, &EntityViewTransform::bounds, &EntityViewTransform::transform);
         implementer->localAABB = localBounds;
@@ -116,19 +114,19 @@ namespace PK::App::EntityBuilders
         {
             case LightType::Directional:
             {
-                implementer->localAABB = BoundingBox::CenterExtents(PK_FLOAT3_ZERO, PK_FLOAT3_ONE);
+                implementer->localAABB = math::centerExtentsToAABB(PK_FLOAT3_ZERO, PK_FLOAT3_ONE);
                 flags = flags | ScenePrimitiveFlags::NeverCull;
             }
             break;
             case LightType::Point:
             {
-                implementer->localAABB = BoundingBox::CenterExtents(PK_FLOAT3_ZERO, PK_FLOAT3_ONE * radius);
+                implementer->localAABB = math::centerExtentsToAABB(PK_FLOAT3_ZERO, PK_FLOAT3_ONE * radius);
             }
             break;
             case LightType::Spot:
             {
                 auto a = radius * math::tan(angle * 0.5f * PK_FLOAT_DEG2RAD);
-                implementer->localAABB = BoundingBox::CenterExtents({ 0.0f, 0.0f, radius * 0.5f }, { a, a, radius * 0.5f });
+                implementer->localAABB = math::centerExtentsToAABB(float3(0.0f, 0.0f, radius * 0.5f), float3(a, a, radius * 0.5f));
             }
             break;
             default: PK_FATAL_ERROR("Invalid Light Type");

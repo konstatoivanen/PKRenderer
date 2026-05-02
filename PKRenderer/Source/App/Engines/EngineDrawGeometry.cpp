@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include "Core/ECS/EntityDatabase.h"
-#include "Core/Math/FunctionsIntersect.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "App/ECS/EntityViewMeshStatic.h"
 #include "App/Renderer/RenderView.h"

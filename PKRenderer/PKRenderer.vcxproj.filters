@@ -1113,7 +1113,7 @@
     <ClInclude Include="Source\Core\Math\Color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Math\FunctionsIntersect.h">
+    <ClInclude Include="Source\Core\Math\Bounds.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Extended.h">
@@ -2171,9 +2171,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Engines\EngineUpdateTransforms.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Math\FunctionsIntersect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Rendering\ConstantBuffer.cpp">

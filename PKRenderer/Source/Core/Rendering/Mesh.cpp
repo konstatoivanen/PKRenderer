@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
-#include "Core/Math/FunctionsIntersect.h"
 #include "Core/Math/Extended.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/CLI/Log.h"
@@ -35,9 +34,9 @@ namespace PK
 
         for (auto i = 0u; i < mesh->submeshCount; ++i)
         {
-            auto bounds = BoundingBox::MinMax(float3(pSubmeshes[i].bbmin), float3(pSubmeshes[i].bbmax));
+            const auto bounds = AABB<float3>(float3(pSubmeshes[i].bbmin), float3(pSubmeshes[i].bbmax));
             submeshes[i] = { 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds };
-            Math::BoundsEncapsulate(&m_fullRange.bounds, bounds);
+            m_fullRange.bounds |= bounds;
         }
 
         VertexStreamLayout streamLayout;
@@ -142,7 +141,7 @@ namespace PK
         for (auto i = 0u; i < submeshCount; ++i)
         {
             m_submeshes[i] = submeshes[i];
-            Math::BoundsEncapsulate(&m_fullRange.bounds, submeshes[i].bounds);
+            m_fullRange.bounds |= submeshes[i].bounds;
             m_fullRange.vertexCount = math::max(m_fullRange.vertexCount, submeshes[i].vertexFirst + submeshes[i].vertexCount);
             m_fullRange.indexCount = math::max(m_fullRange.indexCount, submeshes[i].indexFirst + submeshes[i].indexCount);
         }

@@ -14,7 +14,7 @@ namespace PK::App
 
         Mode mode = CustomMatrix;
         float4x4 customViewToClip = PK_FLOAT4X4_IDENTITY;
-        BoundingBox orthoBounds{};
+        AABB<float3> orthoBounds{};
         float fieldOfView = 90.0f;
         float zNear = 0.1f;
         float zFar = 100.0f;

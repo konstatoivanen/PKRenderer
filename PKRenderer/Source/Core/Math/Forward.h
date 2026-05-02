@@ -46,6 +46,8 @@ namespace PK
         template<typename T, int N> struct vector {};
         template<typename T, int C, int R> struct matrix {};
         template<typename T> struct quaternion;
+        template<typename T, int N> struct AABB;
+        template<typename T, int N> struct convex;
     
         #if defined(PK_MATH_SIMD_SSE2)
         typedef __m128	simd_f32vec4;
@@ -218,11 +220,14 @@ namespace PK
 
     typedef math::quaternion<float> quaternion;
 
+    // Implicit vector alias.
+    template <typename T>
+    using AABB = math::AABB<typename T::scalar_type, T::N>;
+
     typedef byte4 color32;
     typedef float4 color;
     struct FrustumPlanes;
     struct ShadowCascadeCreateInfo;
-    struct BoundingBox;
 
     constexpr float PK_FLOAT_PI = 3.1415926535f;
     constexpr float PK_FLOAT_TWO_PI = 6.2831853071f;

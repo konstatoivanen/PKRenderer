@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Math/FunctionsIntersect.h"
+#include "Core/Math/Bounds.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "App/ECS/EntityViewTransform.h"
 #include "EngineUpdateTransforms.h"
@@ -21,7 +21,7 @@ namespace PK::App
             view->transform->localToWorld = view->transform->GetLocalToWorld();
             view->transform->worldToLocal = math::affineInverseTranspose(view->transform->localToWorld);
             view->transform->minUniformScale = math::cmin(math::abs(view->transform->scale));
-            view->bounds->worldAABB = Math::BoundsTransform(view->transform->localToWorld, view->bounds->localAABB);
+            view->bounds->worldAABB = math::mul(view->transform->localToWorld, view->bounds->localAABB);
         }
     }
 }

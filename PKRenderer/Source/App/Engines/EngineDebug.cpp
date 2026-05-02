@@ -4,7 +4,6 @@
 #include "Core/Math/Extended.h"
 #include "Core/Math/Projection.h"
 #include "Core/Math/Color.h"
-#include "Core/Math/FunctionsIntersect.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/MeshStaticAsset.h"

@@ -5,8 +5,8 @@ namespace PK::App
 {
     struct ComponentBounds
     {
-        BoundingBox localAABB;
-        BoundingBox worldAABB;
+        AABB<float3> localAABB;
+        AABB<float3> worldAABB;
         virtual ~ComponentBounds() = default;
     };
 }

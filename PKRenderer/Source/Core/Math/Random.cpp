@@ -24,9 +24,10 @@ namespace PK::math
     {
         uint64_t oldstate = rng->state;
         rng->state = oldstate * 6364136223846793005ULL + rng->inc;
-        uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
-        uint32_t rot = oldstate >> 59u;
-        return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
+        uint32_t xorshifted = (uint32_t)(((oldstate >> 18u) ^ oldstate) >> 27u);
+        uint32_t rot0 = oldstate >> 59u;
+        uint32_t rot1 = static_cast<uint32_t>(-static_cast<int32_t>(rot0) & 31);
+        return (xorshifted >> rot0) | (xorshifted << rot1);
     }
 
     uint32_t randomUint()
@@ -58,7 +59,7 @@ namespace PK::math
         bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
         bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
         bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-        float y = float(bits) * 2.3283064365386963e-10;
+        float y = float(bits) * 2.3283064365386963e-10f;
         return vector<float,2>(float(i % n) / float(n), y);
     }
 

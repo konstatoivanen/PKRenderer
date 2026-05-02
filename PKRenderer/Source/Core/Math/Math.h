@@ -1,6 +1,7 @@
 #pragma once
 #include "Vector.h"
 #include "Quaternion.h"
+#include "Bounds.h"
 
 namespace PK
 {
@@ -100,16 +101,25 @@ namespace PK
     constexpr color32 PK_COLOR32_MAGENTA = { 255,   0, 255, 255 };
     constexpr color32 PK_COLOR32_YELLOW = { 255, 255,   0, 255 };
 
-    struct FrustumPlanes
+    constexpr AABB<float3> PK_FLOAT3_MIN_AABB = { PK_FLOAT3_MAX, -PK_FLOAT3_MAX };
+
+    struct FrustumPlanes : math::convex<float,6>
     {
-        float4 left;
-        float4 right;
-        float4 top;
-        float4 bottom;
-        float4 far;
-        float4 near;
-        inline float4& operator[](size_t i) { return (&left)[i]; }
-        constexpr float4* array_ptr() { return &left; }
+        constexpr FrustumPlanes() = default;
+        constexpr FrustumPlanes(const FrustumPlanes& p) = default;
+        constexpr FrustumPlanes(const math::convex<float,6>& p) : math::convex<float, 6>(p) {};
+        float4& left() { return planes[0]; }
+        float4& right() { return planes[1]; }
+        float4& top() { return planes[2]; }
+        float4& bottom() { return planes[3]; }
+        float4& far() { return planes[4]; }
+        float4& near() { return planes[5]; }
+        const float4& left() const { return planes[0]; }
+        const float4& right() const { return planes[1]; }
+        const float4& top() const { return planes[2]; }
+        const float4& bottom() const { return planes[3]; }
+        const float4& far() const { return planes[4]; }
+        const float4& near() const { return planes[5]; }
     };
 
     struct ShadowCascadeCreateInfo
@@ -121,23 +131,5 @@ namespace PK
         float padding;
         uint32_t resolution;
         uint32_t count;
-    };
-
-    struct BoundingBox
-    {
-        float3 min;
-        float3 max;
-
-        float3 GetCenter() const { return min + (max - min) * 0.5f; }
-        float3 GetExtents() const { return (max - min) * 0.5f; }
-        float GetWidth() const { return max.x - min.x; }
-        float GetHeight() const { return max.y - min.y; }
-        float GetDepth() const { return max.z - min.z; }
-
-        BoundingBox() : min(PK_FLOAT3_ZERO), max(PK_FLOAT3_ZERO) {}
-        BoundingBox(const float3& _min, const float3& _max) : min(_min), max(_max) {}
-        inline static BoundingBox MinMax(const float3& min, const float3& max) { return BoundingBox(min, max); }
-        inline static BoundingBox CenterExtents(const float3& center, const float3& extents) { return BoundingBox(center - extents, center + extents); }
-        inline static BoundingBox GetMinBounds() { return{ PK_FLOAT3_MAX, -PK_FLOAT3_MAX }; }
     };
 }

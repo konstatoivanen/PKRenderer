@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/Extended.h"
-#include "Core/Math/FunctionsIntersect.h"
+#include "Core/Math/Bounds.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -383,9 +383,9 @@ namespace PK::App
         }
     }
 
-    void EngineGUIRenderer::GizmosDrawBounds(const BoundingBox& aabb)
+    void EngineGUIRenderer::GizmosDrawBounds(const AABB<float3>& aabb)
     {
-        if (m_gizmos_enabledCPU && Math::IntersectPlanesAABB(m_gizmos_frustrumPlanes.array_ptr(), 6, aabb))
+        if (m_gizmos_enabledCPU && math::intersectsConvex(aabb, m_gizmos_frustrumPlanes.array_ptr(), 6))
         {
             auto idx = m_gizmos_vertexCount;
             m_gizmos_vertexCount += 24u;
@@ -424,7 +424,7 @@ namespace PK::App
 
     void EngineGUIRenderer::GizmosDrawBox(const float3& origin, const float3& size)
     {
-        GizmosDrawBounds(BoundingBox::MinMax(origin, origin + size));
+        GizmosDrawBounds(AABB<float3>(origin, origin + size));
     }
 
     void EngineGUIRenderer::GizmosDrawLine(const float3& start, const float3& end)
@@ -458,7 +458,7 @@ namespace PK::App
             {
                 float3 nearCorners[4];
                 float3 farCorners[4];
-                auto planes = Math::ExtractFrustrumPlanes(matrix, true);
+                auto planes = FrustumPlanes(math::frustumConvex<true>(matrix));
 
                 auto temp = planes[1];
                 planes[1] = planes[2];
@@ -466,8 +466,8 @@ namespace PK::App
 
                 for (auto i = 0; i < 4; ++i)
                 {
-                    nearCorners[i] = Math::IntesectPlanes3(planes.near, planes[i], planes[(i + 1) % 4]);
-                    farCorners[i] = Math::IntesectPlanes3(planes.far, planes[i], planes[(i + 1) % 4]);
+                    nearCorners[i] = math::triplanarIntersection(planes.near(), planes[i], planes[(i + 1) % 4]);
+                    farCorners[i] = math::triplanarIntersection(planes.far(), planes[i], planes[(i + 1) % 4]);
                 }
 
                 for (auto i = 0; i < 4; ++i)
@@ -491,7 +491,7 @@ namespace PK::App
     void EngineGUIRenderer::GizmosSetMatrix(const float4x4& matrix)
     {
         auto vp = m_gizmos_worldToClip * matrix;
-        m_gizmos_frustrumPlanes = Math::ExtractFrustrumPlanes(vp, true);
+        m_gizmos_frustrumPlanes = math::frustumConvex<true>(vp);
         m_gizmos_matrix = matrix;
     }
 
