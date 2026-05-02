@@ -452,7 +452,7 @@ namespace PK
         constexpr RenderTargetBinding() {}
     };
 
-    struct AccelerationStructureGeometryInfo
+    struct RayTracingGeometryInfo
     {
         NameID name;
         RHIBuffer* vertexBuffer;

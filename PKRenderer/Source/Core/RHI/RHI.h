@@ -47,7 +47,7 @@ namespace PK
     struct FixedFunctionShaderAttributes;
     struct FixedFunctionState;
     struct RenderTargetBinding;
-    struct AccelerationStructureGeometryInfo;
+    struct RayTracingGeometryInfo;
     struct RHIDriverMemoryInfo;
     struct RHIDriverDescriptor;
     struct SwapchainDescriptor;

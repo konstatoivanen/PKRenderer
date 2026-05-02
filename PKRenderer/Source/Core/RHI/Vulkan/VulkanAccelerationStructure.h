@@ -11,7 +11,7 @@ namespace PK
         ~VulkanAccelerationStructure();
         
         void BeginWrite(QueueType queue, uint32_t instanceLimit) final;
-        void AddInstance(AccelerationStructureGeometryInfo& geometry, const float3x4& matrix) final;
+        void AddInstance(RayTracingGeometryInfo& geometry, const float3x4& matrix) final;
         void EndWrite() final;
         
         uint32_t GetInstanceCount() const final { return m_instanceCount; }
@@ -58,7 +58,7 @@ namespace PK
                 bool needsRealloc = false;
             };
 
-            uint64_t GetGeometryIndex(const AccelerationStructureGeometryInfo& geometry);
+            uint64_t GetGeometryIndex(const RayTracingGeometryInfo& geometry);
             void ValidateResources();
 
             const VulkanDriver* m_driver = nullptr;

@@ -64,11 +64,11 @@ namespace PK
 
         void UploadTexture(RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer, uint32_t layers);
 
-        void SetMesh(const Mesh* mesh);
-        void DrawMesh(const Mesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance);
-        void DrawMesh(const Mesh* mesh, int32_t submesh);
-        void DrawMesh(const Mesh* mesh, int32_t submesh, const ShaderAsset* shader, int32_t variantIndex);
-        void DrawMesh(const Mesh* mesh, int32_t submesh, const ShaderAsset* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex);
-        void DrawMeshIndirect(const Mesh* mesh, const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride);
+        void SetMesh(const IMesh* mesh);
+        void DrawMesh(const IMesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance);
+        void DrawMesh(const IMesh* mesh, int32_t submesh);
+        void DrawMesh(const IMesh* mesh, int32_t submesh, const ShaderAsset* shader, int32_t variantIndex);
+        void DrawMesh(const IMesh* mesh, int32_t submesh, const ShaderAsset* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex);
+        void DrawMeshIndirect(const IMesh* mesh, const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride);
     };
 }

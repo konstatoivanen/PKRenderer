@@ -9,12 +9,16 @@ namespace PK
     struct Material;
     struct Font;
     struct FontStyle;
-    struct Mesh;
-    struct MeshStatic;
-    struct SubMeshStatic;
-    struct MeshStaticAsset;
+    struct SubMesh;
+    struct MeshDescriptor;
+    struct MeshletsDescriptor;
     struct MeshStaticDescriptor;
-    class MeshStaticCollection;
+    struct IMesh;
+    struct IMeshlets;
+    struct IRayTracingGeometry;
+    struct MeshStaticAllocator;
+    struct MeshStatic;
+    struct Mesh;
     struct ConstantBuffer;
     struct CommandBufferExt;
     struct ShaderBindingTable;
@@ -29,8 +33,8 @@ namespace PK
     typedef Ref<Material> MaterialRef;
     typedef Ref<Font> FontRef;
     typedef Ref<Mesh> MeshRef;
-    typedef Ref<MeshStaticAsset> MeshStaticAssetRef;
     typedef Ref<MeshStatic> MeshStaticRef;
     typedef Ref<ConstantBuffer> ConstantBufferRef;
     typedef Unique<Window> WindowScope;
+
 }

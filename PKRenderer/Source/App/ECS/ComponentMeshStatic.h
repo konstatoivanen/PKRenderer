@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Rendering/MeshStaticCollection.h"
+#include "Core/Rendering/Mesh.h"
 
 namespace PK::App
 {

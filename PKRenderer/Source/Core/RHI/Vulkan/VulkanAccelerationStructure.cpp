@@ -39,7 +39,7 @@ namespace PK
         m_driver->DisposePooled(m_structureBuffer, fence);
     }
 
-    uint64_t VulkanAccelerationStructure::GetGeometryIndex(const AccelerationStructureGeometryInfo& geometry)
+    uint64_t VulkanAccelerationStructure::GetGeometryIndex(const RayTracingGeometryInfo& geometry)
     {
         BLASKey key{ geometry.indexBuffer, ((uint64_t)geometry.indexFirst & 0xFFFFFFFFu) | (((uint64_t)geometry.indexCount) << 32ull) };
         uint32_t index = 0u;
@@ -290,7 +290,7 @@ namespace PK
         m_writeBuffer = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(m_instanceInputBuffer->BeginMap(m_instanceBufferOffset, 0ull));
     }
 
-    void VulkanAccelerationStructure::AddInstance(AccelerationStructureGeometryInfo& geometry, const float3x4& matrix)
+    void VulkanAccelerationStructure::AddInstance(RayTracingGeometryInfo& geometry, const float3x4& matrix)
     {
         PK_DEBUG_FATAL_ASSERT(m_instanceCount < m_instanceLimit, "Instance limit exceeded!");
 

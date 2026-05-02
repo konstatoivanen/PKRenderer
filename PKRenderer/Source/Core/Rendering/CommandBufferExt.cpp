@@ -180,7 +180,7 @@ namespace PK
         commandBuffer->CopyToTexture(texture, data, size, &region, 1u);
     }
 
-    void CommandBufferExt::SetMesh(const Mesh* mesh)
+    void CommandBufferExt::SetMesh(const IMesh* mesh)
     {
         auto& vbuffers = mesh->GetVertexBuffers();
         const RHIBuffer* pVBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES];
@@ -195,7 +195,7 @@ namespace PK
         commandBuffer->SetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexType());
     }
 
-    void CommandBufferExt::DrawMesh(const Mesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance)
+    void CommandBufferExt::DrawMesh(const IMesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance)
     {
         SetMesh(mesh);
 
@@ -221,23 +221,23 @@ namespace PK
         commandBuffer->DrawIndexed(sm.indexCount, instanceCount, sm.indexFirst, sm.vertexFirst, firstInstance);
     }
 
-    void CommandBufferExt::DrawMesh(const Mesh* mesh, int32_t submesh)
+    void CommandBufferExt::DrawMesh(const IMesh* mesh, int32_t submesh)
     {
         DrawMesh(mesh, submesh, 1u, 0u);
     }
 
-    void CommandBufferExt::DrawMesh(const Mesh* mesh, int32_t submesh, const ShaderAsset* shader, int32_t variantIndex)
+    void CommandBufferExt::DrawMesh(const IMesh* mesh, int32_t submesh, const ShaderAsset* shader, int32_t variantIndex)
     {
         DrawMesh(mesh, submesh, shader, 1u, 0u, variantIndex);
     }
 
-    void CommandBufferExt::DrawMesh(const Mesh* mesh, int32_t submesh, const ShaderAsset* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex)
+    void CommandBufferExt::DrawMesh(const IMesh* mesh, int32_t submesh, const ShaderAsset* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex)
     {
         SetShader(shader, variantIndex);
         DrawMesh(mesh, submesh, instanceCount, firstInstance);
     }
 
-    void CommandBufferExt::DrawMeshIndirect(const Mesh* mesh, const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
+    void CommandBufferExt::DrawMeshIndirect(const IMesh* mesh, const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
         SetMesh(mesh);
         commandBuffer->DrawIndexedIndirect(indirectArguments, offset, drawCount, stride);

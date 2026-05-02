@@ -1128,9 +1128,6 @@
     <ClInclude Include="Source\Core\Rendering\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Rendering\Mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\App\Renderer\RenderView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1140,10 +1137,7 @@
     <ClInclude Include="Source\Core\Rendering\ShaderPropertyBlock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Rendering\MeshStaticCollection.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Rendering\MeshStaticAsset.h">
+    <ClInclude Include="Source\Core\Rendering\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Renderer\Passes\PassAutoExposure.h">
@@ -2179,19 +2173,13 @@
     <ClCompile Include="Source\Core\Rendering\Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Rendering\Mesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\Rendering\ShaderBindingTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Rendering\ShaderPropertyBlock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Rendering\MeshStaticCollection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Rendering\MeshStaticAsset.cpp">
+    <ClCompile Include="Source\Core\Rendering\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Renderer\Passes\PassAutoExposure.cpp">

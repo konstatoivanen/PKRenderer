@@ -1,7 +1,7 @@
 #pragma once
 #include <PKAssets/PKAsset.h>
-#include "Core/Math/Math.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "Core/Math/Math.h"
 
 namespace PK { class AssetDatabase; }
 
@@ -76,9 +76,9 @@ namespace PK::MeshUtilities
     void CalculateTangents(GeometryContext* ctx);
 
     MeshletBuildData BuildMeshletsMonotone(GeometryContext* ctx);
-    MeshStatic* CreateMeshStatic(MeshStaticCollection* baseMesh, GeometryContext* ctx, const char* name);
-    MeshStatic* CreateBoxMeshStatic(MeshStaticCollection* baseMesh, const float3& offset, const float3& extents);
-    MeshStatic* CreateQuadMeshStatic(MeshStaticCollection* baseMesh, const float2& min, const float2& max);
-    MeshStatic* CreatePlaneMeshStatic(MeshStaticCollection* baseMesh, const float2& center, const float2& extents, uint2 resolution);
-    MeshStatic* CreateSphereMeshStatic(MeshStaticCollection* baseMesh, const float3& offset, const float radius);
+    MeshStatic CreateMeshStatic(MeshStaticAllocator* allocator, GeometryContext* ctx, const char* name);
+    MeshStatic CreateBoxMeshStatic(MeshStaticAllocator* allocator, const float3& offset, const float3& extents);
+    MeshStatic CreateQuadMeshStatic(MeshStaticAllocator* allocator, const float2& min, const float2& max);
+    MeshStatic CreatePlaneMeshStatic(MeshStaticAllocator* allocator, const float2& center, const float2& extents, uint2 resolution);
+    MeshStatic CreateSphereMeshStatic(MeshStaticAllocator* allocator, const float3& offset, const float radius);
 }

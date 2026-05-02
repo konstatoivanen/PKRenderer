@@ -4,8 +4,6 @@
 #include "Core/Utilities/Memory.h"
 #include "Core/CLI/Log.h"
 #include "Core/Math/Extended.h"
-#include "Core/Rendering/MeshStaticCollection.h"
-#include "Core/Rendering/MeshStaticAsset.h"
 #include "Core/Rendering/Mesh.h"
 #include "MeshUtilities.h"
 
@@ -376,13 +374,21 @@ namespace PK::MeshUtilities
         return output;
     }
 
-    MeshStatic* CreateMeshStatic(MeshStaticCollection* baseMesh, GeometryContext* ctx, const char* name)
+    MeshStatic CreateMeshStatic(MeshStaticAllocator* allocator, GeometryContext* ctx, const char* name)
     {
         CalculateTangents(ctx);
 
         auto meshlets = BuildMeshletsMonotone(ctx);
 
-        MeshStaticDescriptor::SubMesh submesh = { 0u, ctx->countVertex, 0u, ctx->countIndex, ctx->aabb };
+        SubMesh submesh;
+        submesh.name = 0u;
+        submesh.vertexFirst = 0u;
+        submesh.vertexCount = ctx->countVertex;
+        submesh.indexFirst = 0u;
+        submesh.indexCount = ctx->countIndex;
+        submesh.meshletFirst = 0u;
+        submesh.meshletCount = 0u;
+        submesh.bounds = ctx->aabb;
 
         MeshStaticDescriptor desc{};
         desc.name = name;
@@ -400,19 +406,20 @@ namespace PK::MeshUtilities
             { ElementType::Float2, PK_RHI_VS_TEXCOORD0, 0 },
             { ElementType::Float3, PK_RHI_VS_POSITION, 1 },
         };
-        desc.meshlet.pSubmeshes = &meshlets.submesh;
-        desc.meshlet.submeshCount = 1u;
-        desc.meshlet.pMeshlets = meshlets.meshlets;
-        desc.meshlet.meshletCount = meshlets.meshlet_count;
-        desc.meshlet.pVertices = meshlets.vertices;
-        desc.meshlet.vertexCount = meshlets.vertex_count;
-        desc.meshlet.pIndices = meshlets.indices;
-        desc.meshlet.triangleCount = meshlets.index_count / 3u;
+        desc.meshlets.pSubmeshes = &meshlets.submesh;
+        desc.meshlets.submeshCount = 1u;
+        desc.meshlets.pMeshlets = meshlets.meshlets;
+        desc.meshlets.meshletCount = meshlets.meshlet_count;
+        desc.meshlets.pVertices = meshlets.vertices;
+        desc.meshlets.vertexCount = meshlets.vertex_count;
+        desc.meshlets.pIndices = meshlets.indices;
+        desc.meshlets.triangleCount = meshlets.index_count / 3u;
 
-        return baseMesh->Allocate(&desc);
+        MeshStatic mesh(allocator, desc);
+        return mesh;
     }
 
-    MeshStatic* CreateBoxMeshStatic(MeshStaticCollection* baseMesh, const float3& offset, const float3& extents)
+    MeshStatic CreateBoxMeshStatic(MeshStaticAllocator* allocator, const float3& offset, const float3& extents)
     {
         constexpr auto vcount = 24u;
         constexpr auto icount = 36u;
@@ -519,10 +526,10 @@ namespace PK::MeshUtilities
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = math::centerExtentsToAABB(offset, extents);
-        return CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Box");
+        return CreateMeshStatic(allocator, &geometryContext, "Primitive_Box");
     }
 
-    MeshStatic* CreateQuadMeshStatic(MeshStaticCollection* baseMesh, const float2& min, const float2& max)
+    MeshStatic CreateQuadMeshStatic(MeshStaticAllocator* allocator, const float2& min, const float2& max)
     {
         constexpr auto vcount = 4u;
         constexpr auto icount = 2u;
@@ -557,10 +564,10 @@ namespace PK::MeshUtilities
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = AABB<float3>({ min.x, min.y, 0.0f }, { max.x, max.y, 0.0f });
-        return CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Box");
+        return CreateMeshStatic(allocator, &geometryContext, "Primitive_Box");
     }
 
-    MeshStatic* CreatePlaneMeshStatic(MeshStaticCollection * baseMesh, const float2 & center, const float2 & extents, uint2 resolution)
+    MeshStatic CreatePlaneMeshStatic(MeshStaticAllocator* allocator, const float2 & center, const float2 & extents, uint2 resolution)
     {
         auto vcount = resolution.x * resolution.y * 4;
         auto icount = resolution.x * resolution.y * 6;
@@ -613,14 +620,14 @@ namespace PK::MeshUtilities
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = math::centerExtentsToAABB(float3(center.xy, 0.0f), float3(extents.xy, 0.0f));
-        auto virtualMesh = CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Plane"); 
+        auto virtualMesh = CreateMeshStatic(allocator, &geometryContext, "Primitive_Plane"); 
 
         Memory::Free(buffer);
 
         return virtualMesh;
     }
 
-    MeshStatic* CreateSphereMeshStatic(MeshStaticCollection* baseMesh, const float3& offset, const float radius)
+    MeshStatic CreateSphereMeshStatic(MeshStaticAllocator* allocator, const float3& offset, const float radius)
     {
         const auto longc = 24;
         const auto lattc = 16;
@@ -720,7 +727,7 @@ namespace PK::MeshUtilities
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = math::centerExtentsToAABB(offset, PK_FLOAT3_ONE * radius);
-        auto virtualMesh = CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Sphere");
+        auto virtualMesh = CreateMeshStatic(allocator, &geometryContext, "Primitive_Sphere");
 
         Memory::Free(buffer);
 

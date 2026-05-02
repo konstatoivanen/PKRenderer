@@ -8,7 +8,7 @@
 #include "Core/ControlFlow/RemoteProcessRunner.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/ShaderAsset.h"
-#include "Core/Rendering/MeshStaticAsset.h"
+#include "Core/Rendering/Mesh.h"
 #include "Core/Rendering/Window.h"
 #include "Core/IApplication.h"
 #include "App/FrameStep.h"
@@ -81,7 +81,7 @@ namespace PK::App
         assetDatabase->LoadDirectory<ShaderAsset>("Content/Shaders/");
 
         auto batcherMeshStatic = GetServices()->Create<BatcherMeshStatic>();
-        assetDatabase->RegisterFactory<MeshStaticAsset>(batcherMeshStatic);
+        assetDatabase->RegisterFactory<MeshStatic>(batcherMeshStatic);
 
         auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic);
 
@@ -98,7 +98,7 @@ namespace PK::App
         auto engineProfiler = GetServices()->Create<EngineProfiler>(assetDatabase);
 
         auto engineFlyCamera = GetServices()->Create<EngineFlyCamera>(entityDb, inputConfig);
-        auto engineDebug = GetServices()->Create<EngineDebug>(assetDatabase, entityDb, batcherMeshStatic->GetMeshStaticCollection());
+        auto engineDebug = GetServices()->Create<EngineDebug>(assetDatabase, entityDb, batcherMeshStatic->GetMeshStaticAllocator());
         
         auto cvariableRegister = GetService<CVariableRegister>();
 

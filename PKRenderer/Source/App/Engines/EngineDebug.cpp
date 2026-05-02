@@ -6,8 +6,7 @@
 #include "Core/Math/Color.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/MeshStaticAsset.h"
-#include "Core/Rendering/MeshStaticCollection.h"
+#include "Core/Rendering/Mesh.h"
 #include "Core/Rendering/MeshUtilities.h"
 #include "Core/Rendering/Window.h"
 #include "Core/IApplication.h"
@@ -22,17 +21,17 @@
 
 namespace PK::App
 {
-    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticCollection* baseMesh)
+    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticAllocator* meshAllocator)
     {
         m_entityDb = entityDb;
         m_assetDatabase = assetDatabase;
         auto config = assetDatabase->Load<EngineDebugConfig>("Content/Configs/DebugEngine.cfg");
 
-        auto columnMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Columns.pkmesh", CacheMode::Shared);
-        auto rocksMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Rocks.pkmesh", CacheMode::Shared);
+        auto columnMesh = assetDatabase->Load<MeshStatic>("Content/Models/MDL_Columns.pkmesh", CacheMode::Shared);
+        auto rocksMesh = assetDatabase->Load<MeshStatic>("Content/Models/MDL_Rocks.pkmesh", CacheMode::Shared);
         // @TODO move these to some global resources initializer.
-        auto sphereMesh = assetDatabase->CreateVirtual<MeshStaticAsset>("Primitive_Sphere", MeshUtilities::CreateSphereMeshStatic(baseMesh, PK_FLOAT3_ZERO, 1.0f));
-        auto planeMesh = assetDatabase->CreateVirtual<MeshStaticAsset>("Primitive_Plane", MeshUtilities::CreatePlaneMeshStatic(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
+        auto sphereMesh = assetDatabase->CreateVirtual<MeshStatic>("Primitive_Sphere", MeshUtilities::CreateSphereMeshStatic(meshAllocator, PK_FLOAT3_ZERO, 1.0f));
+        auto planeMesh = assetDatabase->CreateVirtual<MeshStatic>("Primitive_Plane", MeshUtilities::CreatePlaneMeshStatic(meshAllocator, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
         auto materialSand = assetDatabase->Load<Material>("Content/Materials/M_Sand.material", CacheMode::Shared);
         auto materialAsphalt = assetDatabase->Load<Material>("Content/Materials/M_Asphalt.material", CacheMode::Shared);
@@ -42,8 +41,8 @@ namespace PK::App
         auto minpos = float3(-70, -6, -70);
         auto maxpos = float3(+70, -4, +70);
 
-        EntityBuilders::CreateEntityMeshStatic(m_entityDb, planeMesh->GetMeshStatic(), { {materialSand,0} }, { 0, -5, 0 }, float3(90, 0, 0) * PK_FLOAT_DEG2RAD, 80.0f);
-        EntityBuilders::CreateEntityMeshStatic(m_entityDb, columnMesh->GetMeshStatic(), { {materialAsphalt,0} }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
+        EntityBuilders::CreateEntityMeshStatic(m_entityDb, planeMesh, { {materialSand,0} }, { 0, -5, 0 }, float3(90, 0, 0) * PK_FLOAT_DEG2RAD, 80.0f);
+        EntityBuilders::CreateEntityMeshStatic(m_entityDb, columnMesh, { {materialAsphalt,0} }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
 
         auto submeshCount = rocksMesh->GetSubmeshCount();
 
@@ -53,7 +52,7 @@ namespace PK::App
             auto pos = math::halton(i, uint3(7,11,17)) * (maxpos - minpos) + minpos;
             auto rot = math::randomRadianFloat3();
             auto size = math::randomRange(1.0f, 3.0f);
-            EntityBuilders::CreateEntityMeshStatic(m_entityDb, rocksMesh->GetMeshStatic(), { { materialMarble,submesh} }, pos, rot, size);
+            EntityBuilders::CreateEntityMeshStatic(m_entityDb, rocksMesh, { { materialMarble,submesh} }, pos, rot, size);
         }
 
         for (auto i = 0; i < 128; ++i)
@@ -62,7 +61,7 @@ namespace PK::App
             auto pos = math::halton(i + 128, uint3(7,11,17)) * (maxpos - minpos) + minpos;
             auto rot = math::randomRadianFloat3();
             auto size = math::randomRange(1.0f, 3.0f);
-            EntityBuilders::CreateEntityMeshStatic(m_entityDb, rocksMesh->GetMeshStatic(), { {materialPlaster,submesh} }, pos, rot, size);
+            EntityBuilders::CreateEntityMeshStatic(m_entityDb, rocksMesh, { {materialPlaster,submesh} }, pos, rot, size);
         }
 
         for (uint32_t i = 0u; i < config->LightCount; ++i)

@@ -4,7 +4,6 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
-#include "Core/Rendering/MeshStaticAsset.h"
 #include "Core/Rendering/Material.h"
 #include "App/ECS/ComponentTransform.h"
 #include "App/Renderer/HashCache.h"
@@ -22,9 +21,9 @@ namespace PK::App
         m_tasklets = RHI::CreateBuffer<uint2>(4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
     }
 
-    void BatcherMeshStatic::AssetConstruct(MeshStaticAsset* memory, const char* filepath)
+    void BatcherMeshStatic::AssetConstruct(MeshStatic* memory, const char* filepath)
     {
-        Memory::Construct(memory, &m_staticGeometry, filepath);
+        Memory::Construct(memory, &m_meshAllocator, filepath);
     }
 
     void BatcherMeshStatic::BeginCollectDrawCalls()
@@ -135,8 +134,8 @@ namespace PK::App
 
             // Write draw info & tasklet buffers.
             {
-                auto submesh = m_staticGeometry.GetSubmesh(info->submesh);
-                auto taskCount = (submesh->meshletCount + PK_RHI_MAX_MESHLETS_PER_TASK - 1u) / PK_RHI_MAX_MESHLETS_PER_TASK;
+                const auto& submesh = m_meshAllocator.GetSubmesh(info->submesh);
+                const auto taskCount = (submesh.meshletCount + PK_RHI_MAX_MESHLETS_PER_TASK - 1u) / PK_RHI_MAX_MESHLETS_PER_TASK;
 
                 indexView[i] = PKAssets::PackPKDrawInfo
                 (
@@ -149,10 +148,10 @@ namespace PK::App
 
                 for (auto j = 0u; j < taskCount; ++j)
                 {
-                    auto taskletMeshletCount = math::min(PK_RHI_MAX_MESHLETS_PER_TASK, submesh->meshletCount - j * PK_RHI_MAX_MESHLETS_PER_TASK);
+                    auto taskletMeshletCount = math::min(PK_RHI_MAX_MESHLETS_PER_TASK, submesh.meshletCount - j * PK_RHI_MAX_MESHLETS_PER_TASK);
                     taskletView[taskletCount++] =
                     {
-                        submesh->meshletFirst + j * PK_RHI_MAX_MESHLETS_PER_TASK,
+                        submesh.meshletFirst + j * PK_RHI_MAX_MESHLETS_PER_TASK,
                         (i & 0xFFFFFFu) | ((taskletMeshletCount & 0xFF) << 24u)
                     };
                 }
@@ -197,7 +196,7 @@ namespace PK::App
         uint32_t userdata,
         uint16_t sortDepth)
     {
-        PK_FATAL_ASSERT(mesh->baseMesh == &m_staticGeometry, "Cannot submit draws for meshes not registered in the scene mesh of this geometry batcher!");
+        PK_FATAL_ASSERT(mesh->GetAllocator() == &m_meshAllocator, "Cannot submit draws for meshes not registered in the scene mesh of this geometry batcher!");
 
         auto info = m_drawArena.Allocate<DrawInfo>(1u);
         info->shader = m_shaders.Add({ shader, 0ull, 0ull });
@@ -227,7 +226,7 @@ namespace PK::App
             info->material = m_materials[materialIndex].batchIndex;
         }
 
-        auto meshletCount = mesh->GetSubmesh(submesh)->meshletCount;
+        auto meshletCount = mesh->GetSubmesh(submesh).meshletCount;
         m_taskletCount += (meshletCount + PK_RHI_MAX_MESHLETS_PER_TASK - 1u) / PK_RHI_MAX_MESHLETS_PER_TASK;
         m_drawInfoCount++;
     }
@@ -245,10 +244,10 @@ namespace PK::App
         }
 
         auto hash = HashCache::Get();
-        RHI::SetBuffer(hash->pk_Meshlet_Submeshes, m_staticGeometry.GetMeshletSubmeshBuffer());
-        RHI::SetBuffer(hash->pk_Meshlets, m_staticGeometry.GetMeshletBuffer());
-        RHI::SetBuffer(hash->pk_Meshlet_Vertices, m_staticGeometry.GetMeshletVertexBuffer());
-        RHI::SetBuffer(hash->pk_Meshlet_Indices, m_staticGeometry.GetMeshletIndexBuffer());
+        RHI::SetBuffer(hash->pk_Meshlet_Submeshes, m_meshAllocator.GetMeshletSubmeshBuffer());
+        RHI::SetBuffer(hash->pk_Meshlets, m_meshAllocator.GetMeshletBuffer());
+        RHI::SetBuffer(hash->pk_Meshlet_Vertices, m_meshAllocator.GetMeshletVertexBuffer());
+        RHI::SetBuffer(hash->pk_Meshlet_Indices, m_meshAllocator.GetMeshletIndexBuffer());
 
         const auto& passGroup = m_resolvedGroups[group];
 

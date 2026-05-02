@@ -1,19 +1,19 @@
 #pragma once
 #include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/FixedArena.h"
-#include "Core/Rendering/MeshStaticCollection.h"
+#include "Core/Rendering/Mesh.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Material.h"
 #include "App/Renderer/IBatcher.h"
 
 namespace PK { class AssetDatabase; }
-namespace PK { struct MeshStaticAsset; }
+namespace PK { struct MeshStatic; }
 
 namespace PK::App
 {
     struct ComponentTransform;
 
-    class BatcherMeshStatic : public IBatcher, public AssetFactory<MeshStaticAsset>
+    class BatcherMeshStatic : public IBatcher, public AssetFactory<MeshStatic>
     {
         constexpr static uint32_t MAX_SHADERS = 64u;
         constexpr static uint32_t MAX_MATERIALS = 2048u;
@@ -99,9 +99,9 @@ namespace PK::App
     public:
         BatcherMeshStatic();
 
-        inline MeshStaticCollection* GetMeshStaticCollection() { return &m_staticGeometry; }
+        inline MeshStaticAllocator* GetMeshStaticAllocator() { return &m_meshAllocator; }
 
-        void AssetConstruct(MeshStaticAsset* memory, const char* filepath) final;
+        void AssetConstruct(MeshStatic* memory, const char* filepath) final;
 
         void BeginCollectDrawCalls() final;
 
@@ -127,7 +127,7 @@ namespace PK::App
         void UploadMaterials(CommandBufferExt cmd);
         void UploadDrawIndices(CommandBufferExt cmd);
 
-        MeshStaticCollection m_staticGeometry;
+        MeshStaticAllocator m_meshAllocator;
         FixedSet16<ShaderReference, MAX_SHADERS, ShaderReferenceHash> m_shaders;
         FixedSet16<MaterialReference, MAX_MATERIALS, MaterialReferenceHash> m_materials;
         HashSet<ComponentTransform*> m_transforms;

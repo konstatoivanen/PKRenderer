@@ -193,7 +193,7 @@ namespace PK
 
         uint32_t GetStrongRefCount() const noexcept { return shared ? shared->GetStrongRefCount() : 0u; }
         uint32_t GetWeakRefCount() const noexcept { return shared ? shared->GetWeakRefCount() : 0u; }
-        T* get() const noexcept { return pointer; }
+        constexpr T* get() const noexcept { return pointer; }
 
         void IncrementStrongRef() const noexcept  { if (shared) shared->IncrementStrongRef(); }
         void DecrementStrongRef() noexcept { if (shared) shared->DecrementStrongRef(); }

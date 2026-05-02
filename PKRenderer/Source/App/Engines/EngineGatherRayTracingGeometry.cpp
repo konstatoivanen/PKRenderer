@@ -40,7 +40,7 @@ namespace PK::App
 
         structure->BeginWrite(request->queue, (uint32_t)instanceCount);
 
-        AccelerationStructureGeometryInfo geometry{};
+        RayTracingGeometryInfo geometry{};
         geometry.customIndex = 0u;
         geometry.recordOffset = 0u;
 
@@ -55,7 +55,7 @@ namespace PK::App
             {
                 for (const auto& material : view.materials->materials)
                 {
-                    if (view.staticMesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material.submesh, &geometry))
+                    if (view.staticMesh->sharedMesh->GatherRayTracingGeometry(material.submesh, &geometry))
                     {
                         structure->AddInstance(geometry, view.transform->localToWorld);
                     }

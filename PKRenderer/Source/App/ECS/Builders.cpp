@@ -2,7 +2,7 @@
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/Rendering/ShaderAsset.h"
-#include "Core/Rendering/MeshStaticAsset.h"
+#include "Core/Rendering/Mesh.h"
 #include "App/ECS/ImplementerMeshStatic.h"
 #include "App/ECS/ImplementerFlyCamera.h"
 #include "App/ECS/ImplementerLight.h"
@@ -25,7 +25,7 @@ namespace PK::App::EntityBuilders
 
         for (auto& target : materials)
         {
-            bounds |= mesh->GetSubmesh(target.submesh)->bounds;
+            bounds |= mesh->GetSubmesh(target.submesh).bounds;
         }
 
         return bounds;
@@ -233,7 +233,7 @@ namespace PK::App::EntityBuilders
 
         implementer->sourceRadius = kLightSourceRadius;
 
-        auto mesh = assetDatabase->Find<MeshStaticAsset>("Primitive_Sphere")->GetMeshStatic();
+        auto mesh = assetDatabase->Find<MeshStatic>("Primitive_Sphere");
         auto shader = assetDatabase->Find<ShaderAsset>("MS_Mat_Unlit_Color");
         auto material = assetDatabase->CreateVirtual<Material>(FixedString32("M_Point_Light_%u", egid.entityID()).c_str(), shader.get(), nullptr);
         material->Set<float4>(HashCache::Get()->_Color, color);

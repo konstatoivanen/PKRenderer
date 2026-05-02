@@ -95,7 +95,7 @@ namespace PK
     {
         virtual ~RHIAccelerationStructure() = 0;
         virtual void BeginWrite(QueueType queue, uint32_t instanceLimit) = 0;
-        virtual void AddInstance(AccelerationStructureGeometryInfo& geometry, const float3x4& matrix) = 0;
+        virtual void AddInstance(RayTracingGeometryInfo& geometry, const float3x4& matrix) = 0;
         virtual void EndWrite() = 0;
         virtual uint32_t GetInstanceCount() const = 0;
         virtual uint32_t GetSubStructureCount() const = 0;

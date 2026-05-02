@@ -34,7 +34,7 @@ namespace PK::App
         public IStep<AssetImportEvent<EngineDebugConfig>*>
     {
     public:
-        EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticCollection* baseMesh);
+        EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticAllocator* meshAllocator);
         virtual void OnStepFrameUpdate(FrameContext* ctx) final;
         virtual void Step(IGizmosRenderer* gui) final;
         virtual void Step(AssetImportEvent<EngineDebugConfig>* token) final;
