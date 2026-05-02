@@ -493,6 +493,15 @@ namespace PK
             }
         }
 
+        // For memory:
+        // For some reason this we never encountered a scenario where the first descriptors were identical but only the count was different.
+        // Caught with debug engine draw. :)
+        if (m_descritorState.bindingCount != resourceLayout.GetCount())
+        {
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
+            m_descritorState.bindingCount = (uint32_t)resourceLayout.GetCount();
+        }
+
         if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_DESCRIPTORS)
         {
             auto name = shader->GetName();
@@ -510,12 +519,6 @@ namespace PK
         {
             m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
             m_descritorState.stageFlags = layout->stageFlags;
-        }
-
-        if (m_descritorState.bindingCount != resourceLayout.GetCount())
-        {
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-            m_descritorState.bindingCount = (uint32_t)resourceLayout.GetCount();
         }
 
         m_services.descriptorCache->SetDescriptorSetFence(m_descritorState.descriptorSet, fence);

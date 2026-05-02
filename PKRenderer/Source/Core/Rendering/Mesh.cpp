@@ -12,6 +12,7 @@ namespace PK
     IMeshlets::~IMeshlets() = default;
     IRayTracingGeometry::~IRayTracingGeometry() = default;
 
+
     MeshStaticAllocator::MeshStaticAllocator()
     {
         const uint32_t maxSubmeshes = 65535u;
