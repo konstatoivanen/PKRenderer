@@ -21,10 +21,10 @@ namespace PK
     // @TODO convert into a pool. for deletions.
     struct ImplementerBucket
     {
+        uint8_t data[PK_ECS_BUCKET_SIZE];
+        void (*destructor)(void* value, size_t count);
         ImplementerBucket* previous;
         size_t count;
-        void (*destructor)(void* value, size_t count);
-        uint8_t data[PK_ECS_BUCKET_SIZE];
 
         ~ImplementerBucket() 
         { 

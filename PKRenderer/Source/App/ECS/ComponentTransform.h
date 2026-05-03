@@ -6,12 +6,12 @@ namespace PK::App
 {
     struct ComponentTransform
     {
-        float3 position = PK_FLOAT3_ZERO;
-        quaternion rotation = PK_QUATERNION_IDENTITY;
-        float3 scale = PK_FLOAT3_ONE;
-
+        // vector alignment order here.
         float3x4 localToWorld = PK_FLOAT3X4_IDENTITY;
         float4x4 worldToLocal = PK_FLOAT4X4_IDENTITY;
+        quaternion rotation = PK_QUATERNION_IDENTITY;
+        float3 position = PK_FLOAT3_ZERO;
+        float3 scale = PK_FLOAT3_ONE;
         float minUniformScale = 1.0f;
 
         inline float3x4 GetLocalToWorld() const { return math::transformTRS3x4(position, rotation, scale); }
