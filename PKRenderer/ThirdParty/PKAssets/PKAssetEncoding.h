@@ -11,6 +11,7 @@ namespace PKAssets
     {
         uint8_t lengths[PK_ASSET_ENCODE_CODE_COUNT]{};
         uint16_t codes[PK_ASSET_ENCODE_CODE_COUNT]{};
+        size_t decodePadding;
         size_t size;
     };
 

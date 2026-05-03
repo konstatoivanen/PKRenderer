@@ -59,7 +59,7 @@ namespace PKAssets
         PKAssetType type = PKAssetType::Invalid;        // 73 bytes
         bool isCompressed = false;                      // 74 bytes
 
-        uint16_t __padding = 0u;                        // 76 bytes
+        uint16_t decodePadding = 0u;                    // 76 bytes
         uint32_t uncompressedSize = 0u;                 // 80 bytes
     };
 

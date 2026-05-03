@@ -63,12 +63,14 @@ namespace PKAssets
             return -1;
         }
 
-        uint8_t* buffer = static_cast<uint8_t*>(malloc(header.uncompressedSize));
+        auto bufferSize = header.uncompressedSize + header.decodePadding * 16ull;
+        auto buffer = static_cast<uint8_t*>(malloc(bufferSize));
 
         if (header.isCompressed)
         {
             // Write uncompressed data to the end of the asset buffer & decode in place.
-            uint8_t* compressed = buffer + (header.uncompressedSize - (size - headerSize));
+            // Includes precalculated overscan offset so that inplace decoding doesn't overrun the encoded buffer.
+            auto compressed = buffer + (bufferSize - (size - headerSize));
             fread(compressed, sizeof(uint8_t), size - headerSize, file);
             DecodeBuffer(compressed, buffer + headerSize, header.uncompressedSize - headerSize);
             header.isCompressed = false;

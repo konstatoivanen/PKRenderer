@@ -156,15 +156,24 @@ namespace PKAssets
                 table->size += table->lengths[bytes[i]];
             }
     
+            table->decodePadding = in_data_size * 8ull - table->size;
+
+            for (auto i = 0ull; i < in_data_size && table->decodePadding > i * 8ull; ++i)
+            {
+                table->decodePadding += table->lengths[bytes[i]];
+            }
+
             // bits to bytes
             table->size = (table->size + 7ull) / 8ull;
+            table->decodePadding = (table->decodePadding + 7ull) / 8ull;
+            table->decodePadding = in_data_size - table->decodePadding;
         }
         else if (table)
         {
             auto stream_bitbuffer = 0ull;
             auto stream_bitcount = 0u;
             auto stream_bytecount = 0u;
-    
+
             for (auto i = 0u; i < PK_ASSET_ENCODE_CODE_COUNT; ++i)
             {
                 stream_bitbuffer |= (uint64_t)table->lengths[i] << stream_bitcount;
