@@ -25,9 +25,9 @@ namespace PK
 
         m_streamLayout = VertexStreamLayout(
         {
-            { ElementType::Float3, PK_RHI_VS_NORMAL, 0 },
-            { ElementType::Float4, PK_RHI_VS_TANGENT, 0 },
-            { ElementType::Float2, PK_RHI_VS_TEXCOORD0, 0 },
+            { ElementType::Half4, PK_RHI_VS_NORMAL, 0 },
+            { ElementType::Half4, PK_RHI_VS_TANGENT, 0 },
+            { ElementType::Half2, PK_RHI_VS_TEXCOORD0, 0 },
             { ElementType::Float3, PK_RHI_VS_POSITION, 1 },
         });
 

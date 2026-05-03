@@ -18,40 +18,35 @@ namespace PK::MeshUtilities
         static void GetPosition(const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert)
         {
             auto meshData = static_cast<GeometryContext*>(pContext->m_pUserData);
-            auto pPosition =  meshData->pPositions + meshData->pIndices[iFace * 3 + iVert] * meshData->stridePositionsf32;
-            fvPosOut[0] = pPosition[0];
-            fvPosOut[1] = pPosition[1];
-            fvPosOut[2] = pPosition[2];
+            fvPosOut[0] = meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_POSITION.x;
+            fvPosOut[1] = meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_POSITION.y;
+            fvPosOut[2] = meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_POSITION.z;
         }
 
         static void GetNormal(const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert)
         {
             auto meshData = static_cast<GeometryContext*>(pContext->m_pUserData);
-            auto pNormal = meshData->pNormals + meshData->pIndices[iFace * 3 + iVert] * meshData->strideNormalsf32;
-            fvNormOut[0] = pNormal[0];
-            fvNormOut[1] = pNormal[1];
-            fvNormOut[2] = pNormal[2];
+            fvNormOut[0] = meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_NORMAL.x;
+            fvNormOut[1] = meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_NORMAL.y;
+            fvNormOut[2] = meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_NORMAL.z;
         }
 
         static void GetTexCoord(const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert)
         {
             auto meshData = static_cast<GeometryContext*>(pContext->m_pUserData);
-            auto pTexcoord = meshData->pTexcoords + meshData->pIndices[iFace * 3 + iVert] * meshData->strideTexcoordsf32;
-            fvTexcOut[0] = pTexcoord[0];
-            fvTexcOut[1] = pTexcoord[1];
+            fvTexcOut[0] = meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_TEXCOORD0.x;
+            fvTexcOut[1] = meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_TEXCOORD0.y;
         }
 
         static void SetTSpaceBasic(const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert)
         {
             auto meshData = static_cast<GeometryContext*>(pContext->m_pUserData);
-            auto pTangent = meshData->pTangents + meshData->pIndices[iFace * 3 + iVert] * meshData->strideTangentsf32;
-            pTangent[0] = fvTangent[0];
-            pTangent[1] = fvTangent[1];
-            pTangent[2] = fvTangent[2];
-            pTangent[3] = fSign;
+            meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_TANGENT.x = fvTangent[0];
+            meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_TANGENT.y = fvTangent[1];
+            meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_TANGENT.z = fvTangent[2];
+            meshData->pVertices[meshData->pIndices[iFace * 3 + iVert]].in_TANGENT.w = fSign;
         }
     }
-
 
     void AlignVertexStreams(char* vertices, size_t count, const VertexStreamLayout& src, const VertexStreamLayout& dst)
     {
@@ -106,12 +101,12 @@ namespace PK::MeshUtilities
     {
         for (auto i = 0u; i < ctx->countIndex; i += 3u)
         {
-            const auto& v0 = *reinterpret_cast<float3*>(ctx->pPositions + ctx->pIndices[i + 0] * ctx->stridePositionsf32);
-            const auto& v1 = *reinterpret_cast<float3*>(ctx->pPositions + ctx->pIndices[i + 1] * ctx->stridePositionsf32);
-            const auto& v2 = *reinterpret_cast<float3*>(ctx->pPositions + ctx->pIndices[i + 2] * ctx->stridePositionsf32);
-            auto& n0 = *reinterpret_cast<float3*>(ctx->pNormals + ctx->pIndices[i + 0] * ctx->strideNormalsf32);
-            auto& n1 = *reinterpret_cast<float3*>(ctx->pNormals + ctx->pIndices[i + 1] * ctx->strideNormalsf32);
-            auto& n2 = *reinterpret_cast<float3*>(ctx->pNormals + ctx->pIndices[i + 2] * ctx->strideNormalsf32);
+            const auto& v0 = ctx->pVertices[ctx->pIndices[i + 0]].in_POSITION;
+            const auto& v1 = ctx->pVertices[ctx->pIndices[i + 1]].in_POSITION;
+            const auto& v2 = ctx->pVertices[ctx->pIndices[i + 2]].in_POSITION;
+            auto& n0 = ctx->pVertices[ctx->pIndices[i + 0]].in_NORMAL;
+            auto& n1 = ctx->pVertices[ctx->pIndices[i + 1]].in_NORMAL;
+            auto& n2 = ctx->pVertices[ctx->pIndices[i + 2]].in_NORMAL;
 
             auto tangent = math::normalize(v1 - v0);
             auto binormal = math::normalize(v2 - v0);
@@ -123,8 +118,7 @@ namespace PK::MeshUtilities
 
         for (auto i = 0u; i < ctx->countVertex; ++i)
         {
-            auto& normal = *reinterpret_cast<float3*>(ctx->pNormals + i * ctx->strideNormalsf32);
-            normal = math::normalize(normal) * sign;
+            ctx->pVertices[i].in_NORMAL = math::normalize(ctx->pVertices[i].in_NORMAL) * sign;
         }
     }
 
@@ -222,10 +216,10 @@ namespace PK::MeshUtilities
         auto pack_meshlet_vertex = [](GeometryContext* ctx, PKAssets::PKMeshletVertex* out_vertex, uint32_t index)
         {
             *out_vertex = PKAssets::PackPKMeshletVertex(
-                ctx->pPositions + index * ctx->stridePositionsf32,
-                ctx->pTexcoords + index * ctx->strideTexcoordsf32,
-                ctx->pNormals + index * ctx->strideNormalsf32,
-                ctx->pTangents + index * ctx->strideTangentsf32,
+                &ctx->pVertices[index].in_POSITION.x,
+                &ctx->pVertices[index].in_TEXCOORD0.x,
+                &ctx->pVertices[index].in_NORMAL.x,
+                &ctx->pVertices[index].in_TANGENT.x,
                 nullptr,
                 &ctx->aabb.min.x,
                 &ctx->aabb.max.x);
@@ -240,7 +234,6 @@ namespace PK::MeshUtilities
             // Compute bounds
             {
                 const auto index_count = meshlet.triangle_count * 3;
-                const auto vertex_stride_float = ctx->stridePositionsf32;
                 float3 normals[PKAssets::PK_MESHLET_MAX_TRIANGLES * 3];
                 float3 corners[PKAssets::PK_MESHLET_MAX_TRIANGLES * 3][3];
                 uint32_t valid_tri_count = 0u;
@@ -248,9 +241,9 @@ namespace PK::MeshUtilities
                 for (auto i = 0u; i < index_count; i += 3u)
                 {
                     bool isValid = false;
-                    const auto a = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 0]];
-                    const auto b = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 1]];
-                    const auto c = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 2]];
+                    const auto a = &ctx->pVertices[meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 0]]].in_POSITION.x;
+                    const auto b = &ctx->pVertices[meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 1]]].in_POSITION.x;
+                    const auto c = &ctx->pVertices[meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 2]]].in_POSITION.x;
                     normals[valid_tri_count] = math::triangleNormal(a, b, c, isValid);
                     corners[valid_tri_count][0] = float3(a);
                     corners[valid_tri_count][1] = float3(b);
@@ -380,6 +373,26 @@ namespace PK::MeshUtilities
 
         auto meshlets = BuildMeshletsMonotone(ctx);
 
+        // @TODO temp conversion to get stuff working.
+        const auto stream0Stride = 20u; // matches stream layout
+        const auto stream1Stride = 12u; // matches stream layout
+        auto pVertices = Memory::AllocateClear<uint8_t>((stream0Stride + stream1Stride) * ctx->countVertex);
+        auto pStream0 = pVertices;
+        auto pStream1 = pVertices + stream0Stride * ctx->countVertex;
+
+        ConvertVertices<float, uint16_t>(pStream0 + 0u, &ctx->pVertices->in_NORMAL.x, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
+        ConvertVertices<float, uint16_t>(pStream0 + 2u, &ctx->pVertices->in_NORMAL.y, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
+        ConvertVertices<float, uint16_t>(pStream0 + 4u, &ctx->pVertices->in_NORMAL.z, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
+        ConvertVertices<float, uint16_t>(pStream0 + 8u, &ctx->pVertices->in_TANGENT.x, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
+        ConvertVertices<float, uint16_t>(pStream0 + 10u, &ctx->pVertices->in_TANGENT.y, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
+        ConvertVertices<float, uint16_t>(pStream0 + 12u, &ctx->pVertices->in_TANGENT.z, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
+        ConvertVertices<float, uint16_t>(pStream0 + 14u, &ctx->pVertices->in_TANGENT.w, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
+        ConvertVertices<float, uint16_t>(pStream0 + 16u, &ctx->pVertices->in_TEXCOORD0.x, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
+        ConvertVertices<float, uint16_t>(pStream0 + 18u, &ctx->pVertices->in_TEXCOORD0.y, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
+        ConvertVertices<float, float>(pStream1 + 0u, &ctx->pVertices->in_POSITION.x, ctx->countVertex, sizeof(VertexDefault), stream1Stride);
+        ConvertVertices<float, float>(pStream1 + 4u, &ctx->pVertices->in_POSITION.y, ctx->countVertex, sizeof(VertexDefault), stream1Stride);
+        ConvertVertices<float, float>(pStream1 + 8u, &ctx->pVertices->in_POSITION.z, ctx->countVertex, sizeof(VertexDefault), stream1Stride);
+
         SubMesh submesh;
         submesh.name = 0u;
         submesh.vertexFirst = 0u;
@@ -392,7 +405,7 @@ namespace PK::MeshUtilities
 
         MeshStaticDescriptor desc{};
         desc.name = name;
-        desc.regular.pVertices = ctx->pVertices;
+        desc.regular.pVertices = pVertices;
         desc.regular.pIndices = ctx->pIndices;
         desc.regular.pSubmeshes = &submesh;
         desc.regular.indexType = ElementType::Uint;
@@ -401,9 +414,9 @@ namespace PK::MeshUtilities
         desc.regular.submeshCount = 1u;
         desc.regular.streamLayout =
         {
-            { ElementType::Float3, PK_RHI_VS_NORMAL, 0 },
-            { ElementType::Float4, PK_RHI_VS_TANGENT, 0 },
-            { ElementType::Float2, PK_RHI_VS_TEXCOORD0, 0 },
+            { ElementType::Half4, PK_RHI_VS_NORMAL, 0 },
+            { ElementType::Half4, PK_RHI_VS_TANGENT, 0 },
+            { ElementType::Half2, PK_RHI_VS_TEXCOORD0, 0 },
             { ElementType::Float3, PK_RHI_VS_POSITION, 1 },
         };
         desc.meshlets.pSubmeshes = &meshlets.submesh;
@@ -416,6 +429,9 @@ namespace PK::MeshUtilities
         desc.meshlets.triangleCount = meshlets.index_count / 3u;
 
         MeshStatic mesh(allocator, desc);
+
+        Memory::Free(pVertices);
+
         return mesh;
     }
 
@@ -445,62 +461,31 @@ namespace PK::MeshUtilities
         float2 uv01 = { 0.0f, 1.0f };
         float2 uv11 = { 1.0f, 1.0f };
 
-        struct VertexData
-        {
-            Vertex_NormalTangentTexCoord attributes[vcount];
-            float3 positions[vcount];
-        } 
-        vertexData;
-
-        vertexData.attributes[0] = { down, float4(front, 1), uv11 };
-        vertexData.attributes[1] = { down, float4(front, 1), uv01 };
-        vertexData.attributes[2] = { down, float4(front, 1), uv00 };
-        vertexData.attributes[3] = { down, float4(front, 1), uv10 };
-        vertexData.attributes[4] = { left, float4(down, 1), uv11 };
-        vertexData.attributes[5] = { left, float4(down, 1), uv01 };
-        vertexData.attributes[6] = { left, float4(down, 1), uv00 };
-        vertexData.attributes[7] = { left, float4(down, 1), uv10 };
-        vertexData.attributes[8] = { front, float4(down, 1), uv11 };
-        vertexData.attributes[9] = { front, float4(down, 1), uv01 };
-        vertexData.attributes[10] = { front, float4(down, 1), uv00 };
-        vertexData.attributes[11] = { front, float4(down, 1), uv10 };
-        vertexData.attributes[12] = { back, float4(up, 1), uv11 };
-        vertexData.attributes[13] = { back, float4(up, 1), uv01 };
-        vertexData.attributes[14] = { back, float4(up, 1), uv00 };
-        vertexData.attributes[15] = { back, float4(up, 1), uv10 };
-        vertexData.attributes[16] = { right, float4(up, 1), uv11 };
-        vertexData.attributes[17] = { right, float4(up, 1), uv01 };
-        vertexData.attributes[18] = { right, float4(up, 1), uv00 };
-        vertexData.attributes[19] = { right, float4(up, 1), uv10 };
-        vertexData.attributes[20] = { up, float4(back, 1), uv11 };
-        vertexData.attributes[21] = { up, float4(back, 1), uv01 };
-        vertexData.attributes[22] = { up, float4(back, 1), uv00 };
-        vertexData.attributes[23] = { up, float4(back, 1), uv10 };
-
-        vertexData.positions[0] = p0;
-        vertexData.positions[1] = p1;
-        vertexData.positions[2] = p2;
-        vertexData.positions[3] = p3;
-        vertexData.positions[4] = p7;
-        vertexData.positions[5] = p4;
-        vertexData.positions[6] = p0;
-        vertexData.positions[7] = p3;
-        vertexData.positions[8] = p4;
-        vertexData.positions[9] = p5;
-        vertexData.positions[10] = p1;
-        vertexData.positions[11] = p0;
-        vertexData.positions[12] = p6;
-        vertexData.positions[13] = p7;
-        vertexData.positions[14] = p3;
-        vertexData.positions[15] = p2;
-        vertexData.positions[16] = p5;
-        vertexData.positions[17] = p6;
-        vertexData.positions[18] = p2;
-        vertexData.positions[19] = p1;
-        vertexData.positions[20] = p7;
-        vertexData.positions[21] = p6;
-        vertexData.positions[22] = p5;
-        vertexData.positions[23] = p4;
+        VertexDefault vertices[vcount];
+        vertices[0] = { p0,down, uv11, float4(front, 1) };
+        vertices[1] = { p1,down, uv01, float4(front, 1) };
+        vertices[2] = { p2,down, uv00, float4(front, 1) };
+        vertices[3] = { p3,down, uv10, float4(front, 1) };
+        vertices[4] = { p7,left, uv11, float4(down, 1) };
+        vertices[5] = { p4,left, uv01, float4(down, 1) };
+        vertices[6] = { p0,left, uv00, float4(down, 1) };
+        vertices[7] = { p3,left, uv10, float4(down, 1) };
+        vertices[8] = { p4,front, uv11, float4(down, 1) };
+        vertices[9] = { p5,front, uv01, float4(down, 1) };
+        vertices[10] = { p1, front, uv00, float4(down, 1) };
+        vertices[11] = { p0, front, uv10, float4(down, 1) };
+        vertices[12] = { p6, back, uv11, float4(up, 1) };
+        vertices[13] = { p7, back, uv01, float4(up, 1) };
+        vertices[14] = { p3, back, uv00, float4(up, 1) };
+        vertices[15] = { p2, back, uv10, float4(up, 1) };
+        vertices[16] = { p5, right, uv11, float4(up, 1) };
+        vertices[17] = { p6, right, uv01, float4(up, 1) };
+        vertices[18] = { p2, right, uv00, float4(up, 1) };
+        vertices[19] = { p1, right, uv10, float4(up, 1) };
+        vertices[20] = { p7, up, uv11, float4(back, 1) };
+        vertices[21] = { p6, up, uv01, float4(back, 1) };
+        vertices[22] = { p5, up, uv00, float4(back, 1) };
+        vertices[23] = { p4, up, uv10, float4(back, 1) };
 
         uint32_t indices[] =
         {
@@ -513,15 +498,7 @@ namespace PK::MeshUtilities
         };
 
         GeometryContext geometryContext;
-        geometryContext.pVertices = vertexData.attributes;
-        geometryContext.pPositions = reinterpret_cast<float*>(vertexData.positions);
-        geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
-        geometryContext.pNormals = reinterpret_cast<float*>(vertexData.attributes) + 0u;
-        geometryContext.strideNormalsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
-        geometryContext.pTangents = reinterpret_cast<float*>(vertexData.attributes) + 3u;
-        geometryContext.strideTangentsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
-        geometryContext.pTexcoords = reinterpret_cast<float*>(vertexData.attributes) + 7u;
-        geometryContext.strideTexcoordsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
+        geometryContext.pVertices = vertices;
         geometryContext.pIndices = indices;
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
@@ -533,33 +510,15 @@ namespace PK::MeshUtilities
     {
         constexpr auto vcount = 4u;
         constexpr auto icount = 2u;
-
-        struct VertexData
-        {
-            Vertex_NormalTangentTexCoord attributes[vcount];
-            float3 positions[vcount];
-        } vertexData;
-
-        vertexData.positions[0] = { min.x, min.y, 0.0f };
-        vertexData.positions[1] = { min.x, max.y, 0.0f };
-        vertexData.positions[2] = { max.x, max.y, 0.0f };
-        vertexData.positions[3] = { max.x, min.y, 0.0f };
-        vertexData.attributes[0] = { PK_FLOAT3_UP, float4(PK_FLOAT3_BACKWARD, 1), { 0.0f, 0.0f }};
-        vertexData.attributes[1] = { PK_FLOAT3_UP, float4(PK_FLOAT3_BACKWARD, 1), { 0.0f, 1.0f }};
-        vertexData.attributes[2] = { PK_FLOAT3_UP, float4(PK_FLOAT3_BACKWARD, 1), { 1.0f, 1.0f }};
-        vertexData.attributes[3] = { PK_FLOAT3_UP, float4(PK_FLOAT3_BACKWARD, 1), { 1.0f, 0.0f }};
+        VertexDefault vertices[vcount];
+        vertices[0] = { { min.x, min.y, 0.0f }, PK_FLOAT3_UP, { 0.0f, 0.0f }, float4(PK_FLOAT3_BACKWARD, 1) };
+        vertices[1] = { { min.x, max.y, 0.0f }, PK_FLOAT3_UP, { 0.0f, 1.0f }, float4(PK_FLOAT3_BACKWARD, 1) };
+        vertices[2] = { { max.x, max.y, 0.0f }, PK_FLOAT3_UP, { 1.0f, 1.0f }, float4(PK_FLOAT3_BACKWARD, 1) };
+        vertices[3] = { { max.x, min.y, 0.0f }, PK_FLOAT3_UP, { 1.0f, 0.0f }, float4(PK_FLOAT3_BACKWARD, 1) };
         uint32_t indices[] = { 0u,1u,2u, 2u,3u,0u };
 
         GeometryContext geometryContext;
-        geometryContext.pVertices = vertexData.attributes;
-        geometryContext.pPositions = reinterpret_cast<float*>(vertexData.positions);
-        geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
-        geometryContext.pNormals = reinterpret_cast<float*>(vertexData.attributes) + 0u;
-        geometryContext.strideNormalsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
-        geometryContext.pTangents = reinterpret_cast<float*>(vertexData.attributes) + 3u;
-        geometryContext.strideTangentsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
-        geometryContext.pTexcoords = reinterpret_cast<float*>(vertexData.attributes) + 7u;
-        geometryContext.strideTexcoordsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
+        geometryContext.pVertices = vertices;
         geometryContext.pIndices = indices;
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
@@ -571,11 +530,10 @@ namespace PK::MeshUtilities
     {
         auto vcount = resolution.x * resolution.y * 4;
         auto icount = resolution.x * resolution.y * 6;
-        auto bufferSize = sizeof(Vertex_Full) * vcount + sizeof(uint) * icount;
+        auto bufferSize = sizeof(VertexDefault) * vcount + sizeof(uint32_t) * icount;
         auto* buffer = Memory::AllocateAligned(bufferSize);
-        auto* attributes = reinterpret_cast<Vertex_NormalTangentTexCoord*>(buffer);
-        auto* positions = reinterpret_cast<float3*>(attributes + vcount);
-        auto* indices = reinterpret_cast<uint*>(positions + vcount);
+        auto* vertices = reinterpret_cast<VertexDefault*>(buffer);
+        auto* indices = reinterpret_cast<uint32_t*>(vertices + vcount);
 
         auto isize = float3(extents.x / resolution.x, extents.y / resolution.y, 0.0f) * 2.0f;
         auto min = float3(center - extents, 0);
@@ -587,15 +545,10 @@ namespace PK::MeshUtilities
             auto baseVertex = (y * resolution.x + x) * 4;
             auto baseIndex = (y * resolution.x + x) * 6;
 
-            attributes[baseVertex + 0] = { PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 0) };
-            attributes[baseVertex + 1] = { PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 1) };
-            attributes[baseVertex + 2] = { PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 1) };
-            attributes[baseVertex + 3] = { PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 0) };
-
-            positions[baseVertex + 0] = { vmin + isize.zzz };
-            positions[baseVertex + 1] = { vmin + isize.zyz };
-            positions[baseVertex + 2] = { vmin + isize.xyz };
-            positions[baseVertex + 3] = { vmin + isize.xzz };
+            vertices[baseVertex + 0] = { { vmin + isize.zzz }, PK_FLOAT3_BACKWARD, float2(0, 0), PK_FLOAT4_ZERO };
+            vertices[baseVertex + 1] = { { vmin + isize.zyz }, PK_FLOAT3_BACKWARD, float2(0, 1), PK_FLOAT4_ZERO };
+            vertices[baseVertex + 2] = { { vmin + isize.xyz }, PK_FLOAT3_BACKWARD, float2(1, 1), PK_FLOAT4_ZERO };
+            vertices[baseVertex + 3] = { { vmin + isize.xzz }, PK_FLOAT3_BACKWARD, float2(1, 0), PK_FLOAT4_ZERO };
 
             indices[baseIndex + 0] = baseVertex + 0;
             indices[baseIndex + 1] = baseVertex + 1;
@@ -607,23 +560,13 @@ namespace PK::MeshUtilities
         }
 
         GeometryContext geometryContext;
-        geometryContext.pVertices = buffer;
-        geometryContext.pPositions = reinterpret_cast<float*>(positions);
-        geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
-        geometryContext.pNormals = reinterpret_cast<float*>(attributes) + 0u;
-        geometryContext.strideNormalsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
-        geometryContext.pTangents = reinterpret_cast<float*>(attributes) + 3u;
-        geometryContext.strideTangentsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
-        geometryContext.pTexcoords = reinterpret_cast<float*>(attributes) + 7u;
-        geometryContext.strideTexcoordsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
+        geometryContext.pVertices = vertices;
         geometryContext.pIndices = indices;
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = math::centerExtentsToAABB(float3(center.xy, 0.0f), float3(extents.xy, 0.0f));
         auto virtualMesh = CreateMeshStatic(allocator, &geometryContext, "Primitive_Plane"); 
-
         Memory::Free(buffer);
-
         return virtualMesh;
     }
 
@@ -635,12 +578,11 @@ namespace PK::MeshUtilities
         const auto icount = ((lattc - 1) * longc * 2 + longc * 2) * 3;
 
         //Vertex_Full
-        auto* buffer = Memory::AllocateAligned(sizeof(Vertex_Full) * vcount + sizeof(uint) * icount);
-        auto* attributes = reinterpret_cast<Vertex_NormalTangentTexCoord*>(buffer);
-        auto* positions = reinterpret_cast<float3*>(attributes + vcount);
-        auto* indices = reinterpret_cast<uint*>(positions + vcount);
+        auto* buffer = Memory::AllocateAligned(sizeof(VertexDefault) * vcount + sizeof(uint) * icount);
+        auto* vertices = reinterpret_cast<VertexDefault*>(buffer);
+        auto* indices = reinterpret_cast<uint*>(vertices + vcount);
 
-        positions[0] = PK_FLOAT3_UP * radius;
+        vertices[0].in_POSITION = PK_FLOAT3_UP * radius;
 
         for (auto lat = 0u; lat < lattc; lat++)
         {
@@ -653,28 +595,27 @@ namespace PK::MeshUtilities
                 float a2 = PK_FLOAT_TWO_PI * (float)(lon == longc ? 0 : lon) / longc;
                 float sin2 = math::sin(a2);
                 float cos2 = math::cos(a2);
-                positions[lon + lat * (longc + 1) + 1] = float3(sin1 * cos2, cos1, sin1 * sin2) * radius;
+                vertices[lon + lat * (longc + 1) + 1].in_POSITION = float3(sin1 * cos2, cos1, sin1 * sin2) * radius;
             }
         }
 
-        positions[vcount - 1] = PK_FLOAT3_UP * -radius;
+        vertices[vcount - 1].in_POSITION = PK_FLOAT3_UP * -radius;
 
         for (int n = 0; n < vcount; ++n)
         {
-            attributes[n].in_NORMAL = math::normalize(positions[n]);
+            vertices[n].in_NORMAL = math::normalize(vertices[n].in_POSITION);
         }
 
-        attributes[0].in_TEXCOORD0 = PK_FLOAT2_UP;
-        attributes[vcount - 1].in_TEXCOORD0 = PK_FLOAT2_ZERO;
+        vertices[0].in_TEXCOORD0 = PK_FLOAT2_UP;
+        vertices[vcount - 1].in_TEXCOORD0 = PK_FLOAT2_ZERO;
 
         for (auto lat = 0u; lat < lattc; lat++)
         {
             for (int lon = 0u; lon <= longc; lon++)
             {
-                attributes[lon + lat * (longc + 1) + 1].in_TEXCOORD0 = float2((float)lon / longc, 1.0f - (float)(lat + 1) / (lattc + 1));
+                vertices[lon + lat * (longc + 1) + 1].in_TEXCOORD0 = float2((float)lon / longc, 1.0f - (float)(lat + 1) / (lattc + 1));
             }
         }
-
 
         //Top Cap
         auto i = 0u;
@@ -712,25 +653,14 @@ namespace PK::MeshUtilities
             indices[i++] = vcount - (lon + 1) - 1;
         }
 
-
         GeometryContext geometryContext;
-        geometryContext.pVertices = attributes;
-        geometryContext.pPositions = reinterpret_cast<float*>(positions);
-        geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
-        geometryContext.pNormals = reinterpret_cast<float*>(attributes) + 0u;
-        geometryContext.strideNormalsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
-        geometryContext.pTangents = reinterpret_cast<float*>(attributes) + 3u;
-        geometryContext.strideTangentsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
-        geometryContext.pTexcoords = reinterpret_cast<float*>(attributes) + 7u;
-        geometryContext.strideTexcoordsf32 = sizeof(Vertex_NormalTangentTexCoord) / sizeof(float);
+        geometryContext.pVertices = vertices;
         geometryContext.pIndices = indices;
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = math::centerExtentsToAABB(offset, PK_FLOAT3_ONE * radius);
         auto virtualMesh = CreateMeshStatic(allocator, &geometryContext, "Primitive_Sphere");
-
         Memory::Free(buffer);
-
         return virtualMesh;
     }
 }

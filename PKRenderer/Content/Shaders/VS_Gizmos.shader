@@ -9,9 +9,9 @@
 #include "includes/Common.glsl"
 #include "includes/GBuffers.glsl"
 
-PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
-
 [pk_local(MainVs)] in uint4 in_POSITION;
+
+PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
 
 void MainVs()
 {

@@ -2,3 +2,6 @@ mesh_splitPositionStream:1
 mesh_simplificationError:10
 mesh_simplificationNormalsWeight:1000
 mesh_simplificationUvsWeight:10
+mesh_useHalfPrecisionNormals:1
+mesh_useHalfPrecisionTangents:1
+mesh_useHalfPrecisionUVs:1

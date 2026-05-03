@@ -26,48 +26,56 @@ namespace PK::MeshUtilities
         MeshletBuildData& operator=(MeshletBuildData const&) = delete;
     };
 
+    // Not representative of GPU buffer layouts.
+    // Ordered this way to satisfy vector alignment requirements.
+    struct alignas(16) VertexDefault
+    {
+        float3 in_POSITION;
+        float3 in_NORMAL;
+        float2 in_TEXCOORD0;
+        float4 in_TANGENT;
+    };
+
     struct GeometryContext
     {
-        void* pVertices = nullptr;
-        float* pPositions = nullptr;
-        uint32_t stridePositionsf32 = 0u;
-        float* pNormals = nullptr;
-        uint32_t strideNormalsf32 = 0u;
-        float* pTangents = nullptr;
-        uint32_t strideTangentsf32 = 0u;
-        float* pTexcoords = nullptr;
-        uint32_t strideTexcoordsf32 = 0u;
+        VertexDefault* pVertices = nullptr;
         uint32_t* pIndices = nullptr;
         uint32_t countVertex = 0u;
         uint32_t countIndex = 0u;
         AABB<float3> aabb;
     };
 
-    struct Vertex_Full
+    template<typename Ts, typename Td>
+    void ConvertVertices(void* dst, const void* src, size_t count, size_t strideSrc, size_t strideDst)
     {
-        float3 in_POSITION;
-        float3 in_NORMAL;
-        float4 in_TANGENT;
-        float2 in_TEXCOORD0;
-    };
+        for (auto i = 0ull; i < count; ++i)
+        {
+            const void* vsrc = reinterpret_cast<const char*>(src) + strideSrc * i;
+            void* vdst = reinterpret_cast<char*>(dst) + strideDst * i;
 
-    struct Vertex_Lite
-    {
-        float3 in_POSITION;
-        float2 in_TEXCOORD0;
-    };
-
-    struct Vertex_Position
-    {
-        float3 in_POSITION;
-    };
-
-    struct Vertex_NormalTangentTexCoord
-    {
-        float3 in_NORMAL;
-        float4 in_TANGENT;
-        float2 in_TEXCOORD0;
-    };
+            // Filty UB here. should use memcpy instead.
+            if constexpr (TIsSame<Ts, float> && TIsSame<Td, uint16_t>)
+            {
+                *reinterpret_cast<uint16_t*>(vdst) = math::f32tof16(*reinterpret_cast<const float*>(vsrc));
+            }
+            else if constexpr (TIsSame<Ts, uint16_t> && TIsSame<Td, float>)
+            {
+                *reinterpret_cast<float*>(vdst) = math::f16tof32(*reinterpret_cast<const uint16_t*>(vsrc));
+            }
+            else if constexpr (TIsSame<Ts, float> && TIsSame<Td, uint32_t>)
+            {
+                *reinterpret_cast<uint32_t*>(vdst) = math::asuint(*reinterpret_cast<const float*>(vsrc));
+            }
+            else if constexpr (TIsSame<Ts, uint32_t> && TIsSame<Td, float>)
+            {
+                *reinterpret_cast<float*>(vdst) = math::asfloat(*reinterpret_cast<const uint32_t*>(vsrc));
+            }
+            else
+            {
+                *reinterpret_cast<Td*>(vdst) = static_cast<Td>(*reinterpret_cast<const Ts*>(vsrc));
+            }
+        }
+    }
 
     void AlignVertexStreams(char* vertices, size_t count, const VertexStreamLayout& src, const VertexStreamLayout& dst);
 

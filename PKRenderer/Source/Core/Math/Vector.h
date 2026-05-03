@@ -873,7 +873,7 @@ namespace PK::math
         {
             struct { T x, y, z, w; };
             struct { T r, g, b, a; };
-           //typename storage<T,4>:type data; // @TODO cannot currently use due to unaligned vertex streams. PLEASE FIX ASAP.
+            typename storage<T,4>::type data; 
             PK_SWIZZLE_MEMBERS_42(T, x, y, z, w)
             PK_SWIZZLE_MEMBERS_42(T, r, g, b, a)
             PK_SWIZZLE_MEMBERS_43(T, x, y, z, w)
@@ -886,7 +886,7 @@ namespace PK::math
         constexpr vector(const vector<T,4>& v) = default;
         constexpr explicit vector(T s) : x(s), y(s), z(s), w(s) {}
         constexpr explicit vector(const T* ptr) : x(ptr[0]), y(ptr[1]), z(ptr[2]), w(ptr[3]) {}
-      //  constexpr explicit vector(const typename storage<T,4>::type& data) : data(data) {}
+        constexpr explicit vector(const typename storage<T,4>::type& data) : data(data) {}
         constexpr vector(T _x, T _y, T _z, T _w) : x(_x), y(_y), z(_z), w(_w) {}
         template<typename X, typename Y, typename Z, typename W> constexpr vector(X _x, Y _y, Z _z, W _w) : x(static_cast<T>(_x)), y(static_cast<T>(_y)), z(static_cast<T>(_z)), w(static_cast<T>(_w)) {}
         template<typename XY, typename Z, typename W> constexpr vector(const vector<XY,2>& _xy, Z _z, W _w) : x(static_cast<T>(_xy.x)), y(static_cast<T>(_xy.y)), z(static_cast<T>(_z)), w(static_cast<T>(_w)) {}
