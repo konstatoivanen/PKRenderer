@@ -466,8 +466,8 @@ namespace PK
             // Hash fixed size array version.
             for (auto i = 1u; i < count && !isVariableSize; ++i)
             {
-                auto hash = handles[i]->Version();
-                hash += 0x9e3779b9ull + (version << 6ull) + (version >> 2ull);
+                auto hash = (uint32_t)handles[i]->Version();
+                hash += 0x9e3779b9u + (version << 6u) + (version >> 2u);
                 version ^= hash;
             }
 
@@ -521,13 +521,13 @@ namespace PK
         for (auto bindingIndex = 0u; bindingIndex < m_descritorState.bindingCount; ++bindingIndex)
         {
             const auto& binding = m_descritorState.bindings[bindingIndex];
+            auto access = shader->GetResourceLayout()[bindingIndex].writeMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
+            auto stage = VulkanEnumConvert::GetPipelineStageFlags(m_descritorState.stageFlags);
 
             // No dynamic array support as they're locally reserved for readonly resources
             for (auto i = 0u; i < binding.count && !binding.isVariableSize; ++i)
             {
                 auto handle = binding.handles[i];
-                auto stage = VulkanEnumConvert::GetPipelineStageFlags(m_descritorState.stageFlags);
-                auto access = shader->GetResourceLayout()[bindingIndex].writeMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
 
                 switch (binding.type)
                 {

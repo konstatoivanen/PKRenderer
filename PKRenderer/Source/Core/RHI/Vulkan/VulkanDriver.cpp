@@ -269,86 +269,22 @@ namespace PK
     RHIBuffer* VulkanDriver::AcquireStage(size_t size) { return stagingBufferCache->Acquire(size, false, nullptr); }
     void VulkanDriver::ReleaseStage(RHIBuffer* buffer, const FenceRef& fence) { stagingBufferCache->Release(static_cast<VulkanStagingBuffer*>(buffer), fence); }
 
-    void VulkanDriver::SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count)
-    {
-        auto handles = PK_STACK_ALLOC(const VulkanBindHandle*, count);
+    #define PK_VK_BIND_HANDLES(name, assigner, count)\
+        auto handles = PK_STACK_ALLOC(const VulkanBindHandle*, count);\
+        for (auto i = 0u; i < count; ++i) handles[i] = assigner;\
+        globalResources.Set(name, handles, count)                   
 
-        for (auto i = 0u; i < count; ++i)
-        {
-            handles[i] = static_cast<VulkanBuffer*>(buffers[i])->GetBindHandle(ranges[i]);
-        }
+    void VulkanDriver::SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanBuffer*>(buffers[i])->GetBindHandle(ranges[i]), count); }
+    void VulkanDriver::SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) { globalResources.Set(name, static_cast<const VulkanBindSet*>(bufferArray)); }
+    void VulkanDriver::SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanTexture*>(textures[i])->GetBindHandle(ranges[i], TextureBindMode::SampledTexture), count); }
+    void VulkanDriver::SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureArray) { globalResources.Set(name, static_cast<const VulkanBindSet*>(textureArray)); }
+    void VulkanDriver::SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanTexture*>(images[i])->GetBindHandle(ranges[i], TextureBindMode::Image), count); }
+    void VulkanDriver::SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) { PK_VK_BIND_HANDLES(name, samplerCache->GetBindHandle(samplers[i]), count); }
+    void VulkanDriver::SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanAccelerationStructure*>(structures[i])->GetBindHandle(), count); }
+    void VulkanDriver::SetConstant(NameID name, const void* data, uint32_t size) { globalResources.Set<char>(name, static_cast<const char*>(data), size); }
+    void VulkanDriver::SetKeyword(NameID name, bool value) { globalResources.Set<bool>(name, value); }
 
-        globalResources.Set(name, handles, count);
-    }
-
-    void VulkanDriver::SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) 
-    {
-        globalResources.Set(name, static_cast<const VulkanBindSet*>(bufferArray)); 
-    }
-
-    void VulkanDriver::SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count)
-    {
-        auto handles = PK_STACK_ALLOC(const VulkanBindHandle*, count);
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            handles[i] = static_cast<VulkanTexture*>(textures[i])->GetBindHandle(ranges[i], TextureBindMode::SampledTexture);
-        }
-
-        globalResources.Set(name, handles, count);
-    }
-
-    void VulkanDriver::SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureArray) 
-    {
-        globalResources.Set(name, static_cast<const VulkanBindSet*>(textureArray)); 
-    }
-
-    void VulkanDriver::SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count)
-    {
-        auto handles = PK_STACK_ALLOC(const VulkanBindHandle*, count);
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            handles[i] = static_cast<VulkanTexture*>(images[i])->GetBindHandle(ranges[i], TextureBindMode::Image);
-        }
-
-        globalResources.Set(name, handles, count);
-    }
-
-    void VulkanDriver::SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count)
-    {
-        auto handles = PK_STACK_ALLOC(const VulkanBindHandle*, count);
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            handles[i] = samplerCache->GetBindHandle(samplers[i]);
-        }
-
-        globalResources.Set(name, handles, count);
-    }
-
-    void VulkanDriver::SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count)
-    {
-        auto handles = PK_STACK_ALLOC(const VulkanBindHandle*, count);
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            handles[i] = static_cast<VulkanAccelerationStructure*>(structures[i])->GetBindHandle();
-        }
-
-        globalResources.Set(name, handles, count);
-    }
-
-    void VulkanDriver::SetConstant(NameID name, const void* data, uint32_t size) 
-    {
-        globalResources.Set<char>(name, static_cast<const char*>(data), size); 
-    }
-    
-    void VulkanDriver::SetKeyword(NameID name, bool value) 
-    { 
-        globalResources.Set<bool>(name, value); 
-    }
-
+    #undef PK_VK_BIND_HANDLES
 
     void VulkanDriver::GC()
     {

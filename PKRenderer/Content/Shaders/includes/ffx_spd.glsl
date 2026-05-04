@@ -58,19 +58,9 @@ SpdFormat SpdReduceLoadSourceImage4(int2 base)
 // Load operator for last workgroup to get coherent mip6 data
 SpdFormat SpdLoadMip6(int2 coord)
 
-// Store operators for all possible mips. main difference from base SPD as we want to have static indexing to the resources.
-void SpdStoreMip1(int2 coord, SpdFormat v) 
-void SpdStoreMip2(int2 coord, SpdFormat v)
-void SpdStoreMip3(int2 coord, SpdFormat v)
-void SpdStoreMip4(int2 coord, SpdFormat v)
-void SpdStoreMip5(int2 coord, SpdFormat v)
+// Store operators for all mip levels. special handling for coherent mip 6.
+void SpdStoreMip(int mip, int2 coord, SpdFormat v) 
 void SpdStoreMip6(int2 coord, SpdFormat v)
-void SpdStoreMip7(int2 coord, SpdFormat v)
-void SpdStoreMip8(int2 coord, SpdFormat v)
-void SpdStoreMip9(int2 coord, SpdFormat v)
-void SpdStoreMip10(int2 coord, SpdFormat v)
-void SpdStoreMip11(int2 coord, SpdFormat v)
-void SpdStoreMip12(int2 coord, SpdFormat v)
 */
 
 SpdFormat SpdReduceQuad(SpdFormat v)
@@ -147,22 +137,22 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
         int2 tex = int2(workGroupID.xy * 64) + int2(x * 2, y * 2);
         int2 pix = int2(workGroupID.xy * 32) + int2(x, y);
         v[0] = SpdReduceLoadSourceImage4(tex);
-        SpdStoreMip1(pix, v[0]);
+        SpdStoreMip(1, pix, v[0]);
 
         tex = int2(workGroupID.xy * 64) + int2(x * 2 + 32, y * 2);
         pix = int2(workGroupID.xy * 32) + int2(x + 16, y);
         v[1] = SpdReduceLoadSourceImage4(tex);
-        SpdStoreMip1(pix, v[1]);
+        SpdStoreMip(1, pix, v[1]);
         
         tex = int2(workGroupID.xy * 64) + int2(x * 2, y * 2 + 32);
         pix = int2(workGroupID.xy * 32) + int2(x, y + 16);
         v[2] = SpdReduceLoadSourceImage4(tex);
-        SpdStoreMip1(pix, v[2]);
+        SpdStoreMip(1, pix, v[2]);
         
         tex = int2(workGroupID.xy * 64) + int2(x * 2 + 32, y * 2 + 32);
         pix = int2(workGroupID.xy * 32) + int2(x + 16, y + 16);
         v[3] = SpdReduceLoadSourceImage4(tex);
-        SpdStoreMip1(pix, v[3]);
+        SpdStoreMip(1, pix, v[3]);
 
         v[0] = SpdReduceQuad(v[0]);
         v[1] = SpdReduceQuad(v[1]);
@@ -171,13 +161,13 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
 
         if ((localInvocationIndex % 4) == 0)
         {
-            SpdStoreMip2(int2(workGroupID.xy * 16) + int2(x/2, y/2), v[0]);
+            SpdStoreMip(2, int2(workGroupID.xy * 16) + int2(x/2, y/2), v[0]);
             SpdStoreIntermediate(x/2, y/2, v[0]);
-            SpdStoreMip2(int2(workGroupID.xy * 16) + int2(x/2 + 8, y/2), v[1]);
+            SpdStoreMip(2, int2(workGroupID.xy * 16) + int2(x/2 + 8, y/2), v[1]);
             SpdStoreIntermediate(x/2 + 8, y/2, v[1]);
-            SpdStoreMip2(int2(workGroupID.xy * 16) + int2(x/2, y/2 + 8), v[2]);
+            SpdStoreMip(2, int2(workGroupID.xy * 16) + int2(x/2, y/2 + 8), v[2]);
             SpdStoreIntermediate(x/2, y/2 + 8, v[2]);
-            SpdStoreMip2(int2(workGroupID.xy * 16) + int2(x/2 + 8, y/2 + 8), v[3]);
+            SpdStoreMip(2, int2(workGroupID.xy * 16) + int2(x/2 + 8, y/2 + 8), v[3]);
             SpdStoreIntermediate(x/2 + 8, y/2 + 8, v[3]);
         }
     }
@@ -191,7 +181,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
         // quad index 0 stores result
         if (localInvocationIndex % 4 == 0)
         {
-            SpdStoreMip3(int2(workGroupID.xy * 8) + int2(x/2, y/2), v);
+            SpdStoreMip(3, int2(workGroupID.xy * 8) + int2(x/2, y/2), v);
             SpdStoreIntermediate(x + (y/2) % 2, y, v);
         }
     }
@@ -207,7 +197,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
             // quad index 0 stores result
             if (localInvocationIndex % 4 == 0)
             {   
-                SpdStoreMip4(int2(workGroupID.xy * 4) + int2(x/2, y/2), v);
+                SpdStoreMip(4, int2(workGroupID.xy * 4) + int2(x/2, y/2), v);
                 SpdStoreIntermediate(x * 2 + y/2, y * 2, v);
             }
         }
@@ -224,7 +214,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
             // quad index 0 stores result
             if (localInvocationIndex % 4 == 0)
             {   
-                SpdStoreMip5(int2(workGroupID.xy * 2) + int2(x/2, y/2), v);
+                SpdStoreMip(5, int2(workGroupID.xy * 2) + int2(x/2, y/2), v);
                 SpdStoreIntermediate(x / 2 + y, 0, v);
             }
         }
@@ -271,22 +261,22 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
         int2 tex = int2(x * 4 + 0, y * 4 + 0);
         int2 pix = int2(x * 2 + 0, y * 2 + 0);
         SpdFormat v0 = SpdReduceLoad4(tex, size_6);
-        SpdStoreMip7(pix, v0);
+        SpdStoreMip(7, pix, v0);
 
         tex = int2(x * 4 + 2, y * 4 + 0);
         pix = int2(x * 2 + 1, y * 2 + 0);
         SpdFormat v1 = SpdReduceLoad4(tex, size_6);
-        SpdStoreMip7(pix, v1);
+        SpdStoreMip(7, pix, v1);
 
         tex = int2(x * 4 + 0, y * 4 + 2);
         pix = int2(x * 2 + 0, y * 2 + 1);
         SpdFormat v2 = SpdReduceLoad4(tex, size_6);
-        SpdStoreMip7(pix, v2);
+        SpdStoreMip(7, pix, v2);
 
         tex = int2(x * 4 + 2, y * 4 + 2);
         pix = int2(x * 2 + 1, y * 2 + 1);
         SpdFormat v3 = SpdReduceLoad4(tex, size_6);
-        SpdStoreMip7(pix, v3);
+        SpdStoreMip(7, pix, v3);
         
         if (mips <= 8)
         {
@@ -309,7 +299,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
         SpdStoreIntermediate(x, y, v);
         #endif
 
-        SpdStoreMip8(int2(x, y), v);
+        SpdStoreMip(8, int2(x, y), v);
     }
 
     // Mip 9
@@ -331,7 +321,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
 
         if (localInvocationIndex % 4 == 0)
         {
-            SpdStoreMip9(int2(x/2, y/2), v);
+            SpdStoreMip(9, int2(x/2, y/2), v);
             SpdStoreIntermediate(x + (y/2) % 2, y, v);
         }
     }
@@ -358,7 +348,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
             // quad index 0 stores result
             if (localInvocationIndex % 4 == 0)
             {   
-                SpdStoreMip10(int2(x/2, y/2), v);
+                SpdStoreMip(10, int2(x/2, y/2), v);
                 SpdStoreIntermediate(x * 2 + y/2, y * 2, v);
             }
         }
@@ -386,7 +376,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
             // quad index 0 stores result
             if (localInvocationIndex % 4 == 0)
             {   
-                SpdStoreMip11(int2(x/2, y/2), v);
+                SpdStoreMip(11, int2(x/2, y/2), v);
                 SpdStoreIntermediate(x / 2 + y, 0, v);
             }
         }
@@ -404,7 +394,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
             // quad index 0 stores result
             if (localInvocationIndex % 4 == 0)
             {   
-                SpdStoreMip12(int2(0,0), v);
+                SpdStoreMip(12, int2(0,0), v);
             }
         }
     }

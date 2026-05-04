@@ -19,12 +19,7 @@ namespace PK::App
         DECLARE_HASH(pk_Image4)
         DECLARE_HASH(pk_Image5)
         DECLARE_HASH(pk_Image6)
-        DECLARE_HASH(pk_Image7)
-        DECLARE_HASH(pk_Image8)
-        DECLARE_HASH(pk_Image9)
-        DECLARE_HASH(pk_Image10)
-        DECLARE_HASH(pk_Image11)
-        DECLARE_HASH(pk_Image12)
+        DECLARE_HASH(pk_ImageArray)
         
         DECLARE_HASH(pk_HZB_WorkgroupCounter)
         DECLARE_HASH(pk_HZB_Parameters)

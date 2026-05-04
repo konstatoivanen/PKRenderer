@@ -146,14 +146,15 @@ namespace PK
                     m_resources[index].value = defaultRecord;
                     m_resolveTimestamps[index] = 0ull;
                     m_accessTimestamps[index] = 0ull;
-                    index = m_resources.GetCount() - 1;
                 }
 
                 auto isSequentialAccess = true;
+                auto isCoherentAccess = true;
 
                 if ((options & PK_RHI_ACCESS_OPT_TRANSFER) == 0u)
                 {
                     isSequentialAccess = (m_globalResolveCounter - m_resolveTimestamps[index]) < 2u;
+                    isCoherentAccess = (m_globalResolveCounter - m_resolveTimestamps[index]) == 0u;
                     m_resolveTimestamps[index] = m_globalResolveCounter;
                     m_accessTimestamps[index] = m_globalAccessCounter++;
                 }
@@ -177,7 +178,7 @@ namespace PK
                     auto overlap = TInfo<T>::IsOverlap((*current)->range, scope.range);
                     auto adjacent = TInfo<T>::IsAdjacent((*current)->range, scope.range);
                     auto mergeFlags = (*current)->layout == scope.layout && (*current)->queueFamily == scope.queueFamily;
-                    auto mergeOverlap = overlap && !writeCur && !writeNew;
+                    auto mergeOverlap = overlap && ((!writeCur && !writeNew) || isCoherentAccess);
                     auto mergeAdjacent = adjacent && writeCur == writeNew;
                     auto skipBarrier = !isSequentialAccess && mergeFlags;
 

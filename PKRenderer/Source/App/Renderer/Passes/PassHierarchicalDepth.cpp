@@ -53,19 +53,17 @@ namespace PK::App
         RHI::SetConstant<uint4>(hash->pk_HZB_Parameters, uint4(hzbDesc.levels, numWorkGroups, resolution.xy));
 
         // We have at least 8 mips based on min window scale. All targets need to be bound though, rebind last mip to fill the rest of the bindings.
-        RHI::SetImage(hash->pk_Image, resources->hierarchicalDepth.get(), { 0, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image1, resources->hierarchicalDepth.get(), { 1, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image2, resources->hierarchicalDepth.get(), { 2, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image3, resources->hierarchicalDepth.get(), { 3, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image4, resources->hierarchicalDepth.get(), { 4, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image5, resources->hierarchicalDepth.get(), { 5, 0, 1, 2 });
+        RHITexture* images[13]{};
+        TextureViewRange ranges[13]{};
+
+        for (auto i = 0u; i < 13u; ++i)
+        {
+            images[i] = resources->hierarchicalDepth.get();
+            ranges[i] = { (uint16_t)math::min(i, hzbDesc.levels - 1u), 0, 1, 2 };
+        }
+
+        RHI::SetImageArray(hash->pk_ImageArray, images, ranges, 13ull);
         RHI::SetImage(hash->pk_Image6, resources->hierarchicalDepth.get(), { 6, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image7, resources->hierarchicalDepth.get(), { 7, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image8, resources->hierarchicalDepth.get(), { 8, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image9, resources->hierarchicalDepth.get(), { (uint16_t)math::min(9u, hzbDesc.levels - 1u), 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image10, resources->hierarchicalDepth.get(), { (uint16_t)math::min(10u, hzbDesc.levels - 1u), 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image11, resources->hierarchicalDepth.get(), { (uint16_t)math::min(11u, hzbDesc.levels - 1u), 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image12, resources->hierarchicalDepth.get(), { (uint16_t)math::min(12u, hzbDesc.levels - 1u), 0, 1, 2 });
         cmd.Dispatch(m_computeHierachicalDepth, 0u, uint3(256u * groupCountX, groupCountY, 1));
     }
 }
