@@ -722,7 +722,7 @@ namespace PK
 
             for (const auto& element : constantLayout)
             {
-                if (resources->TryGet<char>(element.name, data, &dataSize) && dataSize <= element.size)
+                if (resources->TryGet<char>(element.name, &data, &dataSize) && dataSize <= element.size)
                 {
                     vkCmdPushConstants(m_commandBuffer, layout, stageFlags, element.offset, (uint32_t)dataSize, data);
                 }

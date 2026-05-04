@@ -57,7 +57,7 @@ namespace PK
 
         for (auto i = 0u; i < bindingCount; ++i)
         {
-            if (bindings[i].isArray)
+            if (bindings[i].isVariableSize)
             {
                 variableSize += bindings[i].count;
             }
@@ -76,7 +76,7 @@ namespace PK
         {
             auto* bind = key.bindings + i;
             auto* write = writes + i;
-            auto handles = bind->isArray ? bind->handles : &bind->handle;
+            auto handles = bind->handles;
             auto type = VulkanEnumConvert::GetDescriptorType(bind->type);
 
             write->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -86,21 +86,27 @@ namespace PK
             write->dstBinding = i;
             write->dstSet = m_sets[index].value->set;
 
-            if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC || type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+            if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || 
+                type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || 
+                type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC || 
+                type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
             {
                 auto buffers = m_writeArena.Allocate<VkDescriptorBufferInfo>(bind->count);
                 write->pBufferInfo = buffers;
 
                 for (auto i = 0; i < bind->count; ++i)
                 {
-                    buffers[i].buffer = bind->handle->buffer.buffer;
-                    buffers[i].offset = bind->handle->buffer.offset;
-                    buffers[i].range = bind->handle->buffer.range;
+                    buffers[i].buffer = handles[i]->buffer.buffer;
+                    buffers[i].offset = handles[i]->buffer.offset;
+                    buffers[i].range = handles[i]->buffer.range;
                 }
                 continue;
             }
 
-            if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE || type == VK_DESCRIPTOR_TYPE_SAMPLER)
+            if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || 
+                type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || 
+                type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE || 
+                type == VK_DESCRIPTOR_TYPE_SAMPLER)
             {
                 auto images = m_writeArena.Allocate<VkDescriptorImageInfo>(bind->count);
                 write->pImageInfo = images;

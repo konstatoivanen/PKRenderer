@@ -68,13 +68,13 @@ namespace PK
         virtual RHIBuffer* AcquireStage(size_t size) final;
         virtual void ReleaseStage(RHIBuffer* buffer, const FenceRef& fence) final;
 
-        void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) final;
-        void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) final;
+        void SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) final;
         void SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) final;
+        void SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) final;
         void SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureArray) final;
-        void SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) final;
-        void SetSampler(NameID name, const SamplerDescriptor& sampler) final;
-        void SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) final;
+        void SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) final;
+        void SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) final;
+        void SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) final;
         void SetConstant(NameID name, const void* data, uint32_t size) final;
         void SetKeyword(NameID name, bool value) final;
 

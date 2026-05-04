@@ -63,22 +63,14 @@ namespace PK
     {
         VulkanVertexBufferBundle bundle{};
 
-        auto i = 0u;
-
-        for (; i < PK_RHI_MAX_VERTEX_ATTRIBUTES; ++i)
+        for (auto& stream : m_pipelineKey.vertexStreams)
         {
-            auto bufferAttrib = &m_pipelineKey.vertexBuffers[i];
-            auto handle = m_vertexBuffers[i];
-
-            if (bufferAttrib->stride == 0 || handle == nullptr)
+            if (stream.stride != 0)
             {
-                break;
+                bundle.buffers[stream.binding] = m_vertexBuffers[stream.binding]->buffer.buffer;
+                bundle.count = math::max(bundle.count, stream.binding + 1u);
             }
-
-            bundle.buffers[i] = handle->buffer.buffer;
         }
-
-        bundle.count = i;
 
         return bundle;
     }
@@ -245,7 +237,7 @@ namespace PK
 
         if (i < PK_RHI_MAX_VERTEX_ATTRIBUTES)
         {
-            memset(m_vertexBuffers + i, 0, sizeof(m_vertexBuffers[0]) * (PK_RHI_MAX_VERTEX_ATTRIBUTES - i));
+            Memory::Memset(m_vertexBuffers + i, 0, PK_RHI_MAX_VERTEX_ATTRIBUTES - i);
         }
     }
 
@@ -261,7 +253,7 @@ namespace PK
 
         if (count < PK_RHI_MAX_VERTEX_ATTRIBUTES && m_vertexStreamLayout[count].stride != 0)
         {
-            memset(m_vertexStreamLayout + count, 0, sizeof(VertexStreamElement) * (PK_RHI_MAX_VERTEX_ATTRIBUTES - count));
+            Memory::Memset(m_vertexStreamLayout + count, 0, PK_RHI_MAX_VERTEX_ATTRIBUTES - count);
         }
     }
 
@@ -355,7 +347,7 @@ namespace PK
         }
 
         auto index = 0u;
-        auto validateAttributes = false;
+        auto validateStreams = false;
         const auto& shaderLayout = shader->GetVertexLayout();
 
         if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_SHADER)
@@ -367,7 +359,7 @@ namespace PK
 
                 if (attribute->location != element.location || attribute->format != format)
                 {
-                    validateAttributes = true;
+                    validateStreams = true;
                     attribute->location = element.location;
                     attribute->format = format;
                 }
@@ -376,69 +368,66 @@ namespace PK
             // Attribute count changed
             if (index < PK_RHI_MAX_VERTEX_ATTRIBUTES && m_pipelineKey.vertexAttributes[index].format != VK_FORMAT_UNDEFINED)
             {
-                memset(m_pipelineKey.vertexAttributes + index, 0, sizeof(VkVertexInputAttributeDescription) * (PK_RHI_MAX_VERTEX_ATTRIBUTES - index));
-                validateAttributes = true;
+                validateStreams = true;
+                Memory::Memset(m_pipelineKey.vertexAttributes + index, 0, PK_RHI_MAX_VERTEX_ATTRIBUTES - index);
             }
         }
 
-        if (!validateAttributes && (m_dirtyFlags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS) == 0)
+        if (validateStreams || (m_dirtyFlags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS))
         {
-            return;
-        }
+            auto streamIndex = 0u;
+            auto remainingAttributes = shaderLayout.GetCount();
+            const VertexStreamElement* elementPrev = nullptr;
 
-        auto indexBindingBuffer = 0u;
-        auto boundElementCount = 0u;
-        const VertexStreamElement* elementPrev = nullptr;
-
-        for (index = 0u; index < PK_RHI_MAX_VERTEX_ATTRIBUTES && m_vertexStreamLayout[index].stride != 0; ++index)
-        {
-            const auto& element = m_vertexStreamLayout[index];
-            auto elementIdx = 0u;
-
-            if (m_vertexBuffers[element.stream] && shaderLayout.TryGetElement(element.name, &elementIdx))
+            for (index = 0u; index < PK_RHI_MAX_VERTEX_ATTRIBUTES && m_vertexStreamLayout[index].stride != 0; ++index)
             {
-                // Merge adjacent buffer bindings if possible
-                if (elementPrev && (elementPrev->stream != element.stream ||
-                    elementPrev->inputRate != element.inputRate ||
-                    elementPrev->stride != element.stride))
-                {
-                    ++indexBindingBuffer;
-                }
+                const auto& element = m_vertexStreamLayout[index];
+                auto elementIdx = 0u;
 
-                ++boundElementCount;
-                elementPrev = &element;
-                auto inputRate = VulkanEnumConvert::GetInputRate(element.inputRate);
-                auto bindingBuffer = &m_pipelineKey.vertexBuffers[indexBindingBuffer];
-                auto bindingAttribute = &m_pipelineKey.vertexAttributes[elementIdx];
-
-                if (bindingBuffer->binding != element.stream || bindingBuffer->inputRate != inputRate || bindingBuffer->stride != element.stride)
+                if (m_vertexBuffers[element.stream] && shaderLayout.TryGetElement(element.name, &elementIdx))
                 {
-                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-                    bindingBuffer->binding = element.stream;
-                    bindingBuffer->inputRate = inputRate;
-                    bindingBuffer->stride = element.stride;
-                }
+                    // Merge adjacent buffer bindings if possible
+                    // If the user has bound the same stream multiple times with different attributes
+                    // we cannot directly use the stream index to actually index the bindings.
+                    if (elementPrev && (elementPrev->stream != element.stream ||
+                        elementPrev->inputRate != element.inputRate ||
+                        elementPrev->stride != element.stride))
+                    {
+                        ++streamIndex;
+                    }
 
-                if (bindingAttribute->binding != indexBindingBuffer || bindingAttribute->offset != element.offset)
-                {
-                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-                    bindingAttribute->binding = indexBindingBuffer;
-                    bindingAttribute->offset = element.offset;
+                    --remainingAttributes;
+                    elementPrev = &element;
+                    auto inputRate = VulkanEnumConvert::GetInputRate(element.inputRate);
+                    auto stream = &m_pipelineKey.vertexStreams[streamIndex];
+                    auto attribute = &m_pipelineKey.vertexAttributes[elementIdx];
+
+                    if (stream->binding != element.stream || stream->inputRate != inputRate || stream->stride != element.stride)
+                    {
+                        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+                        stream->binding = element.stream;
+                        stream->inputRate = inputRate;
+                        stream->stride = element.stride;
+                    }
+
+                    if (attribute->binding != streamIndex || attribute->offset != element.offset)
+                    {
+                        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+                        attribute->binding = streamIndex;
+                        attribute->offset = element.offset;
+                    }
                 }
             }
-        }
 
-        if (boundElementCount != shaderLayout.GetCount())
-        {
-            PK_LOG_WARNING("Warning only '%u' out of '%u' shader vertex input streams were bound.", boundElementCount, shaderLayout.GetCount());
-        }
+            PK_DEBUG_WARNING_ASSERT(remainingAttributes == 0, "Warning '%u' of shader vertex input attributes were not bound.", remainingAttributes);
 
-        auto bindingBufferCount = indexBindingBuffer + 1u;
+            auto streamCount = streamIndex + 1u;
 
-        if (bindingBufferCount < PK_RHI_MAX_VERTEX_ATTRIBUTES && m_pipelineKey.vertexBuffers[bindingBufferCount].stride != 0)
-        {
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-            memset(m_pipelineKey.vertexBuffers + bindingBufferCount, 0, sizeof(VkVertexInputBindingDescription) * (PK_RHI_MAX_VERTEX_ATTRIBUTES - bindingBufferCount));
+            if (streamCount < PK_RHI_MAX_VERTEX_ATTRIBUTES && m_pipelineKey.vertexStreams[streamCount].stride != 0)
+            {
+                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+                Memory::Memset(m_pipelineKey.vertexStreams + streamCount, 0, PK_RHI_MAX_VERTEX_ATTRIBUTES - streamCount);
+            }
         }
     }
 
@@ -454,42 +443,42 @@ namespace PK
 
         for (const auto& element : resourceLayout)
         {
-            auto* binding = bindings + bindingIndex++;
+            auto& binding = bindings[bindingIndex++];
+            const auto isVariableSize = element.count == PK_RHI_MAX_UNBOUNDED_SIZE;
+            const VulkanBindHandle* const* handles = nullptr;
+            uint32_t version = 0u, count = 0u;
 
-            if (element.count > 1)
+            if (isVariableSize)
             {
                 const VulkanBindSet* handleSet = nullptr;
-                PK_FATAL_ASSERT(resources->TryGet<const VulkanBindSet*>(element.name, handleSet), "Descriptors (%s) not bound!", element.name.c_str());
-
-                uint32_t version = 0u;
-                uint32_t count = 0u;
-                auto handles = handleSet->GetHandles(&version, &count);
-                count = count < element.count ? (uint16_t)count : element.count;
-
-                if (binding->count != count || binding->type != element.type || binding->handles != handles || binding->version != version || !binding->isArray)
-                {
-                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-                    binding->count = count;
-                    binding->type = element.type;
-                    binding->handles = handles;
-                    binding->version = version;
-                    binding->isArray = true;
-                }
-
-                continue;
+                PK_FATAL_ASSERT(resources->TryGet<const VulkanBindSet*>(element.name, handleSet), "Descriptors '%s' not bound!", element.name.c_str());
+                handles = handleSet->GetHandles(&version, &count);
+            }
+            else
+            {
+                auto size = 0ull;
+                PK_FATAL_ASSERT(resources->TryGet<const VulkanBindHandle*>(element.name, &handles, &size), "Descriptor '%s' not bound!", element.name.c_str());
+                PK_FATAL_ASSERT(size == sizeof(void*) * element.count, "Descriptor '%s' bound array size '%u' doesn't match size '%u' in shader", element.name.c_str(), size / sizeof(void*), element.count);
+                version = handles[0]->Version();
+                count = element.count;
             }
 
-            const VulkanBindHandle* handle = nullptr;
-            PK_FATAL_ASSERT(resources->TryGet<const VulkanBindHandle*>(element.name, handle), "Descriptor (%s) not bound!", element.name.c_str());
+            // Hash fixed size array version.
+            for (auto i = 1u; i < count && !isVariableSize; ++i)
+            {
+                auto hash = handles[i]->Version();
+                hash += 0x9e3779b9ull + (version << 6ull) + (version >> 2ull);
+                version ^= hash;
+            }
 
-            if (binding->count != element.count || binding->type != element.type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
+            if (binding.handles != handles || binding.count != count || binding.type != element.type || binding.version != version)
             {
                 m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-                binding->count = element.count;
-                binding->type = element.type;
-                binding->handle = handle;
-                binding->version = (uint32_t)handle->Version();
-                binding->isArray = false;
+                binding.handles = handles;
+                binding.count = count;
+                binding.type = element.type;
+                binding.version = version;
+                binding.isVariableSize = isVariableSize;
             }
         }
 
@@ -531,14 +520,16 @@ namespace PK
 
         for (auto bindingIndex = 0u; bindingIndex < m_descritorState.bindingCount; ++bindingIndex)
         {
-            // No Array support as they're locally reserved for readonly resources
-            if (!m_descritorState.bindings[bindingIndex].isArray)
+            const auto& binding = m_descritorState.bindings[bindingIndex];
+
+            // No dynamic array support as they're locally reserved for readonly resources
+            for (auto i = 0u; i < binding.count && !binding.isVariableSize; ++i)
             {
-                auto handle = m_descritorState.bindings[bindingIndex].handle;
+                auto handle = binding.handles[i];
                 auto stage = VulkanEnumConvert::GetPipelineStageFlags(m_descritorState.stageFlags);
                 auto access = shader->GetResourceLayout()[bindingIndex].writeMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
 
-                switch (m_descritorState.bindings[bindingIndex].type)
+                switch (binding.type)
                 {
                     case ShaderResourceType::SamplerTexture:
                     case ShaderResourceType::Texture:
@@ -592,14 +583,12 @@ namespace PK
                     
                     m_renderTargetLayouts[i] = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-                    auto previousLayout = RecordRenderTarget
-                    (
+                    auto previousLayout = RecordRenderTarget(
                         color.target,
                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                         VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                         m_renderTargetLayouts[i],
-                        PK_RHI_ACCESS_OPT_BARRIER
-                    );
+                        PK_RHI_ACCESS_OPT_BARRIER);
 
                     if (color.loadOp == LoadOp::Load && previousLayout == VK_IMAGE_LAYOUT_UNDEFINED)
                     {
@@ -608,14 +597,12 @@ namespace PK
 
                     if (color.resolve && color.resolve->image.image)
                     {
-                        RecordImage
-                        (
+                        RecordImage(
                             color.target, 
                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 
                             m_renderTargetLayouts[i], 
-                            PK_RHI_ACCESS_OPT_BARRIER
-                        );
+                            PK_RHI_ACCESS_OPT_BARRIER);
                     }
                 }
             }
@@ -642,14 +629,12 @@ namespace PK
                     RecordImage(depth.target, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
                 }
 
-                auto previousLayout = RecordRenderTarget
-                (
+                auto previousLayout = RecordRenderTarget(
                     depth.target,
                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                     accessFlags,
                     m_renderTargetLayouts[PK_RHI_MAX_RENDER_TARGETS],
-                    PK_RHI_ACCESS_OPT_BARRIER
-                );
+                    PK_RHI_ACCESS_OPT_BARRIER);
 
                 if (depth.loadOp == LoadOp::Load && previousLayout == VK_IMAGE_LAYOUT_UNDEFINED)
                 {

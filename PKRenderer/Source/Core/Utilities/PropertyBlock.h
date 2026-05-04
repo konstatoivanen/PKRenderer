@@ -50,10 +50,10 @@ namespace PK
             }
         
             template<typename T>
-            bool TryGet(const uint32_t hashId, const T*& value, uint64_t* size) const
+            bool TryGet(const uint32_t hashId, const T** value, uint64_t* size) const
             {
-                value = Get<T>(hashId, size);
-                return value != nullptr;
+                *value = Get<T>(hashId, size);
+                return *value != nullptr;
             }
 
             template<typename T>

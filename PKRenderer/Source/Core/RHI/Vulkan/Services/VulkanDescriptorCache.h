@@ -13,16 +13,11 @@ namespace PK
     {
         struct alignas(8) DescriptorBinding
         {
-            union
-            {
-                const VulkanBindHandle* handle;
-                const VulkanBindHandle* const* handles;
-            };
-
+            const VulkanBindHandle* const* handles;
             uint32_t version;
             uint16_t count;
             ShaderResourceType type;
-            bool isArray;
+            bool isVariableSize;
         };
 
         VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, uint32_t maxSets, initializer_list<Pair<const VkDescriptorType, uint32_t>> poolSizes);

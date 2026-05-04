@@ -219,12 +219,12 @@ namespace PK
             {
                 vertexInputInfo.vertexBindingDescriptionCount = 0u;
                 vertexInputInfo.vertexAttributeDescriptionCount = 0u;
-                vertexInputInfo.pVertexBindingDescriptions = key.vertexBuffers;
+                vertexInputInfo.pVertexBindingDescriptions = key.vertexStreams;
                 vertexInputInfo.pVertexAttributeDescriptions = key.vertexAttributes;
 
                 for (auto i = 0u; i < PK_RHI_MAX_VERTEX_ATTRIBUTES; ++i)
                 {
-                    vertexInputInfo.vertexBindingDescriptionCount += key.vertexBuffers[i].stride != 0;
+                    vertexInputInfo.vertexBindingDescriptionCount += key.vertexStreams[i].stride != 0;
                     vertexInputInfo.vertexAttributeDescriptionCount += key.vertexAttributes[i].format != VK_FORMAT_UNDEFINED;
                 }
 

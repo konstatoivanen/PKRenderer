@@ -27,7 +27,7 @@ namespace PK
             FixedFunctionState fixedFunctionState{};
             VkBool32 primitiveRestart = VK_FALSE;
             VkVertexInputAttributeDescription vertexAttributes[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
-            VkVertexInputBindingDescription vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
+            VkVertexInputBindingDescription vertexStreams[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
 
             inline bool operator == (const PipelineKey& r) const noexcept { return memcmp(this, &r, sizeof(PipelineKey)) == 0; }
         };

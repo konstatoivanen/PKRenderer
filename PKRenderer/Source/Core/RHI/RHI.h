@@ -162,18 +162,26 @@ namespace PK
         template<typename T> 
         inline bool ValidateBuffer(RHIBufferRef& inoutBuffer, size_t count) { return ValidateBuffer(inoutBuffer, sizeof(T) * count); }
 
+        void SetBufferArray(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count);
+        void SetBufferArray(NameID name, RHIBuffer** buffers, size_t count);
+        void SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferSet);
         void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range);
         void SetBuffer(NameID name, RHIBuffer* buffer);
+        void SetTextureArray(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count);
+        void SetTextureArray(NameID name, RHITexture** textures, size_t count);
+        void SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureSet);
         void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range);
         void SetTexture(NameID name, RHITexture* texture, uint16_t level, uint16_t layer);
         void SetTexture(NameID name, RHITexture* texture);
-        void SetImage(NameID name, RHITexture* texture, const TextureViewRange& range);
-        void SetImage(NameID name, RHITexture* texture, uint16_t level, uint16_t layer);
-        void SetImage(NameID name, RHITexture* texture);
+        void SetImageArray(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count);
+        void SetImageArray(NameID name, RHITexture** images, size_t count);
+        void SetImage(NameID name, RHITexture* image, const TextureViewRange& range);
+        void SetImage(NameID name, RHITexture* image, uint16_t level, uint16_t layer);
+        void SetImage(NameID name, RHITexture* image);
+        void SetSamplerArray(NameID name, const SamplerDescriptor* samplers, size_t count);
         void SetSampler(NameID name, const SamplerDescriptor& sampler);
+        void SetAccelerationStructureArray(NameID name, RHIAccelerationStructure** structures, size_t count);
         void SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure);
-        void SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferSet);
-        void SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureSet);
         void SetConstant(NameID name, const void* data, uint32_t size);
         void SetKeyword(NameID name, bool value);
 

@@ -291,18 +291,60 @@ namespace PK
         return true;
     }
 
-    void RHI::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { RHIDriver::Get()->SetBuffer(name, buffer, range); }
-    void RHI::SetBuffer(NameID name, RHIBuffer* buffer) { RHIDriver::Get()->SetBuffer(name, buffer, buffer->GetFullRange()); }
-    void RHI::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { RHIDriver::Get()->SetTexture(name, texture, range); }
-    void RHI::SetTexture(NameID name, RHITexture* texture, uint16_t level, uint16_t layer) { RHIDriver::Get()->SetTexture(name, texture, { level, layer, 1u, 1u }); }
-    void RHI::SetTexture(NameID name, RHITexture* texture) { RHIDriver::Get()->SetTexture(name, texture, {}); }
-    void RHI::SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) { RHIDriver::Get()->SetImage(name, texture, range); }
-    void RHI::SetImage(NameID name, RHITexture* texture, uint16_t level, uint16_t layer) { RHIDriver::Get()->SetImage(name, texture, { level, layer, 1u, 1u }); }
-    void RHI::SetImage(NameID name, RHITexture* texture) { RHIDriver::Get()->SetImage(name, texture, {}); }
-    void RHI::SetSampler(NameID name, const SamplerDescriptor& sampler) { RHIDriver::Get()->SetSampler(name, sampler); }
-    void RHI::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { RHIDriver::Get()->SetAccelerationStructure(name, structure); }
+    void RHI::SetBufferArray(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { RHIDriver::Get()->SetBuffers(name, buffers, ranges, count); }
     void RHI::SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferSet) { RHIDriver::Get()->SetBufferSet(name, bufferSet); }
+    void RHI::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { RHIDriver::Get()->SetBuffers(name, &buffer, &range, 1u); }
+    void RHI::SetTextureArray(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { RHIDriver::Get()->SetTextures(name, textures, ranges, count); }
     void RHI::SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureSet) { RHIDriver::Get()->SetTextureSet(name, textureSet); }
+    void RHI::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { RHIDriver::Get()->SetTextures(name, &texture, &range, 1u); }
+    void RHI::SetImageArray(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { RHIDriver::Get()->SetImages(name, images, ranges, count); }
+    void RHI::SetImage(NameID name, RHITexture* image, const TextureViewRange& range) { RHIDriver::Get()->SetImages(name, &image, &range, 1u); }
+    void RHI::SetSamplerArray(NameID name, const SamplerDescriptor* samplers, size_t count) { RHIDriver::Get()->SetSamplers(name, samplers, count); }
+    void RHI::SetSampler(NameID name, const SamplerDescriptor& sampler) { RHIDriver::Get()->SetSamplers(name, &sampler, 1u); }
+    void RHI::SetAccelerationStructureArray(NameID name, RHIAccelerationStructure** structures, size_t count) { RHIDriver::Get()->SetAccelerationStructures(name, structures, count); }
+    void RHI::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { RHIDriver::Get()->SetAccelerationStructures(name, &structure, 1u); }
+
+    void RHI::SetBuffer(NameID name, RHIBuffer* buffer) { SetBuffer(name, buffer, buffer->GetFullRange()); }
+    void RHI::SetTexture(NameID name, RHITexture* texture, uint16_t level, uint16_t layer) { SetTexture(name, texture, { level, layer, 1u, 1u }); }
+    void RHI::SetTexture(NameID name, RHITexture* texture) { SetTexture(name, texture, {}); }
+    void RHI::SetImage(NameID name, RHITexture* image, uint16_t level, uint16_t layer) { SetImage(name, image, { level, layer, 1u, 1u }); }
+    void RHI::SetImage(NameID name, RHITexture* image) { SetImage(name, image, {}); }
     void RHI::SetConstant(NameID name, const void* data, uint32_t size) { RHIDriver::Get()->SetConstant(name, data, size); }
     void RHI::SetKeyword(NameID name, bool value) { RHIDriver::Get()->SetKeyword(name, value); }
+
+    void RHI::SetBufferArray(NameID name, RHIBuffer** buffers, size_t count) 
+    {
+        auto ranges = PK_STACK_ALLOC(BufferIndexRange, count);
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            ranges[i] = buffers[i]->GetFullRange();
+        }
+
+        SetBufferArray(name, buffers, ranges, count); 
+    }
+
+    void RHI::SetTextureArray(NameID name, RHITexture** textures, size_t count) 
+    {
+        auto ranges = PK_STACK_ALLOC(TextureViewRange, count);
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            ranges[i] = {};
+        }
+
+        SetTextureArray(name, textures, ranges, count); 
+    }
+
+    void RHI::SetImageArray(NameID name, RHITexture** images, size_t count) 
+    { 
+        auto ranges = PK_STACK_ALLOC(TextureViewRange, count);
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            ranges[i] = {};
+        }
+
+        SetImageArray(name, images, ranges, count); 
+    }
 }

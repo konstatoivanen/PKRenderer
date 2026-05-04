@@ -222,13 +222,13 @@ namespace PK
         virtual RHIBuffer* AcquireStage(size_t size) = 0;
         virtual void ReleaseStage(RHIBuffer* buffer, const FenceRef& fence) = 0;
 
-        virtual void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) = 0;
-        virtual void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) = 0;
+        virtual void SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) = 0;
         virtual void SetBufferSet(NameID name, RHIBufferBindSet* bufferSet) = 0;
+        virtual void SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) = 0;
         virtual void SetTextureSet(NameID name, RHITextureBindSet* textureSet) = 0;
-        virtual void SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) = 0;
-        virtual void SetSampler(NameID name, const SamplerDescriptor& sampler) = 0;
-        virtual void SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) = 0;
+        virtual void SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) = 0;
+        virtual void SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) = 0;
+        virtual void SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) = 0;
         virtual void SetConstant(NameID name, const void* data, uint32_t size) = 0;
         virtual void SetKeyword(NameID name, bool value) = 0;
 
