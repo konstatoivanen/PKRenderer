@@ -125,20 +125,15 @@ namespace PK
                 VkImageLayout layout,
                 uint8_t options);
 
-            PKRenderStateDirtyFlags ValidatePipeline(const FenceRef& fence);
+            PKRenderStateDirtyFlags ResolvePipelineState(const FenceRef& fence);
 
         private:
-            void ValidateVertexBuffers();
-            void ValidateResourceAccess();
-            void ValidateDescriptors(const FenceRef& fence);
-            void ValidatePipelineFormats();
-
             VulkanServiceContext m_services;
         
             VulkanDescriptorState m_descritorState{};
             VulkanPipelineCache::PipelineKey m_pipelineKey{};
             VulkanRenderTargetBindings m_renderTarget{};
-            VkImageLayout m_renderTargetLayouts[PK_RHI_MAX_RENDER_TARGETS + 1u]{};
+            VkImageLayout m_depthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)RayTracingShaderGroup::MaxCount]{};
         
             VertexStreamElement m_vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};

@@ -82,8 +82,8 @@ namespace PK
         if ((ShaderStageFlags::StagesMesh & stageFlags) != 0u)
         {
             // this doesn't matter for mesh shaders. set it to a default to prevent duplicate pipelines.
-            MeshPipelineKey meshKey = { key.shader, key.fixedFunctionState };
-            meshKey.fixedFunctionState.rasterization.topology = Topology::PointList;
+            MeshPipelineKey meshKey = { key.shader, key.fixed };
+            meshKey.fixed.rasterization.topology = Topology::PointList;
             value = &m_meshPipelines[m_meshPipelines.AddKey(meshKey)].value;
         }
 
@@ -102,7 +102,7 @@ namespace PK
                 const auto module = key.shader->GetModule(i);
                 const auto stageFlag = (ShaderStageFlags)(1u << i);
 
-                if (module != VK_NULL_HANDLE && (stageFlag & stageFlags) != 0u && (stageFlag & key.fixedFunctionState.excludeStageMask) == 0u)
+                if (module != VK_NULL_HANDLE && (stageFlag & stageFlags) != 0u && (stageFlag & key.fixed.excludeStageMask) == 0u)
                 {
                     VkPipelineShaderStageCreateInfo stageInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
                     stageInfo.stage = VulkanEnumConvert::GetShaderStage((ShaderStage)i);
@@ -115,27 +115,27 @@ namespace PK
             VkPipelineRenderingCreateInfo renderingInfo{ VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR };
             renderingInfo.viewMask = 0u;
             renderingInfo.colorAttachmentCount = 0u;
-            renderingInfo.pColorAttachmentFormats = key.fixedFunctionState.colorFormats;
-            renderingInfo.depthAttachmentFormat = key.fixedFunctionState.depthFormat;
-            renderingInfo.stencilAttachmentFormat = VulkanEnumConvert::IsDepthStencilFormat(key.fixedFunctionState.depthFormat) ? key.fixedFunctionState.depthFormat : VK_FORMAT_UNDEFINED;
-            for (; renderingInfo.colorAttachmentCount < PK_RHI_MAX_RENDER_TARGETS && key.fixedFunctionState.colorFormats[renderingInfo.colorAttachmentCount] != VK_FORMAT_UNDEFINED; ++renderingInfo.colorAttachmentCount) {}
+            renderingInfo.pColorAttachmentFormats = key.fixed.colorFormats;
+            renderingInfo.depthAttachmentFormat = key.fixed.depthFormat;
+            renderingInfo.stencilAttachmentFormat = VulkanEnumConvert::IsDepthStencilFormat(key.fixed.depthFormat) ? key.fixed.depthFormat : VK_FORMAT_UNDEFINED;
+            for (; renderingInfo.colorAttachmentCount < PK_RHI_MAX_RENDER_TARGETS && key.fixed.colorFormats[renderingInfo.colorAttachmentCount] != VK_FORMAT_UNDEFINED; ++renderingInfo.colorAttachmentCount) {}
 
             VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
-            rasterizer.depthClampEnable = key.fixedFunctionState.rasterization.depthClampEnable;
-            rasterizer.rasterizerDiscardEnable = key.fixedFunctionState.rasterization.rasterizerDiscardEnable;
-            rasterizer.polygonMode = VulkanEnumConvert::GetPolygonMode(key.fixedFunctionState.rasterization.polygonMode);
-            rasterizer.lineWidth = key.fixedFunctionState.rasterization.lineWidth;
-            rasterizer.cullMode = VulkanEnumConvert::GetCullMode(key.fixedFunctionState.rasterization.cullMode);
-            rasterizer.frontFace = VulkanEnumConvert::GetFrontFace(key.fixedFunctionState.rasterization.frontFace);
-            rasterizer.depthBiasEnable = key.fixedFunctionState.rasterization.depthBiasEnable;
-            rasterizer.depthBiasConstantFactor = key.fixedFunctionState.rasterization.depthBiasConstantFactor;
-            rasterizer.depthBiasClamp = key.fixedFunctionState.rasterization.depthBiasClamp;
-            rasterizer.depthBiasSlopeFactor = key.fixedFunctionState.rasterization.depthBiasSlopeFactor;
+            rasterizer.depthClampEnable = key.fixed.rasterization.depthClampEnable;
+            rasterizer.rasterizerDiscardEnable = key.fixed.rasterization.rasterizerDiscardEnable;
+            rasterizer.polygonMode = VulkanEnumConvert::GetPolygonMode(key.fixed.rasterization.polygonMode);
+            rasterizer.lineWidth = key.fixed.rasterization.lineWidth;
+            rasterizer.cullMode = VulkanEnumConvert::GetCullMode(key.fixed.rasterization.cullMode);
+            rasterizer.frontFace = VulkanEnumConvert::GetFrontFace(key.fixed.rasterization.frontFace);
+            rasterizer.depthBiasEnable = key.fixed.rasterization.depthBiasEnable;
+            rasterizer.depthBiasConstantFactor = key.fixed.rasterization.depthBiasConstantFactor;
+            rasterizer.depthBiasClamp = key.fixed.rasterization.depthBiasClamp;
+            rasterizer.depthBiasSlopeFactor = key.fixed.rasterization.depthBiasSlopeFactor;
 
             VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT };
-            conservativeRaster.conservativeRasterizationMode = VulkanEnumConvert::GetRasterMode(key.fixedFunctionState.rasterization.rasterMode, m_allowUnderEstimation);
-            conservativeRaster.extraPrimitiveOverestimationSize = fminf(m_maxOverEstimation, key.fixedFunctionState.rasterization.overEstimation);
-            rasterizer.pNext = key.fixedFunctionState.rasterization.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
+            conservativeRaster.conservativeRasterizationMode = VulkanEnumConvert::GetRasterMode(key.fixed.rasterization.rasterMode, m_allowUnderEstimation);
+            conservativeRaster.extraPrimitiveOverestimationSize = fminf(m_maxOverEstimation, key.fixed.rasterization.overEstimation);
+            rasterizer.pNext = key.fixed.rasterization.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
 
             VkPipelineRasterizationLineStateCreateInfo lineRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO };
             lineRaster.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH;
@@ -143,39 +143,39 @@ namespace PK
             *rasterPnext = rasterizer.polygonMode == VK_POLYGON_MODE_LINE ? &lineRaster : nullptr;
 
             VkPipelineMultisampleStateCreateInfo multisampling{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
-            multisampling.sampleShadingEnable = key.fixedFunctionState.multisampling.sampleShadingEnable;
-            multisampling.rasterizationSamples = VulkanEnumConvert::GetSampleCountFlags(key.fixedFunctionState.multisampling.rasterizationSamples);
-            multisampling.minSampleShading = key.fixedFunctionState.multisampling.minSampleShading;
+            multisampling.sampleShadingEnable = key.fixed.multisampling.sampleShadingEnable;
+            multisampling.rasterizationSamples = VulkanEnumConvert::GetSampleCountFlags(key.fixed.multisampling.rasterizationSamples);
+            multisampling.minSampleShading = key.fixed.multisampling.minSampleShading;
             multisampling.pSampleMask = nullptr;
-            multisampling.alphaToCoverageEnable = key.fixedFunctionState.multisampling.alphaToCoverageEnable;
-            multisampling.alphaToOneEnable = key.fixedFunctionState.multisampling.alphaToOneEnable;
+            multisampling.alphaToCoverageEnable = key.fixed.multisampling.alphaToCoverageEnable;
+            multisampling.alphaToOneEnable = key.fixed.multisampling.alphaToOneEnable;
 
             VkPipelineDepthStencilStateCreateInfo depthStencil{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
-            depthStencil.depthTestEnable = key.fixedFunctionState.depthStencil.depthCompareOp != Comparison::Off;
-            depthStencil.depthWriteEnable = key.fixedFunctionState.depthStencil.depthWriteEnable;
-            depthStencil.depthCompareOp = VulkanEnumConvert::GetCompareOp(key.fixedFunctionState.depthStencil.depthCompareOp);
-            depthStencil.depthBoundsTestEnable = key.fixedFunctionState.depthStencil.depthBoundsTestEnable;
-            depthStencil.stencilTestEnable = key.fixedFunctionState.depthStencil.stencilTestEnable;
-            depthStencil.minDepthBounds = key.fixedFunctionState.depthStencil.minDepthBounds;
-            depthStencil.maxDepthBounds = key.fixedFunctionState.depthStencil.maxDepthBounds;
+            depthStencil.depthTestEnable = key.fixed.depthStencil.depthCompareOp != Comparison::Off;
+            depthStencil.depthWriteEnable = key.fixed.depthStencil.depthWriteEnable;
+            depthStencil.depthCompareOp = VulkanEnumConvert::GetCompareOp(key.fixed.depthStencil.depthCompareOp);
+            depthStencil.depthBoundsTestEnable = key.fixed.depthStencil.depthBoundsTestEnable;
+            depthStencil.stencilTestEnable = key.fixed.depthStencil.stencilTestEnable;
+            depthStencil.minDepthBounds = key.fixed.depthStencil.minDepthBounds;
+            depthStencil.maxDepthBounds = key.fixed.depthStencil.maxDepthBounds;
 
             VkPipelineColorBlendAttachmentState blendAttachments[PK_RHI_MAX_RENDER_TARGETS];
 
             for (auto i = 0u; i < renderingInfo.colorAttachmentCount; ++i)
             {
-                blendAttachments[i].blendEnable = key.fixedFunctionState.blending.isBlendEnabled();
-                blendAttachments[i].srcColorBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixedFunctionState.blending.srcColorFactor, VK_BLEND_FACTOR_ONE);
-                blendAttachments[i].dstColorBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixedFunctionState.blending.dstColorFactor, VK_BLEND_FACTOR_ZERO);
-                blendAttachments[i].colorBlendOp = VulkanEnumConvert::GetBlendOp(key.fixedFunctionState.blending.colorOp);
-                blendAttachments[i].srcAlphaBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixedFunctionState.blending.srcAlphaFactor, VK_BLEND_FACTOR_ONE);
-                blendAttachments[i].dstAlphaBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixedFunctionState.blending.dstAlphaFactor, VK_BLEND_FACTOR_ZERO);
-                blendAttachments[i].alphaBlendOp = VulkanEnumConvert::GetBlendOp(key.fixedFunctionState.blending.alphaOp);
-                blendAttachments[i].colorWriteMask = (VkColorComponentFlagBits)key.fixedFunctionState.blending.colorMask & 0xF;
+                blendAttachments[i].blendEnable = key.fixed.blending.isBlendEnabled();
+                blendAttachments[i].srcColorBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixed.blending.srcColorFactor, VK_BLEND_FACTOR_ONE);
+                blendAttachments[i].dstColorBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixed.blending.dstColorFactor, VK_BLEND_FACTOR_ZERO);
+                blendAttachments[i].colorBlendOp = VulkanEnumConvert::GetBlendOp(key.fixed.blending.colorOp);
+                blendAttachments[i].srcAlphaBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixed.blending.srcAlphaFactor, VK_BLEND_FACTOR_ONE);
+                blendAttachments[i].dstAlphaBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixed.blending.dstAlphaFactor, VK_BLEND_FACTOR_ZERO);
+                blendAttachments[i].alphaBlendOp = VulkanEnumConvert::GetBlendOp(key.fixed.blending.alphaOp);
+                blendAttachments[i].colorWriteMask = (VkColorComponentFlagBits)key.fixed.blending.colorMask & 0xF;
             }
 
             VkPipelineColorBlendStateCreateInfo colorBlending{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
-            colorBlending.logicOpEnable = key.fixedFunctionState.blending.isLogicOpEnabled();
-            colorBlending.logicOp = VulkanEnumConvert::GetLogicOp(key.fixedFunctionState.blending.logicOp);
+            colorBlending.logicOpEnable = key.fixed.blending.isLogicOpEnabled();
+            colorBlending.logicOp = VulkanEnumConvert::GetLogicOp(key.fixed.blending.logicOp);
             colorBlending.attachmentCount = renderingInfo.colorAttachmentCount;
             colorBlending.pAttachments = blendAttachments;
             colorBlending.blendConstants[0] = 0.0f;
@@ -228,7 +228,7 @@ namespace PK
                     vertexInputInfo.vertexAttributeDescriptionCount += key.vertexAttributes[i].format != VK_FORMAT_UNDEFINED;
                 }
 
-                inputAssembly.topology = VulkanEnumConvert::GetTopology(key.fixedFunctionState.rasterization.topology);
+                inputAssembly.topology = VulkanEnumConvert::GetTopology(key.fixed.rasterization.topology);
                 inputAssembly.primitiveRestartEnable = key.primitiveRestart;
                 pipelineInfo.pVertexInputState = &vertexInputInfo;
                 pipelineInfo.pInputAssemblyState = &inputAssembly;

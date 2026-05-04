@@ -660,7 +660,7 @@ namespace PK
 
     void VulkanCommandBuffer::ValidatePipeline()
     {
-        auto flags = m_renderState->ValidatePipeline(GetFenceRef());
+        auto flags = m_renderState->ResolvePipelineState(GetFenceRef());
 
         if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {

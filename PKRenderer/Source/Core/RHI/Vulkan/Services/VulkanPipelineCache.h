@@ -24,7 +24,7 @@ namespace PK
         struct PipelineKey
         {
             VersionHandle<VulkanShader> shader;
-            FixedFunctionState fixedFunctionState{};
+            FixedFunctionState fixed{};
             VkBool32 primitiveRestart = VK_FALSE;
             VkVertexInputAttributeDescription vertexAttributes[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
             VkVertexInputBindingDescription vertexStreams[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
@@ -36,7 +36,7 @@ namespace PK
         struct MeshPipelineKey
         {
             VersionHandle<VulkanShader> shader;
-            FixedFunctionState fixedFunctionState{};
+            FixedFunctionState fixed{};
 
             inline bool operator == (const MeshPipelineKey& r) const noexcept { return memcmp(this, &r, sizeof(MeshPipelineKey)) == 0; }
         };
