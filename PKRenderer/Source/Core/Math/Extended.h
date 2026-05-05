@@ -6,21 +6,44 @@ namespace PK::math
 {
     template<typename T> uint64_t hash3x4(const matrix<T,3,4>& matrix, T precision)
     {
-        uint64_t h = 14695981039346656037ULL;
-
-        for (auto i = 0u; i < 3u; ++i)
+        #if PK_MATH_SIMD
+        if constexpr (TIsSame<T, float>)
         {
-            h ^= (uint64_t)(matrix[i][0] / precision);
-            h *= 1099511628211ULL;
-            h ^= (uint64_t)(matrix[i][1] / precision);
-            h *= 1099511628211ULL;
-            h ^= (uint64_t)(matrix[i][2] / precision);
-            h *= 1099511628211ULL;
-            h ^= (uint64_t)(matrix[i][3] / precision);
-            h *= 1099511628211ULL;
-        }
+            // Not very good but this is used to detect changes so one bit difference is ok.
+            simd_f32vec4 inv = _mm_set1_ps(1.0f / precision);
+            simd_u32vec4 r0 = _mm_cvtps_epi32(_mm_mul_ps(matrix[0].data, inv));
+            simd_u32vec4 r1 = _mm_cvtps_epi32(_mm_mul_ps(matrix[1].data, inv));
+            simd_u32vec4 r2 = _mm_cvtps_epi32(_mm_mul_ps(matrix[2].data, inv));
+            simd_u32vec4 ac = _mm_add_epi64(_mm_xor_si128(r0, r1), r2);
+            ulong2 u2(ac);
 
-        return h;
+            uint64_t h = u2.x ^ (u2.y + 0x9E3779B185EBCA87ull);
+            h ^= h >> 33ull;
+            h *= 0xff51afd7ed558ccdULL;
+            h ^= h >> 33ull;
+            h *= 0xc4ceb9fe1a85ec53ULL;
+            h ^= h >> 33ull;
+            return h;
+        }
+        else
+        #endif
+        {
+            uint64_t h = 14695981039346656037ULL;
+
+            for (auto i = 0u; i < 3u; ++i)
+            {
+                h ^= (uint64_t)(matrix[i][0] / precision);
+                h *= 1099511628211ULL;
+                h ^= (uint64_t)(matrix[i][1] / precision);
+                h *= 1099511628211ULL;
+                h ^= (uint64_t)(matrix[i][2] / precision);
+                h *= 1099511628211ULL;
+                h ^= (uint64_t)(matrix[i][3] / precision);
+                h *= 1099511628211ULL;
+            }
+
+            return h;
+        }
     }
 
     // Produces Reverse Z
@@ -31,8 +54,6 @@ namespace PK::math
         *outZFar = (aabb.max.z + paddingRU.z);
         return orthographic(aabb.min.x + paddingLD.x, aabb.max.x + paddingRU.x, aabb.min.y + paddingLD.y, aabb.max.y + paddingRU.y, aabb.min.z + paddingLD.z, aabb.max.z + paddingRU.z) * worldToLocal;
     }
-
-    void composeShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices);
 
     template<typename T> vector<T,2> octawrap(const vector<T,2>& v) { return (static_cast<T>(1) - abs(v.yx())) * sign(v); }
 
@@ -62,4 +83,6 @@ namespace PK::math
         bool isValid = false;
         return triangleNormal(&a.x, &b.x, &c.x, isValid);
     }
+    
+    void composeShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices);
 }

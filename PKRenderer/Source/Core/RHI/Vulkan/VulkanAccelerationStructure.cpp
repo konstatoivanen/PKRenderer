@@ -302,6 +302,7 @@ namespace PK
         instance->instanceShaderBindingTableRecordOffset = geometry.recordOffset;
         instance->flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
         instance->accelerationStructureReference = GetGeometryIndex(geometry);
+
         m_structureHashCurr += math::hash3x4(matrix, 0.01f) * (instance->accelerationStructureReference + 1ull);
     }
 

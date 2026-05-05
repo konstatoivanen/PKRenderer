@@ -120,11 +120,11 @@ namespace PK::App
 
         return;
 
-        auto meshes = m_entityDb->Query<EntityViews::MeshRenderable>((int)ENTITY_GROUPS::ACTIVE);
+        auto meshes = m_entityDb->Query<EntityViewMeshStatic>((int)ENTITY_GROUPS::ACTIVE);
 
-        for (auto i = 0; i < meshes.count; ++i)
+        for (auto i = 0; i < meshes.count && i < 1; ++i)
         {
-            meshes[i].transform->position.y = math::sin(time + (10 * (float)i / meshes.count)) * 10;
+            meshes[i].transform->position.y = math::sin(ctx->time.time + (10 * (float)i / meshes.count)) * 10;
         }
         */
     }
