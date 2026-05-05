@@ -63,7 +63,7 @@ namespace PK
         for (auto i = 0u; i < GetCount(); ++i)
         {
             data[i].offset = m_streamStrides[data[i].stream];
-            m_streamStrides[data[i].stream] += data[i].size;
+            m_streamStrides[data[i].stream] += (uint16_t)RHIEnumConvert::Size(data[i].format);
         }
 
         for (auto i = 0u; i < GetCount(); ++i)

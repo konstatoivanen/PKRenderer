@@ -1536,12 +1536,12 @@ namespace PK
             }
         }
 
-        VkIndexType GetIndexType(ElementType format)
+        VkIndexType GetIndexType(size_t size)
         {
-            switch (format)
+            switch (size)
             {
-                case ElementType::Ushort: return VK_INDEX_TYPE_UINT16;
-                case ElementType::Uint: return VK_INDEX_TYPE_UINT32;
+                case sizeof(uint16_t): return VK_INDEX_TYPE_UINT16;
+                case sizeof(uint32_t): return VK_INDEX_TYPE_UINT32;
                 default: return VK_INDEX_TYPE_MAX_ENUM;
             }
         }

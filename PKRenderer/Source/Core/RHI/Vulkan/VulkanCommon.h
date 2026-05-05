@@ -524,7 +524,7 @@ namespace PK
         ColorSpace GetColorSpace(VkColorSpaceKHR colorSpace);
         VSyncMode GetVSyncMode(VkPresentModeKHR presentMode);
         VkFormat GetFormat(TextureFormat format);
-        VkIndexType GetIndexType(ElementType format);
+        VkIndexType GetIndexType(size_t size);
         TextureFormat GetTextureFormat(VkFormat format);
         uint32_t GetFormatBlockSize(VkFormat format);
         bool IsDepthFormat(VkFormat format);

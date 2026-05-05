@@ -559,6 +559,8 @@ namespace PK
     {
         constexpr auto Size = PKAssets::PKElementTypeToSize;
         constexpr auto Alignment = PKAssets::PKElementTypeToAlignment;
+        constexpr auto Components = PKAssets::PKElementTypeToComponents;
+        constexpr auto Scalar = PKAssets::PKElementTypeToScalar;
         constexpr auto IsResourceHandle = PKAssets::PKElementTypeIsResourceHandle;
         constexpr auto StringToElementType = PKAssets::StringToPKElementType;
         constexpr auto StringToShaderResourceType = PKAssets::StringToPKDescriptorType;

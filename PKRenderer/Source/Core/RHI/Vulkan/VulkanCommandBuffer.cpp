@@ -87,10 +87,10 @@ namespace PK
         m_renderState->SetVertexStreams(elements, count); 
     }
 
-    void VulkanCommandBuffer::SetIndexBuffer(const RHIBuffer* buffer, ElementType indexFormat)
+    void VulkanCommandBuffer::SetIndexBuffer(const RHIBuffer* buffer, size_t indexSize)
     {
         auto handle = static_cast<const VulkanBuffer*>(buffer)->GetBindHandle();
-        m_renderState->SetIndexBuffer(handle, VulkanEnumConvert::GetIndexType(indexFormat));
+        m_renderState->SetIndexBuffer(handle, VulkanEnumConvert::GetIndexType(indexSize));
     }
 
     void VulkanCommandBuffer::SetShaderBindingTable(RayTracingShaderGroup group, const RHIBuffer* buffer, size_t offset, size_t stride, size_t size)

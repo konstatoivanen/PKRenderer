@@ -30,7 +30,7 @@ namespace PK::App
         m_gizmos_vertexStreamElement.inputRate = InputRate::PerVertex;
         m_gizmos_vertexStreamElement.stride = sizeof(uint4);
         m_gizmos_vertexStreamElement.offset = 0u;
-        m_gizmos_vertexStreamElement.size = sizeof(uint4);
+        m_gizmos_vertexStreamElement.format = ElementType::Uint4;
 
         auto hash = HashCache::Get();
         RHI::SetBuffer(hash->pk_Gizmos_IndirectVertices, m_gizmos_indirectVertexBuffer.get());
@@ -96,7 +96,7 @@ namespace PK::App
         if (m_gui_vertexCount >= 2)
         {
             RHI::SetTextureSet(HashCache::Get()->pk_GUI_Textures, m_gui_textures.get());
-            cmd->SetIndexBuffer(m_gui_indexBuffer.get(), ElementType::Ushort);
+            cmd->SetIndexBuffer(m_gui_indexBuffer.get(), sizeof(uint16_t));
             cmd.SetShader(m_gui_shader);
             cmd.SetRenderTarget({ target, LoadOp::Load, StoreOp::Store }, true);
             cmd->DrawIndexed(math::min(GUI_MAX_INDICES, m_gui_indexCount), 1u, 0u, 0u, 0u);

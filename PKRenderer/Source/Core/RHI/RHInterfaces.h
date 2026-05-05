@@ -154,7 +154,7 @@ namespace PK
         virtual void SetShader(const RHIShader* shader) = 0;
         virtual void SetVertexBuffers(const RHIBuffer** buffers, uint32_t count) = 0;
         virtual void SetVertexStreams(const VertexStreamElement* elements, uint32_t count) = 0;
-        virtual void SetIndexBuffer(const RHIBuffer* buffer, ElementType indexFormat) = 0;
+        virtual void SetIndexBuffer(const RHIBuffer* buffer, size_t indexSize) = 0;
         virtual void SetShaderBindingTable(RayTracingShaderGroup group, const RHIBuffer* buffer, size_t offset = 0, size_t stride = 0, size_t size = 0) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;

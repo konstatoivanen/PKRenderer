@@ -69,114 +69,126 @@ namespace PKAssets
         "keyword",
     };
 
-    const static uint32_t PKElementType_SIZES[] =
+    const static uint8_t PKElementType_SIZES[] =
     {
-        0u,         /*Invalid*/
-        4u,         /*Float*/
-        4u * 2u,    /*Float2*/
-        4u * 3u,    /*Float3*/
-        4u * 4u,    /*Float4*/
-        8u,         /*Double*/
-        8u * 2u,    /*Double2*/
-        8u * 3u,    /*Double3*/
-        8u * 4u,    /*Double4*/
-        2u,         /*Half*/
-        2u * 2u,    /*Half2*/
-        2u * 3u,    /*Half3*/
-        2u * 4u,    /*Half4*/
-        4u,         /*Int*/
-        4u * 2u,    /*Int2*/
-        4u * 3u,    /*Int3*/
-        4u * 4u,    /*Int4*/
-        4u,         /*Uint*/
-        4u * 2u,    /*Uint2*/
-        4u * 3u,    /*Uint3*/
-        4u * 4u,    /*Uint4*/
-        2u,         /*Short*/
-        2u * 2u,    /*Short2*/
-        2u * 3u,    /*Short3*/
-        2u * 4u,    /*Short4*/
-        2u,         /*Ushort*/
-        2u * 2u,    /*Ushort2*/
-        2u * 3u,    /*Ushort3*/
-        2u * 4u,    /*Ushort4*/
-        8u,         /*Long*/
-        8u * 2u,    /*Long2*/
-        8u * 3u,    /*Long3*/
-        8u * 4u,    /*Long4*/
-        8u,         /*Ulong*/
-        8u * 2u,    /*Ulong2*/
-        8u * 3u,    /*Ulong3*/
-        8u * 4u,    /*Ulong4*/
-        4 * 2 * 2,  /*Float2x2*/
-        4 * 3 * 3,  /*Float3x3*/
-        4 * 4 * 4,  /*Float4x4*/
-        3 * 4 * 4,  /*Float3x4*/
-        8 * 2 * 2,  /*Double2x2*/
-        8 * 3 * 3,  /*Double3x3*/
-        8 * 4 * 4,  /*Double4x4*/
-        2 * 2 * 2,  /*Half2x2*/
-        2 * 3 * 3,  /*Half3x3*/
-        2 * 4 * 4,  /*Half4x4*/
+        0u,  /*Invalid*/
+        1u * 4u, /*Float*/
+        2u * 4u, /*Float2*/
+        3u * 4u, /*Float3*/
+        4u * 4u, /*Float4*/
+        
+        1u * 8u, /*Double*/
+        2u * 8u, /*Double2*/
+        3u * 8u, /*Double3*/
+        4u * 8u, /*Double4*/
+        
+        1u * 2u, /*Half*/
+        2u * 2u, /*Half2*/
+        3u * 2u, /*Half3*/
+        4u * 2u, /*Half4*/
+        
+        1u * 4u, /*Int*/
+        2u * 4u, /*Int2*/
+        3u * 4u, /*Int3*/
+        4u * 4u, /*Int4*/
+        
+        1u * 4u, /*Uint*/
+        2u * 4u, /*Uint2*/
+        3u * 4u, /*Uint3*/
+        4u * 4u, /*Uint4*/
+        
+        1u * 2u, /*Short*/
+        2u * 2u, /*Short2*/
+        3u * 2u, /*Short3*/
+        4u * 2u, /*Short4*/
+        
+        1u * 2u, /*Ushort*/
+        2u * 2u, /*Ushort2*/
+        3u * 2u, /*Ushort3*/
+        4u * 2u, /*Ushort4*/
+        
+        1u * 8u, /*Long*/
+        2u * 8u, /*Long2*/
+        3u * 8u, /*Long3*/
+        4u * 8u, /*Long4*/
+        
+        1u * 8u, /*Ulong*/
+        2u * 8u, /*Ulong2*/
+        3u * 8u, /*Ulong3*/
+        4u * 8u, /*Ulong4*/
+
+        2u * 2u * 4u,  /*Float2x2*/
+        3u * 3u * 4u,  /*Float3x3*/
+        4u * 4u * 4u,  /*Float4x4*/
+        3u * 4u * 4u,  /*Float3x4*/
+        
+        2u * 2u * 8u,  /*Double2x2*/
+        3u * 3u * 8u,  /*Double3x3*/
+        4u * 4u * 8u,  /*Double4x4*/
+        
+        2u * 2u * 2u,  /*Half2x2*/
+        3u * 3u * 2u,  /*Half3x3*/
+        4u * 4u * 2u,  /*Half4x4*/
+        
         4u, /*Texture2DHandle*/
         4u, /*Texture3DHandle*/
         4u, /*TextureCubeHandle*/
         1u  /*Keyword*/
     };
 
-    const static uint32_t PKElementType_ALIGNMENTS[] =
+    const static PKElementType PKElementType_SCALAR[] =
     {
-        0u,         /*Invalid*/
-        4u,         /*Float*/
-        4u * 2u,    /*Float2*/
-        4u * 4u,    /*Float3*/
-        4u * 4u,    /*Float4*/
-        8u,         /*Double*/
-        8u * 2u,    /*Double2*/
-        8u * 4u,    /*Double3*/
-        8u * 4u,    /*Double4*/
-        2u,         /*Half*/
-        2u * 2u,    /*Half2*/
-        2u * 4u,    /*Half3*/
-        2u * 4u,    /*Half4*/
-        4u,         /*Int*/
-        4u * 2u,    /*Int2*/
-        4u * 4u,    /*Int3*/
-        4u * 4u,    /*Int4*/
-        4u,         /*Uint*/
-        4u * 2u,    /*Uint2*/
-        4u * 4u,    /*Uint3*/
-        4u * 4u,    /*Uint4*/
-        2u,         /*Short*/
-        2u * 2u,    /*Short2*/
-        2u * 4u,    /*Short3*/
-        2u * 4u,    /*Short4*/
-        2u,         /*Ushort*/
-        2u * 2u,    /*Ushort2*/
-        2u * 4u,    /*Ushort3*/
-        2u * 4u,    /*Ushort4*/
-        8u,         /*Long*/
-        8u * 2u,    /*Long2*/
-        8u * 4u,    /*Long3*/
-        8u * 4u,    /*Long4*/
-        8u,         /*Ulong*/
-        8u * 2u,    /*Ulong2*/
-        8u * 4u,    /*Ulong3*/
-        8u * 4u,    /*Ulong4*/
-        4u * 2u,    /*Float2x2*/
-        4u * 4u,    /*Float3x3*/
-        4u * 4u,    /*Float4x4*/
-        3u * 4u,    /*Float3x4*/
-        8u * 2u,    /*Double2x2*/
-        8u * 4u,    /*Double3x3*/
-        8u * 4u,    /*Double4x4*/
-        2u * 2u,    /*Half2x2*/
-        2u * 4u,    /*Half3x3*/
-        2u * 4u,    /*Half4x4*/
-        4u,         /*Texture2DHandle*/
-        4u,         /*Texture3DHandle*/
-        4u,         /*TextureCubeHandle*/
-        1u          /*Keyword*/
+        PKElementType::Invalid,
+        PKElementType::Float,
+        PKElementType::Float,
+        PKElementType::Float,
+        PKElementType::Float,
+        PKElementType::Double,
+        PKElementType::Double,
+        PKElementType::Double,
+        PKElementType::Double,
+        PKElementType::Half,
+        PKElementType::Half,
+        PKElementType::Half,
+        PKElementType::Half,
+        PKElementType::Int,
+        PKElementType::Int,
+        PKElementType::Int,
+        PKElementType::Int,
+        PKElementType::Uint,
+        PKElementType::Uint,
+        PKElementType::Uint,
+        PKElementType::Uint,
+        PKElementType::Short,
+        PKElementType::Short,
+        PKElementType::Short,
+        PKElementType::Short,
+        PKElementType::Ushort,
+        PKElementType::Ushort,
+        PKElementType::Ushort,
+        PKElementType::Ushort,
+        PKElementType::Long,
+        PKElementType::Long,
+        PKElementType::Long,
+        PKElementType::Long,
+        PKElementType::Ulong,
+        PKElementType::Ulong,
+        PKElementType::Ulong,
+        PKElementType::Ulong,
+        PKElementType::Float,
+        PKElementType::Float,
+        PKElementType::Float,
+        PKElementType::Float,
+        PKElementType::Double,
+        PKElementType::Double,
+        PKElementType::Double,
+        PKElementType::Half,
+        PKElementType::Half,
+        PKElementType::Half,
+        PKElementType::Texture2DHandle,
+        PKElementType::Texture3DHandle,
+        PKElementType::TextureCubeHandle,
+        PKElementType::Keyword
     };
 
     const static char* PKTextureType_NAMES[] =
@@ -472,8 +484,32 @@ namespace PKAssets
         return (PKColorMask)mask;
     }
 
-    uint32_t PKElementTypeToSize(PKElementType type) { return PKElementType_SIZES[(uint32_t)type]; }
-    uint32_t PKElementTypeToAlignment(PKElementType type) { return PKElementType_ALIGNMENTS[(uint32_t)type]; }
+    uint32_t PKElementTypeToSize(PKElementType type)
+    {
+        return PKElementType_SIZES[(uint32_t)type];
+    }
+
+    PKElementType PKElementTypeToScalar(PKElementType type)
+    {
+        return PKElementType_SCALAR[(uint32_t)type];
+    }
+
+    uint32_t PKElementTypeToComponents(PKElementType type)
+    {
+        return PKElementType_SIZES[(uint32_t)type] / PKElementType_SIZES[(uint32_t)PKElementType_SCALAR[(uint32_t)type]];
+    }
+
+    uint32_t PKElementTypeToAlignment(PKElementType type)
+    {
+        const auto size = PKElementType_SIZES[(uint32_t)type];
+        const auto scalarSize = PKElementType_SIZES[(uint32_t)PKElementType_SCALAR[(uint32_t)type]];
+        auto components = (size / (scalarSize ? scalarSize : 1u)) - 1u;
+        components |= components >> 1u;
+        components |= components >> 2u;
+        components = (components & 0x3u) + 1u;
+        return scalarSize * components;
+    }
+
 
     bool PKElementTypeIsResourceHandle(PKElementType type)
     {

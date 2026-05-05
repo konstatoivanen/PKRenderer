@@ -19,7 +19,7 @@ namespace PK
         void SetShader(const RHIShader* shader) final;
         void SetVertexBuffers(const RHIBuffer** buffers, uint32_t count) final;
         void SetVertexStreams(const VertexStreamElement* elements, uint32_t count) final;
-        void SetIndexBuffer(const RHIBuffer* buffer, ElementType indexFormat) final;
+        void SetIndexBuffer(const RHIBuffer* buffer, size_t indexSize) final;
         void SetShaderBindingTable(RayTracingShaderGroup group, const RHIBuffer* buffer, size_t offset, size_t stride, size_t size) final;
 
         void SetStageExcludeMask(const ShaderStageFlags mask) final;

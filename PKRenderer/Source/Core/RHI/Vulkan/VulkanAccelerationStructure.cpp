@@ -60,8 +60,8 @@ namespace PK
             structure->geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
             structure->geometry.geometry.triangles.vertexStride = geometry.vertexStride;
             structure->geometry.geometry.triangles.vertexData.deviceAddress = adressVertex + geometry.vertexOffset;
-            structure->geometry.geometry.triangles.maxVertex = geometry.vertexFirst + geometry.vertexCount - 1;
-            structure->geometry.geometry.triangles.indexType = geometry.indexStride > 2 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
+            structure->geometry.geometry.triangles.maxVertex = geometry.vertexFirst + geometry.vertexCount - 1u;
+            structure->geometry.geometry.triangles.indexType = geometry.indexStride > 2u ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
             structure->geometry.geometry.triangles.indexData.deviceAddress = adressIndex;
             structure->geometry.geometry.triangles.transformData.deviceAddress = 0ull;
             structure->geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;

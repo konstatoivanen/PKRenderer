@@ -48,7 +48,121 @@ namespace PK::MeshUtilities
         }
     }
 
-    void AlignVertexStreams(char* vertices, size_t count, const VertexStreamLayout& src, const VertexStreamLayout& dst)
+    template<typename Ts, typename Td>
+    PK_FORCE_NOINLINE static void ConvertVertices(void* dst, const void* src, size_t count, size_t strideSrc, size_t strideDst, size_t components)
+    {
+        for (auto i = 0ull; i < count; ++i)
+        {
+            const void* vsrc = reinterpret_cast<const char*>(src) + strideSrc * i;
+            void* vdst = reinterpret_cast<char*>(dst) + strideDst * i;
+
+            if constexpr (sizeof(Ts) == sizeof(Td))
+            {
+                memcpy(vdst, vsrc, sizeof(Ts) * components);
+            }
+            else
+            {
+                for (auto j = 0u; j < components; ++j)
+                { 
+                    // Filty UB here. should use memcpy instead.
+                    if constexpr (TIsSame<Ts, float> && TIsSame<Td, uint16_t>)
+                    {
+                        reinterpret_cast<uint16_t*>(vdst)[j] = math::f32tof16(reinterpret_cast<const float*>(vsrc)[j]);
+                    }
+                    else if constexpr (TIsSame<Ts, uint16_t> && TIsSame<Td, float>)
+                    {
+                        reinterpret_cast<float*>(vdst)[j] = math::f16tof32(reinterpret_cast<const uint16_t*>(vsrc)[j]);
+                    }
+                    else
+                    {
+                        reinterpret_cast<Td*>(vdst)[j] = static_cast<Td>(reinterpret_cast<const Ts*>(vsrc)[j]);
+                    }
+                }
+            }
+        }
+    }
+
+    static void ConvertVertices(void* dst, const void* src, size_t count, size_t strideSrc, size_t strideDst, ElementType typeSrc, ElementType typeDst)
+    {
+        auto componentsSrc = RHIEnumConvert::Components(typeSrc);
+        auto componentsDst = RHIEnumConvert::Components(typeDst);
+        auto components = math::min(componentsSrc, componentsDst);
+        auto scalarSrc = RHIEnumConvert::Scalar(typeSrc);
+        auto scalarDst = RHIEnumConvert::Scalar(typeDst);
+        auto sizeSrc = RHIEnumConvert::Size(scalarSrc);
+        auto sizeDst = RHIEnumConvert::Size(scalarDst);
+
+        if (sizeSrc == sizeDst)
+        {
+            ConvertVertices<char, char>(dst, src, count, strideSrc, strideDst, sizeSrc * components);
+            return;
+        }
+
+        #define PK_VERTEX_CONVERT(Es, Ed, Ts, Td)\
+            if (scalarSrc == Es && scalarDst == Ed) \
+            { \
+                ConvertVertices<Ts, Td>(dst, src, count, strideSrc, strideDst, components); \
+                return; \
+            }
+
+        // Special conversions for half. conversions to/from half from other types is not supported.
+        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Half, float, uint16_t)
+        PK_VERTEX_CONVERT(ElementType::Half, ElementType::Float, uint16_t, float)
+
+        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Uint,   uint16_t, uint32_t)
+        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Int,    uint16_t, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Float,  uint16_t, float)
+        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Ulong,  uint16_t, uint64_t)
+        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Long,   uint16_t, int64_t)
+        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Double, uint16_t, double)
+
+        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Uint,   int16_t, uint32_t)
+        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Int,    int16_t, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Float,  int16_t, float)
+        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Ulong,  int16_t, uint64_t)
+        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Long,   int16_t, int64_t)
+        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Double, int16_t, double)
+
+        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Ushort, uint32_t, uint16_t)
+        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Short,  uint32_t, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Ulong,  uint32_t, uint64_t)
+        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Long,   uint32_t, int64_t)
+        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Double, uint32_t, double)
+
+        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Ushort, int32_t, uint16_t)
+        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Short,  int32_t, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Ulong,  int32_t, uint64_t)
+        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Long,   int32_t, int64_t)
+        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Double, int32_t, double)
+
+        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Ushort, float, uint16_t)
+        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Short,  float, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Ulong,  float, uint64_t)
+        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Long,   float, int64_t)
+        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Double, float, double)
+
+        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Ushort, uint64_t, uint16_t)
+        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Short,  uint64_t, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Uint,   uint64_t, uint32_t)
+        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Int,    uint64_t, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Float,  uint64_t, float)
+
+        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Ushort, int64_t, uint16_t)
+        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Short,  int64_t, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Uint,   int64_t, uint32_t)
+        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Int,    int64_t, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Float,  int64_t, float)
+
+        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Ushort, double, uint16_t)
+        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Short,  double, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Uint,   double, uint32_t)
+        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Int,    double, int16_t)
+        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Float,  double, float)
+
+        #undef PK_VERTEX_CONVERT
+    }
+
+    void AlignVertexStreams(void* vertices, size_t count, const VertexStreamLayout& src, const VertexStreamLayout& dst)
     {
         auto needsAlignment = false;
         uint32_t* remap = PK_STACK_ALLOC(uint32_t, dst.GetCount());
@@ -63,21 +177,18 @@ namespace PK::MeshUtilities
 
                 if (vsrc.name == vdst.name)
                 {
-                    PK_FATAL_ASSERT(vsrc.size == vdst.size, "Element '%s' size missmatch '%u' & '%u'", vdst.name.c_str(), vdst.size, vsrc.size);
                     PK_FATAL_ASSERT(vsrc.inputRate == vdst.inputRate, "Element '%s' input rate missmatch '%i' & '%i'", vdst.name.c_str(), (int)vdst.inputRate, (int)vsrc.inputRate);
-                    needsAlignment |= vsrc.stream != vdst.stream || vsrc.offset != vdst.offset;
+                    needsAlignment |= vsrc.format != vdst.format || vsrc.stream != vdst.stream || vsrc.offset != vdst.offset || vsrc.stride != vdst.stride;
                     remap[i] = j;
                     break;
                 }
             }
         }
 
-
-        PK_FATAL_ASSERT(dst.GetStride() == src.GetStride(), "Layout stride missmatch!");
-
         if (needsAlignment)
         {
-            auto buffer = Memory::Allocate<char>(count * dst.GetStride());
+            auto buffer = Memory::AllocateClear<char>(count * dst.GetStride());
+            auto pverts = reinterpret_cast<char*>(vertices);
 
             for (auto i = 0u; i < dst.GetCount(); ++i)
             {
@@ -85,16 +196,39 @@ namespace PK::MeshUtilities
                 const auto& vsrc = src[remap[i]];
                 const auto srcOffset = vsrc.stream == 0 ? 0ull : src.GetStride(vsrc.stream - 1) * count;
                 const auto dstOffset = vdst.stream == 0 ? 0ull : dst.GetStride(vdst.stream - 1) * count;
-
-                for (auto i = 0u; i < count; ++i)
-                {
-                    Memory::Memcpy(buffer + dstOffset + vdst.stride * i + vdst.offset, vertices + srcOffset + vsrc.stride * i + vsrc.offset, vdst.size);
-                }
+                ConvertVertices(buffer + dstOffset, pverts + srcOffset, count, vsrc.stride, vdst.stride, vsrc.format, vdst.format);
             }
 
-            Memory::Memcpy(vertices, buffer, count * dst.GetStride());
+            Memory::Memcpy(pverts, buffer, count * dst.GetStride());
             Memory::Free(buffer);
         }
+    }
+
+    void CopyIndexBuffer(void* dst, const void* src, size_t count, size_t sizeSrc, size_t sizeDst)
+    {
+        if (sizeSrc == sizeDst)
+        {
+            memcpy(dst, src, count * sizeSrc);
+            return;
+        }
+
+        if (sizeDst == sizeof(uint32_t) && sizeSrc == sizeof(uint16_t))
+        {
+            auto psrc = reinterpret_cast<const uint16_t*>(src);
+            auto pdst = reinterpret_cast<uint32_t*>(dst);
+            Memory::CopyCastArray(pdst, psrc, count);
+            return;
+        }
+
+        if (sizeDst == sizeof(uint16_t) && sizeSrc == sizeof(uint32_t))
+        {
+            auto psrc = reinterpret_cast<const uint32_t*>(src);
+            auto pdst = reinterpret_cast<uint16_t*>(dst);
+            Memory::CopyCastArray(pdst, psrc, count);
+            return;
+        }
+
+        PK_FATAL_ASSERT(false, "Unsupported index size");
     }
 
     void CalculateNormals(GeometryContext* ctx, float sign)
@@ -373,26 +507,6 @@ namespace PK::MeshUtilities
 
         auto meshlets = BuildMeshletsMonotone(ctx);
 
-        // @TODO temp conversion to get stuff working.
-        const auto stream0Stride = 20u; // matches stream layout
-        const auto stream1Stride = 12u; // matches stream layout
-        auto pVertices = Memory::AllocateClear<uint8_t>((stream0Stride + stream1Stride) * ctx->countVertex);
-        auto pStream0 = pVertices;
-        auto pStream1 = pVertices + stream0Stride * ctx->countVertex;
-
-        ConvertVertices<float, uint16_t>(pStream0 + 0u, &ctx->pVertices->in_NORMAL.x, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
-        ConvertVertices<float, uint16_t>(pStream0 + 2u, &ctx->pVertices->in_NORMAL.y, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
-        ConvertVertices<float, uint16_t>(pStream0 + 4u, &ctx->pVertices->in_NORMAL.z, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
-        ConvertVertices<float, uint16_t>(pStream0 + 8u, &ctx->pVertices->in_TANGENT.x, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
-        ConvertVertices<float, uint16_t>(pStream0 + 10u, &ctx->pVertices->in_TANGENT.y, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
-        ConvertVertices<float, uint16_t>(pStream0 + 12u, &ctx->pVertices->in_TANGENT.z, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
-        ConvertVertices<float, uint16_t>(pStream0 + 14u, &ctx->pVertices->in_TANGENT.w, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
-        ConvertVertices<float, uint16_t>(pStream0 + 16u, &ctx->pVertices->in_TEXCOORD0.x, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
-        ConvertVertices<float, uint16_t>(pStream0 + 18u, &ctx->pVertices->in_TEXCOORD0.y, ctx->countVertex, sizeof(VertexDefault), stream0Stride);
-        ConvertVertices<float, float>(pStream1 + 0u, &ctx->pVertices->in_POSITION.x, ctx->countVertex, sizeof(VertexDefault), stream1Stride);
-        ConvertVertices<float, float>(pStream1 + 4u, &ctx->pVertices->in_POSITION.y, ctx->countVertex, sizeof(VertexDefault), stream1Stride);
-        ConvertVertices<float, float>(pStream1 + 8u, &ctx->pVertices->in_POSITION.z, ctx->countVertex, sizeof(VertexDefault), stream1Stride);
-
         SubMesh submesh;
         submesh.name = 0u;
         submesh.vertexFirst = 0u;
@@ -405,19 +519,20 @@ namespace PK::MeshUtilities
 
         MeshStaticDescriptor desc{};
         desc.name = name;
-        desc.regular.pVertices = pVertices;
+        desc.regular.pVertices = ctx->pVertices;
         desc.regular.pIndices = ctx->pIndices;
         desc.regular.pSubmeshes = &submesh;
-        desc.regular.indexType = ElementType::Uint;
+        desc.regular.indexSize = sizeof(uint32_t);
         desc.regular.vertexCount = ctx->countVertex;
         desc.regular.indexCount = ctx->countIndex;
         desc.regular.submeshCount = 1u;
         desc.regular.streamLayout =
         {
-            { ElementType::Half4, PK_RHI_VS_NORMAL, 0 },
-            { ElementType::Half4, PK_RHI_VS_TANGENT, 0 },
-            { ElementType::Half2, PK_RHI_VS_TEXCOORD0, 0 },
-            { ElementType::Float3, PK_RHI_VS_POSITION, 1 },
+            // VertexDefault layout. allocator will rearrange & pack vertices if needed.
+            { ElementType::Float3, PK_RHI_VS_POSITION, 0 },
+            { ElementType::Float3, PK_RHI_VS_NORMAL, 0 },
+            { ElementType::Float2, PK_RHI_VS_TEXCOORD0, 0 },
+            { ElementType::Float4, PK_RHI_VS_TANGENT, 0 },
         };
         desc.meshlets.pSubmeshes = &meshlets.submesh;
         desc.meshlets.submeshCount = 1u;
@@ -429,9 +544,6 @@ namespace PK::MeshUtilities
         desc.meshlets.triangleCount = meshlets.index_count / 3u;
 
         MeshStatic mesh(allocator, desc);
-
-        Memory::Free(pVertices);
-
         return mesh;
     }
 

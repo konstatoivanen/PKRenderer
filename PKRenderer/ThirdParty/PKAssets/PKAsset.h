@@ -594,7 +594,7 @@ namespace PKAssets
     struct alignas(4) PKVertexAttribute
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        uint8_t size = 0;                    // 65 bytes
+        uint8_t format = 0;                  // 65 bytes // aliased PKElementType
         uint8_t stream = 0;                  // 66 bytes
         uint16_t offset = 0;                 // 68 bytes
     };
@@ -618,9 +618,7 @@ namespace PKAssets
         RelativePtr<void> vertexBuffer;                     // 28 bytes
         RelativePtr<void> indexBuffer;                      // 32 bytes
         RelativePtr<PKMeshletMesh> meshletMesh;             // 36 bytes
-        PKElementType indexType;                            // 38 bytes
-
-        uint16_t __padding = 0u;                            // 40 bytes
+        uint32_t indexSize;                                 // 40 bytes
     };
 
 
@@ -673,6 +671,8 @@ namespace PKAssets
 
     uint32_t PKElementTypeToSize(PKElementType type);
     uint32_t PKElementTypeToAlignment(PKElementType type);
+    uint32_t PKElementTypeToComponents(PKElementType type);
+    PKElementType PKElementTypeToScalar(PKElementType type);
     bool PKElementTypeIsResourceHandle(PKElementType type);
 
     PKAssetType StringToPKAssetType(const char* str);

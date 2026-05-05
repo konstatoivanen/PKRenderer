@@ -192,7 +192,7 @@ namespace PK
 
         commandBuffer->SetVertexBuffers(pVBuffers, (uint32_t)vbuffers.GetCount());
         SetVertexStreams(mesh->GetVertexStreamLayout());
-        commandBuffer->SetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexType());
+        commandBuffer->SetIndexBuffer(mesh->GetIndexBuffer(), mesh->GetIndexSize());
     }
 
     void CommandBufferExt::DrawMesh(const IMesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance)

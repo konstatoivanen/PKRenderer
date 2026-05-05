@@ -15,6 +15,7 @@ namespace PK
 
     MeshStaticAllocator::MeshStaticAllocator()
     {
+        // @TODO refactor these into a descriptor
         const uint32_t maxSubmeshes = 65535u;
         const uint32_t maxMeshlets = 65535u * 4u;
         const uint32_t maxVertices = 65535u * 32u;
@@ -34,7 +35,7 @@ namespace PK
         m_vertexBuffers.ClearFast();
         m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000u, BufferUsage::SparseVertex, "MeshStaticCollection.VertexAttributes"));
         m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000u, BufferUsage::SparseVertex | BufferUsage::Storage, "MeshStaticCollection.VertexPositions"));
-        m_indexBuffer = RHI::CreateBuffer(RHIEnumConvert::Size(m_indexType) * 2000000u, BufferUsage::SparseIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
+        m_indexBuffer = RHI::CreateBuffer(m_indexSize * 2000000u, BufferUsage::SparseIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
         m_submeshBuffer = RHI::CreateBuffer<PKAssets::PKMeshletSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
         m_meshletBuffer = RHI::CreateBuffer<PKAssets::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
         m_meshletVertexBuffer = RHI::CreateBuffer<uint4>(maxVertices, flags, "Meshlet.VertexBuffer");
@@ -73,7 +74,6 @@ namespace PK
         auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
         auto positionsStride = m_streamLayout.GetStride(1u);
         auto attributesStride = m_streamLayout.GetStride(0u);
-        auto indexStride = RHIEnumConvert::Size(m_indexType);
 
         auto submeshesSize = desc.meshlets.submeshCount * submeshStride;
         auto meshletsSize = desc.meshlets.meshletCount * meshletStride;
@@ -81,7 +81,7 @@ namespace PK
         auto meshletIndicesSize = ((size_t)desc.meshlets.triangleCount * 3ull);
         auto positionsSize = desc.regular.vertexCount * positionsStride;
         auto attributesSize = desc.regular.vertexCount * attributesStride;
-        auto indicesSize = desc.regular.indexCount * indexStride;
+        auto indicesSize = desc.regular.indexCount * m_indexSize;
 
         PK_FATAL_ASSERT((meshletIndicesSize % 4ull) == 0ull, "Index counts must be aligned to 4!");
 
@@ -109,8 +109,8 @@ namespace PK
 
         allocation->vertexFirst = (uint32_t)(positionsOffset / positionsStride);
         allocation->vertexCount = (uint32_t)(positionsSize / positionsStride);
-        allocation->indexFirst = (uint32_t)(indexOffset / indexStride);
-        allocation->indexCount = (uint32_t)(indicesSize / indexStride);
+        allocation->indexFirst = (uint32_t)(indexOffset / m_indexSize);
+        allocation->indexCount = (uint32_t)(indicesSize / m_indexSize);
         allocation->name = desc.name;
 
         for (auto i = 0u; i < allocation->submeshCount; ++i)
@@ -139,20 +139,12 @@ namespace PK
         commandBuffer.UploadBufferSubData(m_meshletVertexBuffer.get(), desc.meshlets.pVertices, meshletVertexOffset, meshletVerticesSize);
         commandBuffer.UploadBufferSubData(m_meshletIndexBuffer.get(), desc.meshlets.pIndices, meshletIndexOffset, meshletIndicesSize);
 
-        // Rewrite indices if using a different index format
-        if (RHIEnumConvert::Size(desc.regular.indexType) == 2u && indexStride == 4u)
-        {
-            auto view = commandBuffer.BeginBufferWrite<uint32_t>(m_indexBuffer.get(), allocation->indexFirst, desc.regular.indexCount);
-            Memory::CopyCastArray(view.data, reinterpret_cast<uint16_t*>(desc.regular.pIndices), desc.regular.indexCount);
-            commandBuffer->EndBufferWrite(m_indexBuffer.get());
-        }
-        else
-        {
-            commandBuffer.UploadBufferSubData(m_indexBuffer.get(), desc.regular.pIndices, indexOffset, indicesSize);
-        }
+        auto pIndices = commandBuffer->BeginBufferWrite(m_indexBuffer.get(), indexOffset, indicesSize);
+        MeshUtilities::CopyIndexBuffer(pIndices, desc.regular.pIndices, desc.regular.indexCount, desc.regular.indexSize, m_indexSize);
+        commandBuffer->EndBufferWrite(m_indexBuffer.get());
 
         // Align vertices into split layout if necessary
-        MeshUtilities::AlignVertexStreams((char*)desc.regular.pVertices, desc.regular.vertexCount, desc.regular.streamLayout, m_streamLayout);
+        MeshUtilities::AlignVertexStreams(desc.regular.pVertices, desc.regular.vertexCount, desc.regular.streamLayout, m_streamLayout);
 
         commandBuffer.UploadBufferSubData(m_vertexBuffers[0].get(), (char*)desc.regular.pVertices, attributesOffset, attributesSize);
         commandBuffer.UploadBufferSubData(m_vertexBuffers[1].get(), (char*)desc.regular.pVertices + attributesSize, positionsOffset, positionsSize);
@@ -169,7 +161,6 @@ namespace PK
         auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
         auto positionsStride = m_streamLayout.GetStride(1u);
         auto attributesStride = m_streamLayout.GetStride(0u);
-        auto indexStride = RHIEnumConvert::Size(m_indexType);
 
         auto submeshOffset = allocation->submeshFirst * submeshStride;
         auto meshletOffset = allocation->meshletFirst * meshletStride;
@@ -177,7 +168,7 @@ namespace PK
         auto meshletIndexOffset = ((size_t)allocation->meshletTriangleFirst * 3ull);
         auto positionsOffset = allocation->vertexFirst * positionsStride;
         auto attributesOffset = allocation->vertexFirst * attributesStride;
-        auto indexOffset = allocation->indexFirst * indexStride;
+        auto indexOffset = allocation->indexFirst * m_indexSize;
 
         auto submeshesSize = allocation->submeshCount * submeshStride;
         auto meshletsSize = allocation->meshletCount * meshletStride;
@@ -185,7 +176,7 @@ namespace PK
         auto meshletIndicesSize = ((size_t)allocation->meshletTriangleCount * 3ull);
         auto positionsSize = allocation->vertexCount * positionsStride;
         auto attributesSize = allocation->vertexCount * attributesStride;
-        auto indicesSize = allocation->indexCount * indexStride;
+        auto indicesSize = allocation->indexCount * m_indexSize;
 
         m_submeshBuffer->SparseDeallocate({ submeshOffset, submeshesSize });
         m_meshletBuffer->SparseDeallocate({ meshletOffset, meshletsSize });
@@ -224,7 +215,7 @@ namespace PK
             outInfo->vertexStride = m_streamLayout.GetStride(1u);
             outInfo->vertexFirst = sm.vertexFirst;
             outInfo->vertexCount = sm.vertexCount;
-            outInfo->indexStride = RHIEnumConvert::Size(m_indexType);
+            outInfo->indexStride = m_indexSize;
             outInfo->indexFirst = sm.indexFirst;
             outInfo->indexCount = sm.indexCount;
             outInfo->customIndex = 0u;
@@ -274,11 +265,11 @@ namespace PK
         {
             auto stream = streamLayout.Add();
             stream->name = pAttributes[i].name;
-            stream->stream = (byte)pAttributes[i].stream;
+            stream->stream = pAttributes[i].stream;
             stream->inputRate = InputRate::PerVertex;
             stream->stride = 0u;
             stream->offset = pAttributes[i].offset;
-            stream->size = pAttributes[i].size;
+            stream->format = (ElementType)pAttributes[i].format;
         }
 
         streamLayout.CalculateOffsetsAndStride();
@@ -293,7 +284,7 @@ namespace PK
             desc.regular.pIndices = pIndices;
             desc.regular.streamLayout = streamLayout;
             desc.regular.pSubmeshes = submeshes;
-            desc.regular.indexType = mesh->indexType;
+            desc.regular.indexSize = mesh->indexSize;
             desc.regular.vertexCount = mesh->vertexCount;
             desc.regular.indexCount = mesh->indexCount;
             desc.regular.submeshCount = mesh->submeshCount;
@@ -361,7 +352,7 @@ namespace PK
         descriptor.pVertices = mesh->vertexBuffer.Get(base);
         descriptor.pIndices = mesh->indexBuffer.Get(base);
         descriptor.pSubmeshes = PK_STACK_ALLOC(SubMesh, mesh->submeshCount);
-        descriptor.indexType = mesh->indexType;
+        descriptor.indexSize = mesh->indexSize;
         descriptor.vertexCount = mesh->vertexCount;
         descriptor.indexCount = mesh->indexCount;
         descriptor.submeshCount = mesh->submeshCount;
@@ -381,11 +372,11 @@ namespace PK
         for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
         {
             auto attribute = descriptor.streamLayout.Add();
-            attribute->stream = (uint8_t)pAttributes[i].stream;
+            attribute->stream = pAttributes[i].stream;
             attribute->inputRate = InputRate::PerVertex;
             attribute->stride = 0u;
             attribute->offset = pAttributes[i].offset;
-            attribute->size = pAttributes[i].size;
+            attribute->format = (ElementType)pAttributes[i].format;
             attribute->name = pAttributes[i].name;
         }
 
@@ -401,14 +392,14 @@ namespace PK
     }
 
     Mesh::Mesh(const RHIBufferRef& indexBuffer,
-        ElementType indexType,
+        uint32_t indexSize,
+        const VertexStreamLayout& streamLayout,
         RHIBufferRef* vertexBuffers,
         uint32_t vertexBufferCount,
-        const VertexStreamLayout& streamLayout,
         SubMesh* submeshes,
         uint32_t submeshCount)
     {
-        SetResources(indexBuffer, indexType, vertexBuffers, vertexBufferCount, streamLayout, submeshes, submeshCount);
+        SetResources(indexBuffer, indexSize, streamLayout, vertexBuffers, vertexBufferCount, submeshes, submeshCount);
     }
 
     void Mesh::SetResources(const MeshDescriptor& desc, const char* name)
@@ -437,25 +428,24 @@ namespace PK
             pVertices += size;
         }
 
-        auto indicesSize = PKAssets::PKElementTypeToSize(desc.indexType) * desc.indexCount;
-        auto indexBuffer = RHI::CreateBuffer(indicesSize, BufferUsage::DefaultIndex, indexBufferName.c_str());
+        auto indexBuffer = RHI::CreateBuffer(desc.indexSize * desc.indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str());
         commandBuffer.UploadBufferData(indexBuffer.get(), desc.pIndices);
 
-        SetResources(indexBuffer, desc.indexType, vertexBuffers, bufferCount, desc.streamLayout, desc.pSubmeshes, desc.submeshCount);
+        SetResources(indexBuffer, desc.indexSize, desc.streamLayout, vertexBuffers, bufferCount, desc.pSubmeshes, desc.submeshCount);
 
         m_uploadFence = commandBuffer->GetFenceRef();
     }
 
     void Mesh::SetResources(const RHIBufferRef& indexBuffer,
-        ElementType indexType,
+        uint32_t indexSize,
+        const VertexStreamLayout& streamLayout,
         RHIBufferRef* vertexBuffers,
         uint32_t vertexBufferCount,
-        const VertexStreamLayout& streamLayout,
         SubMesh* submeshes,
         uint32_t submeshCount)
     {
         m_indexBuffer = indexBuffer;
-        m_indexType = indexType;
+        m_indexSize = indexSize;
         m_streamLayout = streamLayout;
         m_vertexBuffers.Clear();
 
@@ -468,7 +458,7 @@ namespace PK
 
         for (auto i = 0u; i < m_streamLayout.GetCount(); ++i)
         {
-            if (m_streamLayout[i].name == vertexPositionName && m_streamLayout[i].size == (uint16_t)sizeof(float3))
+            if (m_streamLayout[i].name == vertexPositionName && m_streamLayout[i].format == ElementType::Float3)
             {
                 m_positionAttributeIndex = i;
             }
@@ -509,7 +499,7 @@ namespace PK
             outInfo->vertexStride = positionStream->stride;
             outInfo->vertexFirst = sm.vertexFirst;
             outInfo->vertexCount = sm.vertexCount;
-            outInfo->indexStride = RHIEnumConvert::Size(m_indexType);
+            outInfo->indexStride = m_indexSize;
             outInfo->indexFirst = sm.indexFirst;
             outInfo->indexCount = sm.indexCount;
             outInfo->customIndex = 0u;

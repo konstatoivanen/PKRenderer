@@ -92,31 +92,21 @@ namespace PK
     struct VertexStreamElement
     {
         NameID name = 0u;
+        ElementType format = ElementType::Invalid;
         InputRate inputRate = InputRate::PerVertex;
         uint8_t stream = 0u;
         uint16_t stride = 0u;
         uint16_t offset = 0u;
-        uint16_t size = 0u;
         
         VertexStreamElement() = default;
 
-        VertexStreamElement(uint16_t size, NameID name, uint8_t stream = 0u, InputRate inputRate = InputRate::PerVertex) :
-            name(name),
-            inputRate(inputRate),
-            stream(stream),
-            stride(0u),
-            offset(0u),
-            size(size)
-        {
-        }
-
         VertexStreamElement(ElementType format, NameID name, uint8_t stream = 0u, InputRate inputRate = InputRate::PerVertex) :
             name(name),
+            format(format),
             inputRate(inputRate),
             stream(stream),
             stride(0u),
-            offset(0u),
-            size((uint16_t)RHIEnumConvert::Size(format))
+            offset(0u)
         {
         }
     };

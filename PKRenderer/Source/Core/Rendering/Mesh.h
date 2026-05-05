@@ -10,7 +10,6 @@ namespace PK
 {
     typedef FixedList<RHIBufferRef, PK_RHI_MAX_VERTEX_ATTRIBUTES> VertexBuffers;
 
-
     struct SubMesh
     {
         NameID name = 0u;
@@ -29,7 +28,7 @@ namespace PK
         void* pIndices;
         SubMesh* pSubmeshes;
         VertexStreamLayout streamLayout;
-        ElementType indexType;
+        uint32_t indexSize;
         uint32_t vertexCount;
         uint32_t indexCount;
         uint32_t submeshCount;
@@ -61,7 +60,7 @@ namespace PK
         virtual const VertexBuffers& GetVertexBuffers() const = 0;
         virtual const RHIBuffer* GetIndexBuffer() const = 0;
         virtual const VertexStreamLayout& GetVertexStreamLayout() const = 0;
-        virtual ElementType GetIndexType() const = 0;
+        virtual uint32_t GetIndexSize() const = 0;
         virtual uint32_t GetSubmeshCount() const = 0;
         virtual const SubMesh& GetSubmesh(int32_t submesh) const = 0;
     };
@@ -114,7 +113,7 @@ namespace PK
         constexpr RHIBuffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
         constexpr const SubMesh& GetSubmesh(uint32_t index) const { return *m_submeshes[index]; }
         constexpr const VertexStreamLayout& GetVertexStreamLayout() const { return m_streamLayout; }
-        constexpr ElementType GetIndexType() const { return m_indexType; }
+        constexpr uint32_t GetIndexSize() const { return m_indexSize; }
         inline bool HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
 
         Allocation* Allocate(const MeshStaticDescriptor& desc);
@@ -132,7 +131,7 @@ namespace PK
         FixedPool<Allocation, 4096ull> m_allocations;
         FixedPool<SubMesh, 8192ull> m_submeshes;
         VertexStreamLayout m_streamLayout;
-        ElementType m_indexType = ElementType::Uint;
+        uint32_t m_indexSize = sizeof(uint32_t);
         uint32_t m_submeshCount = 0u;
         uint32_t m_meshletCount = 0u;
         uint32_t m_meshletVertexCount = 0u;
@@ -161,7 +160,7 @@ namespace PK
         inline const VertexBuffers& GetVertexBuffers() const final { return m_allocation->allocator->GetVertexBuffers(); }
         inline const RHIBuffer* GetIndexBuffer() const final { return m_allocation->allocator->GetIndexBuffer(); }
         inline const VertexStreamLayout& GetVertexStreamLayout() const final { return m_allocation->allocator->GetVertexStreamLayout(); }
-        inline ElementType GetIndexType() const final { return m_allocation->allocator->GetIndexType(); }
+        inline uint32_t GetIndexSize() const final { return m_allocation->allocator->GetIndexSize(); }
         inline uint32_t GetSubmeshCount() const final { return m_allocation->submeshCount; }
         inline const SubMesh& GetSubmesh(int32_t localIndex) const final { return m_allocation->allocator->GetSubmesh(GetGlobalSubmeshIndex((unsigned)localIndex)); }
         inline bool HasPendingUpload() const final { return m_allocation->allocator->HasPendingUpload(); }
@@ -177,27 +176,27 @@ namespace PK
         Mesh(const char* filepath);
         Mesh(const MeshDescriptor& descriptor, const char* name);
         Mesh(const RHIBufferRef& indexBuffer,
-            ElementType indexType,
+            uint32_t indexSize,
+            const VertexStreamLayout& streamLayout,
             RHIBufferRef* vertexBuffers,
             uint32_t vertexBufferCount,
-            const VertexStreamLayout& streamLayout,
             SubMesh* submeshes,
             uint32_t submeshCount);
 
         void SetResources(const MeshDescriptor& descriptor, const char* name);
 
         void SetResources(const RHIBufferRef& indexBuffer, 
-            ElementType indexType, 
+            uint32_t indexSize, 
+            const VertexStreamLayout& streamLayout,
             RHIBufferRef* vertexBuffers, 
             uint32_t vertexBufferCount,
-            const VertexStreamLayout& streamLayout,
             SubMesh* submeshes,
             uint32_t submeshCount);
 
         inline const VertexBuffers& GetVertexBuffers() const final { return m_vertexBuffers; }
         inline const RHIBuffer* GetIndexBuffer() const final { return m_indexBuffer.get(); }
         inline const VertexStreamLayout& GetVertexStreamLayout() const final { return m_streamLayout; }
-        inline ElementType GetIndexType() const final { return m_indexType; }
+        inline uint32_t GetIndexSize() const final { return m_indexSize; }
         inline uint32_t GetSubmeshCount() const final { return math::max(1u, (uint32_t)m_submeshes.GetCount()); }
         const SubMesh& GetSubmesh(int32_t submesh) const final;
         inline bool HasPendingUpload() const final { return !m_uploadFence.WaitInvalidate(0ull); }
@@ -207,7 +206,7 @@ namespace PK
         VertexBuffers m_vertexBuffers;
         RHIBufferRef m_indexBuffer;
         VertexStreamLayout m_streamLayout;
-        ElementType m_indexType;
+        uint32_t m_indexSize;
         List<SubMesh, 1ull> m_submeshes;
         SubMesh m_fullrange{};
         uint32_t m_positionAttributeIndex = ~0u;
