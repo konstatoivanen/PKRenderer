@@ -1,23 +1,35 @@
 #pragma once
 #include <stdint.h>
 
+#define PK_MATH_SIMD_SSE2 0
+#define PK_MATH_SIMD_SSE3 0 
+#define PK_MATH_SIMD_SSSE3 0
+#define PK_MATH_SIMD_SSE4_1 0 
+#define PK_MATH_SIMD_SSE4_2 0 
+#define PK_MATH_SIMD_NEON 0
+
 // SIMD defines
 #if defined(__i386__) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64) || defined(__SSE2__)
+    #undef PK_MATH_SIMD_SSE2
     #define PK_MATH_SIMD_SSE2 1
     #include <emmintrin.h>
     #if defined(__SSE3__)
+        #undef PK_MATH_SIMD_SSE3
         #define PK_MATH_SIMD_SSE3 1
         #include <pmmintrin.h>
     #endif
     #if defined(__SSSE3__)
+        #undef PK_MATH_SIMD_SSSE3
         #define PK_MATH_SIMD_SSSE3 1
         #include <tmmintrin.h>
     #endif
     #if defined(__SSE4_1__)
+        #undef PK_MATH_SIMD_SSE4_1
         #define PK_MATH_SIMD_SSE4_1 1
         #include <smmintrin.h>
     #endif
     #if defined(__SSE4_2__)
+        #undef PK_MATH_SIMD_SSE4_2
         #define PK_MATH_SIMD_SSE4_2 1
         #if defined(__clang__)
             #include <popcntintrin.h>
@@ -27,6 +39,7 @@
 #endif
 
 #if defined(_M_ARM) || defined(__ARM_NEON__) || defined(__ARM_NEON)
+    #undef PK_MATH_SIMD_NEON 
     #define PK_MATH_SIMD_NEON 1
     #include "neon.h"
 #endif
@@ -37,6 +50,8 @@
 #include <immintrin.h>
 #endif
 
+// clang actually does a pretty good job at auto vectorizing the operations.
+// No such luck with msvc... manual implementation it is.
 #define PK_MATH_SIMD (PK_MATH_SIMD_SSE2 || PK_MATH_SIMD_SSE3 || PK_MATH_SIMD_SSSE3 || PK_MATH_SIMD_SSE4_1 || PK_MATH_SIMD_SSE4_2 || PK_MATH_SIMD_NEON)
 
 namespace PK
@@ -49,7 +64,15 @@ namespace PK
         template<typename T, int N> struct AABB;
         template<typename T, int N> struct convex;
     
-        #if defined(PK_MATH_SIMD_SSE2)
+        // redeclared here as we don't want any dependencies on the rest of the project for the math lib.
+        #if defined(__clang__)
+        template <typename T0, typename T1> constexpr bool type_is_same = __is_same(T0, T1);
+        #else
+        template <typename, typename> constexpr bool type_is_same = false;
+        template <typename T> constexpr bool type_is_same<T, T> = true;
+        #endif 
+
+        #if PK_MATH_SIMD_SSE2
         typedef __m128	simd_f32vec4;
         typedef __m128i	simd_i32vec4;
         typedef __m128i	simd_u32vec4;
@@ -58,7 +81,7 @@ namespace PK
         typedef __m128i	simd_u64vec2;
         #endif
         
-        #if defined(PK_MATH_SIMD_NEON)
+        #if PK_MATH_SIMD_NEON
         typedef float32x4_t	simd_f32vec4;
         typedef int32x4_t	simd_i32vec4;
         typedef uint32x4_t	simd_u32vec4;

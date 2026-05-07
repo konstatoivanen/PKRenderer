@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/Memory.h"
-#include "Core/Math/Extended.h"
+#include "Core/Math/Random.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
@@ -303,7 +303,7 @@ namespace PK
         instance->flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
         instance->accelerationStructureReference = GetGeometryIndex(geometry);
 
-        m_structureHashCurr += math::hash3x4(matrix, 0.01f) * (instance->accelerationStructureReference + 1ull);
+        m_structureHashCurr += math::hash(matrix, 0.01f) * (instance->accelerationStructureReference + 1ull);
     }
 
     void VulkanAccelerationStructure::EndWrite()

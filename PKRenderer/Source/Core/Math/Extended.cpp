@@ -4,7 +4,7 @@
 
 namespace PK::math
 {
-    void composeShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices)
+    void calculateShadowCascades(const ShadowCascadeCreateInfo info, float4x4* outMatrices)
     {
         typedef AABB<float,3> AABBf32;
 

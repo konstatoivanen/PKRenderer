@@ -97,7 +97,7 @@ namespace PK::math
         const T y = -static_cast<T>(1) + (static_cast<T>(2) * static_cast<T>(coord.y)) / gridSize.y;
         const T z = static_cast<T>(coord.z) / gridSize.z;
         const T zrange = zfar - znear;
-        return composePerspectiveOffset(x, x + ix, y, y + iy, fovy, aspect, znear + zrange * z, znear + zrange * (z + iz));
+        return perspectiveOffset(x, x + ix, y, y + iy, fovy, aspect, znear + zrange * z, znear + zrange * (z + iz));
     }
 
     // Produces Reverse Z

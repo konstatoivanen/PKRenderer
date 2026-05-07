@@ -102,4 +102,13 @@ namespace PK::math
         h ^= h >> 13u; h *= M; h ^= h >> 15u;
         return h;
     }
+
+    uint64_t combinehash(const ulong2& h)
+    {
+        auto r = (h.y ^ h.x) * 0x9ddfea08eb382d69ull;
+        r ^= (r >> 47ull);
+        r = (h.x ^ r) * 0x9ddfea08eb382d69ull;
+        r ^= (r >> 47ull);
+        return r * 0x9ddfea08eb382d69ull;
+    }
 }

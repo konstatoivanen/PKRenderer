@@ -172,7 +172,7 @@ namespace PK::App
         cascadeInfo.resolution = 1024;
         cascadeInfo.count = 4;
         math::cascadeDepths<float, 5>(0.2f, 25.0f, 0.5f, zplanes);
-        math::composeShadowCascadeMatrices(cascadeInfo, cascades);
+        math::calculateShadowCascades(cascadeInfo, cascades);
 
         for (auto i = 0; i < 4; ++i)
         {

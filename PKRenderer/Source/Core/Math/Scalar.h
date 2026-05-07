@@ -150,13 +150,13 @@ namespace PK::math
     
     inline float log2(float v) { return ::log2f(v); }
     inline double log2(double v) { return ::log2(v); }
-    #if defined(__clang__)
+#if defined(__clang__)
     inline uint32_t log2(uint32_t v) { uint32_t y; asm("\tbsr %1, %0\n" : "=r"(y) : "r" (v)); return y; }
     inline uint64_t log2(uint64_t v) { return static_cast<uint64_t>(63 - __builtin_clzll(v)); }
-    #else
+#else
     inline uint32_t log2(uint32_t v) { auto index = 0ul; return _BitScanReverse(&index, v) ? static_cast<uint32_t>(index) : 0u; }
     inline uint64_t log2(uint64_t v) { auto index = 0ul; return _BitScanReverse64(&index, v) ? static_cast<uint64_t>(index) : 0ull; }
-    #endif
+#endif
 
     inline float sqrt(float v) { return ::sqrtf(v); }
     inline double sqrt(double v) { return ::sqrt(v); }

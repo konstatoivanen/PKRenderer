@@ -139,4 +139,59 @@ namespace PK::math
     vector<uint32_t,2> murmurhash21(uint32_t seed);
     vector<uint32_t,3> murmurhash31(uint32_t seed);
     vector<uint32_t,4> murmurhash41(uint32_t seed);
+
+    uint64_t combinehash(const ulong2& h);
+
+    template<int C, typename T, int N>
+    uint64_t matrixHash(const vector<T,N>* v)
+    {
+        #if PK_MATH_SIMD
+        if constexpr (vector<T, N>::is_simd)
+        {
+            return combinehash(ulong2(simd_hash<typename storage<T,N>::type,C>(&v[0].data)));
+        }
+        else
+        #endif
+        {
+            const uint8_t* bytes = reinterpret_cast<const uint8_t*>(v);
+            uint64_t value = 14695981039346656037ull;
+
+            for (size_t i = 0; i < C * N * sizeof(T); ++i)
+            {
+                value ^= static_cast<uint64_t>(bytes[i]);
+                value *= 1099511628211ull;
+            }
+
+            return value;
+        }
+    }
+
+    template<int C, typename T, int N>
+    uint64_t matrixHash(const vector<T,N>* v, float precision)
+    {
+        #if PK_MATH_SIMD
+        if constexpr (vector<T,N>::is_simd)
+        {
+            return combinehash(ulong2(simd_hash_quantized<typename storage<T,N>::type,C>(&v[0].data, precision)));
+        }
+        else
+        #endif
+        {
+            uint64_t h = 14695981039346656037ull;
+
+            for (auto i = 0u; i < C; ++i)
+            for (auto j = 0u; j < N; ++j)
+            {
+                h ^= static_cast<uint64_t>(v[i][j] / precision);
+                h *= 1099511628211ull;
+            }
+
+            return h;
+        }
+    }
+
+    template<typename T, int N> uint64_t hash(const vector<T,N>& vector) { return matrixHash<1>(&vector); }
+    template<typename T, int C, int R> uint64_t hash(const matrix<T,C,R>& matrix) { return matrixHash<C>(&matrix[0]); }
+    template<typename T, int N> uint64_t hash(const vector<T, N>& vector, float precision) { return matrixHash<1>(&vector, precision); }
+    template<typename T, int C, int R> uint64_t hash(const matrix<T, C, R>& matrix, float precision) { return matrixHash<C>(&matrix[0], precision); }
 }

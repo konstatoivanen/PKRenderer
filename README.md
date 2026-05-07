@@ -264,7 +264,6 @@ Physical Device Requirements:
 - [PKAssetTools](https://github.com/konstatoivanen/PKAssetTools)
 - [Vulkan](https://github.com/KhronosGroup/Vulkan-Headers)
 - [rapidyaml](https://github.com/biojppm/rapidyaml/tree/master)
-- [GLM](https://github.com/g-truc/glm)
 - [mikktspace](http://www.mikktspace.com/)
 - [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
 - [Bend screen space shadows](https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/)

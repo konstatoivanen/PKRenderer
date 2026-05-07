@@ -42,7 +42,7 @@ namespace PK::math
 
     template<typename T, int N> struct storage { constexpr static const bool is_simd = false; typedef struct type { T data[N]; } type; };
 
-    #if defined(PK_MATH_SIMD_SSE2)
+    #if PK_MATH_SIMD && PK_MATH_SIMD_SSE2
     template<> struct storage<float,4> { constexpr static const bool is_simd = true; typedef simd_f32vec4 type; };
     template<> struct storage<double,2> { constexpr static const bool is_simd = true; typedef simd_f64vec2 type; };
     template<> struct storage<int32_t,4> { constexpr static const bool is_simd = true; typedef simd_i32vec4 type; };
@@ -51,7 +51,7 @@ namespace PK::math
     template<> struct storage<uint64_t,2> { constexpr static const bool is_simd = true; typedef simd_u64vec2 type; };
     #endif
 
-    #if defined(PK_MATH_SIMD_NEON)
+    #if PK_MATH_SIMD && PK_MATH_SIMD_NEON
     template<> struct storage<float,4> { constexpr static const bool is_simd = true; typedef simd_f32vec4 type; };
     template<> struct storage<int32_t,4> { constexpr static const bool is_simd = true; typedef simd_i32vec4 type; };
     template<> struct storage<uint32_t,4> { constexpr static const bool is_simd = true; typedef glm_u32vec4 type; };
@@ -1922,17 +1922,17 @@ namespace PK::math
 
     template<typename T> constexpr typename matrix<T,4,4>::col_type operator*(const matrix<T,4,4>& m, const typename matrix<T,4,4>::row_type& v)
     {
-        typename matrix<T,4,4>::col_type const Mov0(v[0]);
-        typename matrix<T,4,4>::col_type const Mov1(v[1]);
-        typename matrix<T,4,4>::col_type const Mul0 = m[0] * Mov0;
-        typename matrix<T,4,4>::col_type const Mul1 = m[1] * Mov1;
-        typename matrix<T,4,4>::col_type const Add0 = Mul0 + Mul1;
-        typename matrix<T,4,4>::col_type const Mov2(v[2]);
-        typename matrix<T,4,4>::col_type const Mov3(v[3]);
-        typename matrix<T,4,4>::col_type const Mul2 = m[2] * Mov2;
-        typename matrix<T,4,4>::col_type const Mul3 = m[3] * Mov3;
-        typename matrix<T,4,4>::col_type const Add1 = Mul2 + Mul3;
-        typename matrix<T,4,4>::col_type const Add2 = Add0 + Add1;
+        const typename matrix<T,4,4>::col_type Mov0(v[0]);
+        const typename matrix<T,4,4>::col_type Mov1(v[1]);
+        const typename matrix<T,4,4>::col_type Mul0 = m[0] * Mov0;
+        const typename matrix<T,4,4>::col_type Mul1 = m[1] * Mov1;
+        const typename matrix<T,4,4>::col_type Add0 = Mul0 + Mul1;
+        const typename matrix<T,4,4>::col_type Mov2(v[2]);
+        const typename matrix<T,4,4>::col_type Mov3(v[3]);
+        const typename matrix<T,4,4>::col_type Mul2 = m[2] * Mov2;
+        const typename matrix<T,4,4>::col_type Mul3 = m[3] * Mov3;
+        const typename matrix<T,4,4>::col_type Add1 = Mul2 + Mul3;
+        const typename matrix<T,4,4>::col_type Add2 = Add0 + Add1;
         return Add2;
     }
 
@@ -2158,7 +2158,11 @@ namespace PK::math
     template<typename T> vector<T,3> rsqrt(const vector<T,3>& v) { return vector<T,3>(rsqrt(v.x), rsqrt(v.y), rsqrt(v.z)); }
     template<typename T> vector<T,4> rsqrt(const vector<T,4>& v) { return vector<T,4>(rsqrt(v.x), rsqrt(v.y), rsqrt(v.z), rsqrt(v.w)); }
 
-    template<typename T, int N> vector<T,2> rcp(const vector<T,N>& v) { return static_cast<T>(1) / v; }
+    template<typename T, int N> vector<T,N> rcp(const vector<T,N>& v) { return static_cast<T>(1) / v; }
+
+    template<typename T> constexpr vector<T,2> sign(const vector<T,2>& v) { return vector<T,2>(sign(v.x), sign(v.y)); }
+    template<typename T> constexpr vector<T,3> sign(const vector<T,3>& v) { return vector<T,3>(sign(v.x), sign(v.y), sign(v.z)); }
+    template<typename T> constexpr vector<T,4> sign(const vector<T,4>& v) { return vector<T,4>(sign(v.x), sign(v.y), sign(v.z), sign(v.w)); }
 
     template<typename T> vector<T,2> abs(const vector<T,2>& v) { return vector<T,2>(abs(v.x), abs(v.y)); }
     template<typename T> vector<T,3> abs(const vector<T,3>& v) { return vector<T,3>(abs(v.x), abs(v.y), abs(v.z)); }
@@ -2238,11 +2242,6 @@ namespace PK::math
     template<typename T, typename U> vector<T,2> lerp(const vector<T,2>& a, const vector<T,2>& b, U i) { return vector<T,2>(lerp(a.x, b.x, i), lerp(a.y, b.y, i)); }
     template<typename T, typename U> vector<T,3> lerp(const vector<T,3>& a, const vector<T,3>& b, U i) { return vector<T,3>(lerp(a.x, b.x, i), lerp(a.y, b.y, i), lerp(a.z, b.z, i)); }
     template<typename T, typename U> vector<T,4> lerp(const vector<T,4>& a, const vector<T,4>& b, U i) { return vector<T,4>(lerp(a.x, b.x, i), lerp(a.y, b.y, i), lerp(a.z, b.z, i), lerp(a.w, b.w, i)); }
-
-    template<typename T> constexpr vector<T,2> sign(const vector<T,2>& v) { return vector<T,2>(sign(v.x), sign(v.y)); }
-    template<typename T> constexpr vector<T,3> sign(const vector<T,3>& v) { return vector<T,3>(sign(v.x), sign(v.y), sign(v.z)); }
-    template<typename T> constexpr vector<T,4> sign(const vector<T,4>& v) { return vector<T,4>(sign(v.x), sign(v.y), sign(v.z), sign(v.w)); }
-
     template<typename T> vector<T,2> smoothstep(const vector<T,2>& a, const vector<T,2>& b, const vector<T,2>& i) { return vector<T,2>(smoothstep(a.x, b.x, i.x), smoothstep(a.y, b.y, i.y)); }
     template<typename T> vector<T,3> smoothstep(const vector<T,3>& a, const vector<T,3>& b, const vector<T,3>& i) { return vector<T,3>(smoothstep(a.x, b.x, i.x), smoothstep(a.y, b.y, i.y), smoothstep(a.z, b.z, i.z)); }
     template<typename T> vector<T,4> smoothstep(const vector<T,4>& a, const vector<T,4>& b, const vector<T,4>& i) { return vector<T,4>(smoothstep(a.x, b.x, i.x), smoothstep(a.y, b.y, i.y), smoothstep(a.z, b.z, i.z), smoothstep(a.w, b.w, i.w)); }
@@ -2285,7 +2284,7 @@ namespace PK::math
     template<typename T> constexpr matrix<T,4,3> transpose(const matrix<T,3,4>& m) { return matrix<T,3,4>(m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1], m[0][2], m[1][2], m[2][2], m[0][3], m[1][3], m[2][3]); }
     template<typename T> constexpr matrix<T,2,4> transpose(const matrix<T,4,2>& m) { return matrix<T,2,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1]); }
     template<typename T> constexpr matrix<T,3,4> transpose(const matrix<T,4,3>& m) { return matrix<T,3,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2]); }
-    template<typename T> constexpr matrix<T,4,4> transpose(const matrix<T,4,4>& m) { return matrix<T,4,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2], m[0][3], m[1][3], m[2][3], m[3][3]); }
+    template<typename T> constexpr matrix<T,4,4> transpose(const matrix<T,4,4>& m) { return matrix<T,4,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2], m[0][3], m[1][3], m[2][3], m[3][3]); }    
     template<typename T> constexpr matrix<T,3,4> transpose3x4(const matrix<T,4,4>& m) { return matrix<T,3,4>(m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2]); }
     template<typename T> constexpr matrix<T,4,4> transpose4x4(const matrix<T,3,4>& m) { return matrix<T,4,4>(m[0][0], m[1][0], m[2][0], static_cast<T>(0), m[0][1], m[1][1], m[2][1], static_cast<T>(0), m[0][2], m[1][2], m[2][2], static_cast<T>(0), m[0][3], m[1][3], m[2][3], static_cast<T>(1)); }
 
@@ -2422,3 +2421,6 @@ namespace PK::math
             +determinant(matrix<T,3,3>(m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2])));
     }
 }
+
+// float specific simd overloads.
+#include "Simd.h"

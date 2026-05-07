@@ -307,8 +307,10 @@ struct SurfaceData
         if (subgroupQuadAll(is_invalid_surf))
         {
             const float3 diff_scene_env = SceneEnv_Sample_SH_Diffuse(surf.normal);
+            // occlude ground from secondary bounces.
+            const float3 diff_scene_env_masked = diff_scene_env * step(0, surf.normal.y);
             const float4 diff_voxel_traced = GI_VX_ConeTrace_Diffuse(world_pos, surf.normal);
-            return surf.diffuse * (diff_scene_env * diff_voxel_traced.a + diff_voxel_traced.rgb);
+            return surf.diffuse * (diff_scene_env_masked * diff_voxel_traced.a + diff_voxel_traced.rgb);
         }
         else
         {

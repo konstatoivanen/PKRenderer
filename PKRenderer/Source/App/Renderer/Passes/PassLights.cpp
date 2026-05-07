@@ -243,7 +243,7 @@ namespace PK::App
                 cascadeInfo.splitPlanes = cascadeZSplits;
                 cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                 cascadeInfo.count = ShadowCascadeCount;
-                math::composeShadowCascadeMatrices(cascadeInfo, matrices);
+                math::calculateShadowCascades(cascadeInfo, matrices);
                 const auto nearPlane = math::nearPlane(*matrices);
                 light.position = float3(nearPlane.xyz);
                 light.radius = nearPlane.w;
@@ -254,7 +254,7 @@ namespace PK::App
                 // Regenerate cascades as the depth range might change based on culling. 
                 shadowCasters = context->cullingProxy->CullCascades(shadowCasterMask, matrices, renderView->forwardPlane, cascadeZSplits, ShadowCascadeCount);
                 cascadeInfo.nearPlaneOffset = shadowCasters.outMinDepth;
-                math::composeShadowCascadeMatrices(cascadeInfo, matrices);
+                math::calculateShadowCascades(cascadeInfo, matrices);
             }
 
             if (castShadows && view->light->type == LightType::Spot)
