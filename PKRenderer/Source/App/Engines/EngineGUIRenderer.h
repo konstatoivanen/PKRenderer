@@ -58,7 +58,7 @@ namespace PK::App
 
     private:
         constexpr static const uint32_t GUI_MAX_VERTICES = 16384u;
-        constexpr static const uint32_t GUI_MAX_INDICES = GUI_MAX_VERTICES * 3;
+        constexpr static const uint32_t GUI_MAX_INDICES = GUI_MAX_VERTICES * 3u;
         constexpr static const uint32_t GUI_MAX_TEXTURES = 64;
         constexpr static const uint16_t GUI_TEX_INDEX_WHITE = 0u;
         constexpr static const uint16_t GUI_TEX_INDEX_ERROR = 1u;
@@ -76,8 +76,8 @@ namespace PK::App
         BufferView<GUIVertex> m_gui_vertexView;
         BufferView<uint16_t> m_gui_indexView;
         short4 m_gui_renderAreaRect = PK_SHORT4_ZERO;
-        uint32_t m_gui_vertexCount = 0;
-        uint32_t m_gui_indexCount = 0;
+        uint32_t m_gui_vertexCount = 0u;
+        uint32_t m_gui_indexCount = 0u;
         bool m_gui_enabled = true;
 
         ShaderAsset* m_gizmos_shader = nullptr;

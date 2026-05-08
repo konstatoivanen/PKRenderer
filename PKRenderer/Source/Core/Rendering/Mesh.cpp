@@ -22,7 +22,7 @@ namespace PK
         const uint32_t maxTriangles = 65535u * 16u * 3u;
         const auto flags = BufferUsage::GPUOnly | BufferUsage::TransferDst | BufferUsage::Storage | BufferUsage::Sparse;
 
-        PK_FATAL_ASSERT((maxTriangles * 3ull) % 4ull == 0ull, "Input triangle count x3 must be divisible by 4");
+        static_assert((maxTriangles * 3ull) % 4ull == 0ull, "Input triangle count x3 must be divisible by 4");
 
         m_streamLayout = VertexStreamLayout(
         {
@@ -417,7 +417,7 @@ namespace PK
         for (auto& attribute : desc.streamLayout)
         {
             bufferNames[attribute.stream].Append('.');
-            bufferNames[attribute.stream].Append(attribute.name);
+            bufferNames[attribute.stream].Append(attribute.name.c_str());
         }
 
         for (; bufferCount < PK_RHI_MAX_VERTEX_ATTRIBUTES && desc.streamLayout.GetStride(bufferCount) != 0u; ++bufferCount)

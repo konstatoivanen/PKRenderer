@@ -483,7 +483,7 @@ namespace PK
         bindHandle.image.format = info.format;
         bindHandle.image.extent = createInfo.extent;
         bindHandle.image.range = createInfo.subresourceRange;
-        bindHandle.image.samples = createInfo.samples;
+        bindHandle.image.samples = (uint16_t)createInfo.samples;
         bindHandle.image.sampler = VK_NULL_HANDLE;
         bindHandle.isConcurrent = createInfo.isConcurrent;
         bindHandle.isTracked = createInfo.isTracked;
@@ -527,13 +527,13 @@ namespace PK
         vmaDestroyBuffer(allocator, buffer, memory);
     }
 
-    void* VulkanRawBuffer::BeginMap(size_t offset, size_t readsize) const
+    void* VulkanRawBuffer::BeginMap(size_t offset, size_t writeSize) const
     {
         PK_DEBUG_FATAL_ASSERT(memory, "Trying to map a buffer without dedicated memory!");
 
-        if (readsize > 0ull)
+        if (writeSize > 0ull)
         {
-            vmaInvalidateAllocation(allocator, memory, offset, readsize);
+            vmaInvalidateAllocation(allocator, memory, offset, writeSize);
         }
 
         void* mappedRange = nullptr;
@@ -552,7 +552,7 @@ namespace PK
         return static_cast<char*>(mappedRange) + offset;
     }
 
-    void VulkanRawBuffer::EndMap(size_t offset, size_t size) const
+    void VulkanRawBuffer::EndMap(size_t offset, size_t writeSize) const
     {
         PK_DEBUG_FATAL_ASSERT(memory, "Trying to umap a buffer without dedicated memory!");
 
@@ -561,9 +561,9 @@ namespace PK
             vmaUnmapMemory(allocator, memory);
         }
 
-        if (size > 0ull)
+        if (writeSize > 0ull)
         {
-            vmaFlushAllocation(allocator, memory, offset, size);
+            vmaFlushAllocation(allocator, memory, offset, writeSize);
         }
     }
 
@@ -727,7 +727,7 @@ namespace PK
         size(size),
         type(type),
         lastQueryFence(),
-        count(0u)
+        activeCount(0u)
     {
         VkQueryPoolCreateInfo info{ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
         info.queryCount = size;
@@ -743,27 +743,27 @@ namespace PK
 
     bool VulkanQueryPool::WaitResults(uint64_t timeout)
     {
-        return count > 0 && lastQueryFence.WaitInvalidate(timeout);
+        return activeCount > 0 && lastQueryFence.WaitInvalidate(timeout);
     }
 
     void VulkanQueryPool::ResetQuery()
     {
-        if (count > 0)
+        if (activeCount > 0)
         {
-            vkResetQueryPool(device, pool, 0, count);
-            count = 0u;
+            vkResetQueryPool(device, pool, 0, activeCount);
+            activeCount = 0u;
         }
     }
 
     int32_t VulkanQueryPool::AddQuery(const FenceRef& fence)
     {
-        if (count >= size)
+        if (activeCount >= size)
         {
             return -1;
         }
 
         lastQueryFence = fence;
-        return count++;
+        return activeCount++;
     }
 
     bool VulkanQueryPool::GetResults(void* outBuffer, size_t first, size_t count, size_t stride, uint64_t timeout, VkQueryResultFlagBits flags)
@@ -779,7 +779,7 @@ namespace PK
 
     bool VulkanQueryPool::GetResultsAll(void* outBuffer, size_t stride, uint64_t timeout, VkQueryResultFlagBits flags)
     {
-        if (GetResults(outBuffer, 0, count, stride, timeout, flags))
+        if (GetResults(outBuffer, 0, activeCount, stride, timeout, flags))
         {
             ResetQuery();
             return true;
@@ -1727,8 +1727,6 @@ namespace PK
                 default: 
                     return 0u;
             }
-
-            return uint32_t();
         }
 
         VkImageAspectFlagBits GetFormatAspect(VkFormat format)

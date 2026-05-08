@@ -7,6 +7,8 @@ namespace PK::math
 {
     #if PK_MATH_SIMD_SSE4_1  
     #define simd_mullo _mm_mullo_epi32
+    #define simd_extract_low_epi64(v) _mm_extract_epi64(v,0)
+    #define simd_extract_high_epi64(v) _mm_extract_epi64(v,1)
     #else
     inline __m128i simd_mullo(__m128i a, __m128i b)
     {
@@ -16,6 +18,8 @@ namespace PK::math
         auto v3 = _mm_shuffle_epi32(v1, _MM_SHUFFLE(0, 0, 2, 0));
         return _mm_unpacklo_epi32(v2, v3);
     }
+    #define simd_extract_low_epi64(v) _mm_cvtsi128_si64(v)
+    #define simd_extract_high_epi64(v) _mm_cvtsi128_si64(_mm_srli_si128(v, 8))
     #endif
 
     inline simd_i32vec4 simd_cast_int(simd_i32vec4 v) { return v; }
@@ -29,7 +33,7 @@ namespace PK::math
     inline simd_f32vec4 simd_cvt_float(simd_i32vec4 v) { return _mm_cvtepi32_ps(v); }
 
     template<typename T, int N>
-    inline simd_u64vec2 simd_hash(const T* v)
+    inline uint64_t simd_hash(const T* v)
     {
         const auto fnv_prime = _mm_set1_epi32(16777619);
         auto hash = _mm_set1_epi32(2166136261);
@@ -41,11 +45,15 @@ namespace PK::math
             hash = simd_mullo(hash, fnv_prime);
         }
 
-        return hash;
+        auto h = static_cast<uint64_t>(simd_extract_low_epi64(hash));
+        h *= 1099511628211ull;
+        h ^= static_cast<uint64_t>(simd_extract_high_epi64(hash));
+        h *= 1099511628211ull;
+        return h;
     }
 
     template<typename T, int N>
-    inline simd_u64vec2 simd_hash_quantized(const T* v, float precision)
+    inline uint64_t simd_hash_quantized(const T* v, float precision)
     {
         const auto inv = _mm_set1_ps(1.0f / precision);
         const auto fnv_prime = _mm_set1_epi32(16777619u);
@@ -53,14 +61,18 @@ namespace PK::math
 
         for (auto i = 0u; i < N; ++i)
         {
-            auto v0 = simd_cvt_int(v[i]);
+            auto v0 = simd_cvt_float(v[i]);
             auto v1 = _mm_mul_ps(v0, inv);
             auto v2 = _mm_cvtps_epi32(v1);
             hash = _mm_xor_si128(hash, v2);
             hash = simd_mullo(hash, fnv_prime);
         }
 
-        return hash;
+        auto h = static_cast<uint64_t>(simd_extract_low_epi64(hash));
+        h *= 1099511628211ull;
+        h ^= static_cast<uint64_t>(simd_extract_high_epi64(hash));
+        h *= 1099511628211ull;
+        return h;
     }
 
     inline simd_f32vec4 simd_dot_4(simd_f32vec4 v1, simd_f32vec4 v2)
@@ -83,6 +95,8 @@ namespace PK::math
     }
 
     template<> inline float4 operator-(const float4& v) { return float4(_mm_xor_ps(v.data, _mm_set1_ps(-0.0f))); }
+    /*
+    * Scalar operators disabled. unaligned load into vector regs + vector op was slower than piece wise scalar op.
     template<> inline float4 operator+(const float4& v, float s) { return float4(_mm_add_ps(v.data, _mm_set1_ps(s))); }
     template<> inline float4 operator-(const float4& v, float s) { return float4(_mm_sub_ps(v.data, _mm_set1_ps(s))); }
     template<> inline float4 operator*(const float4& v, float s) { return float4(_mm_mul_ps(v.data, _mm_set1_ps(s))); }
@@ -91,6 +105,7 @@ namespace PK::math
     template<> inline float4 operator-(float s, const float4& v) { return float4(_mm_sub_ps(_mm_set1_ps(s), v.data)); }
     template<> inline float4 operator*(float s, const float4& v) { return float4(_mm_mul_ps(_mm_set1_ps(s), v.data)); }
     template<> inline float4 operator/(float s, const float4& v) { return float4(_mm_div_ps(_mm_set1_ps(s), v.data)); }
+    */
     template<> inline float4 operator+(const float4& a, const float4& b) { return float4(_mm_add_ps(a.data, b.data)); }
     template<> inline float4 operator-(const float4& a, const float4& b) { return float4(_mm_sub_ps(a.data, b.data)); }
     template<> inline float4 operator*(const float4& a, const float4& b) { return float4(_mm_mul_ps(a.data, b.data)); }
@@ -98,6 +113,8 @@ namespace PK::math
     
     template<> inline int4 operator-(const int4& v) { return int4(_mm_sub_epi32(_mm_setzero_si128(), v.data)); }
     template<> inline int4 operator~(const int4& v) { return int4(_mm_xor_si128(v.data, _mm_set1_epi32(-1))); }
+    /*
+    * Scalar operators disabled. unaligned load into vector regs + vector op was slower than piece wise scalar op.
     template<> inline int4 operator+(const int4& v, int32_t s) { return int4(_mm_add_epi32(v.data, _mm_set1_epi32(s))); }
     template<> inline int4 operator-(const int4& v, int32_t s) { return int4(_mm_sub_epi32(v.data, _mm_set1_epi32(s))); }
     template<> inline int4 operator*(const int4& v, int32_t s) { return int4(simd_mullo(v.data, _mm_set1_epi32(s))); }
@@ -110,6 +127,7 @@ namespace PK::math
     template<> inline int4 operator&(int32_t s, const int4& v) { return int4(_mm_and_si128(_mm_set1_epi32(s), v.data)); }
     template<> inline int4 operator|(int32_t s, const int4& v) { return int4(_mm_or_si128(_mm_set1_epi32(s), v.data)); }
     template<> inline int4 operator^(int32_t s, const int4& v) { return int4(_mm_xor_si128(_mm_set1_epi32(s), v.data)); }
+    */
     template<> inline int4 operator+(const int4& a, const int4& b) { return int4(_mm_add_epi32(a.data, b.data)); }
     template<> inline int4 operator-(const int4& a, const int4& b) { return int4(_mm_sub_epi32(a.data, b.data)); }
     template<> inline int4 operator*(const int4& a, const int4& b) { return int4(simd_mullo(a.data, b.data)); }
@@ -119,6 +137,8 @@ namespace PK::math
 
     template<> inline uint4 operator-(const uint4& v) { return uint4(_mm_sub_epi32(_mm_setzero_si128(), v.data)); }
     template<> inline uint4 operator~(const uint4& v) { return uint4(_mm_xor_si128(v.data, _mm_set1_epi32(-1))); }
+    /*
+    * Scalar operators disabled. unaligned load into vector regs + vector op was slower than piece wise scalar op.
     template<> inline uint4 operator+(const uint4& v, uint32_t s) { return uint4(_mm_add_epi32(v.data, _mm_set1_epi32(s))); }
     template<> inline uint4 operator-(const uint4& v, uint32_t s) { return uint4(_mm_sub_epi32(v.data, _mm_set1_epi32(s))); }
     template<> inline uint4 operator*(const uint4& v, uint32_t s) { return uint4(simd_mullo(v.data, _mm_set1_epi32(s))); }
@@ -131,6 +151,7 @@ namespace PK::math
     template<> inline uint4 operator&(uint32_t s, const uint4& v) { return uint4(_mm_and_si128(_mm_set1_epi32(s), v.data)); }
     template<> inline uint4 operator|(uint32_t s, const uint4& v) { return uint4(_mm_or_si128(_mm_set1_epi32(s), v.data)); }
     template<> inline uint4 operator^(uint32_t s, const uint4& v) { return uint4(_mm_xor_si128(_mm_set1_epi32(s), v.data)); }
+    */
     template<> inline uint4 operator+(const uint4& a, const uint4& b) { return uint4(_mm_add_epi32(a.data, b.data)); }
     template<> inline uint4 operator-(const uint4& a, const uint4& b) { return uint4(_mm_sub_epi32(a.data, b.data)); }
     template<> inline uint4 operator*(const uint4& a, const uint4& b) { return uint4(simd_mullo(a.data, b.data)); }
@@ -140,22 +161,37 @@ namespace PK::math
 
     template<> inline float4 operator*(const float4x4& m, const float4& v)
     {
-        auto m0 = _mm_mul_ps(m[0].data, _mm_shuffle_ps(v.data, v.data, _MM_SHUFFLE(0, 0, 0, 0)));
-        auto m1 = _mm_mul_ps(m[1].data, _mm_shuffle_ps(v.data, v.data, _MM_SHUFFLE(1, 1, 1, 1)));
-        auto m2 = _mm_mul_ps(m[2].data, _mm_shuffle_ps(v.data, v.data, _MM_SHUFFLE(2, 2, 2, 2)));
-        auto m3 = _mm_mul_ps(m[3].data, _mm_shuffle_ps(v.data, v.data, _MM_SHUFFLE(3, 3, 3, 3)));
-        auto a0 = _mm_add_ps(m0, m1);
-        auto a1 = _mm_add_ps(m2, m3);
-        auto a2 = _mm_add_ps(a0, a1);
-        return float4(a2);
+        auto vd = v.data;
+        auto m0 = m[0].data;
+        auto m1 = m[1].data;
+        auto m2 = m[2].data;
+        auto m3 = m[3].data;
+        m0 = _mm_mul_ps(m0, _mm_shuffle_ps(vd, vd, _MM_SHUFFLE(0, 0, 0, 0)));
+        m1 = _mm_mul_ps(m1, _mm_shuffle_ps(vd, vd, _MM_SHUFFLE(1, 1, 1, 1)));
+        m0 = _mm_add_ps(m0, m1);
+        m2 = _mm_mul_ps(m2, _mm_shuffle_ps(vd, vd, _MM_SHUFFLE(2, 2, 2, 2)));
+        m3 = _mm_mul_ps(m3, _mm_shuffle_ps(vd, vd, _MM_SHUFFLE(3, 3, 3, 3)));
+        m2 = _mm_add_ps(m2, m3);
+        m0 = _mm_add_ps(m0, m2);
+        return float4(m0);
     }
 
     template<> inline float4 operator*(const float4& v, const float4x4& m)
     {
-        auto m0 = _mm_mul_ps(v.data, m[0].data);
-        auto m1 = _mm_mul_ps(v.data, m[1].data);
-        auto m2 = _mm_mul_ps(v.data, m[2].data);
-        auto m3 = _mm_mul_ps(v.data, m[3].data);
+        auto vd = v.data;
+        auto m0 = m[0].data;
+        auto m1 = m[1].data;
+        auto m2 = m[2].data;
+        auto m3 = m[3].data;
+        m0 = _mm_mul_ps(vd, m0);
+        m1 = _mm_mul_ps(vd, m1);
+        m2 = _mm_mul_ps(vd, m2);
+        m3 = _mm_mul_ps(vd, m3);
+        #if PK_MATH_SIMD_SSE3
+        auto h0 = _mm_hadd_ps(m0, m1);
+        auto h1 = _mm_hadd_ps(m2, m3);
+        return float4(_mm_hadd_ps(h0, h1));
+        #else
         auto u0 = _mm_unpacklo_ps(m0, m1);
         auto u1 = _mm_unpackhi_ps(m0, m1);
         auto a0 = _mm_add_ps(u0, u1);
@@ -166,11 +202,12 @@ namespace PK::math
         auto f1 = _mm_movehl_ps(a1, a0);
         auto f2 = _mm_add_ps(f0, f1);
         return float4(f2);
+        #endif
     }
 
     template<> inline float4x4 operator*(const float4x4& m1, const float4x4& m2)
     {
-        float4x4 result(0);
+        alignas(16) float4x4 result(0);
         for (auto i = 0u; i < 4u; ++i)
         {
             auto r = _mm_mul_ps(m1[0].data, _mm_shuffle_ps(m2[i].data, m2[i].data, _MM_SHUFFLE(0, 0, 0, 0)));
@@ -206,8 +243,8 @@ namespace PK::math
         return int4(_mm_sign_epi32(v.data, v.data));
         #else
         const auto mask = _mm_srai_epi32(v.data, 31);
-        const auto xor = _mm_xor_si128(v.data, mask);
-        return int4(_mm_sub_epi32(xor, mask));
+        const auto xr = _mm_xor_si128(v.data, mask);
+        return int4(_mm_sub_epi32(xr, mask));
         #endif
     }
 
@@ -220,8 +257,8 @@ namespace PK::math
         #else
         const auto rnd = round(v).data;
         const auto cmp = _mm_cmpgt_ps(v.data, rnd);
-        const auto and = _mm_and_ps(cmp, _mm_set1_ps(1.0f));
-        return float4(_mm_add_ps(rnd, and));
+        const auto xnd = _mm_and_ps(cmp, _mm_set1_ps(1.0f));
+        return float4(_mm_add_ps(rnd, xnd));
         #endif
     }
 
@@ -232,8 +269,8 @@ namespace PK::math
         #else
         const auto rnd = round(v).data;
         const auto cmp = _mm_cmplt_ps(v.data, rnd);
-        const auto and = _mm_and_ps(cmp, _mm_set1_ps(1.0f));
-        return float4(_mm_sub_ps(rnd, and));
+        const auto xnd = _mm_and_ps(cmp, _mm_set1_ps(1.0f));
+        return float4(_mm_sub_ps(rnd, xnd));
         #endif
     }
 
@@ -258,20 +295,8 @@ namespace PK::math
     template<> inline float4 max(const float4& a, const float4& b) { return float4(_mm_max_ps(a.data, b.data)); }
     template<> inline float4 max(const float4& a, float b) { return float4(_mm_max_ps(a.data, _mm_set1_ps(b))); }
 
-    template<> inline float4 lerp(const float4& a, const float4& b, const float4& i)
-    {
-        const auto s0 = _mm_sub_ps(_mm_set1_ps(1.0f), i.data);
-        const auto m0 = _mm_mul_ps(a.data, s0);
-        const auto m1 = _mm_mul_ps(b.data, i.data);
-        return float4(_mm_add_ps(m0, m1));
-    }
-
-    template<> inline float4 lerp(const float4& a, const float4& b, float i)
-    { 
-        const auto m0 = _mm_mul_ps(a.data, _mm_set1_ps(1.0f - i));
-        const auto m1 = _mm_mul_ps(b.data, _mm_set1_ps(i));
-        return float4(_mm_add_ps(m0, m1));
-    }
+    template<> inline float4 lerp(const float4& a, const float4& b, const float4& i) { return float4(_mm_add_ps(a.data, _mm_mul_ps(i.data, _mm_sub_ps(b.data, a.data)))); }
+    template<> inline float4 lerp(const float4& a, const float4& b, float i) { return float4(_mm_add_ps(a.data, _mm_mul_ps(_mm_set1_ps(i), _mm_sub_ps(b.data, a.data)))); }
 
     template<> inline float4 smoothstep(const float4& a, const float4& b, const float4& i)
     { 
@@ -316,8 +341,8 @@ namespace PK::math
         const auto mul0 = _mm_mul_ps(swp0, swp3);
         const auto mul1 = _mm_mul_ps(swp1, swp2);
         const auto sub0 = _mm_sub_ps(mul0, mul1);
-        float4 v4(sub0);
-        return float3(v4);
+        alignas(16) float4 result(sub0);
+        return float3(result.x, result.y, result.z);
     }
 
     template<> inline float4 reflect(const float4& i, const float4& n) 
@@ -352,7 +377,7 @@ namespace PK::math
 
     template<> inline float4x4 transpose(const float4x4& m)
     {   
-        float4x4 result(0); 
+        alignas(16) float4x4 result(0); 
         auto v0 = _mm_shuffle_ps(m[0].data, m[1].data, 0x44);
         auto v2 = _mm_shuffle_ps(m[0].data, m[1].data, 0xEE);
         auto v1 = _mm_shuffle_ps(m[2].data, m[3].data, 0x44);
@@ -366,7 +391,7 @@ namespace PK::math
 
     template<> inline float3x4 transpose3x4(const float4x4& m)
     {
-        float3x4 result(0);
+        alignas(16) float3x4 result(0);
         auto v0 = _mm_shuffle_ps(m[0].data, m[1].data, 0x44);
         auto v2 = _mm_shuffle_ps(m[0].data, m[1].data, 0xEE);
         auto v1 = _mm_shuffle_ps(m[2].data, m[3].data, 0x44);
@@ -481,7 +506,7 @@ namespace PK::math
         auto r2 = _mm_shuffle_ps(r0, r1, _MM_SHUFFLE(2, 0, 2, 0));
         auto id = _mm_div_ps(_mm_set1_ps(1.0f), simd_dot_4(m0, r2));
 
-        float4x4 result(0);
+        alignas(16) float4x4 result(0);
         result[0].data = _mm_mul_ps(i0, id);
         result[1].data = _mm_mul_ps(i1, id);
         result[2].data = _mm_mul_ps(i2, id);

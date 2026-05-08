@@ -26,8 +26,10 @@ namespace PK
             {
                 return static_cast<TBase*>(&m_instance);
             }
-    
-            return FixedTypeSet<TRest...>::template GetInstance<TBase>();
+            else
+            {
+                return FixedTypeSet<TRest...>::template GetInstance<TBase>();
+            }
         }
     
         T m_instance;

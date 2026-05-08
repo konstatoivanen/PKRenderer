@@ -40,6 +40,8 @@
     #define PK_OFFSET_OF(X, Y) offsetof(X, Y)
     #undef __PRETTY_FUNCTION__
     #define __PRETTY_FUNCTION__ __FUNCSIG__
+    #pragma warning( push )
+    #pragma warning( disable : 4201 )
 #else
     #error "Unsupported compiler!"
 #endif

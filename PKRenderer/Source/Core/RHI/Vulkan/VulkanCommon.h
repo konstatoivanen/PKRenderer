@@ -480,7 +480,7 @@ namespace PK
         const uint32_t size;
         const VkQueryType type;
         FenceRef lastQueryFence;
-        uint32_t count;
+        uint32_t activeCount;
         VkQueryPool pool;
     };
 

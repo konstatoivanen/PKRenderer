@@ -43,12 +43,12 @@ namespace PK
 
     void InputState::SetCursor(const float2& position, const float2& size)
     {
-        auto cursorPosition = float2(position.x, size.y - position.y);
-        auto cursorPositionNormalized = cursorPosition / size;
-        auto cursorPositionDelta = cursorPosition - this->cursorPosition;
-        this->cursorPosition = cursorPosition;
-        this->cursorPositionDelta += cursorPositionDelta;
-        this->cursorPositionNormalized = cursorPositionNormalized;
+        auto positionFlipY = float2(position.x, size.y - position.y);
+        auto positionNormalized = positionFlipY / size;
+        auto positionDelta = positionFlipY - this->cursorPosition;
+        this->cursorPosition = positionFlipY;
+        this->cursorPositionDelta += positionDelta;
+        this->cursorPositionNormalized = positionNormalized;
     }
 
     void InputState::SwapBuffers(uint32_t deltaMillis)

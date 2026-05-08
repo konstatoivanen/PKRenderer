@@ -7,7 +7,7 @@ namespace PK::math
     // Produces Reverse Z
     template<typename T> matrix<T,4,4> orthographicFrustumBounding(const matrix<T,4,4>& worldToLocal, const matrix<T,4,4>& clipToView, const vector<T,3>& paddingLD, const vector<T,3>& paddingRU, T* outZNear, T* outZFar)
     {
-        auto aabb = PK::Math::GetInverseFrustumBounds(worldToLocal * clipToView);
+        auto aabb = inverseFrustumToAABB(worldToLocal * clipToView);
         *outZNear = (aabb.min.z + paddingLD.z);
         *outZFar = (aabb.max.z + paddingRU.z);
         return orthographic(aabb.min.x + paddingLD.x, aabb.max.x + paddingRU.x, aabb.min.y + paddingLD.y, aabb.max.y + paddingRU.y, aabb.min.z + paddingLD.z, aabb.max.z + paddingRU.z) * worldToLocal;

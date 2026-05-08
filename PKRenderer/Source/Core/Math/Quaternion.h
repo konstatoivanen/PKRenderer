@@ -86,6 +86,30 @@ namespace PK::math
         return v + ((uv * q.w) + uuv) * static_cast<T>(2);
     }
 
+    #if PK_MATH_SIMD
+    template<> inline float3 mul(const quaternion<float>& q, const float3& v)
+    {
+        const auto vv = _mm_set_ps(0.0f, v.z, v.y, v.x);
+        const auto qv = q.data;
+        const auto qw = _mm_shuffle_ps(qv, qv, _MM_SHUFFLE(3, 3, 3, 3));
+        const auto q0 = _mm_shuffle_ps(qv, qv, _MM_SHUFFLE(3, 0, 2, 1));
+        const auto q1 = _mm_shuffle_ps(qv, qv, _MM_SHUFFLE(3, 1, 0, 2));
+        const auto v0 = _mm_shuffle_ps(vv, vv, _MM_SHUFFLE(3, 0, 2, 1));
+        const auto v1 = _mm_shuffle_ps(vv, vv, _MM_SHUFFLE(3, 1, 0, 2));
+        const auto uv = _mm_sub_ps(_mm_mul_ps(q0, v1), _mm_mul_ps(q1, v0));
+        const auto u0 = _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(3, 0, 2, 1));
+        const auto u1 = _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(3, 1, 0, 2));
+        const auto uuv = _mm_sub_ps(_mm_mul_ps(q0, u1), _mm_mul_ps(q1, u0));
+        const auto two = _mm_set1_ps(2.0f);
+        auto res = _mm_mul_ps(uv, qw);
+        res = _mm_add_ps(res, uuv);
+        res = _mm_mul_ps(res, two);
+        res = _mm_add_ps(res, vv);
+        alignas(16) float4 result(res);
+        return float3(result.x, result.y, result.z);
+    }
+    #endif
+
     template<typename T> vector<T,3> mul(const vector<T,3>& v, const quaternion<T>& q) { return mul(inverse(q), v); }
 
     template<typename T> quaternion<T> nlerp(const quaternion<T>& a, const quaternion<T>& b, T t) { return quaternion<T>(normalize(lerp(a,b,t))); }
@@ -107,11 +131,7 @@ namespace PK::math
         if (cosTheta > static_cast<T>(1) - static_cast<T>(1e-4f))
         {
             // Linear interpolation
-            return quaternion<T>(
-                lerp(x.x, z.x, a),
-                lerp(x.y, z.y, a),
-                lerp(x.z, z.z, a),
-                lerp(x.w, z.w, a));
+            return quaternion<T>(lerp(x, z, a));
         }
         else
         {

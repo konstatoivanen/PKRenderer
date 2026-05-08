@@ -12,4 +12,22 @@ namespace PK
         LogScopeTimer(size_t length, const char* name);
         ~LogScopeTimer();
     };
+
+
+    struct LogScopeTimeAggregator : public NoCopy
+    {
+        struct State
+        {
+            double elapsed = 0.0;
+            size_t ticks = 0ull;
+        };
+
+        volatile State* state;
+        double start;
+        const char* name;
+        size_t length;
+        LogScopeTimeAggregator(volatile State* state, const char* name);
+        LogScopeTimeAggregator(volatile State* state, size_t length, const char* name);
+        ~LogScopeTimeAggregator();
+    };
 }

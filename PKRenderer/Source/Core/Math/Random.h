@@ -140,15 +140,13 @@ namespace PK::math
     vector<uint32_t,3> murmurhash31(uint32_t seed);
     vector<uint32_t,4> murmurhash41(uint32_t seed);
 
-    uint64_t combinehash(const ulong2& h);
-
     template<int C, typename T, int N>
     uint64_t matrixHash(const vector<T,N>* v)
     {
         #if PK_MATH_SIMD
         if constexpr (vector<T, N>::is_simd)
         {
-            return combinehash(ulong2(simd_hash<typename storage<T,N>::type,C>(&v[0].data)));
+            return simd_hash<typename storage<T,N>::type,C>(&v[0].data);
         }
         else
         #endif
@@ -172,7 +170,7 @@ namespace PK::math
         #if PK_MATH_SIMD
         if constexpr (vector<T,N>::is_simd)
         {
-            return combinehash(ulong2(simd_hash_quantized<typename storage<T,N>::type,C>(&v[0].data, precision)));
+            return simd_hash_quantized<typename storage<T,N>::type,C>(&v[0].data, precision);
         }
         else
         #endif

@@ -111,7 +111,7 @@ namespace PK
         constexpr RHIBuffer* GetMeshletBuffer() const { return m_meshletBuffer.get(); }
         constexpr const VertexBuffers& GetVertexBuffers() const { return m_vertexBuffers; }
         constexpr RHIBuffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
-        constexpr const SubMesh& GetSubmesh(uint32_t index) const { return *m_submeshes[index]; }
+        inline const SubMesh& GetSubmesh(uint32_t index) const { return *m_submeshes[index]; }
         constexpr const VertexStreamLayout& GetVertexStreamLayout() const { return m_streamLayout; }
         constexpr uint32_t GetIndexSize() const { return m_indexSize; }
         inline bool HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }

@@ -161,9 +161,9 @@ namespace PK::App
 
             if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
             {
-                m_gui_indexView[idxi++] = idxv + 0;
-                m_gui_indexView[idxi++] = idxv + 1;
-                m_gui_indexView[idxi++] = idxv + 2;
+                m_gui_indexView[idxi++] = idxv + 0u;
+                m_gui_indexView[idxi++] = idxv + 1u;
+                m_gui_indexView[idxi++] = idxv + 2u;
                 m_gui_vertexView[idxv++] = a;
                 m_gui_vertexView[idxv++] = b;
                 m_gui_vertexView[idxv++] = c;
@@ -190,12 +190,12 @@ namespace PK::App
                 const short4 sminmax = short4(rect.x, rect.y, rect.x + rect.z, rect.y + rect.w);
                 const float4 tminmax = float4(textureRect.x, textureRect.y, textureRect.x + textureRect.z, textureRect.y + textureRect.w);
                 const float2 texelSize = (1.0f / float3(m_gui_textures->GetBoundTextureSize(textureIndex))).xy;
-                m_gui_indexView[idxi++] = idxv + 0;
-                m_gui_indexView[idxi++] = idxv + 1;
-                m_gui_indexView[idxi++] = idxv + 2;
-                m_gui_indexView[idxi++] = idxv + 2;
-                m_gui_indexView[idxi++] = idxv + 3;
-                m_gui_indexView[idxi++] = idxv + 0;
+                m_gui_indexView[idxi++] = idxv + 0u;
+                m_gui_indexView[idxi++] = idxv + 1u;
+                m_gui_indexView[idxi++] = idxv + 2u;
+                m_gui_indexView[idxi++] = idxv + 2u;
+                m_gui_indexView[idxi++] = idxv + 3u;
+                m_gui_indexView[idxi++] = idxv + 0u;
                 m_gui_vertexView[idxv++] = { color, sminmax.xy, math::f32tof16(tminmax.xy * texelSize), textureIndex, 0u };
                 m_gui_vertexView[idxv++] = { color, sminmax.xw, math::f32tof16(tminmax.xw * texelSize), textureIndex, 0u };
                 m_gui_vertexView[idxv++] = { color, sminmax.zw, math::f32tof16(tminmax.zw * texelSize), textureIndex, 0u };
@@ -228,26 +228,26 @@ namespace PK::App
                     auto base0 = idxv + i * 2u;
                     auto base1 = idxv + ((i + 1u) % 4u) * 2u;
 
-                    m_gui_indexView[idxi++] = base0 + 0;
-                    m_gui_indexView[idxi++] = base0 + 1;
-                    m_gui_indexView[idxi++] = base1 + 1;
+                    m_gui_indexView[idxi++] = base0 + 0u;
+                    m_gui_indexView[idxi++] = base0 + 1u;
+                    m_gui_indexView[idxi++] = base1 + 1u;
 
-                    m_gui_indexView[idxi++] = base1 + 1;
-                    m_gui_indexView[idxi++] = base1 + 0;
-                    m_gui_indexView[idxi++] = base0 + 0;
+                    m_gui_indexView[idxi++] = base1 + 1u;
+                    m_gui_indexView[idxi++] = base1 + 0u;
+                    m_gui_indexView[idxi++] = base0 + 0u;
                 }
 
-                m_gui_vertexView[idxv + 0] = { color, outer.xy, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv + 1] = { color, inner.xy, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 0u] = { color, outer.xy, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 1u] = { color, inner.xy, PK_USHORT2_ZERO, 0, 0u };
 
-                m_gui_vertexView[idxv + 2] = { color, outer.xw, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv + 3] = { color, inner.xw, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 2u] = { color, outer.xw, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 3u] = { color, inner.xw, PK_USHORT2_ZERO, 0, 0u };
                 
-                m_gui_vertexView[idxv + 4] = { color, outer.zw, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv + 5] = { color, inner.zw, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 4u] = { color, outer.zw, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 5u] = { color, inner.zw, PK_USHORT2_ZERO, 0, 0u };
                 
-                m_gui_vertexView[idxv + 6] = { color, outer.zy, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv + 7] = { color, inner.zy, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 6u] = { color, outer.zy, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 7u] = { color, inner.zy, PK_USHORT2_ZERO, 0, 0u };
             }
         }
     }
@@ -269,12 +269,12 @@ namespace PK::App
                 const auto tangent = float2(-direction.y, direction.x);
                 const auto offset = math::normalize(tangent + direction) * 0.5f * width;
  
-                m_gui_indexView[idxi++] = idxv + 0;
-                m_gui_indexView[idxi++] = idxv + 1;
-                m_gui_indexView[idxi++] = idxv + 2;
-                m_gui_indexView[idxi++] = idxv + 2;
-                m_gui_indexView[idxi++] = idxv + 3;
-                m_gui_indexView[idxi++] = idxv + 0;
+                m_gui_indexView[idxi++] = idxv + 0u;
+                m_gui_indexView[idxi++] = idxv + 1u;
+                m_gui_indexView[idxi++] = idxv + 2u;
+                m_gui_indexView[idxi++] = idxv + 2u;
+                m_gui_indexView[idxi++] = idxv + 3u;
+                m_gui_indexView[idxi++] = idxv + 0u;
                 m_gui_vertexView[idxv++] = { color0, math::round(p0f + float2(-offset.y, +offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
                 m_gui_vertexView[idxv++] = { color1, math::round(p1f + float2(+offset.x, +offset.y)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
                 m_gui_vertexView[idxv++] = { color1, math::round(p1f + float2(+offset.y, -offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
@@ -313,12 +313,12 @@ namespace PK::App
                             auto& crect = text_rects[i];
                             const auto sminmax = short4(crect.rect.x, crect.rect.y, crect.rect.x + crect.rect.z, crect.rect.y + crect.rect.w);
                             const auto tminmax = float4(crect.texrect.x, crect.texrect.y, crect.texrect.x + crect.texrect.z, crect.texrect.y + crect.texrect.w);
-                            m_gui_indexView[idxi++] = idxv + 0;
-                            m_gui_indexView[idxi++] = idxv + 1;
-                            m_gui_indexView[idxi++] = idxv + 2;
-                            m_gui_indexView[idxi++] = idxv + 2;
-                            m_gui_indexView[idxi++] = idxv + 3;
-                            m_gui_indexView[idxi++] = idxv + 0;
+                            m_gui_indexView[idxi++] = idxv + 0u;
+                            m_gui_indexView[idxi++] = idxv + 1u;
+                            m_gui_indexView[idxi++] = idxv + 2u;
+                            m_gui_indexView[idxi++] = idxv + 2u;
+                            m_gui_indexView[idxi++] = idxv + 3u;
+                            m_gui_indexView[idxi++] = idxv + 0u;
                             m_gui_vertexView[idxv++] = { color, sminmax.xy, math::f32tof16(tminmax.xy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
                             m_gui_vertexView[idxv++] = { color, sminmax.xw, math::f32tof16(tminmax.xw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
                             m_gui_vertexView[idxv++] = { color, sminmax.zw, math::f32tof16(tminmax.zw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };

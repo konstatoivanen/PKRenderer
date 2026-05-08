@@ -71,7 +71,7 @@ namespace PK::math
         const auto u0 = asuint(v);
         const auto u1 = u0 & 0x7FFFF000u;
         const auto u2 = (asuint(::fminf(asfloat(u1) * 1.92592994e-34f, 260042752.0f)) + 0x1000u) >> 13u;
-        return (u1 >= 0x7f800000u ? u1 > 0x7f800000u ? 0x7e00u : 0x7c00u : u2) | (u0 & ~0x7FFFF000u) >> 16u;
+        return static_cast<uint16_t>((u1 >= 0x7f800000u ? u1 > 0x7f800000u ? 0x7e00u : 0x7c00u : u2) | (u0 & ~0x7FFFF000u) >> 16u);
     }
 
     constexpr float f16tof32(uint16_t x)

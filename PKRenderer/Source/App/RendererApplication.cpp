@@ -72,8 +72,8 @@ namespace PK::App
         GetServices()->Create<HashCache>();
 
         auto sequencer = GetServices()->Create<Sequencer>();
-        auto entityDb = GetServices()->Create<EntityDatabase>();
         auto assetDatabase = GetServices()->Create<AssetDatabase>(sequencer);
+        auto entityDb = GetServices()->Create<EntityDatabase>();
         auto input = GetServices()->Create<EngineInput>(sequencer);
         auto time = GetServices()->Create<EngineTime>(sequencer, config.TimeScale);
         Platform::SetInputHandler(input);

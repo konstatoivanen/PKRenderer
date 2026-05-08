@@ -287,7 +287,7 @@ namespace PK::math
 
     template<typename T> constexpr AABB<T,3> inverseFrustumToAABB(const matrix<T,4,4>& inverseMatrix, T lznear, T lzfar)
     {
-        vector<T, 4> positions[8];
+        vector<T,4> positions[8];
         positions[0] = inverseMatrix * vector<T, 4>(-1, -1, PK_CLIPZ_NEAR, 1);
         positions[1] = inverseMatrix * vector<T, 4>(-1, +1, PK_CLIPZ_NEAR, 1);
         positions[2] = inverseMatrix * vector<T, 4>(+1, +1, PK_CLIPZ_NEAR, 1);

@@ -29,7 +29,7 @@ namespace PK
 
         FixedString256 m_crashLogPath;
         LogColor m_currentColor = PK_LOG_COLOR_BLACK;
-        uint32_t m_severityMask = ~0;
+        uint32_t m_severityMask = ~0u;
         int32_t m_indentation[PK_LOG_LVL_COUNT]{};
     };
 }

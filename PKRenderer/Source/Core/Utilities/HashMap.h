@@ -200,7 +200,7 @@ namespace PK
             return false;
         }
 
-        bool Reserve(uint32_t count, uint32_t bucketCountFactor)
+        bool Reserve(uint32_t count, [[maybe_unused]] uint32_t bucketCountFactor)
         {
             return Reserve(count);
         }

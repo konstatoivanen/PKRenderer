@@ -28,23 +28,25 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
 
-        auto bluenoise256 = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_Bluenoise256.pktexture")->GetRHI();
-        auto bluenoise128x64 = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_Bluenoise128x64.pktexture")->GetRHI();
+        {
+            auto bluenoise256 = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_Bluenoise256.pktexture")->GetRHI();
+            auto bluenoise128x64 = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_Bluenoise128x64.pktexture")->GetRHI();
 
-        auto sampler = bluenoise256->GetSamplerDescriptor();
-        sampler.anisotropy = 0.0f;
-        sampler.filterMin = FilterMode::Point;
-        sampler.filterMag = FilterMode::Bilinear;
-        bluenoise256->SetSampler(sampler);
+            auto sampler = bluenoise256->GetSamplerDescriptor();
+            sampler.anisotropy = 0.0f;
+            sampler.filterMin = FilterMode::Point;
+            sampler.filterMag = FilterMode::Bilinear;
+            bluenoise256->SetSampler(sampler);
 
-        sampler = bluenoise128x64->GetSamplerDescriptor();
-        sampler.anisotropy = 0.0f;
-        sampler.filterMin = FilterMode::Point;
-        sampler.filterMag = FilterMode::Bilinear;
-        bluenoise128x64->SetSampler(sampler);
+            sampler = bluenoise128x64->GetSamplerDescriptor();
+            sampler.anisotropy = 0.0f;
+            sampler.filterMin = FilterMode::Point;
+            sampler.filterMag = FilterMode::Bilinear;
+            bluenoise128x64->SetSampler(sampler);
 
-        RHI::SetTexture(hash->pk_Bluenoise256, bluenoise256);
-        RHI::SetTexture(hash->pk_Bluenoise128x64, bluenoise128x64);
+            RHI::SetTexture(hash->pk_Bluenoise256, bluenoise256);
+            RHI::SetTexture(hash->pk_Bluenoise128x64, bluenoise128x64);
+        }
 
         {
             SamplerDescriptor sampler{};

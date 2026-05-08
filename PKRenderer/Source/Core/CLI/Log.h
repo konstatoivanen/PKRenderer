@@ -79,6 +79,15 @@ namespace PK
 #define PK_LOG_TIMER(name) volatile PK::LogScopeTimer PK_LOG_UNIQUE_NAME(pk_log_scope_timer_)(name)
 #define PK_LOG_TIMER_FUNC() volatile PK::LogScopeTimer PK_LOG_UNIQUE_NAME(pk_log_scope_timer_)(PK_LOG_SHORT_FUNCTION_NAME_PARAMS)
 
+#define PK_LOG_TIMER_AGR(name) \
+static volatile PK::LogScopeTimeAggregator::State PK_LOG_CONCAT(pk_log_scope_agr_state, __LINE__){}; \
+volatile PK::LogScopeTimeAggregator PK_LOG_UNIQUE_NAME(pk_log_scope_agr_)(&PK_LOG_CONCAT(pk_log_scope_agr_state, __LINE__), name) \
+
+#define PK_LOG_TIMER_AGR_FUNC() \
+static volatile PK::LogScopeTimeAggregator::State PK_LOG_CONCAT(pk_log_scope_agr_state, __LINE__){}; \
+volatile PK::LogScopeTimeAggregator PK_LOG_UNIQUE_NAME(pk_log_scope_agr_)(&PK_LOG_CONCAT(pk_log_scope_agr_state, __LINE__), PK_LOG_SHORT_FUNCTION_NAME_PARAMS) \
+
+
 #define PK_LOG_HEADER_SCOPE(...) PK_LOG_HEADER(__VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
 #define PK_LOG_INFO_SCOPE(...) PK_LOG_INFO(__VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
 #define PK_LOG_VERBOSE_SCOPE(...) PK_LOG_VERBOSE(__VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_VERBOSE)

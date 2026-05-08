@@ -19,10 +19,10 @@ namespace PK
         void* GetNativeHandle() const final { return buffer; }
         uint64_t GetDeviceAddress() const { return deviceAddress; }
 
-        void* BeginMap(size_t offset, size_t readsize) const final { return VulkanRawBuffer::BeginMap(offset, readsize); }
-        void EndMap(size_t offset, size_t size) const final { VulkanRawBuffer::EndMap(offset, size); }
+        void* BeginMap(size_t offset, size_t writeSize) const final { return VulkanRawBuffer::BeginMap(offset, writeSize); }
+        void EndMap(size_t offset, size_t writeSize) const final { VulkanRawBuffer::EndMap(offset, writeSize); }
 
-        size_t SparseAllocate([[maybe_unused]] const size_t size, [[maybe_unused]] QueueType type) final { return 0ull; }
+        size_t SparseAllocate([[maybe_unused]] const size_t allocationSize, [[maybe_unused]] QueueType type) final { return 0ull; }
         void SparseAllocateRange([[maybe_unused]] const BufferIndexRange& range, [[maybe_unused]] QueueType type) final {}
         void SparseDeallocate([[maybe_unused]] const BufferIndexRange& range) final {}
 
