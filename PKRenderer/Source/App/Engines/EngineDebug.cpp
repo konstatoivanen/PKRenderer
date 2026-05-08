@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/Math/Random.h"
-#include "Core/Math/Extended.h"
 #include "Core/Math/Projection.h"
 #include "Core/Math/Color.h"
+#include "Core/Math/Extended.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/Mesh.h"
@@ -16,6 +16,7 @@
 #include "App/ECS/EntityViewFlyCamera.h"
 #include "App/ECS/EntityViewRenderView.h"
 #include "App/Renderer/IGUIRenderer.h"
+#include "App/Renderer/Passes/PassLights.h"
 #include "App/Renderer/HashCache.h"
 #include "EngineDebug.h"
 
@@ -172,7 +173,7 @@ namespace PK::App
         cascadeInfo.resolution = 1024;
         cascadeInfo.count = 4;
         math::cascadeDepths<float, 5>(0.2f, 25.0f, 0.5f, zplanes);
-        math::calculateShadowCascades(cascadeInfo, cascades);
+        PassLights::BuildShadowCascadeMatrices(cascadeInfo, cascades);
 
         for (auto i = 0; i < 4; ++i)
         {

@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/FastBuffer.h"
-#include "Core/Math/Extended.h"
+#include "Core/Math/Math.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/CLI/CVariable.h"
 #include "App/Renderer/EntityEnums.h"
@@ -14,6 +14,18 @@ namespace PK::App
     struct RequestEntityCullResults;
     struct RenderPipelineContext;
     struct RenderView;
+
+    // @TODO this doesn't belong here.
+    struct ShadowCascadeCreateInfo
+    {
+        float4x4 worldToLocal;
+        float4x4 clipToWorld;
+        float* splitPlanes;
+        float nearPlaneOffset;
+        float padding;
+        uint32_t resolution;
+        uint32_t count;
+    };
 
     class PassLights : public NoCopy
     {
@@ -47,6 +59,8 @@ namespace PK::App
             void RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void RenderScreenSpaceShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void ComputeClusters(CommandBufferExt cmd, RenderPipelineContext* context);
+
+            static void BuildShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices);
 
         private:
             ShaderAsset* m_computeLightAssignment = nullptr;

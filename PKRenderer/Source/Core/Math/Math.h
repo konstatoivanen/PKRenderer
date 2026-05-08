@@ -121,15 +121,4 @@ namespace PK
         const float4& far() const { return planes[4]; }
         const float4& near() const { return planes[5]; }
     };
-
-    struct ShadowCascadeCreateInfo
-    {
-        float4x4 worldToLocal;
-        float4x4 clipToWorld;
-        float* splitPlanes;
-        float nearPlaneOffset;
-        float padding;
-        uint32_t resolution;
-        uint32_t count;
-    };
 }

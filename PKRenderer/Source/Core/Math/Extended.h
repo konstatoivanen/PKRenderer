@@ -41,6 +41,4 @@ namespace PK::math
         bool isValid = false;
         return triangleNormal(&a.x, &b.x, &c.x, isValid);
     }
-    
-    void calculateShadowCascades(const ShadowCascadeCreateInfo info, float4x4* outMatrices);
 }

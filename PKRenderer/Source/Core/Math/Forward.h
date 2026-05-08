@@ -242,15 +242,15 @@ namespace PK
     typedef math::matrix<int64_t,4,4> long4x4;
 
     typedef math::quaternion<float> quaternion;
+ 
+    typedef byte4 color32;
+    typedef float4 color;
 
     // Implicit vector alias.
     template <typename T>
     using AABB = math::AABB<typename T::scalar_type, T::N>;
 
-    typedef byte4 color32;
-    typedef float4 color;
     struct FrustumPlanes;
-    struct ShadowCascadeCreateInfo;
 
     constexpr float PK_FLOAT_PI = 3.1415926535f;
     constexpr float PK_FLOAT_TWO_PI = 6.2831853071f;
