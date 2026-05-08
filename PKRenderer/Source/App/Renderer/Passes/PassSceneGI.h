@@ -1,9 +1,8 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
 #include "Core/CLI/CVariable.h"
-#include "Core/Rendering/RenderingFwd.h"
 #include "Core/Rendering/ShaderBindingTable.h"
 #include "App/Renderer/IBatcher.h"
+#include "App/Renderer/RenderView.h"
 
 namespace PK { class AssetDatabase; }
 
@@ -12,7 +11,7 @@ namespace PK::App
     class PassSceneGI : public NoCopy
     {
         public:
-            struct ViewResources
+            struct ViewResources : public IRenderViewResource
             {
                 RHITextureRef packedGIDiff;
                 RHITextureRef packedGISpec;

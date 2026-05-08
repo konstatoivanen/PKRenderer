@@ -64,7 +64,7 @@ namespace PK::App
     void PassSceneGI::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         auto resolution = view->GetResolution();
 
         uint3 swizzles[3] =
@@ -168,7 +168,7 @@ namespace PK::App
     void PassSceneGI::DispatchRays(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         cmd->BeginDebugScope("SceneGI.DispatchRays", PK_COLOR_GREEN);
         cmd.SetShaderBindingTable(&m_sbtRaytrace);
         cmd.DispatchRays(m_rayTraceGatherGI, resources->rayhits->GetResolution());
@@ -179,7 +179,7 @@ namespace PK::App
     {
         cmd->BeginDebugScope("SceneGI.Reproject", PK_COLOR_GREEN);
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         auto resolution = resources->packedGIDiff->GetResolution();
         cmd.Dispatch(m_computeReproject, { resolution.x, resolution.y, 1u });
         cmd->EndDebugScope();
@@ -190,7 +190,7 @@ namespace PK::App
         auto batcher = context->batcher;
         auto view = context->views[0];
         auto batchGroup = view->primaryPassGroup;
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
 
         // Targets contain garbage data. skip this frame.
         if (!resources->hasResisedTargets)
@@ -220,7 +220,7 @@ namespace PK::App
     void PassSceneGI::RenderGI(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         auto resolution = resources->packedGIDiff->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
         uint3 chbdimension = GetCheckerboardResolution(dimension, m_settings.checkerboardTrace);
@@ -252,7 +252,7 @@ namespace PK::App
         if (m_settings.ReSTIR)
         {
             auto view = context->views[0];
-            auto resources = view->GetResources<ViewResources>();
+            auto resources = view->GetResource<ViewResources>();
             auto resolution = resources->reservoirs0->GetResolution();
             cmd->BeginDebugScope("SceneGI.ValidateReservoirs", PK_COLOR_GREEN);
             cmd.SetShaderBindingTable(&m_sbtValidate);

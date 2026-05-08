@@ -11,7 +11,6 @@
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
-#include "App/Renderer/RenderViewSettings.h"
 #include "App/Renderer/RenderPipelineBase.h"
 #include "PassDistort.h"
 
@@ -52,7 +51,7 @@ namespace PK::App
     {
         auto view = ctx->views[0];
         auto source = view->gbuffers.GetView().current.color;
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         auto resolution = source->GetResolution();
         auto& settings = view->settings.DistortSettings;
 

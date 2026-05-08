@@ -8,7 +8,6 @@
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
-#include "App/Renderer/RenderViewSettings.h"
 #include "App/Renderer/RenderPipelineBase.h"
 #include "PassVolumetricFog.h"
 
@@ -47,7 +46,7 @@ namespace PK::App
     void PassVolumetricFog::ComputeDensity(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         const auto hash = HashCache::Get();
         const uint3 resolution = { uint2(view->GetResolution().xy) / 8u, 128u };
         const auto index_cur = (view->timeRender.frameIndex + 0ull) & 0x1ull;
@@ -98,7 +97,7 @@ namespace PK::App
     void PassVolumetricFog::Compute(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         const auto hash = HashCache::Get();
         const uint3 resolution = { uint2(view->GetResolution().xy) / 8u, 128u };
         const auto index_cur = (view->timeRender.frameIndex + 0ull) & 0x1ull;

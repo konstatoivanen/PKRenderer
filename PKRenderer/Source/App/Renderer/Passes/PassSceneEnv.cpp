@@ -10,7 +10,6 @@
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
-#include "App/Renderer/RenderViewSettings.h"
 #include "App/Renderer/RenderPipelineBase.h"
 #include "PassSceneEnv.h"
 
@@ -39,7 +38,7 @@ namespace PK::App
         auto hash = HashCache::Get();
         auto& settings = view->settings.EnvBackgroundSettings;
         auto& fogSettings = view->settings.FogSettings;
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         
         auto exponential0 = Memory::BitCast<float, float4>(&fogSettings.Exponential0.Constant);
         auto exponential1 = Memory::BitCast<float, float4>(&fogSettings.Exponential1.Constant);
@@ -96,7 +95,7 @@ namespace PK::App
     void PassSceneEnv::PreCompute(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
 
         if (resources->captureIsDirty)
         {

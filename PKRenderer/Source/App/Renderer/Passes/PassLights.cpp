@@ -170,7 +170,7 @@ namespace PK::App
     void PassLights::BuildLights(RenderPipelineContext* context)
     {
         auto renderView = context->views[0];
-        auto resources = renderView->GetResources<ViewResources>();
+        auto resources = renderView->GetResource<ViewResources>();
         auto culledLights = context->cullingProxy->CullFrustum(ScenePrimitiveFlags::Light, renderView->worldToClip);
 
         if (culledLights.GetCount() == 0)
@@ -336,7 +336,7 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto renderView = context->views[0];
-        auto resources = renderView->GetResources<ViewResources>();
+        auto resources = renderView->GetResource<ViewResources>();
         auto& batches = resources->shadowBatches;
 
         auto atlasIndex = 0u;
@@ -387,7 +387,7 @@ namespace PK::App
     void PassLights::RenderScreenSpaceShadows(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto renderView = context->views[0];
-        auto resources = renderView->GetResources<ViewResources>();
+        auto resources = renderView->GetResource<ViewResources>();
         auto& batches = resources->shadowBatches;
 
         if (batches.count == 0u || batches[0].type != LightType::Directional)
@@ -458,7 +458,7 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto renderView = context->views[0];
-        auto resources = renderView->GetResources<ViewResources>();
+        auto resources = renderView->GetResource<ViewResources>();
         auto resolution = renderView->GetResolution();
         resolution.x /= (resolution.x + LightGridTileSizePx - 1) / LightGridTileSizePx;
         resolution.y /= (resolution.y + LightGridTileSizePx - 1) / LightGridTileSizePx;

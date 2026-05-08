@@ -110,7 +110,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <ExceptionHandling>false</ExceptionHandling>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <StringPooling>true</StringPooling>
       <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
@@ -147,7 +147,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <AdditionalOptions>-Wno-missing-field-initializers -mf16c %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <StringPooling>true</StringPooling>
     </ClCompile>
@@ -185,7 +185,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ExceptionHandling>false</ExceptionHandling>
       <StringPooling>true</StringPooling>
     </ClCompile>
@@ -229,7 +229,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <ExceptionHandling>false</ExceptionHandling>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <StringPooling>true</StringPooling>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
@@ -295,7 +295,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FixedRefPool.h" />
     <ClInclude Include="Source\Core\Utilities\FixedString.h" />
     <ClInclude Include="Source\Core\Utilities\LinkedList.h" />
-    <ClInclude Include="Source\Core\Utilities\FixedTypeSet.h" />
+    <ClInclude Include="Source\Core\Utilities\TypeSet.h" />
     <ClInclude Include="Source\Core\Utilities\Function.h" />
     <ClInclude Include="Source\Core\Utilities\InitializerList.h" />
     <ClInclude Include="Source\Core\Utilities\Memory.h" />

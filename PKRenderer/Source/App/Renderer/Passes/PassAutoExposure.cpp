@@ -6,7 +6,6 @@
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
-#include "App/Renderer/RenderViewSettings.h"
 #include "App/Renderer/RenderPipelineBase.h"
 #include "PassAutoExposure.h"
 
@@ -34,7 +33,7 @@ namespace PK::App
     void PassAutoExposure::Render(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         auto target = view->GetGBuffersFullView().previous.color;
         auto resolution = target->GetResolution();
 

@@ -1,6 +1,5 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Rendering/RenderingFwd.h"
+#include "App/Renderer/RenderView.h"
 
 namespace PK { class AssetDatabase; }
 
@@ -9,7 +8,7 @@ namespace PK::App
     class PassAutoExposure : public NoCopy
     {
         public:
-            struct ViewResources
+            struct ViewResources : public IRenderViewResource
             {
                 RHIBufferRef histogram;
             };

@@ -148,7 +148,7 @@ namespace PK::App
             if (viewrect.z > 0 && viewrect.w > 0 && m_renderViewCount < MAX_RENDER_VIEWS)
             {
                 views[m_renderViewCount] = &m_renderViews[m_renderViewCount];
-                auto resources = GetViewResources(m_renderViewCount);
+                auto resources = GetViewResourceSet(m_renderViewCount);
                 auto renderView = &m_renderViews[m_renderViewCount++];
                 auto hasViewChanged = renderView->viewEntityId != entity.GID.entityID();
                 auto viewresolution = viewrect.zw - viewrect.xy;

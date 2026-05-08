@@ -11,7 +11,6 @@
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
-#include "App/Renderer/RenderViewSettings.h"
 #include "App/Renderer/RenderPipelineBase.h"
 #include "PassBloom.h"
 
@@ -44,7 +43,7 @@ namespace PK::App
         auto view = ctx->views[0];
         auto& settings = view->settings.BloomSettings;
         auto source = view->gbuffers.GetView().current.color;
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         auto resolution = source->GetResolution();
         resolution.x >>= 1u;
         resolution.y >>= 1u;

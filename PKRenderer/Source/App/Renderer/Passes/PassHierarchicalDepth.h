@@ -1,6 +1,5 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Rendering/RenderingFwd.h"
+#include "App/Renderer/RenderView.h"
 
 namespace PK { class AssetDatabase; }
 
@@ -11,7 +10,7 @@ namespace PK::App
     class PassHierarchicalDepth : public NoCopy
     {
         public:
-            struct ViewResources
+            struct ViewResources : public IRenderViewResource
             {
                 RHITextureRef hierarchicalDepth;
             };

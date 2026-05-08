@@ -8,7 +8,6 @@
 #include "Core/Rendering/TextureAsset.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
-#include "App/Renderer/RenderViewSettings.h"
 #include "PassTemporalAntialiasing.h"
 
 namespace PK::App
@@ -34,7 +33,7 @@ namespace PK::App
         cmd->BeginDebugScope("TemporalAntialiasing", PK_COLOR_MAGENTA);
 
         auto hash = HashCache::Get();
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
 
         uint16_t historyRead = m_historyLayerIndex++;
         m_historyLayerIndex %= 2;

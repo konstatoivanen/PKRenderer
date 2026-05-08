@@ -1,10 +1,6 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/FastBuffer.h"
-#include "Core/Math/Math.h"
-#include "Core/Rendering/RenderingFwd.h"
 #include "Core/CLI/CVariable.h"
-#include "App/Renderer/EntityEnums.h"
+#include "App/Renderer/RenderView.h"
 
 namespace PK { class AssetDatabase; }
 
@@ -15,7 +11,6 @@ namespace PK::App
     struct RenderPipelineContext;
     struct RenderView;
 
-    // @TODO this doesn't belong here.
     struct ShadowCascadeCreateInfo
     {
         float4x4 worldToLocal;
@@ -35,7 +30,7 @@ namespace PK::App
             constexpr static const uint32_t LightGridTileSizePx = 64;
             constexpr static const uint32_t ShadowCascadeCount = 4;
  
-           struct ShadowbatchInfo
+            struct ShadowbatchInfo
             {
                 uint32_t baseLightIndex = 0u;
                 uint32_t count = 0u;
@@ -43,7 +38,7 @@ namespace PK::App
                 LightType type = LightType::TypeCount;
             };
 
-            struct ViewResources
+            struct ViewResources : public IRenderViewResource
             {
                 BufferView<EntityViewLight*> lightViews;
                 BufferView<ShadowbatchInfo> shadowBatches;

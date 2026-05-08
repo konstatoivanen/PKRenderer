@@ -9,7 +9,6 @@
 #include "Core/Rendering/TextureAsset.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
-#include "App/Renderer/RenderViewSettings.h"
 #include "PassPostEffects.h"
 
 namespace PK::App

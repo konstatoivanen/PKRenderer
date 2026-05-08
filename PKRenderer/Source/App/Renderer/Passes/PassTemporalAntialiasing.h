@@ -1,13 +1,12 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Rendering/RenderingFwd.h"
+#include "App/Renderer/RenderView.h"
 
 namespace PK::App
 {
     class PassTemporalAntialiasing : public NoCopy
     {
         public:
-            struct ViewResources
+            struct ViewResources : public IRenderViewResource
             {
                 RHITextureRef historyTexture;
             };

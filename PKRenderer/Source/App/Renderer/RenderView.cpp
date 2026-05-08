@@ -6,7 +6,7 @@
 
 namespace PK::App
 {
-    IRenderViewResources::~IRenderViewResources() = default;
+    IRenderViewResource::~IRenderViewResource() = default;
 
     uint2 GBuffers::AlignResolution(const uint2& resolution) { return math::align(resolution, RESOLUTION_ALIGNMENT); }
     uint3 GBuffers::GetResolution() const { return color->GetResolution(); }

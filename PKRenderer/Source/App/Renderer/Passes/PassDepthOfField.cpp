@@ -6,7 +6,6 @@
 #include "Core/Rendering/ShaderAsset.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
-#include "App/Renderer/RenderViewSettings.h"
 #include "App/Renderer/RenderPipelineBase.h"
 #include "PassDepthOfField.h"
 
@@ -35,7 +34,7 @@ namespace PK::App
     void PassDepthOfField::ComputeAutoFocus(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         auto screenHeight = view->GetResolution().y;
         auto hash = HashCache::Get();
 
@@ -53,7 +52,7 @@ namespace PK::App
         cmd->BeginDebugScope("DepthOfField", PK_COLOR_MAGENTA);
 
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         auto hash = HashCache::Get();
 
         auto fullres = destination->GetResolution();

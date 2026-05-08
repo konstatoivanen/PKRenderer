@@ -1,9 +1,8 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/FixedArray.h"
 #include "Core/Utilities/FixedString.h"
+#include "Core/Utilities/TypeSet.h"
 #include "Core/Timers/TimeFrameInfo.h"
-#include "Core/Rendering/RenderingFwd.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/EntityEnums.h"
 #include "App/Renderer/RenderViewSettings.h"
@@ -85,14 +84,19 @@ namespace PK::App
         void SwapBuffers();
     };
 
-    struct IRenderViewResources : NoCopy
+    struct IRenderViewResource : NoCopy
     {
-        virtual ~IRenderViewResources() = 0;
+        virtual ~IRenderViewResource() = 0;
     };
+
+    typedef IDerivedTypeSet<IRenderViewResource> IRenderViewResourceSet;
+
+    template<typename ... TViewResources>
+    using RenderViewResourceSet = DerivedTypeSet<IRenderViewResource, TViewResources...>;
 
     struct RenderView : public NoCopy
     {
-        IRenderViewResources* resources = nullptr;
+        IRenderViewResourceSet* resources = nullptr;
 
         ConstantBufferTransient constants{};
         GBuffersFull gbuffers{};
@@ -130,7 +134,7 @@ namespace PK::App
         inline uint64_t GetFrameCountSinceResize() { return timeRender.frameIndex - timeResize.frameIndex; }
         inline bool IsResizeFrame() { return timeRender.frameIndex == timeResize.frameIndex; }
 
-        template<typename TViewResources>
-        TViewResources* GetResources() { return dynamic_cast<TViewResources*>(resources); }
+        template<typename TViewResource>
+        TViewResource* GetResource() { return resources->GetInstance<TViewResource>(); }
     };
 }

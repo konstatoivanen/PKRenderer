@@ -1,15 +1,13 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
 #include "Core/Assets/AssetImportEvent.h"
-#include "Core/Rendering/RenderingFwd.h"
-#include "Core/Math/Math.h"
+#include "App/Renderer/RenderView.h"
 
 namespace PK::App
 {
     class PassSceneEnv : public NoCopy
     {
         public:
-            struct ViewResources
+            struct ViewResources : public IRenderViewResource
             {
                 RHITexture* sourceTexture = nullptr;
                 RHITextureRef sceneEnvIBL = nullptr;

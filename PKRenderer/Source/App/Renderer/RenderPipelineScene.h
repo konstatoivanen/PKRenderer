@@ -19,23 +19,17 @@ namespace PK { struct EntityDatabase; }
 
 namespace PK::App
 {    
-    // New format for per pass resources
-    struct SceneRenderViewResources : 
-        public IRenderViewResources,
-        public PassLights::ViewResources,
-        public PassSceneGI::ViewResources,
-        public PassVolumetricFog::ViewResources,
-        public PassHierarchicalDepth::ViewResources,
-        public PassSceneEnv::ViewResources,
-        public PassDepthOfField::ViewResources,
-        public PassTemporalAntialiasing::ViewResources,
-        public PassDistort::ViewResources,
-        public PassBloom::ViewResources,
-        public PassAutoExposure::ViewResources
-    {
-    };
-
-    class RenderPipelineScene : public IRenderPipeline<SceneRenderViewResources>
+    class RenderPipelineScene : public IRenderPipeline<
+        PassLights::ViewResources,
+        PassSceneGI::ViewResources,
+        PassVolumetricFog::ViewResources,
+        PassHierarchicalDepth::ViewResources,
+        PassSceneEnv::ViewResources,
+        PassDepthOfField::ViewResources,
+        PassTemporalAntialiasing::ViewResources,
+        PassDistort::ViewResources,
+        PassBloom::ViewResources,
+        PassAutoExposure::ViewResources>
     {
         public:
             RenderPipelineScene(AssetDatabase* assetDatabase,

@@ -29,7 +29,7 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto view = context->views[0];
-        auto resources = view->GetResources<ViewResources>();
+        auto resources = view->GetResource<ViewResources>();
         auto resolution = view->GetResolution();
 
         TextureDescriptor hzbDesc{};

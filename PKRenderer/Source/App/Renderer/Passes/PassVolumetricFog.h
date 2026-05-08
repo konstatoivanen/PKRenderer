@@ -1,14 +1,12 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Math/Math.h"
-#include "Core/Rendering/RenderingFwd.h"
+#include "App/Renderer/RenderView.h"
 
 namespace PK::App
 {
     class PassVolumetricFog : public NoCopy
     {
         public:
-            struct ViewResources
+            struct ViewResources : public IRenderViewResource
             {
                 RHITextureRef volumeInject[2];
                 RHITextureRef volumeDensity[2];
