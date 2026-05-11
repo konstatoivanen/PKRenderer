@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FenceRef.h"
-#include "Core/Utilities/List.h"
+#include "Core/Utilities/ArrayList.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/Assets/Asset.h"
 #include "Core/RHI/Layout.h"
@@ -207,7 +207,7 @@ namespace PK
         RHIBufferRef m_indexBuffer;
         VertexStreamLayout m_streamLayout;
         uint32_t m_indexSize;
-        List<SubMesh, 1ull> m_submeshes;
+        InlineList<SubMesh, 1ull> m_submeshes;
         SubMesh m_fullrange{};
         uint32_t m_positionAttributeIndex = ~0u;
         mutable FenceRef m_uploadFence;

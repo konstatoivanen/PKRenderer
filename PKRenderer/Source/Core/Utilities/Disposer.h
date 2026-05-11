@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/FenceRef.h"
-#include "Core/Utilities/List.h"
+#include "Core/Utilities/ArrayList.h"
 
 namespace PK
 {
@@ -31,6 +31,6 @@ namespace PK
             void Prune();
 
         private:
-            List<DisposeHandle> m_disposables;
+            HeapList<DisposeHandle> m_disposables;
     };
 }

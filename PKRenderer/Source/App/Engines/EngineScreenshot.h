@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/FastBuffer.h"
+#include "Core/Utilities/ArrayList.h"
 #include "Core/Utilities/FenceRef.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/FrameStep.h"
@@ -16,7 +16,7 @@ namespace PK::App
 
     private:
         RHIBufferRef m_copyBuffer;
-        FastBuffer<uint16_t> m_accumulatedPixels;
+        HeapArray<uint16_t> m_accumulatedPixels;
         FenceRef m_copyFence;
         uint32_t m_captureCounter = 0u;
         uint32_t m_captureFrameCount = 0u;

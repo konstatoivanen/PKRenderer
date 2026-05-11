@@ -2,7 +2,7 @@
 #include "Core/Utilities/BufferView.h"
 #include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/TypeIndex.h"
-#include "Core/Utilities/FastBuffer.h"
+#include "Core/Utilities/ArrayList.h"
 #include "Core/ECS/EGID.h"
 #include "Core/ECS/IEntityView.h"
 #include "Core/ECS/IEntityImplementer.h"
@@ -43,7 +43,7 @@ namespace PK
 
     struct EntityViewContainer
     {
-        FastBuffer<uint64_t> buffer;
+        HeapArray<uint64_t> buffer;
         uint64_t head = 0ull;
 
         EntityViewContainer(EntityViewContainer&& other) noexcept :
@@ -193,7 +193,7 @@ namespace PK
 
     private:
         HashSet<EntityViewHeader, EntityViewHeaderHash> m_viewHeaders;
-        FastBuffer<EntityViewContainer> m_entityViews;
+        HeapArray<EntityViewContainer> m_entityViews;
         HashMap<uint32_t, ImplementerContainer> m_implementers;
         uint32_t m_idCounter = 0u;
         uint32_t m_viewCounter = 0u;

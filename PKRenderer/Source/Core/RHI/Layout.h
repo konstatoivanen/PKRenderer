@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/List.h"
+#include "Core/Utilities/ArrayList.h"
 #include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/NameID.h"
 #include "Core/RHI/Structs.h"
@@ -24,8 +24,9 @@ namespace PK
 
     struct ShaderPushConstantLayout : public FixedList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>
     {
+        using TBase = FixedList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>;
         ShaderPushConstantLayout() {}
-        ShaderPushConstantLayout(const ShaderPushConstant* variables, size_t count) : FixedList(variables, count) {}
+        ShaderPushConstantLayout(const ShaderPushConstant* variables, size_t count) : TBase(variables, count) {}
     };
 
 
@@ -49,9 +50,10 @@ namespace PK
 
     struct ShaderResourceLayout : public FixedList<ShaderResourceElement, PK_RHI_MAX_DESCRIPTORS_PER_SET>
     {
+        using TBase = FixedList<ShaderResourceElement, PK_RHI_MAX_DESCRIPTORS_PER_SET>;
         ShaderResourceLayout() {}
-        ShaderResourceLayout(const ShaderResourceElement* elements, size_t count) : FixedList(elements, count) {}
-        ShaderResourceLayout(initializer_list<ShaderResourceElement> elements) : FixedList(elements) {}
+        ShaderResourceLayout(const ShaderResourceElement* elements, size_t count) : TBase(elements, count) {}
+        ShaderResourceLayout(initializer_list<ShaderResourceElement> elements) : TBase(elements) {}
         const ShaderResourceElement* TryGetElement(NameID name, uint32_t* index) const;
     };
 
@@ -113,16 +115,17 @@ namespace PK
 
     struct VertexStreamLayout : public FixedList<VertexStreamElement, PK_RHI_MAX_VERTEX_ATTRIBUTES>
     {
-        using FixedList<VertexStreamElement, PK_RHI_MAX_VERTEX_ATTRIBUTES>::Add;
+        using TBase = FixedList<VertexStreamElement, PK_RHI_MAX_VERTEX_ATTRIBUTES>;
+        using TBase::Add;
 
         VertexStreamLayout() {}
 
-        VertexStreamLayout(const VertexStreamElement* elements, size_t count) : FixedList(elements, count)
+        VertexStreamLayout(const VertexStreamElement* elements, size_t count) : TBase(elements, count)
         {
             CalculateOffsetsAndStride();
         }
 
-        VertexStreamLayout(initializer_list<VertexStreamElement> elements) : FixedList(elements)
+        VertexStreamLayout(initializer_list<VertexStreamElement> elements) : TBase(elements)
         {
             CalculateOffsetsAndStride();
         }

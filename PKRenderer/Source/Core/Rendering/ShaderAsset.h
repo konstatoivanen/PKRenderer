@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/FastBuffer.h"
+#include "Core/Utilities/ArrayList.h"
 #include "Core/Assets/Asset.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/ShaderPropertyBlock.h"
@@ -61,7 +61,7 @@ namespace PK
     protected:
         void ReleaseVariants();
 
-        FastBuffer<RHIShaderScope, 4ull> m_shaders;
+        InlineArray<RHIShaderScope, 4ull> m_shaders;
         Map m_map;
         FixedFunctionShaderAttributes m_attributes;
         ShaderPropertyLayout m_materialPropertyLayout;

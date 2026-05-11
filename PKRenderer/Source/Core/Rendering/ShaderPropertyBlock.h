@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/FastBuffer.h"
+#include "Core/Utilities/ArrayList.h"
 #include "Core/Utilities/HashMap.h"
 #include "Core/RHI/Structs.h"
 
@@ -101,6 +101,6 @@ namespace PK
         inline const void* GetData() const { return m_properties.GetData(); }
     private:
         ShaderPropertyLayout m_layout;
-        FastBuffer<uint8_t> m_properties;
+        HeapArray<uint8_t> m_properties;
     };
 }

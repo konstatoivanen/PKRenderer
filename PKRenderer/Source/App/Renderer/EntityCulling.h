@@ -1,6 +1,5 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/FastBuffer.h"
+#include "Core/Utilities/BufferView.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
 

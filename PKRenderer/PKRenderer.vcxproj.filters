@@ -435,7 +435,7 @@
     <ClInclude Include="Source\Core\Utilities\Singleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FastBuffer.h">
+    <ClInclude Include="Source\Core\Utilities\ArrayList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\NoCopy.h">
@@ -534,9 +534,6 @@
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FixedArray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\App\Renderer\IGUIRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -624,9 +621,6 @@
     <ClInclude Include="Source\App\Renderer\Passes\PassDistort.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\List.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedRefPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -670,6 +664,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Simd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Utilities\Allocation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

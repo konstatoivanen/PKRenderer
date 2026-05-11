@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/FastBuffer.h"
+#include "Core/Utilities/ArrayList.h"
 #include "Core/ControlFlow/IStep.h"
 #include "Core/Timers/TimeFrameInfo.h"
 
@@ -22,7 +22,7 @@ namespace PK::App
     private:
         AssetDatabase* m_assetDatabase = nullptr;
         TimeFramerateInfo m_framerate{};
-        FastBuffer<double> m_timeHistory;
+        HeapArray<double> m_timeHistory;
         uint64_t m_timeHistoryHead = 0ull;
         bool m_enabled = false;
     };

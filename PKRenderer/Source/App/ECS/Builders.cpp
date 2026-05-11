@@ -65,7 +65,7 @@ namespace PK::App::EntityBuilders
         const initializer_list<MaterialTarget>& materials)
     {
         entityDb->ReserveView(implementer, egid, &EntityViewMeshStatic::primitive, &EntityViewMeshStatic::materials, &EntityViewMeshStatic::staticMesh, &EntityViewMeshStatic::transform);
-        implementer->materials.Copy(materials);
+        implementer->materials.Copy(materials.begin(), materials.size());
         implementer->sharedMesh = staticMesh;
     }
 

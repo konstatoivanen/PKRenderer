@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/FastBuffer.h"
+#include "Core/Utilities/ArrayList.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Rendering/ShaderPropertyBlock.h"
 #include "Core/Rendering/RenderingFwd.h"
@@ -39,7 +39,7 @@ namespace PK
 
         ShaderAsset* m_shader = nullptr;
         ShaderAsset* m_shaderShadow = nullptr;
-        FastBuffer<uint8_t, INLINE_SIZE> m_propertyBuffer;
+        InlineArray<uint8_t, INLINE_SIZE> m_propertyBuffer;
     };
 
     struct MaterialTarget
