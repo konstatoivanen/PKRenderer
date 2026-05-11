@@ -459,7 +459,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\BatcherMeshStatic.h" />
     <ClInclude Include="Source\App\Renderer\EntityEnums.h" />
     <ClInclude Include="Source\App\Renderer\EntityCulling.h" />
-    <ClInclude Include="Source\Core\Utilities\FixedMask.h" />
+    <ClInclude Include="Source\Core\Utilities\Mask.h" />
     <ClInclude Include="Source\Core\Utilities\BufferView.h" />
     <ClInclude Include="Source\Core\Utilities\FileIO.h" />
     <ClInclude Include="Source\Core\Utilities\FixedPool.h" />
@@ -647,7 +647,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp" />
-    <ClCompile Include="Source\Core\Utilities\FixedMask.cpp" />
+    <ClCompile Include="Source\Core\Utilities\Mask.cpp" />
     <ClCompile Include="Source\Core\Utilities\Ref.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeCVariablesYaml.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeFixedString.cpp" />

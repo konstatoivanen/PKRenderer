@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/FixedMask.h"
 #include "Core/Input/InputState.h"
 
 namespace PK::App

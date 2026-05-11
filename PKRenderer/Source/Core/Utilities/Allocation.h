@@ -6,6 +6,8 @@ namespace PK
     template<size_t size>
     struct AllocationFixed
     {
+        constexpr static const bool is_fixed = true;
+
         template<typename T> 
         struct alignas(16) Data 
         { 
@@ -38,6 +40,8 @@ namespace PK
     template<size_t inline_size>
     struct AllocationInline
     {
+        constexpr static const bool is_fixed = false;
+
         template<typename T>
         struct alignas(16) Data
         {
@@ -90,6 +94,8 @@ namespace PK
 
     struct AllocationHeap
     {
+        constexpr static const bool is_fixed = false;
+
         template<typename T>
         struct Data
         {

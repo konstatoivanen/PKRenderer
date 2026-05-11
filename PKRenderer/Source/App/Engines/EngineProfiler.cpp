@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include "Core/Platform/PlatformInterfaces.h"
-#include "Core/Utilities/FixedMask.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Math/Color.h"
 #include "Core/Math/Extended.h"

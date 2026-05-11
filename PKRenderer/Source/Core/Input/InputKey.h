@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/FixedMask.h"
+#include "Core/Utilities/Mask.h"
 
 namespace PK
 {

@@ -8,44 +8,44 @@ namespace PK
     template<typename TIndex>
     struct IHashSetNode
     {
-        using _TIndex = TIndex;
-        TIndex previous;
-        TIndex next;
+        using Index = TIndex;
+        Index previous;
+        Index next;
         IHashSetNode() : previous(-1), next(-1) {}
-        IHashSetNode(TIndex previous) : previous(previous), next(-1) {}
+        IHashSetNode(Index previous) : previous(previous), next(-1) {}
     };
 
     template<typename TIndex, typename TKey>
     struct IHashMapNode
     {
-        using _TIndex = TIndex;
-        using _TKey = TKey;
-        TKey key;
+        using Index = TIndex;
+        using Key = TKey;
+        Key key;
         size_t hashcode;
-        TIndex previous;
-        TIndex next;
+        Index previous;
+        Index next;
         IHashMapNode() : key(), hashcode(0ull), previous(-1), next(-1) {}
-        IHashMapNode(const TKey& key, uint64_t hash) : key(key), hashcode(hash), previous(-1), next(-1) {}
+        IHashMapNode(const Key& key, uint64_t hash) : key(key), hashcode(hash), previous(-1), next(-1) {}
     };
 
     template<typename TValue, typename TNode>
     struct IHashAllocatorHeap : public NoCopy
     {
     protected:
-        using _TIndex = typename TNode::_TIndex;
-        using _TNode = TNode;
-        using _TValue = TValue;
+        using Index = typename TNode::Index;
+        using Node = TNode;
+        using Value = TValue;
 
         void* m_buffer = nullptr;
 
         union
         {
-            _TIndex* m_buckets = nullptr;
-            _TIndex m_bucketsInline;
+            Index* m_buckets = nullptr;
+            Index m_bucketsInline;
         };
 
-        _TValue* m_values = nullptr;
-        _TNode* m_nodes = nullptr;
+        Value* m_values = nullptr;
+        Node* m_nodes = nullptr;
         uint32_t m_bucketStride = 0u;
         uint32_t m_bucketCount = 0u;
         uint32_t m_collisions = 0u;
@@ -63,8 +63,8 @@ namespace PK
         }
 
         uint32_t GetBucketCount() const { return m_bucketCount + 1u; }
-        const _TIndex* GetBuckets() const { return m_buffer ? m_buckets : &m_bucketsInline; }
-        _TIndex* GetBuckets() { return m_buffer ? m_buckets : &m_bucketsInline; }
+        const Index* GetBuckets() const { return m_buffer ? m_buckets : &m_bucketsInline; }
+        Index* GetBuckets() { return m_buffer ? m_buckets : &m_bucketsInline; }
 
         void Move(IHashAllocatorHeap&& other)
         {
@@ -120,17 +120,17 @@ namespace PK
                 m_bucketCount = (m_bucketStride + 1u) * m_capacity - 1u;
                 
                 size_t size = 0ull;
-                const auto offsetBuckets = Memory::AlignSize<_TIndex>(size);
-                size = offsetBuckets + sizeof(_TIndex) * GetBucketCount();
-                const auto offsetNode = Memory::AlignSize<_TNode>(size);
-                size = offsetNode + sizeof(_TNode) * m_capacity;
-                const auto offsetValue = Memory::AlignSize<_TValue>(size);
-                size = offsetValue + sizeof(_TValue) * m_capacity;
+                const auto offsetBuckets = Memory::AlignSize<Index>(size);
+                size = offsetBuckets + sizeof(Index) * GetBucketCount();
+                const auto offsetNode = Memory::AlignSize<Node>(size);
+                size = offsetNode + sizeof(Node) * m_capacity;
+                const auto offsetValue = Memory::AlignSize<Value>(size);
+                size = offsetValue + sizeof(Value) * m_capacity;
                 
                 auto newBuffer = Memory::AllocateClear<uint8_t>(size);
-                auto newBuckets = Memory::CastOffsetPtr<_TIndex>(newBuffer, offsetBuckets);
-                auto newNodes = Memory::CastOffsetPtr<_TNode>(newBuffer, offsetNode);
-                auto newValues = Memory::CastOffsetPtr<_TValue>(newBuffer, offsetValue);
+                auto newBuckets = Memory::CastOffsetPtr<Index>(newBuffer, offsetBuckets);
+                auto newNodes = Memory::CastOffsetPtr<Node>(newBuffer, offsetNode);
+                auto newValues = Memory::CastOffsetPtr<Value>(newBuffer, offsetValue);
 
                 if (m_buffer)
                 {
@@ -160,20 +160,20 @@ namespace PK
     struct IHashAllocatorFixed : public NoCopy
     {
     protected:
-        using _TIndex = typename TNode::_TIndex;
-        using _TNode = TNode;
-        using _TValue = TValue;
+        using Index = typename TNode::Index;
+        using Node = TNode;
+        using Value = TValue;
 
         static constexpr uint32_t m_capacity = capacity;
-        _TIndex m_buckets[capacity * bucket_stride]{};
-        _TNode m_nodes[capacity]{};
-        _TValue m_values[capacity]{};
+        Index m_buckets[capacity * bucket_stride]{};
+        Node m_nodes[capacity]{};
+        Value m_values[capacity]{};
         uint32_t m_collisions = 0u;
         uint32_t m_count = 0u;
 
         uint32_t GetBucketCount() const { return m_capacity * bucket_stride; }
-        const _TIndex* GetBuckets() const { return m_buckets; }
-        _TIndex* GetBuckets() { return m_buckets; }
+        const Index* GetBuckets() const { return m_buckets; }
+        Index* GetBuckets() { return m_buckets; }
 
         void Move(IHashAllocatorFixed&& other)
         {
@@ -210,56 +210,56 @@ namespace PK
     template<typename TAllocator, typename THash>
     struct IHashSet : public TAllocator
     {
-        using TBase = TAllocator;
-        using TIndex = typename TBase::_TIndex;
-        using TNode = typename TBase::_TNode;
-        using TValue = typename TBase::_TValue;
+        using Base = TAllocator;
+        using Index = typename Base::Index;
+        using Node = typename Base::Node;
+        using Value = typename Base::Value;
         inline static THash Hash;
 
-        IHashSet(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
+        IHashSet(uint32_t size, uint32_t bucketCountFactor) { Base::Reserve(size, bucketCountFactor); }
         IHashSet() : IHashSet(0u, 1u) {}
-        IHashSet(IHashSet&& other) noexcept { TBase::Move(PK::Forward<TAllocator>(other)); }
-        IHashSet(const IHashSet& other) noexcept { TBase::Copy(other); }
+        IHashSet(IHashSet&& other) noexcept { Base::Move(PK::Forward<TAllocator>(other)); }
+        IHashSet(const IHashSet& other) noexcept { Base::Copy(other); }
 
-        constexpr uint32_t GetCount() const { return TBase::m_count; }
-        constexpr uint32_t GetCapacity() const { return TBase::m_capacity; }
-        constexpr const TValue* GetValues() const { return TBase::m_values; }
-        TValue* GetValues() { return TBase::m_values; }
-        constexpr TValue const* begin() const { return TBase::m_values; }
-        constexpr TValue const* end() const { return TBase::m_values + TBase::m_count; }
-        const TValue& operator[](uint32_t index) const { return TBase::m_values[index]; }
-        TValue& operator[](uint32_t index) { return TBase::m_values[index]; }
-        IHashSet& operator=(IHashSet&& other) noexcept { TBase::Move(PK::Forward<TAllocator>(other)); return *this; }
-        IHashSet& operator=(const IHashSet& other) noexcept { TBase::Copy(other); return *this; }
+        constexpr uint32_t GetCount() const { return Base::m_count; }
+        constexpr uint32_t GetCapacity() const { return Base::m_capacity; }
+        constexpr const Value* GetValues() const { return Base::m_values; }
+        Value* GetValues() { return Base::m_values; }
+        constexpr Value const* begin() const { return Base::m_values; }
+        constexpr Value const* end() const { return Base::m_values + Base::m_count; }
+        const Value& operator[](uint32_t index) const { return Base::m_values[index]; }
+        Value& operator[](uint32_t index) { return Base::m_values[index]; }
+        IHashSet& operator=(IHashSet&& other) noexcept { Base::Move(PK::Forward<TAllocator>(other)); return *this; }
+        IHashSet& operator=(const IHashSet& other) noexcept { Base::Copy(other); return *this; }
 
         // Special case access where key is inlined into value.
-        const TValue* GetValuePtr(const TValue& value) const { auto index = GetIndex(value); return index != -1 ? &TBase::m_values[index] : nullptr; }
-        TValue* GetValuePtr(const TValue& value) { auto index = GetIndex(value); return index != -1 ? &TBase::m_values[index] : nullptr; }
+        const Value* GetValuePtr(const Value& value) const { auto index = GetIndex(value); return index != -1 ? &Base::m_values[index] : nullptr; }
+        Value* GetValuePtr(const Value& value) { auto index = GetIndex(value); return index != -1 ? &Base::m_values[index] : nullptr; }
 
         int32_t GetHashIndex(size_t hash) const
         {
-            if (TBase::m_count > 0)
+            if (Base::m_count > 0)
             {
                 const auto bucketIndex = GetBucketIndex(hash);
                 auto valueIndex = GetValueIndexFromBuckets(bucketIndex);
 
                 while (valueIndex != -1)
                 {
-                    if (Hash(TBase::m_values[valueIndex]) == hash)
+                    if (Hash(Base::m_values[valueIndex]) == hash)
                     {
                         return valueIndex;
                     }
 
-                    valueIndex = TBase::m_nodes[valueIndex].previous;
+                    valueIndex = Base::m_nodes[valueIndex].previous;
                 }
             }
 
             return -1;
         }
 
-        int32_t GetIndex(const TValue& value) const
+        int32_t GetIndex(const Value& value) const
         {
-            if (TBase::m_count > 0)
+            if (Base::m_count > 0)
             {
                 const auto hash = Hash(value);
                 const auto bucketIndex = GetBucketIndex(hash);
@@ -267,21 +267,21 @@ namespace PK
 
                 while (valueIndex != -1)
                 {
-                    if (TBase::m_values[valueIndex] == value)
+                    if (Base::m_values[valueIndex] == value)
                     {
                         return valueIndex;
                     }
 
-                    valueIndex = TBase::m_nodes[valueIndex].previous;
+                    valueIndex = Base::m_nodes[valueIndex].previous;
                 }
             }
 
             return -1;
         }
 
-        bool Contains(const TValue& value) const { return GetIndex(value) != -1; }
+        bool Contains(const Value& value) const { return GetIndex(value) != -1; }
 
-        bool Add(const TValue& value, uint32_t* outIndex)
+        bool Add(const Value& value, uint32_t* outIndex)
         {
             const auto hash = Hash(value);
             const auto bucketIndex = GetBucketIndex(hash);
@@ -290,52 +290,52 @@ namespace PK
 
             while (movingValueIndex != -1)
             {
-                if (TBase::m_values[movingValueIndex] == value)
+                if (Base::m_values[movingValueIndex] == value)
                 {
                     *outIndex = movingValueIndex;
                     return false;
                 }
 
-                movingValueIndex = TBase::m_nodes[movingValueIndex].previous;
+                movingValueIndex = Base::m_nodes[movingValueIndex].previous;
             }
                 
-            const auto resized = TBase::Reserve(TBase::m_count + 1u);
-            const auto index = TBase::m_count++;
-            TBase::m_values[index] = value;
+            const auto resized = Base::Reserve(Base::m_count + 1u);
+            const auto index = Base::m_count++;
+            Base::m_values[index] = value;
 
             if (!resized)
             {
-                TBase::m_nodes[index] = TNode(valueIndex);
+                Base::m_nodes[index] = Node(valueIndex);
 
                 if (valueIndex != -1)
                 {
-                    TBase::m_collisions++;
-                    TBase::m_nodes[valueIndex].next = index;
+                    Base::m_collisions++;
+                    Base::m_nodes[valueIndex].next = index;
                 }
 
                 SetValueIndexInBuckets(bucketIndex, index);
             }
             else // Dead code elimination should remove this for fixed versions.
             {
-                TBase::m_collisions = 0u;
+                Base::m_collisions = 0u;
 
-                for (auto newValueIndex = 0u; newValueIndex < TBase::m_count; newValueIndex++)
+                for (auto newValueIndex = 0u; newValueIndex < Base::m_count; newValueIndex++)
                 {
-                    const auto existingBucketIndex = GetBucketIndex(Hash(TBase::m_values[newValueIndex]));
+                    const auto existingBucketIndex = GetBucketIndex(Hash(Base::m_values[newValueIndex]));
                     const auto existingValueIndex = GetValueIndexFromBuckets(existingBucketIndex);
                     SetValueIndexInBuckets(existingBucketIndex, newValueIndex);
 
                     if (existingValueIndex != -1)
                     {
-                        ++TBase::m_collisions;
-                        TBase::m_nodes[newValueIndex].previous = existingValueIndex;
-                        TBase::m_nodes[newValueIndex].next = -1;
-                        TBase::m_nodes[existingValueIndex].next = newValueIndex;
+                        ++Base::m_collisions;
+                        Base::m_nodes[newValueIndex].previous = existingValueIndex;
+                        Base::m_nodes[newValueIndex].next = -1;
+                        Base::m_nodes[existingValueIndex].next = newValueIndex;
                     }
                     else
                     {
-                        TBase::m_nodes[newValueIndex].next = -1;
-                        TBase::m_nodes[newValueIndex].previous = -1;
+                        Base::m_nodes[newValueIndex].next = -1;
+                        Base::m_nodes[newValueIndex].previous = -1;
                     }
                 }
             }
@@ -344,7 +344,7 @@ namespace PK
             return true;
         }
 
-        uint32_t Add(const TValue& value)
+        uint32_t Add(const Value& value)
         {
             uint32_t outIndex = 0u;
             Add(value, &outIndex);
@@ -353,65 +353,65 @@ namespace PK
 
         bool RemoveAt(uint32_t index)
         {
-            if (index >= TBase::m_count)
+            if (index >= Base::m_count)
             {
                 return false;
             }
 
-            const auto hash = Hash(TBase::m_values[index]);
+            const auto hash = Hash(Base::m_values[index]);
             const auto bucketIndex = GetBucketIndex(hash);
 
             if (GetValueIndexFromBuckets(bucketIndex) == (int32_t)index)
             {
-                SetValueIndexInBuckets(bucketIndex, TBase::m_nodes[index].previous);
+                SetValueIndexInBuckets(bucketIndex, Base::m_nodes[index].previous);
             }
 
-            const auto updateNext = TBase::m_nodes[index].next;
-            const auto updatePrevious = TBase::m_nodes[index].previous;
+            const auto updateNext = Base::m_nodes[index].next;
+            const auto updatePrevious = Base::m_nodes[index].previous;
 
             if (updateNext != -1)
             {
-                TBase::m_nodes[updateNext].previous = updatePrevious;
+                Base::m_nodes[updateNext].previous = updatePrevious;
             }
 
             if (updatePrevious != -1)
             {
-                TBase::m_collisions--;
-                TBase::m_nodes[updatePrevious].next = updateNext;
+                Base::m_collisions--;
+                Base::m_nodes[updatePrevious].next = updateNext;
             }
 
-            TBase::m_count--;
+            Base::m_count--;
 
-            if (index != TBase::m_count)
+            if (index != Base::m_count)
             {
-                const auto movingBucketIndex = GetBucketIndex(Hash(TBase::m_values[TBase::m_count]));
+                const auto movingBucketIndex = GetBucketIndex(Hash(Base::m_values[Base::m_count]));
 
-                if (GetValueIndexFromBuckets(movingBucketIndex) == (int32_t)TBase::m_count)
+                if (GetValueIndexFromBuckets(movingBucketIndex) == (int32_t)Base::m_count)
                 {
                     SetValueIndexInBuckets(movingBucketIndex, index);
                 }
 
-                const auto next = TBase::m_nodes[TBase::m_count].next;
-                const auto previous = TBase::m_nodes[TBase::m_count].previous;
+                const auto next = Base::m_nodes[Base::m_count].next;
+                const auto previous = Base::m_nodes[Base::m_count].previous;
 
                 if (next != -1)
                 {
-                    TBase::m_nodes[next].previous = index;
+                    Base::m_nodes[next].previous = index;
                 }
 
                 if (previous != -1)
                 {
-                    TBase::m_nodes[previous].next = index;
+                    Base::m_nodes[previous].next = index;
                 }
 
-                TBase::m_nodes[index] = TBase::m_nodes[TBase::m_count];
-                TBase::m_values[index] = TBase::m_values[TBase::m_count];
+                Base::m_nodes[index] = Base::m_nodes[Base::m_count];
+                Base::m_values[index] = Base::m_values[Base::m_count];
             }
 
             return true;
         }
 
-        bool Remove(const TValue& value)
+        bool Remove(const Value& value)
         {
             auto index = GetIndex(value);
 
@@ -425,79 +425,79 @@ namespace PK
 
         void Clear()
         {
-            if (TBase::m_count > 0)
+            if (Base::m_count > 0)
             {
-                Memory::ClearArray(TBase::m_values, TBase::m_count);
-                Memory::ClearArray(TBase::m_nodes, TBase::m_count);
+                Memory::ClearArray(Base::m_values, Base::m_count);
+                Memory::ClearArray(Base::m_nodes, Base::m_count);
                 ClearBuckets();
-                TBase::m_collisions = 0u;
-                TBase::m_count = 0u;
+                Base::m_collisions = 0u;
+                Base::m_count = 0u;
             }
         }
 
         void ClearFast()
         {
-            if (TBase::m_count > 0)
+            if (Base::m_count > 0)
             {
                 ClearBuckets();
-                TBase::m_collisions = 0u;
-                TBase::m_count = 0u;
+                Base::m_collisions = 0u;
+                Base::m_count = 0u;
             }
         }
 
     private:
-        uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % TBase::GetBucketCount()); }
-        void SetValueIndexInBuckets(uint32_t i, int32_t value) { TBase::GetBuckets()[i] = value + 1; }
-        int32_t GetValueIndexFromBuckets(uint32_t i) const { return TBase::GetBuckets()[i] - 1; }
-        void ClearBuckets() { memset(TBase::GetBuckets(), 0, sizeof(TIndex) * TBase::GetBucketCount()); }
+        uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % Base::GetBucketCount()); }
+        void SetValueIndexInBuckets(uint32_t i, int32_t value) { Base::GetBuckets()[i] = value + 1; }
+        int32_t GetValueIndexFromBuckets(uint32_t i) const { return Base::GetBuckets()[i] - 1; }
+        void ClearBuckets() { memset(Base::GetBuckets(), 0, sizeof(Index) * Base::GetBucketCount()); }
     };
 
     template<typename TAllocator, typename THash>
     struct IHashMap : public TAllocator
     {
-        using TBase = TAllocator;
-        using TNode = typename TBase::_TNode;
-        using TValue = typename TBase::_TValue;
-        using TKey = typename TBase::_TNode::_TKey;
+        using Base = TAllocator;
+        using Node = typename Base::Node;
+        using Value = typename Base::Value;
+        using Key = typename Base::Node::Key;
         inline static THash Hash;
 
         struct KeyValueConst
         {
-            const TKey& key;
-            const TValue& value;
-            KeyValueConst(const TKey& key, const TValue& value) : key(key), value(value) {}
+            const Key& key;
+            const Value& value;
+            KeyValueConst(const Key& key, const Value& value) : key(key), value(value) {}
         };
 
         struct KeyValue
         {
-            TKey& key;
-            TValue& value;
-            KeyValue(TKey& key, TValue& value) : key(key), value(value){}
+            Key& key;
+            Value& value;
+            KeyValue(Key& key, Value& value) : key(key), value(value){}
         };
 
-        IHashMap(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
+        IHashMap(uint32_t size, uint32_t bucketCountFactor) { Base::Reserve(size, bucketCountFactor); }
         IHashMap() : IHashMap(0u, 1u) {}
-        IHashMap(IHashMap&& other) noexcept { TBase::Move(PK::Forward<TBase>(other)); }
-        IHashMap(const IHashMap& other) noexcept { TBase::Copy(other); }
+        IHashMap(IHashMap&& other) noexcept { Base::Move(PK::Forward<Base>(other)); }
+        IHashMap(const IHashMap& other) noexcept { Base::Copy(other); }
 
-        constexpr uint32_t GetCount() const { return TBase::m_count; }
-        constexpr size_t GetCapacity() const { return TBase::m_capacity; }
-        constexpr const TValue* GetValues() const { return TBase::m_values; }
-        TValue* GetValues() { return TBase::m_values; }
-        constexpr TValue const* begin() const { return TBase::m_values; }
-        constexpr TValue const* end() const { return TBase::m_values + TBase::m_count; }
-        const KeyValueConst operator[](uint32_t index) const { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
-        KeyValue operator[](uint32_t index) { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
-        IHashMap& operator=(IHashMap&& other) noexcept { TBase::Move(PK::Forward<TBase>(other)); return *this; }
-        IHashMap& operator=(const IHashMap& other) noexcept { TBase::Copy(other); return *this; }
+        constexpr uint32_t GetCount() const { return Base::m_count; }
+        constexpr size_t GetCapacity() const { return Base::m_capacity; }
+        constexpr const Value* GetValues() const { return Base::m_values; }
+        Value* GetValues() { return Base::m_values; }
+        constexpr Value const* begin() const { return Base::m_values; }
+        constexpr Value const* end() const { return Base::m_values + Base::m_count; }
+        const KeyValueConst operator[](uint32_t index) const { return { Base::m_nodes[index].key, Base::m_values[index] }; }
+        KeyValue operator[](uint32_t index) { return { Base::m_nodes[index].key, Base::m_values[index] }; }
+        IHashMap& operator=(IHashMap&& other) noexcept { Base::Move(PK::Forward<Base>(other)); return *this; }
+        IHashMap& operator=(const IHashMap& other) noexcept { Base::Copy(other); return *this; }
 
-        const TValue* GetValuePtr(const TKey& key) const { auto index = GetIndex(key); return index != -1 ? &TBase::m_values[index] : nullptr; }
-        TValue* GetValuePtr(const TKey& key) { auto index = GetIndex(key); return index != -1 ? &TBase::m_values[index] : nullptr; }
-        void SetValue(const TKey& key, const TValue& value) { auto index = GetIndex(key); if (index != -1) TBase::m_values[index] = value; }
+        const Value* GetValuePtr(const Key& key) const { auto index = GetIndex(key); return index != -1 ? &Base::m_values[index] : nullptr; }
+        Value* GetValuePtr(const Key& key) { auto index = GetIndex(key); return index != -1 ? &Base::m_values[index] : nullptr; }
+        void SetValue(const Key& key, const Value& value) { auto index = GetIndex(key); if (index != -1) Base::m_values[index] = value; }
 
-        int32_t GetIndex(const TKey& key) const
+        int32_t GetIndex(const Key& key) const
         {
-            if (TBase::m_count > 0)
+            if (Base::m_count > 0)
             {
                 const auto hash = Hash(key);
                 const auto bucketIndex = GetBucketIndex(hash);
@@ -505,21 +505,21 @@ namespace PK
 
                 while (valueIndex != -1)
                 {
-                    if (TBase::m_nodes[valueIndex].hashcode == hash && TBase::m_nodes[valueIndex].key == key)
+                    if (Base::m_nodes[valueIndex].hashcode == hash && Base::m_nodes[valueIndex].key == key)
                     {
                         return valueIndex;
                     }
 
-                    valueIndex = TBase::m_nodes[valueIndex].previous;
+                    valueIndex = Base::m_nodes[valueIndex].previous;
                 }
             }
 
             return -1;
         }
 
-        bool Contains(const TKey& key) const { return GetIndex(key) != -1; }
+        bool Contains(const Key& key) const { return GetIndex(key) != -1; }
 
-        bool AddKey(const TKey& key, uint32_t* outIndex)
+        bool AddKey(const Key& key, uint32_t* outIndex)
         {
             const auto hash = Hash(key);
             const auto bucketIndex = GetBucketIndex(hash);
@@ -528,52 +528,52 @@ namespace PK
 
             while (movingValueIndex != -1)
             {
-                if (TBase::m_nodes[movingValueIndex].hashcode == hash && TBase::m_nodes[movingValueIndex].key == key)
+                if (Base::m_nodes[movingValueIndex].hashcode == hash && Base::m_nodes[movingValueIndex].key == key)
                 {
                     *outIndex = movingValueIndex;
                     return false;
                 }
 
-                movingValueIndex = TBase::m_nodes[movingValueIndex].previous;
+                movingValueIndex = Base::m_nodes[movingValueIndex].previous;
             }
 
-            const auto resized = TBase::Reserve(TBase::m_count + 1u);
-            const auto index = TBase::m_count++;
-            TBase::m_nodes[index] = TNode(key, hash);
+            const auto resized = Base::Reserve(Base::m_count + 1u);
+            const auto index = Base::m_count++;
+            Base::m_nodes[index] = Node(key, hash);
 
             if (!resized)
             {
-                TBase::m_nodes[index].previous = valueIndex;
+                Base::m_nodes[index].previous = valueIndex;
 
                 if (valueIndex != -1)
                 {
-                    TBase::m_collisions++;
-                    TBase::m_nodes[valueIndex].next = index;
+                    Base::m_collisions++;
+                    Base::m_nodes[valueIndex].next = index;
                 }
 
                 SetValueIndexInBuckets(bucketIndex, index);
             }
             else // Dead code elimination should remove this for fixed versions.
             {
-                TBase::m_collisions = 0;
+                Base::m_collisions = 0;
 
-                for (auto newValueIndex = 0u; newValueIndex < TBase::m_count; newValueIndex++)
+                for (auto newValueIndex = 0u; newValueIndex < Base::m_count; newValueIndex++)
                 {
-                    const auto existingBucketIndex = GetBucketIndex(TBase::m_nodes[newValueIndex].hashcode);
+                    const auto existingBucketIndex = GetBucketIndex(Base::m_nodes[newValueIndex].hashcode);
                     const auto existingValueIndex = GetValueIndexFromBuckets(existingBucketIndex);
                     SetValueIndexInBuckets(existingBucketIndex, newValueIndex);
 
                     if (existingValueIndex != -1)
                     {
-                        TBase::m_collisions++;
-                        TBase::m_nodes[newValueIndex].previous = existingValueIndex;
-                        TBase::m_nodes[newValueIndex].next = -1;
-                        TBase::m_nodes[existingValueIndex].next = newValueIndex;
+                        Base::m_collisions++;
+                        Base::m_nodes[newValueIndex].previous = existingValueIndex;
+                        Base::m_nodes[newValueIndex].next = -1;
+                        Base::m_nodes[existingValueIndex].next = newValueIndex;
                     }
                     else
                     {
-                        TBase::m_nodes[newValueIndex].next = -1;
-                        TBase::m_nodes[newValueIndex].previous = -1;
+                        Base::m_nodes[newValueIndex].next = -1;
+                        Base::m_nodes[newValueIndex].previous = -1;
                     }
                 }
             }
@@ -582,81 +582,81 @@ namespace PK
             return true;
         }
 
-        uint32_t AddKey(const TKey& key)
+        uint32_t AddKey(const Key& key)
         {
             uint32_t newIndex = 0u;
             AddKey(key, &newIndex);
             return newIndex;
         }
 
-        bool AddValue(const TKey& key, const TValue& value)
+        bool AddValue(const Key& key, const Value& value)
         {
             auto index = 0u;
             auto appended = AddKey(key, &index);
-            TBase::m_values[index] = value;
+            Base::m_values[index] = value;
             return appended;
         }
 
         bool RemoveAt(uint32_t index)
         {
-            if (index >= TBase::m_count)
+            if (index >= Base::m_count)
             {
                 return false;
             }
 
-            const auto bucketIndex = GetBucketIndex(TBase::m_nodes[index].hashcode);
+            const auto bucketIndex = GetBucketIndex(Base::m_nodes[index].hashcode);
 
             if (GetValueIndexFromBuckets(bucketIndex) == (int32_t)index)
             {
-                SetValueIndexInBuckets(bucketIndex, TBase::m_nodes[index].previous);
+                SetValueIndexInBuckets(bucketIndex, Base::m_nodes[index].previous);
             }
 
-            const auto updateNext = TBase::m_nodes[index].next;
-            const auto updatePrevious = TBase::m_nodes[index].previous;
+            const auto updateNext = Base::m_nodes[index].next;
+            const auto updatePrevious = Base::m_nodes[index].previous;
 
             if (updateNext != -1)
             {
-                TBase::m_nodes[updateNext].previous = updatePrevious;
+                Base::m_nodes[updateNext].previous = updatePrevious;
             }
 
             if (updatePrevious != -1)
             {
-                TBase::m_collisions--;
-                TBase::m_nodes[updatePrevious].next = updateNext;
+                Base::m_collisions--;
+                Base::m_nodes[updatePrevious].next = updateNext;
             }
 
-            TBase::m_count--;
+            Base::m_count--;
 
-            if (index != TBase::m_count)
+            if (index != Base::m_count)
             {
-                const auto movingBucketIndex = GetBucketIndex(TBase::m_nodes[TBase::m_count].hashcode);
+                const auto movingBucketIndex = GetBucketIndex(Base::m_nodes[Base::m_count].hashcode);
 
-                if (GetValueIndexFromBuckets(movingBucketIndex) == (int32_t)TBase::m_count)
+                if (GetValueIndexFromBuckets(movingBucketIndex) == (int32_t)Base::m_count)
                 {
                     SetValueIndexInBuckets(movingBucketIndex, index);
                 }
 
-                const auto next = TBase::m_nodes[TBase::m_count].next;
-                const auto previous = TBase::m_nodes[TBase::m_count].previous;
+                const auto next = Base::m_nodes[Base::m_count].next;
+                const auto previous = Base::m_nodes[Base::m_count].previous;
 
                 if (next != -1)
                 {
-                    TBase::m_nodes[next].previous = index;
+                    Base::m_nodes[next].previous = index;
                 }
 
                 if (previous != -1)
                 {
-                    TBase::m_nodes[previous].next = index;
+                    Base::m_nodes[previous].next = index;
                 }
 
-                TBase::m_nodes[index] = TBase::m_nodes[TBase::m_count];
-                TBase::m_values[index] = PK::MoveTemp(TBase::m_values[TBase::m_count]);
+                Base::m_nodes[index] = Base::m_nodes[Base::m_count];
+                Base::m_values[index] = PK::MoveTemp(Base::m_values[Base::m_count]);
             }
 
             return true;
         }
 
-        bool Remove(const TKey& key)
+        bool Remove(const Key& key)
         {
             auto index = GetIndex(key);
 
@@ -670,31 +670,31 @@ namespace PK
 
         void Clear()
         {
-            if (TBase::m_count > 0)
+            if (Base::m_count > 0)
             {
-                Memory::ClearArray(TBase::m_values, TBase::m_count);
-                Memory::ClearArray(TBase::m_nodes, TBase::m_count);
+                Memory::ClearArray(Base::m_values, Base::m_count);
+                Memory::ClearArray(Base::m_nodes, Base::m_count);
                 ClearBuckets();
-                TBase::m_collisions = 0u;
-                TBase::m_count = 0u;
+                Base::m_collisions = 0u;
+                Base::m_count = 0u;
             }
         }
 
         void ClearFast()
         {
-            if (TBase::m_count > 0)
+            if (Base::m_count > 0)
             {
                 ClearBuckets();
-                TBase::m_collisions = 0u;
-                TBase::m_count = 0u;
+                Base::m_collisions = 0u;
+                Base::m_count = 0u;
             }
         }
 
         private:
-            uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % TBase::GetBucketCount()); }
-            void SetValueIndexInBuckets(uint32_t i, int32_t value) { TBase::GetBuckets()[i] = value + 1; }
-            int32_t GetValueIndexFromBuckets(uint32_t i) const { return TBase::GetBuckets()[i] - 1; }
-            void ClearBuckets() { memset(TBase::GetBuckets(), 0, sizeof(int32_t) * TBase::GetBucketCount()); }
+            uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % Base::GetBucketCount()); }
+            void SetValueIndexInBuckets(uint32_t i, int32_t value) { Base::GetBuckets()[i] = value + 1; }
+            int32_t GetValueIndexFromBuckets(uint32_t i) const { return Base::GetBuckets()[i] - 1; }
+            void ClearBuckets() { memset(Base::GetBuckets(), 0, sizeof(int32_t) * Base::GetBucketCount()); }
     };
 
 

@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Platform/Platform.h"
-#include "FixedMask.h"
+#include "Mask.h"
 
 namespace PK
 {

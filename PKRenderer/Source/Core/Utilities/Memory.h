@@ -170,7 +170,7 @@ namespace PK::Memory
 
 
     template<typename TAlignment>
-    size_t AlignSize(size_t size) noexcept { return size == 0ull ? 0ull : (size + sizeof(TAlignment) - 1ull) & ~(sizeof(TAlignment) - 1ull); }
+    constexpr size_t AlignSize(size_t size) noexcept { return size == 0ull ? 0ull : (size + sizeof(TAlignment) - 1ull) & ~(sizeof(TAlignment) - 1ull); }
 
     template<typename T>
     T* CastOffsetPtr(void* data, size_t offset) noexcept { return reinterpret_cast<T*>(static_cast<char*>(data) + offset); }

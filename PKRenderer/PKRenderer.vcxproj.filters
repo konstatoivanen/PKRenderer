@@ -414,7 +414,7 @@
     <ClInclude Include="Source\App\Renderer\BatcherMeshStatic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FixedMask.h">
+    <ClInclude Include="Source\Core\Utilities\Mask.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\BufferView.h">
@@ -1147,7 +1147,7 @@
     <ClCompile Include="ThirdParty\PKAssets\PKAssetEncoding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Utilities\FixedMask.cpp">
+    <ClCompile Include="Source\Core\Utilities\Mask.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp">

@@ -1,6 +1,6 @@
 #pragma once
 #include "NoCopy.h"
-#include "FixedMask.h"
+#include "Mask.h"
 #include "Memory.h"
 
 namespace PK

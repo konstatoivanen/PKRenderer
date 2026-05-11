@@ -41,7 +41,7 @@ namespace PK
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
         Array& operator=(Array&& other) noexcept { Move(PK::Forward<Array>(other)); return *this; }
-        Array& operator=(const Array& other) noexcept { Copy(other.GetData(), other.GetCount()); return *this; }
+        Array& operator=(const Array& other) noexcept { Copy(other); return *this; }
 
         inline void Copy(const T* elements, size_t count)
         {
@@ -132,7 +132,7 @@ namespace PK
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
         List& operator=(List&& other) noexcept { Move(PK::Forward<List>(other)); return *this; }
-        List& operator=(const List& other) noexcept { Copy(other.GetData(), other.GetCount()); return *this; }
+        List& operator=(const List& other) noexcept { Copy(other); return *this; }
 
 
         inline void Copy(const T* elements, size_t count)
