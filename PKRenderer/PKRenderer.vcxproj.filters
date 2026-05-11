@@ -423,7 +423,7 @@
     <ClInclude Include="Source\Core\Utilities\FileIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FixedPool.h">
+    <ClInclude Include="Source\Core\Utilities\Pool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\Hash.h">
@@ -444,7 +444,7 @@
     <ClInclude Include="Source\Core\Utilities\PropertyBlock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FixedRangeTable.h">
+    <ClInclude Include="Source\Core\Utilities\RangeTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\Ref.h">

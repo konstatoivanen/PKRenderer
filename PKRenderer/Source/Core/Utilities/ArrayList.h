@@ -15,18 +15,18 @@ namespace PK
         using TData = typename TAllocation::template Data<T>;
 
         constexpr Array() : m_data() {}
-        Array(size_t capacity) noexcept : Array() { Reserve(capacity); }
+        Array(size_t capacity) noexcept : Array() { Reserve(capacity, false); }
         Array(Array&& other) noexcept : Array() { Move(PK::Forward<Array>(other)); }
         Array(initializer_list<T>&& other) noexcept : Array() { Move(other.begin(), other.size())); }
         Array(const Array& other) noexcept : Array() { Copy(other.GetData(), other.GetCount()); }
         Array(const initializer_list<T>& other) noexcept : Array() { Copy(other.begin(), other.size()); }
         Array(const T* elements, size_t count) noexcept : Array() { Copy(elements, count); }
-        ~Array() { TAllocation::Free(m_data); }
+        ~Array() { TData::Free(m_data); }
 
-        constexpr T* GetData() { return TAllocation::GetPtr(m_data); }
-        constexpr T const* GetData() const { return TAllocation::GetPtr(m_data); }
-        constexpr size_t GetCount() const { return TAllocation::GetCount(m_data); }
-        constexpr size_t GetSize() const { return TAllocation::GetSize(m_data); }
+        constexpr T* GetData() { return TData::GetPtr(m_data); }
+        constexpr T const* GetData() const { return TData::GetPtr(m_data); }
+        constexpr size_t GetCount() const { return TData::GetCount(m_data); }
+        constexpr size_t GetSize() const { return TData::GetSize(m_data); }
 
         constexpr BufferView<T> GetView() { return { GetData(), GetCount() }; }
         constexpr ConstBufferView<T> GetView() const { return { GetData(), GetCount() }; }
@@ -45,7 +45,7 @@ namespace PK
 
         inline void Copy(const T* elements, size_t count)
         {
-            Reserve(count);
+            Reserve(count, false);
             Memory::CopyArray(GetData(), elements, count);
         }
 
@@ -64,28 +64,28 @@ namespace PK
         {
             if (this != &other)
             {
-                TAllocation::Free(m_data);
+                TData::Free(m_data);
                 m_data = PK::Exchange(other.m_data, {});
             }
         }
 
-        bool Reserve(size_t newCount)
+        bool Reserve(size_t newCount, bool preserve)
         {
-            if (newCount <= TAllocation::GetCount(m_data))
+            if (newCount > TData::GetCount(m_data))
             {
-                return false;
+                auto newData = TData::Allocate(newCount);
+
+                if (preserve && GetCount() > 0u)
+                {
+                    Memory::Memcpy<T>(TData::GetPtr(newData), TData::GetPtr(m_data), GetCount());
+                }
+
+                TData::Free(m_data);
+                m_data = newData;
+                return true;
             }
 
-            auto newData = TAllocation::template Allocate<T>(newCount);
-
-            if (GetCount() > 0u)
-            {
-                Memory::Memcpy<T>(TAllocation::GetPtr(newData), TAllocation::GetPtr(m_data), GetCount());
-            }
-
-            TAllocation::Free(m_data);
-            m_data = newData;
-            return true;
+            return false;
         }
 
         void Clear() 
@@ -112,10 +112,10 @@ namespace PK
         List(const List& other) noexcept : List() { Copy(other.GetData(), other.GetCount()); }
         List(const initializer_list<T>& other) noexcept : List() { Copy(other.begin(), other.size()); }
         List(const T* elements, size_t count) noexcept : List() { Copy(elements, count); }
-        ~List() { Clear(); TAllocation::Free(m_data); }
+        ~List() { Clear(); TData::Free(m_data); }
 
-        constexpr T* GetData() { return TAllocation::GetPtr(m_data); }
-        constexpr T const* GetData() const { return TAllocation::GetPtr(m_data); }
+        constexpr T* GetData() { return TData::GetPtr(m_data); }
+        constexpr T const* GetData() const { return TData::GetPtr(m_data); }
         constexpr size_t GetCount() const { return m_count; }
         constexpr size_t GetSize() const { return m_count * sizeof(T); }
 
@@ -134,11 +134,10 @@ namespace PK
         List& operator=(List&& other) noexcept { Move(PK::Forward<List>(other)); return *this; }
         List& operator=(const List& other) noexcept { Copy(other); return *this; }
 
-
         inline void Copy(const T* elements, size_t count)
         {
             Clear();
-            Reserve(count);
+            Reserve(count, false);
             Memory::CopyArray(GetData(), elements, count);
             m_count = count;
         }
@@ -159,35 +158,34 @@ namespace PK
         {
             if (this != &other)
             {
-                TAllocation::Free(m_data);
+                TData::Free(m_data);
                 m_data = PK::Exchange(other.m_data, {});
                 m_count = PK::Exchange(other.m_count, 0ull);
             }
         }
 
-
-        bool Reserve(size_t newCapacity)
+        bool Reserve(size_t newCapacity, bool preserve)
         {
-            if (newCapacity <= TAllocation::GetCount(m_data))
+            if (newCapacity > TData::GetCount(m_data))
             {
+                auto newData = TData::Allocate(newCapacity);
+
+                if (preserve && m_count > 0u)
+                {
+                    Memory::MoveArray(TData::GetPtr(newData), TData::GetPtr(m_data), m_count);
+                }
+                
+                TData::Free(m_data);
+                m_data = newData;
                 return false;
             }
 
-            auto newData = TAllocation::template Allocate<T>(newCapacity);
-
-            if (m_count > 0u)
-            {
-                Memory::MoveArray(TAllocation::GetPtr(newData), TAllocation::GetPtr(m_data), m_count);
-            }
-            
-            TAllocation::Free(m_data);
-            m_data = newData;
             return true;
         }
 
         void Resize(size_t count)
         {
-            Reserve(count);
+            Reserve(count, true);
 
             while (m_count < count)
             {
@@ -206,11 +204,10 @@ namespace PK
             m_count = 0u;
         }
 
-
         template<typename ... Args>
         T* Add(Args&& ... args)
         {
-            Reserve(m_count + 1u);
+            Reserve(m_count + 1u, true);
             return Memory::Construct(GetData() + m_count++, PK::Forward<Args>(args)...);
         }
 

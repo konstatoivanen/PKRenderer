@@ -5,7 +5,7 @@ namespace PK
 {
     Disposer::Disposer(size_t initialCapacity)
     {
-        m_disposables.Reserve(initialCapacity);
+        m_disposables.Reserve(initialCapacity, false);
     }
 
     Disposer::~Disposer()

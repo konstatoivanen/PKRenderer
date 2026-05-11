@@ -169,7 +169,7 @@ namespace PK
         EndWrite();
 
         auto& layout = m_shader->GetMaterialPropertyLayout();
-        m_propertyBuffer.Reserve(layout.GetStrideMaterial());
+        m_propertyBuffer.Reserve(layout.GetStrideMaterial(), false);
 
         BeginWrite(&layout, m_propertyBuffer.GetData());
 

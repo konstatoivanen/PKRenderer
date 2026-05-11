@@ -1,6 +1,5 @@
 #pragma once
-#include "Core/Utilities/FixedPool.h"
-#include "Core/Utilities/FixedRangeTable.h"
+#include "Core/Utilities/RangeTable.h"
 #include "Core/RHI/Structs.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"

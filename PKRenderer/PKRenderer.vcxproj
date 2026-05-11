@@ -462,7 +462,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\Mask.h" />
     <ClInclude Include="Source\Core\Utilities\BufferView.h" />
     <ClInclude Include="Source\Core\Utilities\FileIO.h" />
-    <ClInclude Include="Source\Core\Utilities\FixedPool.h" />
+    <ClInclude Include="Source\Core\Utilities\Pool.h" />
     <ClInclude Include="Source\Core\Utilities\Hash.h" />
     <ClInclude Include="Source\Core\Utilities\HashMap.h" />
     <ClInclude Include="Source\Core\Utilities\Singleton.h" />
@@ -470,7 +470,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\NameID.h" />
     <ClInclude Include="Source\Core\Utilities\NoCopy.h" />
     <ClInclude Include="Source\Core\Utilities\PropertyBlock.h" />
-    <ClInclude Include="Source\Core\Utilities\FixedRangeTable.h" />
+    <ClInclude Include="Source\Core\Utilities\RangeTable.h" />
     <ClInclude Include="Source\Core\Utilities\Ref.h" />
     <ClInclude Include="Source\Core\Utilities\VersionedObject.h" />
   </ItemGroup>

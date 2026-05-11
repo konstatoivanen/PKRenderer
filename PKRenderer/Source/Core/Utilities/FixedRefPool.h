@@ -1,6 +1,6 @@
 #pragma once
 #include "NoCopy.h"
-#include "FixedPool.h"
+#include "Pool.h"
 #include "Ref.h"
 
 namespace PK

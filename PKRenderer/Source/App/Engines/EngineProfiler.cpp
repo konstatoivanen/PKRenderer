@@ -50,7 +50,7 @@ namespace PK::App
         auto cpumemory = Platform::GetMemoryInfo();
         auto gpumemory = RHI::GetMemoryInfo();
 
-        m_timeHistory.Reserve(sampleCountMax);
+        m_timeHistory.Reserve(sampleCountMax, true);
         m_timeHistory[m_timeHistoryHead % sampleCountMax] = m_framerate.frameMs;
 
         auto minHistoryTime = math::max(1e-4, 1000.0 / m_framerate.framerateMax);

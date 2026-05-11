@@ -140,7 +140,7 @@ namespace PK
 
             if (group.container == 0u)
             {
-                m_entityViews.Reserve(++m_viewCounter);
+                m_entityViews.Reserve(++m_viewCounter, true);
                 group.container = m_viewCounter;
             }
 
@@ -154,7 +154,7 @@ namespace PK
                 auto head = views.head;
                 auto count = 1u + head / viewSize;
                 auto capacity = views.buffer.GetCount() / viewSize;
-                views.buffer.Reserve(Hash::ExpandSize(capacity, count) * viewSize);
+                views.buffer.Reserve(Hash::ExpandSize(capacity, count) * viewSize, true);
                 view.container = group.container;
                 view.offset = (uint32_t)head;
                 views.head += viewSize;

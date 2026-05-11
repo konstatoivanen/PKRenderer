@@ -179,7 +179,7 @@ namespace PK
         auto pVariants = shader->variants.Get(base);
         auto fileName = String::ToFilePathStem<64>(filepath);
 
-        m_shaders.Reserve(shader->variantcount);
+        m_shaders.Reserve(shader->variantcount, false);
 
         for (auto i = 0u; i < shader->variantcount; ++i)
         {
