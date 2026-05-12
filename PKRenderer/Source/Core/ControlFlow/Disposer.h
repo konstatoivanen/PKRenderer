@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/FenceRef.h"
 #include "Core/Utilities/ArrayList.h"
+#include "Core/ControlFlow/FenceRef.h"
 
 namespace PK
 {

@@ -291,7 +291,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Timers\TimerFrameRunner.h" />
     <ClInclude Include="Source\Core\Utilities\Allocation.h" />
     <ClInclude Include="Source\Core\Utilities\FixedArena.h" />
-    <ClInclude Include="Source\Core\Utilities\FixedRefPool.h" />
     <ClInclude Include="Source\Core\Utilities\FixedString.h" />
     <ClInclude Include="Source\Core\Utilities\LinkedList.h" />
     <ClInclude Include="Source\Core\Utilities\TypeSet.h" />
@@ -432,8 +431,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\Passes\PassTemporalAntialiasing.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassVolumetricFog.h" />
     <ClInclude Include="Source\Core\RHI\BuiltInResources.h" />
-    <ClInclude Include="Source\Core\Utilities\Disposer.h" />
-    <ClInclude Include="Source\Core\Utilities\FenceRef.h" />
+    <ClInclude Include="Source\Core\ControlFlow\Disposer.h" />
+    <ClInclude Include="Source\Core\ControlFlow\FenceRef.h" />
     <ClInclude Include="Source\Core\RHI\RHInterfaces.h" />
     <ClInclude Include="Source\Core\RHI\Layout.h" />
     <ClInclude Include="Source\Core\RHI\Structs.h" />
@@ -737,7 +736,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Renderer\Passes\PassVolumetricFog.cpp" />
     <ClCompile Include="Source\App\Renderer\RenderPipelineBase.cpp" />
     <ClCompile Include="Source\Core\RHI\BuiltInResources.cpp" />
-    <ClCompile Include="Source\Core\Utilities\Disposer.cpp" />
+    <ClCompile Include="Source\Core\ControlFlow\Disposer.cpp" />
     <ClCompile Include="Source\Core\RHI\RHI.cpp" />
     <ClCompile Include="Source\Core\RHI\Layout.cpp" />
     <ClCompile Include="Source\Core\Rendering\CommandBufferExt.cpp" />

@@ -1,7 +1,6 @@
 #pragma once
-#include "NoCopy.h"
 #include "Mask.h"
-#include "Memory.h"
+#include "Ref.h"
 
 namespace PK
 {
@@ -170,6 +169,52 @@ namespace PK
         TMask m_mask;
     };
 
+    template<typename T>
+    struct PooledSharedObject : public SharedObjectBase
+    {
+        template <typename ... Args>
+        explicit PooledSharedObject(Args&&... args) : SharedObjectBase() { Memory::Construct(&value, PK::Forward<Args>(args)...); }
+        virtual ~PooledSharedObject() noexcept override { Destroy(); }
+
+        void Destroy() noexcept final
+        {
+            if (isConstructed)
+            {
+                Memory::Destruct(&value);
+                isConstructed = 0u;
+            }
+        }
+
+        void Delete() noexcept final
+        {
+            pool->Delete(this);
+        }
+
+        struct U { constexpr U() noexcept {} };
+        union { U unionDefault; T value; };
+        IPool<PooledSharedObject<T>>* pool = nullptr;
+        bool isConstructed = true;
+    };
+
+    template<typename T, typename TBase>
+    struct RefPool : protected TBase
+    {
+        using TShared = PooledSharedObject<T>;
+        using TBase::GetCount;
+        using TBase::GetCapacity;
+
+        RefPool() : TBase() {};
+
+        template<typename ... Args>
+        Ref<T> CreateRef(Args&& ... args)
+        {
+            auto sharedObject = TBase::New(PK::Forward<Args>(args)...);
+            sharedObject->pool = this;
+            return CreateRefAliased<T, TShared>(sharedObject);
+        }
+    };
+
+
     template<typename T, size_t capacity>
     using FixedPool = Pool<T, AllocationFixed<capacity>, FixedMask<capacity>>;
 
@@ -178,4 +223,14 @@ namespace PK
 
     template<typename T>
     using HeapPool = Pool<T, AllocationHeap, HeapMask>;
+
+
+    template<typename T, size_t capacity>
+    using FixedRefPool = RefPool<T, FixedPool<PooledSharedObject<T>, capacity>>;
+
+    template<typename T, size_t inline_capacity>
+    using InlineRefPool = RefPool<T, InlinePool<PooledSharedObject<T>, inline_capacity>>;
+
+    template<typename T>
+    using HeapRefPool = RefPool<T, HeapPool<PooledSharedObject<T>>>;
 }

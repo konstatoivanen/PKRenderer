@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/Pool.h"
-#include "Core/Utilities/FenceRef.h"
 #include "Core/Utilities/ArrayList.h"
+#include "Core/ControlFlow/FenceRef.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/Assets/Asset.h"
 #include "Core/RHI/Layout.h"

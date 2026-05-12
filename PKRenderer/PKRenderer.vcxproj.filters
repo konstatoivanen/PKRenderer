@@ -384,10 +384,10 @@
     <ClInclude Include="Source\Core\RHI\BuiltInResources.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\Disposer.h">
+    <ClInclude Include="Source\Core\ControlFlow\Disposer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FenceRef.h">
+    <ClInclude Include="Source\Core\ControlFlow\FenceRef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\RHInterfaces.h">
@@ -619,9 +619,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Renderer\Passes\PassDistort.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FixedRefPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\PKAssets\PKAssetEncoding.h">
@@ -1021,7 +1018,7 @@
     <ClCompile Include="Source\Core\RHI\BuiltInResources.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Utilities\Disposer.cpp">
+    <ClCompile Include="Source\Core\ControlFlow\Disposer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Layout.cpp">

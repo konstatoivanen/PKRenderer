@@ -4,10 +4,10 @@
 #define VMA_SYSTEM_FREE(ptr) PK::Memory::Free(ptr)
 #include "vulkan/vulkan.h"
 #include "VMA/vk_mem_alloc.h"
-#include "Core/Utilities/FenceRef.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/VersionedObject.h"
 #include "Core/Utilities/LinkedList.h"
+#include "Core/ControlFlow/FenceRef.h"
 #include "Core/RHI/Structs.h"
 
 constexpr static const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_validation";

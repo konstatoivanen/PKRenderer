@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/ArrayList.h"
-#include "Core/Utilities/FenceRef.h"
+#include "Core/ControlFlow/FenceRef.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/FrameStep.h"
 
