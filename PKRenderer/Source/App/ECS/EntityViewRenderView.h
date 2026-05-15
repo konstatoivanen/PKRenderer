@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/ECS/IEntityView.h"
+#include "Core/ECS/EntityComponentRef.h"
 #include "App/ECS/ComponentTransform.h"
 #include "App/ECS/ComponentRenderView.h"
 #include "App/ECS/ComponentProjection.h"
@@ -10,10 +11,10 @@ namespace PK::App
 {
     struct EntityViewRenderView : public IEntityView
     {
-        ComponentTransform* transform;
-        ComponentProjection* projection;
-        ComponentRenderView* renderView;
-        ComponentViewInput* input;
-        ComponentTime* time;
+        EntityComponentRef<ComponentTransform> transform;
+        EntityComponentRef<ComponentProjection> projection;
+        EntityComponentRef<ComponentRenderView> renderView;
+        EntityComponentRef<ComponentViewInput> input;
+        EntityComponentRef<ComponentTime> time;
     };
 }

@@ -96,7 +96,6 @@ namespace PK::Memory
         
         return ptr; 
     }
-
     
     template<typename T, typename ... Args>
     T* New(Args&& ... args) { return Construct<T>(Allocate<T>(1u), PK::Forward<Args>(args)...); }

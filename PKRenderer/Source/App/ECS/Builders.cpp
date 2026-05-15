@@ -40,7 +40,7 @@ namespace PK::App::EntityBuilders
         const float3& scale,
         const AABB<float3>& localBounds)
     {
-        entityDb->ReserveView(implementer, egid, &EntityViewTransform::bounds, &EntityViewTransform::transform);
+        entityDb->NewView(implementer, egid, &EntityViewTransform::bounds, &EntityViewTransform::transform);
         implementer->localAABB = localBounds;
         implementer->position = position;
         implementer->rotation = quaternion(euler);
@@ -53,7 +53,7 @@ namespace PK::App::EntityBuilders
         const EGID& egid,
         ScenePrimitiveFlags flags)
     {
-        entityDb->ReserveView(implementer, egid, &EntityViewScenePrimitive::primitive, &EntityViewScenePrimitive::bounds);
+        entityDb->NewView(implementer, egid, &EntityViewScenePrimitive::primitive, &EntityViewScenePrimitive::bounds);
         implementer->flags = flags;
     }
 
@@ -64,7 +64,7 @@ namespace PK::App::EntityBuilders
         MeshStaticRef staticMesh,
         const initializer_list<MaterialTarget>& materials)
     {
-        entityDb->ReserveView(implementer, egid, &EntityViewMeshStatic::primitive, &EntityViewMeshStatic::materials, &EntityViewMeshStatic::staticMesh, &EntityViewMeshStatic::transform);
+        entityDb->NewView(implementer, egid, &EntityViewMeshStatic::primitive, &EntityViewMeshStatic::materials, &EntityViewMeshStatic::staticMesh, &EntityViewMeshStatic::transform);
         implementer->materials.Copy(materials.begin(), materials.size());
         implementer->sharedMesh = staticMesh;
     }
@@ -79,7 +79,7 @@ namespace PK::App::EntityBuilders
         float radius,
         float angle)
     {
-        entityDb->ReserveView(implementer, egid, &EntityViewLight::transform, &EntityViewLight::bounds, &EntityViewLight::light, &EntityViewLight::primitive);
+        entityDb->NewView(implementer, egid, &EntityViewLight::transform, &EntityViewLight::bounds, &EntityViewLight::light, &EntityViewLight::primitive);
         implementer->color = color;
         implementer->radius = radius;
         implementer->angle = angle;
@@ -139,7 +139,7 @@ namespace PK::App::EntityBuilders
     template<typename T>
     static void CreateEntityViewRenderView(EntityDatabase* entityDb, T* implementer, const EGID& egid, const FixedString16& name, const uint4& desiredRect, bool isWindowTarget)
     {
-        entityDb->ReserveView(implementer, egid, 
+        entityDb->NewView(implementer, egid, 
             &EntityViewRenderView::transform, 
             &EntityViewRenderView::projection, 
             &EntityViewRenderView::renderView, 
@@ -162,7 +162,7 @@ namespace PK::App::EntityBuilders
         float rotationSmoothing,
         float sensitivity)
     {
-        entityDb->ReserveView(implementer, egid, 
+        entityDb->NewView(implementer, egid,
             &EntityViewFlyCamera::transform, 
             &EntityViewFlyCamera::projection, 
             &EntityViewFlyCamera::input, 
@@ -191,7 +191,7 @@ namespace PK::App::EntityBuilders
         ScenePrimitiveFlags flags)
     {
         auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
-        auto implementer = entityDb->ReserveImplementer<ImplementerMeshStatic>();
+        auto implementer = entityDb->NewImplementer<ImplementerMeshStatic>();
         CreateEntityViewTransform(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE * size, GetSubmeshRangeBounds(mesh.get(), materials));
         CreateEntityViewScenePrimitive(entityDb, implementer, egid, flags | ScenePrimitiveFlags::Mesh);
         CreateEntityViewMeshStatic(entityDb, implementer, egid, mesh, materials);
@@ -209,7 +209,7 @@ namespace PK::App::EntityBuilders
         bool castShadows)
     {
         auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
-        auto implementer = entityDb->ReserveImplementer<ImplementerLight>();
+        auto implementer = entityDb->NewImplementer<ImplementerLight>();
         CreateEntityViewTransform(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE, {});
         CreateEntityViewLightPrimitive(entityDb, implementer, egid, type, cookie, color, angle, radius, castShadows);
         return egid;
@@ -226,22 +226,22 @@ namespace PK::App::EntityBuilders
         const float kLightSourceRadius = 0.2f;
 
         auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
-        auto implementer = entityDb->ReserveImplementer<ImplementerLight>();
+        auto implementer = entityDb->NewImplementer<ImplementerLight>();
+        implementer->sourceRadius = kLightSourceRadius;
         CreateEntityViewTransform(entityDb, implementer, egid, position, PK_FLOAT3_ZERO, PK_FLOAT3_ONE, {});
         CreateEntityViewLightPrimitive(entityDb, implementer, egid, type, cookie, color, 90.0f, 20.0f, castShadows);
-        auto lightSphereView = entityDb->ReserveView<EntityViewLightSphereTransforms>(egid);
-
-        implementer->sourceRadius = kLightSourceRadius;
 
         auto mesh = assetDatabase->Find<MeshStatic>("Primitive_Sphere");
         auto shader = assetDatabase->Find<ShaderAsset>("MS_Mat_Unlit_Color");
         auto material = assetDatabase->CreateVirtual<Material>(FixedString32("M_Point_Light_%u", egid.entityID()).c_str(), shader.get(), nullptr);
         material->Set<float4>(HashCache::Get()->_Color, color);
         material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
-
         auto meshEgid = EntityBuilders::CreateEntityMeshStatic(entityDb, mesh, { { material, 0 } }, position, PK_FLOAT3_ZERO, implementer->sourceRadius, ScenePrimitiveFlags::None);
+        
+        auto lightSphereView = entityDb->NewView<EntityViewLightSphereTransforms>(egid);
         lightSphereView->transformMesh = entityDb->Query<EntityViewTransform>(meshEgid)->transform;
         lightSphereView->transformLight = implementer;
+        
         return egid;
     }
 
@@ -260,7 +260,7 @@ namespace PK::App::EntityBuilders
         float sensitivity)
     {
         auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
-        auto implementer = entityDb->ReserveImplementer<ImplementerFlyCamera>();
+        auto implementer = entityDb->NewImplementer<ImplementerFlyCamera>();
         CreateEntityViewTransform(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE, {});
         CreateEntityViewRenderView(entityDb, implementer, egid, name, desiredRect, isWindowTarget);
         CreateEntityViewFlyCamera(entityDb, implementer, egid, moveSpeed, fieldOfView, zNear, zFar, moveSmoothing, rotationSmoothing, sensitivity);

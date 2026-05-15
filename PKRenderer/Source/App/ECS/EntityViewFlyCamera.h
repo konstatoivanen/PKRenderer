@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/ECS/IEntityView.h"
+#include "Core/ECS/EntityComponentRef.h"
 #include "App/ECS/ComponentTransform.h"
 #include "App/ECS/ComponentProjection.h"
 #include "App/ECS/ComponentViewInput.h"
@@ -10,10 +11,10 @@ namespace PK::App
 {
     struct EntityViewFlyCamera : public IEntityView
     {
-        ComponentTransform* transform;
-        ComponentProjection* projection;
-        ComponentViewInput* input;
-        ComponentTime* time;
-        ComponentFlyCamera* flyCamera;
+        EntityComponentRef<ComponentTransform> transform;
+        EntityComponentRef<ComponentProjection> projection;
+        EntityComponentRef<ComponentViewInput> input;
+        EntityComponentRef<ComponentTime> time;
+        EntityComponentRef<ComponentFlyCamera> flyCamera;
     };
 }

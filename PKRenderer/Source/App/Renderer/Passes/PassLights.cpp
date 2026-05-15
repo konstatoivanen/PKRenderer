@@ -301,7 +301,7 @@ namespace PK::App
 
                         if (shader)
                         {
-                            context->batcher->SubmitMeshStaticDraw(entity->transform, shader, nullptr, mesh, kv.submesh, userdata, info.depth);
+                            context->batcher->SubmitMeshStaticDraw(*entity->transform, shader, nullptr, mesh, kv.submesh, userdata, info.depth);
                         }
                     }
                 }

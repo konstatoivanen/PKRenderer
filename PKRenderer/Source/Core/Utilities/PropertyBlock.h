@@ -121,11 +121,11 @@ namespace PK
             bool WriteValue(const void* src, uint32_t index, size_t writeSize);
             bool ReserveMemory(uint64_t byteCapacity, uint32_t propertyCapacity);
 
-            const uint16_t* GetBuckets() const { return m_buffer ? m_buckets : &m_bucketsInline; }
-            uint16_t* GetBuckets() { return m_buffer ? m_buckets : &m_bucketsInline; }
-            uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % m_bucketCount); }
-            void SetValueIndexInBuckets(uint32_t i, int32_t value) { GetBuckets()[i] = (uint16_t)(value + 1); }
-            int32_t GetValueIndexFromBuckets(uint32_t i) const { return (int32_t)(GetBuckets()[i]) - 1; }
+            inline const uint16_t* GetBuckets() const { return m_buffer ? m_buckets : &m_bucketsInline; }
+            inline uint16_t* GetBuckets() { return m_buffer ? m_buckets : &m_bucketsInline; }
+            inline uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % m_bucketCount); }
+            inline void SetValueIndexInBuckets(uint32_t i, int32_t value) { GetBuckets()[i] = (uint16_t)(value + 1); }
+            inline int32_t GetValueIndexFromBuckets(uint32_t i) const { return (int32_t)(GetBuckets()[i]) - 1; }
 
             void* m_buffer = nullptr;
             Property* m_properties = nullptr;

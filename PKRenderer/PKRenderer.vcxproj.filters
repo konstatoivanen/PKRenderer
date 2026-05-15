@@ -666,6 +666,9 @@
     <ClInclude Include="Source\Core\Utilities\Allocation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\ECS\EntityComponentRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
@@ -1157,6 +1160,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

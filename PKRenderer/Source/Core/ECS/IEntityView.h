@@ -6,6 +6,5 @@ namespace PK
     struct IEntityView
     {
         EGID GID;
-        virtual ~IEntityView() = default;
     };
 }

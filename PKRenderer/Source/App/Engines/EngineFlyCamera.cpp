@@ -27,9 +27,9 @@ namespace PK::App
             auto& view = views[i];
             auto& input = view.input;
             auto& time = view.time->info;
-            auto camera = view.flyCamera;
-            auto projection = view.projection;
-            auto transform = view.transform;
+            auto* camera = *view.flyCamera;
+            auto* projection = *view.projection;
+            auto* transform = *view.transform;
 
             auto sensitivity = camera->sensitivity / 1000.0f;
             auto deltaTime = math::clamp((float)time.deltaTime, 0.001f, 0.99f);
@@ -105,7 +105,7 @@ namespace PK::App
         for (auto i = 0u; i < views.count; ++i)
         {
             auto& view = views[i];
-            auto transform = view.transform;
+            auto transform = *view.transform;
             auto position = transform->position;
             auto rotation = math::euler(transform->rotation);
             PK_LOG_INFO("EngineFlyCamera.Transforms.Log: EntityId:%i Pos:[%f, %f, %f], Rot:[%f,%f,%f]", view.GID.entityID(), position.x, position.y, position.z, rotation.x, rotation.y, rotation.z);
@@ -119,8 +119,8 @@ namespace PK::App
         for (auto i = 0u; i < views.count; ++i)
         {
             auto& view = views[i];
-            auto camera = view.flyCamera;
-            auto transform = view.transform;
+            auto camera = *view.flyCamera;
+            auto transform = *view.transform;
 
             camera->eulerAngles = camera->snapshotRotation;
             camera->targetPosition = transform->position = camera->snapshotPosition;

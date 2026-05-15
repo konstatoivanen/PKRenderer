@@ -46,7 +46,7 @@ namespace PK::App
 
                         for (const auto& kv : entity->materials->materials)
                         {
-                            auto transform = entity->transform;
+                            auto transform = *entity->transform;
                             auto shader = kv.material->GetShader();
                             renderEvent->context->batcher->SubmitMeshStaticDraw(transform, shader, kv.material.get(), entity->staticMesh->sharedMesh.get(), kv.submesh, 0u, info.depth);
                         }

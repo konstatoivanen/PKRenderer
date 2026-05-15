@@ -157,13 +157,13 @@ namespace PK
 
     protected:
         T* Allocate(size_t count, int64_t index) final
-            {
-                index = index != -1ll ? index : m_mask.FindFirstZeroRange((uint32_t)count);
-                Memory::Assert(index >= 0ll && index + count - 1ll < GetCapacity(), "Pool capacity exceeded!");
-                auto ptr = GetData() + index;
-                m_mask.FlipRange(index, index + count);
-                return ptr;
-            }
+        {
+            index = index != -1ll ? index : m_mask.FindFirstZeroRange((uint32_t)count);
+            Memory::Assert(index >= 0ll && index + count - 1ll < GetCapacity(), "Pool capacity exceeded!");
+            auto ptr = GetData() + index;
+            m_mask.FlipRange(index, index + count);
+            return ptr;
+        }
 
         TData m_data;
         TMask m_mask;
