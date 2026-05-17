@@ -17,6 +17,8 @@ namespace PK
 
     constexpr static const uint32_t PK_ECS_IMPLEMENTER_BUCKET_SIZE = 32768u;
     
+    typedef void (*EntityViewDeleter)(void*);
+
     struct alignas(16) ImplementerBucket
     {
 
@@ -43,11 +45,19 @@ namespace PK
         ~ImplementerContainer() { Memory::Delete(bucketHead); }
     };
 
+    struct EntityViewArray
+    {
+        struct ViewHeader* header = nullptr;
+        constexpr EntityViewArray() = default;
+        EntityViewArray(EntityViewArray&& other) noexcept : header(PK::Exchange(other.header, nullptr)) {}
+        ~EntityViewArray() { Memory::Free(header); header = nullptr; }
+        EntityViewArray& operator=(EntityViewArray&& other) noexcept { header = PK::Exchange(other.header, nullptr); return *this; }
+        ViewHeader* operator->() const noexcept { return header; }
+    };
+
     //@TODO support group switches
     struct EntityDatabase
     {
-        constexpr static uint32_t VIEW_BUCKET_COUNT_FACTOR = 3u;
-
         struct GroupKey
         {
             uint64_t identifier = 0ull;
@@ -64,72 +74,6 @@ namespace PK
             {
                 return (size_t)k.identifier;
             }
-        };
-
-        struct ViewNode
-        {
-            uint32_t id;
-            int32_t previous;
-            int32_t next;
-            ViewNode() : id(0u), previous(-1), next(-1) {}
-            ViewNode(uint32_t id) : id(id), previous(-1), next(-1) {}
-        };
-
-        // A copy of hashmap, but typeless.
-        // Not calling destructors for views when destroyed.
-        // We no longer care about reference tracking when this happens.
-        struct ViewArray
-        {
-            constexpr ViewArray() = default;
-
-            ViewArray(ViewArray&& other) noexcept :
-                buffer(PK::Exchange(other.buffer, nullptr)),
-                buckets(PK::Exchange(other.buckets, nullptr)),
-                nodes(PK::Exchange(other.nodes, nullptr)),
-                destroyView(PK::Exchange(other.destroyView, nullptr)),
-                bucketCount(PK::Exchange(other.bucketCount, 0u)),
-                viewSize(PK::Exchange(other.viewSize, 0u)),
-                capacity(PK::Exchange(other.capacity, 0u)),
-                count(PK::Exchange(other.count, 0u))
-            { 
-            }
-
-            ~ViewArray() 
-            { 
-                Memory::Free(buffer); 
-                buffer = nullptr; 
-            }
-
-            inline ViewArray& operator=(ViewArray&& other) noexcept 
-            { 
-                if (this != &other)
-                {
-                    if (buffer)
-                    {
-                        Memory::Free(buffer);
-                    }
-
-                    buffer = PK::Exchange(other.buffer, nullptr);
-                    buckets = PK::Exchange(other.buckets, nullptr);
-                    nodes = PK::Exchange(other.nodes, nullptr);
-                    destroyView = PK::Exchange(other.destroyView, nullptr);
-                    bucketCount = PK::Exchange(other.bucketCount, 0u);
-                    viewSize = PK::Exchange(other.viewSize, 0u);
-                    capacity = PK::Exchange(other.capacity, 0u);
-                    count = PK::Exchange(other.count, 0u);
-                }
-
-                return *this;
-            }
-
-            void* buffer = nullptr;
-            uint32_t* buckets = nullptr;
-            ViewNode* nodes = nullptr;
-            void (*destroyView)(void*) = nullptr;
-            uint32_t bucketCount = 0u;
-            uint32_t viewSize = 0ll;
-            uint32_t capacity = 0u;
-            uint32_t count = 0u;
         };
 
         EntityDatabase() : m_typedGroups(32u, 3u), m_implementers(32u, 3u) {}
@@ -194,11 +138,7 @@ namespace PK
             
             if (m_typedGroups.AddKey(GroupKey(egid.groupID(), pk_base_type_index<TView>()), &groupIndex))
             {
-                m_typedGroups[groupIndex].value.viewSize = sizeof(TView);
-                m_typedGroups[groupIndex].value.destroyView = [](void* memory) 
-                { 
-                    Memory::Destruct(static_cast<TView*>(memory)); 
-                };
+                CreateViewArray(m_typedGroups[groupIndex].value, [](void* memory) { Memory::Destruct(static_cast<TView*>(memory)); }, sizeof(TView));
             }
 
             if (ReserveView(m_typedGroups[groupIndex].value, egid.entityID(), &view))
@@ -224,7 +164,7 @@ namespace PK
         {
             static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
             const auto views = m_typedGroups.GetValuePtr(GroupKey(groupId, pk_base_type_index<TView>()));
-            return { views ? static_cast<TView*>(views->buffer) : nullptr, views ? views->count : 0ull };
+            return { static_cast<TView*>(GetViewArrayData(views)), (size_t)GetViewArrayCount(views) };
         }
 
         template<typename TView>
@@ -233,19 +173,52 @@ namespace PK
             static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
             const auto views = m_typedGroups.GetValuePtr(GroupKey(egid.groupID(), pk_base_type_index<TView>()));
             const auto index = GetViewIndex(views, egid.entityID());
-            return index != ~0u ? static_cast<TView*>(views->buffer) + index : nullptr;
+            return index != ~0u ? static_cast<TView*>(GetViewArrayData(views)) + index : nullptr;
         }
 
-        void Delete(const EGID& egid);
-        void Delete(uint32_t group);
+        template<typename TView>
+        void DeleteAllOfType()
+        {
+            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
+            Delete(pk_base_type_index<TView>() + 1u, 0u, 0u);
+        }
+        
+        template<typename TView>
+        void DeleteGroupOfType(uint32_t groupId)
+        {
+            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
+            Delete(pk_base_type_index<TView>() + 1u, groupId, 0u);
+        }
+
+        template<typename TView>
+        void DeleteOfType(const EGID& egid)
+        {
+            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
+            Delete(pk_base_type_index<TView>() + 1u, egid.groupID(), egid.entityID());
+        }
+
+        inline void DeleteGroup(uint32_t groupId) 
+        { 
+            Delete(0u, groupId, 0u); 
+        }
+
+        inline void Delete(const EGID& egid) 
+        { 
+            Delete(0u, egid.groupID(), egid.entityID()); 
+        }
 
     private:
-        static uint32_t GetViewIndex(const ViewArray* views, uint32_t id);
-        static bool ReserveView(ViewArray& views, uint32_t id, void** outPtr);
-        static void RemoveView(ViewArray& views, uint32_t id);
-        static void ClearViews(ViewArray& views);
+        void Delete(uint32_t typeIndex, uint32_t groupId, uint32_t entityId);
 
-        HashMap<GroupKey, ViewArray, GroupHash> m_typedGroups;
+        static void* GetViewArrayData(EntityViewArray* views);
+        static uint32_t GetViewArrayCount(const EntityViewArray* views);
+        static uint32_t GetViewIndex(const EntityViewArray* views, uint32_t id);
+        static void CreateViewArray(EntityViewArray& views, EntityViewDeleter deleter, uint32_t viewSize);
+        static bool ReserveView(EntityViewArray& views, uint32_t id, void** outPtr);
+        static void RemoveView(EntityViewArray& views, uint32_t id);
+        static void ClearViews(EntityViewArray& views);
+
+        HashMap<GroupKey, EntityViewArray, GroupHash> m_typedGroups;
         HashMap<uint32_t, ImplementerContainer> m_implementers;
         uint32_t m_idCounter = 0u;
     };
