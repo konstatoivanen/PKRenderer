@@ -33,6 +33,18 @@ namespace PK::YAML
         return *rhs != nullptr;
     }
 
+    template<>
+    void Write<TextureAsset*>(Node& parent, const char* memberName, TextureAsset* const* rhs)
+    {
+        parent[memberName] << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
+    }
+
+    template<>
+    void Write<TextureAssetRef>(Node& parent, const char* memberName, const TextureAssetRef* rhs)
+    {
+        parent[memberName] << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
+    }
+
     PK_YAML_DECLARE_READ_MEMBER(TextureAsset*)
     PK_YAML_DECLARE_READ_MEMBER(TextureAssetRef)
     PK_YAML_DECLARE_READ_MEMBER(RHITexture*)

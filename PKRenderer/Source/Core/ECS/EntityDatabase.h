@@ -55,7 +55,6 @@ namespace PK
         ViewHeader* operator->() const noexcept { return header; }
     };
 
-    //@TODO support group switches
     struct EntityDatabase
     {
         struct GroupKey

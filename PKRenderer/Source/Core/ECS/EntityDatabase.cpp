@@ -103,7 +103,6 @@ namespace PK
         return ~0u;
     }
 
-
     void EntityDatabase::CreateViewArray(EntityViewArray& viewArray, EntityViewDeleter deleter, uint32_t viewSize)
     {
         Memory::Assert(viewArray.header == nullptr, "View array is already initialized!");

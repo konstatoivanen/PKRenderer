@@ -431,7 +431,15 @@ namespace PKAssets
         B = 0x4u,
         A = 0x8u,
         RG = R | G,
+        RB = R | B,
+        RA = R | A,
+        GB = G | B,
+        GA = G | A,
+        BA = B | A,
         RGB = RG | B,
+        RGA = RG | A,
+        RBA = RB | A,
+        GBA = GB | A,
         RGBA = RGB | A,
     };
 

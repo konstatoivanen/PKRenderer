@@ -484,6 +484,29 @@ namespace PKAssets
         return (PKColorMask)mask;
     }
 
+    const char* PKColorMaskToString(PKColorMask mask)
+    {
+        switch (mask)
+        {
+            case PKColorMask::R: return "R";
+            case PKColorMask::G: return "G";
+            case PKColorMask::B: return "B";
+            case PKColorMask::A: return "A";
+            case PKColorMask::RG: return "RG";
+            case PKColorMask::RB: return "RB";
+            case PKColorMask::RA: return "RA";
+            case PKColorMask::GB: return "GB";
+            case PKColorMask::GA: return "GA";
+            case PKColorMask::BA: return "BA";
+            case PKColorMask::RGB: return "RGB";
+            case PKColorMask::RGA: return "RGA";
+            case PKColorMask::RBA: return "RBA";
+            case PKColorMask::GBA: return "GBA";
+            case PKColorMask::RGBA: return "RGBA";
+            default: return "";
+        }
+    }
+
     uint32_t PKElementTypeToSize(PKElementType type)
     {
         return PKElementType_SIZES[(uint32_t)type];

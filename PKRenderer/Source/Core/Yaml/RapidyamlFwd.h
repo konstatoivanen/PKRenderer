@@ -22,6 +22,7 @@ namespace ryml
 namespace PK::YAML
 {
     typedef ryml::ConstNodeRef ConstNode;
+    typedef ryml::NodeRef Node;
 
     template<typename T>
     bool Read(const ConstNode& node, T* rhs);
@@ -48,9 +49,8 @@ namespace PK::YAML
         return outValue;
     }
 
-    // @TODO No write support as of now.
-    //template<typename T>
-    //void Write(YamlNode* node, const T& rhs);
+    template<typename T>
+    void Write(Node& parent, const char* memberName, const T* rhs);
 }
 
 #define PK_YAML_DECLARE_READ_MEMBER(type) \

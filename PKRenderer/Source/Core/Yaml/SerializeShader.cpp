@@ -23,6 +23,18 @@ namespace PK::YAML
         return *rhs != nullptr;
     }
 
+    template<>
+    void Write<ShaderAsset*>(Node& parent, const char* memberName, ShaderAsset* const* rhs)
+    {
+        parent[memberName] << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
+    }
+
+    template<>
+    void Write<ShaderAssetRef>(Node& parent, const char* memberName, const ShaderAssetRef* rhs)
+    {
+        parent[memberName] << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
+    }
+
     PK_YAML_DECLARE_READ_MEMBER(ShaderAsset*)
     PK_YAML_DECLARE_READ_MEMBER(ShaderAssetRef)
 }
