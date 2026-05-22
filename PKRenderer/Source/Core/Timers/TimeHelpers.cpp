@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include <ctime>
+#include <time.h>
 #include "TimeHelpers.h"
 
 namespace PK

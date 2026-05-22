@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include <algorithm>
+#include "Core/Utilities/Sort.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
@@ -174,7 +174,7 @@ namespace PK::App
 
         auto drawInfoBeg = m_drawInfos + 0u;
         auto drawInfoEnd = m_drawInfos + m_drawInfoCount;
-        std::sort(drawInfoBeg, drawInfoEnd);
+        PK::IntroSort(drawInfoBeg, drawInfoEnd);
 
         UploadTransforms(cmd);
         UploadMaterials(cmd);

@@ -20,24 +20,38 @@ namespace PK::App
 
         struct DrawInfo
         {
-            uint16_t group = 0u;
-            uint16_t shader = 0u;
-            uint16_t material = 0u;
-            uint16_t transform = 0u;
-            uint16_t submesh = 0u;
-            uint16_t sortDepth = 0u;
-            uint32_t userdata = 0u;
-
-            bool operator < (DrawInfo& b)
+            union
             {
-                if (group != b.group) return group < b.group;
-                if (shader != b.shader) return shader < b.shader;
-                if (submesh != b.submesh) return submesh < b.submesh;
-                if (userdata != b.userdata) return userdata < b.userdata;
-                if (material != b.material) return material < b.material;
-                if (transform != b.transform) return transform < b.transform;
-                if (sortDepth != b.sortDepth) return sortDepth < b.sortDepth;
-                return false;
+                struct 
+                {
+                    // priority order (descending here) to map to bit order.
+                    uint16_t sortDepth;
+                    uint16_t transform;
+                    uint16_t material;
+                    uint16_t submesh;
+                    uint32_t userdata;
+                    uint16_t shader;
+                    uint16_t group;
+                };
+                
+                #if defined(__clang__)
+                __uint128_t value;
+                #else
+                struct
+                {
+                    uint64_t low;
+                    uint64_t high;
+                };
+                #endif
+            };
+
+            constexpr bool operator < (const DrawInfo& b) const
+            {
+                #if defined(__clang__)
+                return value < b.value;
+                #else
+                return high != b.high ? high < b.high : low < b.low;
+                #endif
             }
         };
 

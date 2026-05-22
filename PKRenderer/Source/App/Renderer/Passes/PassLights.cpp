@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include <bend/bend_sss_cpu.h>
+#include "Core/Utilities/Sort.h"
 #include "Core/Utilities/FixedArena.h"
 #include "Core/Math/Projection.h"
 #include "Core/ECS/EntityDatabase.h"
@@ -84,15 +85,6 @@ namespace PK::App
         packed.packed2.z = math::f32tof16_pack({ light.near_clip, light.exponent});
         packed.packed2.w = 0u; // unused atm.
         return packed;
-    }
-
-    static int EntityViewLightPtrCompare(const void* a, const void* b)
-    {
-        auto lightA = *static_cast<EntityViewLight* const*>(a);
-        auto lightB = *static_cast<EntityViewLight* const*>(b);
-        auto keyA = (int32_t)lightA->light->type | ((int32_t)((lightA->primitive->flags & ScenePrimitiveFlags::CastShadows) == 0) << 4);
-        auto keyB = (int32_t)lightB->light->type | ((int32_t)((lightB->primitive->flags & ScenePrimitiveFlags::CastShadows) == 0) << 4);
-        return keyA - keyB;
     }
 
     PassLights::PassLights(AssetDatabase* assetDatabase) 
@@ -199,8 +191,14 @@ namespace PK::App
             matrixCount += SHADOW_TYPE_INFOS[(int)view->light->type].MatrixCount * castsSHadows;
             resources->lightViews[i] = view;
         }
-    
-        qsort(resources->lightViews.data, lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
+
+        PK::IntroSort(resources->lightViews.data, resources->lightViews.data + lightCount, TLessFunc<EntityViewLight*>(
+        [](EntityViewLight* const& a, EntityViewLight* const& b)
+        {
+            auto keyA = (int32_t)a->light->type | ((int32_t)((a->primitive->flags & ScenePrimitiveFlags::CastShadows) == 0) << 4);
+            auto keyB = (int32_t)b->light->type | ((int32_t)((b->primitive->flags & ScenePrimitiveFlags::CastShadows) == 0) << 4);
+            return keyA < keyB;
+        }));
 
         RHI::ValidateBuffer<PackedLight>(m_lightsBuffer, lightCount + 1u);
         RHI::ValidateBuffer<float4x4>(m_lightMatricesBuffer, matrixCount);

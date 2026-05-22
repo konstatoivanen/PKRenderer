@@ -294,6 +294,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FixedArena.h" />
     <ClInclude Include="Source\Core\Utilities\FixedString.h" />
     <ClInclude Include="Source\Core\Utilities\LinkedList.h" />
+    <ClInclude Include="Source\Core\Utilities\Sort.h" />
     <ClInclude Include="Source\Core\Utilities\TypeSet.h" />
     <ClInclude Include="Source\Core\Utilities\Function.h" />
     <ClInclude Include="Source\Core\Utilities\InitializerList.h" />

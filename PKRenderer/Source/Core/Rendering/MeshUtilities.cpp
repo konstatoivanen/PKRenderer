@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include <cassert>
+#include <assert.h>
 #include <mikktspace/mikktspace.h>
 #include "Core/Utilities/Memory.h"
 #include "Core/CLI/Log.h"
