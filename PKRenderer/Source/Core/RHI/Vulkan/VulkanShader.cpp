@@ -104,12 +104,12 @@ namespace PK
         {
             if (module != VK_NULL_HANDLE)
             {
-                auto deleter = [](void* c, void* v)
+                m_driver->disposer->Dispose(m_driver->device, module, [](void* c, void* v)
                 {
                     vkDestroyShaderModule(static_cast<VkDevice>(c), static_cast<VkShaderModule>(v), nullptr);
-                };
+                }, 
+                fence);
 
-                m_driver->disposer->Dispose(m_driver->device, module, deleter, fence);
                 module = VK_NULL_HANDLE;
             }
         }

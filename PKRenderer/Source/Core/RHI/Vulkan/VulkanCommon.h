@@ -254,17 +254,6 @@ namespace PK
         VulkanQueueFamilies queueFamilies{};
     };
 
-    struct VulkanImageCreateInfo
-    {
-        VulkanImageCreateInfo() {};
-        VulkanImageCreateInfo(const TextureDescriptor& descriptor, const VulkanQueueFamilies* families = nullptr);
-
-        VkImageCreateInfo image = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-        VmaAllocationCreateInfo allocation = {};
-        VkFormat formatAlias = VK_FORMAT_MAX_ENUM;
-        VulkanQueueFamilies queueFamilies{};
-    };
-
     struct VulkanImageViewCreateInfo
     {
         VkImage image;
@@ -349,24 +338,6 @@ namespace PK
         VmaAllocation memory;
         VkBuffer buffer;
         VkDeviceAddress deviceAddress;
-    };
-
-    struct VulkanRawImage : public VersionedObject
-    {
-        VulkanRawImage(VkDevice device, VmaAllocator allocator, const VulkanImageCreateInfo& createInfo, const char* name);
-        ~VulkanRawImage();
-
-        const VmaAllocator allocator;
-        VmaAllocation memory;
-        VkImage image;
-        VkImage imageAlias;
-        VkSampleCountFlagBits samples;
-        VkFormat format;
-        VkFormat formatAlias;
-        VkImageType type;
-        VkExtent3D extent;
-        uint32_t levels;
-        uint32_t layers;
     };
 
     struct VulkanRawAccelerationStructure : public VersionedObject

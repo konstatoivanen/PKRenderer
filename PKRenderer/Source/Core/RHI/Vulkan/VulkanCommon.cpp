@@ -379,89 +379,6 @@ namespace PK
         }
     }
 
-    VulkanImageCreateInfo::VulkanImageCreateInfo(const TextureDescriptor& descriptor, const VulkanQueueFamilies* families)
-    {
-        if (families)
-        {
-            queueFamilies = *families;
-        }
-
-        image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        image.flags = 0u;
-        image.imageType = descriptor.type == TextureType::Texture3D ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
-        image.format = VulkanEnumConvert::GetFormat(descriptor.format);
-        image.extent = { descriptor.resolution.x, descriptor.resolution.y, descriptor.resolution.z };
-        image.mipLevels = descriptor.levels;
-        image.arrayLayers = descriptor.layers;
-        image.samples = VulkanEnumConvert::GetSampleCountFlags(descriptor.samples);
-        image.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image.usage = 0;
-        image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        image.sharingMode = (descriptor.usage & TextureUsage::Concurrent) != 0 ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
-        image.pQueueFamilyIndices = queueFamilies.indices;
-        image.queueFamilyIndexCount = queueFamilies.count;
-        allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-        formatAlias = VulkanEnumConvert::GetFormat(descriptor.formatAlias);
-
-
-        if (descriptor.type == TextureType::Cubemap ||
-            descriptor.type == TextureType::CubemapArray)
-        {
-            image.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-        }
-
-        if (descriptor.formatAlias != TextureFormat::Invalid && descriptor.formatAlias != descriptor.format)
-        {
-            // Set VK_IMAGE_CREATE_ALIAS_BIT  for block compressed formats
-            image.flags |= VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_ALIAS_BIT;
-            allocation.flags |= VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::RTColor) != 0)
-        {
-            image.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::RTDepth) != 0)
-        {
-            image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::RTStencil) != 0)
-        {
-            image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Upload) != 0)
-        {
-            image.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Sample) != 0)
-        {
-            image.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Input) != 0)
-        {
-            image.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Storage) != 0)
-        {
-            image.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Transient) != 0)
-        {
-            image.usage &= ~(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-            image.usage |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-            // Not supported on desktop
-            //allocation.usage = VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED;
-        }
-    }
-
-
     VulkanImageView::VulkanImageView(VkDevice device, const VulkanImageViewCreateInfo& createInfo, const char* name) : device(device)
     {
         VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
@@ -566,46 +483,6 @@ namespace PK
             vmaFlushAllocation(allocator, memory, offset, writeSize);
         }
     }
-
-
-    VulkanRawImage::VulkanRawImage(VkDevice device, VmaAllocator allocator, const VulkanImageCreateInfo& createInfo, const char* name) :
-        allocator(allocator),
-        samples(createInfo.image.samples),
-        format(createInfo.image.format),
-        formatAlias(createInfo.formatAlias),
-        type(createInfo.image.imageType),
-        extent(createInfo.image.extent),
-        levels(createInfo.image.mipLevels),
-        layers(createInfo.image.arrayLayers)
-    {
-        if (createInfo.image.flags & VK_IMAGE_CREATE_ALIAS_BIT)
-        {
-            auto aliasInfo = createInfo.image;
-            aliasInfo.usage &= ~VK_IMAGE_USAGE_STORAGE_BIT;
-            VK_ASSERT_RESULT_CTX(vmaCreateImage(allocator, &aliasInfo, &createInfo.allocation, &image, &memory, nullptr), "Failed to create an image!");
-            vmaCreateAliasingImage(allocator, memory, &createInfo.image, &imageAlias);
-            VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_IMAGE, (uint64_t)imageAlias, FixedString128({ name, ".Alias" }).c_str());
-        }
-        else
-        {
-            imageAlias = VK_NULL_HANDLE;
-            VK_ASSERT_RESULT_CTX(vmaCreateImage(allocator, &createInfo.image, &createInfo.allocation, &image, &memory, nullptr), "Failed to create an image!");
-        }
-
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_IMAGE, (uint64_t)image, name);
-    }
-
-    VulkanRawImage::~VulkanRawImage()
-    {
-        if (imageAlias != VK_NULL_HANDLE)
-        {
-            vmaDestroyImage(allocator, imageAlias, VK_NULL_HANDLE);
-        }
-
-        vmaDestroyImage(allocator, image, memory);
-
-    }
-
 
     VulkanRawAccelerationStructure::VulkanRawAccelerationStructure(VkDevice device, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name) : device(device)
     {

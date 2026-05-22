@@ -15,10 +15,10 @@ namespace PK
             void SetSampler(const SamplerDescriptor& sampler) final;
             const TextureDescriptor& GetDescriptor() const final { return m_descriptor; }
             const char* GetDebugName() const final { return m_name.c_str(); }
-            void* GetNativeHandle() const final { return m_rawImage->image; }
+            void* GetNativeHandle() const final { return m_image; }
 
             inline VkImageLayout GetImageLayout() const { return VulkanEnumConvert::GetImageLayout(m_descriptor.usage); }
-            inline VkImageAspectFlags GetAspectFlags() const { return VulkanEnumConvert::GetFormatAspect(m_rawImage->format); }
+            inline VkImageAspectFlags GetAspectFlags() const { return VulkanEnumConvert::GetFormatAspect(m_format); }
             inline const VulkanBindHandle* GetBindHandle() { return &GetView({})->bindHandle; }
             inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return &GetView({}, bindMode)->bindHandle; }
             inline const VulkanBindHandle* GetBindHandle(const TextureViewRange& range, TextureBindMode bindMode) { return &GetView(range, bindMode)->bindHandle; }
@@ -41,10 +41,18 @@ namespace PK
 
             const VulkanImageView* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture);
 
-            const VulkanDriver* m_driver = nullptr;
-            FixedString64 m_name;
+            const FixedString64 m_name;
+            const VulkanDriver* m_driver;
             TextureDescriptor m_descriptor;
-            VulkanRawImage* m_rawImage = nullptr;
+            VmaAllocation m_memory;
+            VkImage m_image;
+            VkImage m_imageAlias;
+            VkSampleCountFlagBits m_samples;
+            VkFormat m_format;
+            VkFormat m_formatAlias;
+            VkImageType m_type;
+            VkExtent3D m_extent;
+
             LinkedList<VulkanImageView, uint64_t> m_firstView = nullptr;
     };
 }
