@@ -175,7 +175,7 @@ namespace PK
     RHIBufferRef RHI::CreateBuffer(size_t size, BufferUsage usage, const char* name) { return RHIDriver::Get()->CreateBuffer(size, usage, name); }
     RHITextureRef RHI::CreateTexture(const TextureDescriptor& descriptor, const char* name) { return RHIDriver::Get()->CreateTexture(descriptor, name); }
     RHIAccelerationStructureRef RHI::CreateAccelerationStructure(const char* name) { return RHIDriver::Get()->CreateAccelerationStructure(name); }
-    RHIShaderScope RHI::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return RHIDriver::Get()->CreateShader(base, pVariant, name); }
+    RHIShaderRef RHI::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return RHIDriver::Get()->CreateShader(base, pVariant, name); }
     RHISwapchainScope RHI::CreateSwapchain(const SwapchainDescriptor& descriptor) { return RHIDriver::Get()->CreateSwapchain(descriptor); }
     RHIBuffer* RHI::AcquireStage(size_t size) { return RHIDriver::Get()->AcquireStage(size); }
     void RHI::ReleaseStage(RHIBuffer* buffer, const FenceRef& fence) { RHIDriver::Get()->ReleaseStage(buffer, fence); }

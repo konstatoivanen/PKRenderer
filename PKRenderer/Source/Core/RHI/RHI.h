@@ -115,8 +115,8 @@ namespace PK
     typedef Ref<RHIBufferBindSet> RHIBufferBindSetRef;
     typedef Ref<RHIBuffer> RHIBufferRef;
     typedef Ref<RHITexture> RHITextureRef;
+    typedef Ref<RHIShader> RHIShaderRef;
     typedef Unique<RHISwapchain> RHISwapchainScope;
-    typedef Unique<RHIShader> RHIShaderScope;
     typedef Unique<RHIDriver> RHIDriverScope;
 
     // Interface
@@ -136,7 +136,7 @@ namespace PK
         RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name);
         RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name);
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name);
-        RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name);
+        RHIShaderRef CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name);
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor);
 
         RHIBuffer* AcquireStage(size_t size);

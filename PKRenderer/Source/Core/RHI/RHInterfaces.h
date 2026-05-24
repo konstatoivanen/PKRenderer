@@ -216,7 +216,7 @@ namespace PK
         virtual RHIBufferBindSetRef CreateBufferBindSet(size_t capacity) = 0;
         virtual RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) = 0;
         virtual RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) = 0;
-        virtual RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) = 0;
+        virtual RHIShaderRef CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) = 0;
         virtual RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) = 0;
 
         virtual RHIBuffer* AcquireStage(size_t size) = 0;

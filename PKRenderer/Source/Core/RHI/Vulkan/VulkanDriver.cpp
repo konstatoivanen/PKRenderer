@@ -263,7 +263,7 @@ namespace PK
     RHIAccelerationStructureRef VulkanDriver::CreateAccelerationStructure(const char* name) { return CreateRef<VulkanAccelerationStructure>(this, name); }
     RHITextureBindSetRef VulkanDriver::CreateTextureBindSet(size_t capacity) { return CreateRef<VulkanBindSet>(capacity); }
     RHIBufferBindSetRef VulkanDriver::CreateBufferBindSet(size_t capacity) { return CreateRef<VulkanBindSet>(capacity); }
-    RHIShaderScope VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return CreateUnique<VulkanShader>(this, base, pVariant, name); }
+    RHIShaderRef VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return shaderPool.CreateRef(this, base, pVariant, name); }
     RHISwapchainScope VulkanDriver::CreateSwapchain(const SwapchainDescriptor& descriptor) { return CreateUnique<VulkanSwapchain>(this, descriptor); }
 
     RHIBuffer* VulkanDriver::AcquireStage(size_t size) { return stagingBufferCache->Acquire(size, false, nullptr); }

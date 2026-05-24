@@ -63,7 +63,7 @@ namespace PK
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name) final;
         RHITextureBindSetRef CreateTextureBindSet(size_t capacity) final;
         RHIBufferBindSetRef CreateBufferBindSet(size_t capacity) final;
-        RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) final;
+        RHIShaderRef CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) final;
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) final;
 
         virtual RHIBuffer* AcquireStage(size_t size) final;
@@ -133,12 +133,13 @@ namespace PK
         
         PropertyBlock globalResources;
 
+        FixedRefPool<VulkanTexture, PK_VK_MAX_IMAGES> texturePool;
+        FixedRefPool<VulkanShader, PK_VK_MAX_SHADERS> shaderPool;
+
         mutable FixedTypeSet<
             FixedPool<VulkanBufferView, PK_VK_MAX_BUFFER_VIEWS>,
             FixedPool<VulkanImageView, PK_VK_MAX_IMAGE_VIEWS>,
             FixedPool<VulkanRawBuffer, PK_VK_MAX_RAW_BUFFERS>,
             FixedPool<VulkanRawAccelerationStructure, PK_VK_MAX_ACCELERATION_STRUCTURES>> objectPools;
-
-        FixedRefPool<VulkanTexture, PK_VK_MAX_IMAGES> texturePool;
     };
 }

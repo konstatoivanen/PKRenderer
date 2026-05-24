@@ -14,9 +14,10 @@ namespace PK
  
     constexpr static const uint64_t PK_VK_MAX_BUFFER_VIEWS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_IMAGE_VIEWS = 1024ull;
-    constexpr static const uint64_t PK_VK_MAX_IMAGES = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_RAW_BUFFERS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_ACCELERATION_STRUCTURES = 1024ull;
+    constexpr static const uint64_t PK_VK_MAX_IMAGES = 1024ull;
+    constexpr static const uint64_t PK_VK_MAX_SHADERS = 2048ull;
 
     constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SETS = 256u;
     constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLERS = 32u;

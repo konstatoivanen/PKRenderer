@@ -61,7 +61,7 @@ namespace PK
     protected:
         void ReleaseVariants();
 
-        InlineArray<RHIShaderScope, 4ull> m_shaders;
+        InlineArray<RHIShaderRef, 4ull> m_shaders;
         Map m_map;
         FixedFunctionShaderAttributes m_attributes;
         ShaderPropertyLayout m_materialPropertyLayout;
