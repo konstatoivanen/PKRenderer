@@ -28,220 +28,224 @@ namespace PK
     };
 
     template<typename T, typename TPred = TLess<T>>
-    void InsertionSort(T* beg, T* end, const TPred& pred = TPred())
+    void InsertionSort(T* begin, T* end, const TPred& predicate = TPred())
     {
-        if (beg != end) 
+        if (begin != end) 
         {
-            for (auto mid = beg; ++mid != end;) 
+            for (auto middle = begin; ++middle != end;) 
             { 
-                auto hole = mid;
-                auto cur = PK::MoveTemp(*mid);
+                auto hole = middle;
+                auto current = PK::MoveTemp(*middle);
 
-                if (pred(cur, *beg))
+                if (predicate(current, *begin))
                 { 
-                    auto mend = mid;
-                    auto mdst = ++hole;
+                    auto moveEnd = middle;
+                    auto moveDst = ++hole;
 
-                    while (beg != mend)
+                    while (begin != moveEnd)
                     {
-                        *--mdst = PK::MoveTemp(*--mend);
+                        *--moveDst = PK::MoveTemp(*--moveEnd);
                     }
 
-                    *beg = PK::MoveTemp(cur);
+                    *begin = PK::MoveTemp(current);
                 }
                 else 
                 {
-                    for (auto pre = hole; pred(cur, *(--pre)); hole = pre)
+                    for (auto previous = hole; predicate(current, *(--previous)); hole = previous)
                     {
-                        *hole = PK::MoveTemp(*pre); 
+                        *hole = PK::MoveTemp(*previous);
                     }
 
-                    *hole = PK::MoveTemp(cur); 
+                    *hole = PK::MoveTemp(current);
                 }
             }
         }
     }
 
     template<typename T, typename TPred>
-    void Median3(T* beg, T* mid, T* end, const TPred& pred) 
+    void Median3(T* begin, T* middle, T* end, const TPred& predicate) 
     {
-        if (pred(*mid,*beg))
+        if (predicate(*middle,*begin))
         {
-            PK::Swap(*mid, *beg);
+            PK::Swap(*middle, *begin);
         }
 
-        if (pred(*end,*mid)) 
+        if (predicate(*end,*middle)) 
         { 
-            PK::Swap(*end, *mid);
+            PK::Swap(*end, *middle);
 
-            if (pred(*mid,*beg)) 
+            if (predicate(*middle,*begin)) 
             {
-                PK::Swap(*mid, *beg);
+                PK::Swap(*middle, *begin);
             }
         }
     }
 
     template<typename T, typename TPred>
-    void QuicksortIteration(T* beg, T* end, const TPred& pred, T** outbeg, T** outend)
+    void QuicksortIteration(T* begin, T* end, const TPred& predicate, T** outbegin, T** outend)
     {
-        auto mid = beg + ((end - beg) >> 1ull);
+        auto middle = begin + ((end - begin) >> 1ull);
         const auto last = end - 1ull;
-        const uint64_t count = last - beg;
+        const uint64_t count = last - begin;
 
         if (40ull < count)
         {
             const auto one = (count + 1ull) >> 3ull;
             const auto two = one << 1ull;
-            Median3(beg, beg + one, beg + two, pred);
-            Median3(mid - one, mid, mid + one, pred);
-            Median3(last - two, last - one, last, pred);
-            Median3(beg + one, mid, last - one, pred);
+            Median3(begin, begin + one, begin + two, predicate);
+            Median3(middle - one, middle, middle + one, predicate);
+            Median3(last - two, last - one, last, predicate);
+            Median3(begin + one, middle, last - one, predicate);
         }
         else
         {
-            Median3(beg, mid, last, pred);
+            Median3(begin, middle, last, predicate);
         }
 
-        auto pbeg = mid;
-        auto pend = pbeg + 1ull;
+        auto partitionBegin = middle;
+        auto partitionEnd = partitionBegin + 1ull;
 
-        while (beg < pbeg && !pred(*(pbeg - 1ull), *pbeg) && !pred(*pbeg, *(pbeg - 1ull)))
+        while (begin < partitionBegin && 
+            !predicate(*(partitionBegin - 1ull), *partitionBegin) && 
+            !predicate(*partitionBegin, *(partitionBegin - 1ull)))
         {
-            --pbeg;
+            --partitionBegin;
         }
 
-        while (pend < end && !pred(*pend, *pbeg) && !pred(*pbeg, *pend))
+        while (partitionEnd < end && 
+            !predicate(*partitionEnd, *partitionBegin) && 
+            !predicate(*partitionBegin, *partitionEnd))
         {
-            ++pend;
+            ++partitionEnd;
         }
 
-        auto gbeg = pend;
-        auto gend = pbeg;
+        auto iteratorBegin = partitionEnd;
+        auto iteratorEnd = partitionBegin;
 
         for (;;)
         {
-            for (; gbeg < end; ++gbeg)
+            for (; iteratorBegin < end; ++iteratorBegin)
             {
-                if (pred(*pbeg, *gbeg))
+                if (predicate(*partitionBegin, *iteratorBegin))
                 {
                     continue;
                 }
-                else if (pred(*gbeg, *pbeg))
+                else if (predicate(*iteratorBegin, *partitionBegin))
                 {
                     break;
                 }
-                else if (pend != gbeg)
+                else if (partitionEnd != iteratorBegin)
                 {
-                    PK::Swap(*pend, *gbeg);
+                    PK::Swap(*partitionEnd, *iteratorBegin);
                 }
                 
-                ++pend;
+                ++partitionEnd;
             }
 
-            for (; beg < gend; --gend)
+            for (; begin < iteratorEnd; --iteratorEnd)
             {
-                if (pred(*(gend - 1ull),*pbeg))
+                if (predicate(*(iteratorEnd - 1ull),*partitionBegin))
                 {
                     continue;
                 }
-                else if (pred(*pbeg,*(gend - 1ull)))
+                else if (predicate(*partitionBegin,*(iteratorEnd - 1ull)))
                 {
                     break;
                 }
-                else if (--pbeg != (gend - 1ull))
+                else if (--partitionBegin != (iteratorEnd - 1ull))
                 {
-                    PK::Swap(*pbeg, *(gend - 1ull));
+                    PK::Swap(*partitionBegin, *(iteratorEnd - 1ull));
                 }
             }
 
-            if (gend == beg && gbeg == end)
+            if (iteratorEnd == begin && iteratorBegin == end)
             {
                 break;
             }
 
-            if (gend == beg)
+            if (iteratorEnd == begin)
             {
-                if (pend != gbeg)
+                if (partitionEnd != iteratorBegin)
                 {
-                    PK::Swap(*pbeg, *pend);
+                    PK::Swap(*partitionBegin, *partitionEnd);
                 }
 
-                ++pend;
-                PK::Swap(*pbeg, *gbeg);
-                ++pbeg;
-                ++gbeg;
+                PK::Swap(*partitionBegin, *iteratorBegin);
+                ++partitionEnd;
+                ++partitionBegin;
+                ++iteratorBegin;
             }
-            else if (gbeg == end)
+            else if (iteratorBegin == end)
             {
-                if (--gend != --pbeg)
+                if (--iteratorEnd != --partitionBegin)
                 {
-                    PK::Swap(*gend, *pbeg);
+                    PK::Swap(*iteratorEnd, *partitionBegin);
                 }
 
-                PK::Swap(*pbeg, *(--pend));
+                PK::Swap(*partitionBegin, *(--partitionEnd));
             }
             else
             {
-                PK::Swap(*gbeg, *(--gend));
-                ++gbeg;
+                PK::Swap(*iteratorBegin, *(--iteratorEnd));
+                ++iteratorBegin;
             }
         }
 
-        *outbeg = pbeg;
-        *outend = pend;
+        *outbegin = partitionBegin;
+        *outend = partitionEnd;
     }
 
     template<typename T, typename TPred = TLess<T>>
-    void QuickSort(T* beg, T* end, const TPred& pred = TPred())
+    void QuickSort(T* begin, T* end, const TPred& predicate = TPred())
     {
-        if (beg < end)
+        if (begin < end)
         {
             while (true)
             {
-                T* pbeg = nullptr;
-                T* pend = nullptr;
-                QuicksortIteration(beg, end, pred, &pbeg, &pend);
+                T* partitionBegin = nullptr;
+                T* partitionEnd = nullptr;
+                QuicksortIteration(begin, end, predicate, &partitionBegin, &partitionEnd);
 
-                if (pbeg - beg < end - pend)
+                if (partitionBegin - begin < end - partitionEnd)
                 {
-                    QuickSort(beg, pbeg, pred);
-                    beg = pend;
+                    QuickSort(begin, partitionBegin, predicate);
+                    begin = partitionEnd;
                 }
                 else
                 {
-                    QuickSort(pend, end, pred);
-                    end = pbeg;
+                    QuickSort(partitionEnd, end, predicate);
+                    end = partitionBegin;
                 }
             }
         }
     }
 
     template<typename T, typename TPred = TLess<T>>
-    void IntroSort(T* beg, T* end, const TPred& pred = TPred())
+    void IntroSort(T* begin, T* end, const TPred& predicate = TPred())
     {
-        if (beg < end)
+        if (begin < end)
         {
             while(true)
             {
-                if (end - beg <= 16ll) 
+                if (end - begin <= 16ll) 
                 {
-                    InsertionSort(beg, end, pred);
+                    InsertionSort(begin, end, predicate);
                     return;
                 }
 
-                T* pbeg = nullptr;
-                T* pend = nullptr;
-                QuicksortIteration(beg, end, pred, &pbeg, &pend);
+                T* partitionBegin = nullptr;
+                T* partitionEnd = nullptr;
+                QuicksortIteration(begin, end, predicate, &partitionBegin, &partitionEnd);
 
-                if (pbeg - beg < end - pend)
+                if (partitionBegin - begin < end - partitionEnd)
                 { 
-                    IntroSort(beg, pbeg, pred);
-                    beg = pend;
+                    IntroSort(begin, partitionBegin, predicate);
+                    begin = partitionEnd;
                 }
                 else 
                 { 
-                    IntroSort(pend, end, pred);
-                    end = pbeg;
+                    IntroSort(partitionEnd, end, predicate);
+                    end = partitionBegin;
                 }
             }
         }

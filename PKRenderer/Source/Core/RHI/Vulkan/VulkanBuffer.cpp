@@ -9,8 +9,8 @@ namespace PK
 {
     VulkanBuffer::VulkanBuffer(VulkanDriver* driver, size_t size, BufferUsage usage, const char* name) :
         m_driver(driver),
-        m_usage(usage),
-        m_name(name)
+        m_name(name),
+        m_usage(usage)
     {
         // Sparse buffers cannot be persistently mapped
         if ((m_usage & BufferUsage::Sparse) != 0)

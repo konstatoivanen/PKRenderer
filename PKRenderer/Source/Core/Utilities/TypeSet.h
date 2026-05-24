@@ -63,7 +63,10 @@ namespace PK
         virtual TBase* GetInstance(uint32_t typeIndex) = 0;
 
         template<typename T>
-        T* GetInstance() { return static_cast<T*>(GetInstance(pk_type_index<T>)); }
+        T* GetInstance() 
+        {
+            return static_cast<T*>(GetInstance(pk_type_index<T>)); 
+        }
     };
 
     template<typename TBase, typename ... TTypes>

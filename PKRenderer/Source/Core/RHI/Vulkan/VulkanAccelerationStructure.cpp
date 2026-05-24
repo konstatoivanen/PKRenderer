@@ -41,11 +41,11 @@ namespace PK
         if (handle != VK_NULL_HANDLE)
         {
             m_driver->disposer->Dispose(m_driver->device, handle, 
-                [](void* c, void* v)
-                {
-                    vkDestroyAccelerationStructureKHR(static_cast<VkDevice>(c), static_cast<VkAccelerationStructureKHR>(v), nullptr);
-                },
-                fence);
+            [](void* c, void* v)
+            {
+                vkDestroyAccelerationStructureKHR(static_cast<VkDevice>(c), static_cast<VkAccelerationStructureKHR>(v), nullptr);
+            },
+            fence);
         }
     }
 
@@ -118,15 +118,15 @@ namespace PK
             structure->geometry.geometry.triangles.transformData.deviceAddress = 0ull;
             structure->geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
             structure->range = { geometry.indexCount / 3 , geometry.indexStride * geometry.indexFirst, geometry.vertexFirst, 0u };
-
             structure->buildInfo = VkAccelerationStructureBuildGeometryInfoKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
             structure->buildInfo.geometryCount = 1u;
             structure->buildInfo.pGeometries = &structure->geometry;
+            structure->buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
             structure->buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
             structure->buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
                 VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR |
                 VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
-            structure->buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+
             structure->size = VulkanGetAccelerationBuildSizesInfo(m_driver->device, structure->buildInfo, structure->range.primitiveCount);
         }
 
@@ -149,7 +149,7 @@ namespace PK
         {
             VkDeviceSize scratchSize = 0ull;
             VkDeviceSize bufferSize = 0ull;
-            uint32_t buildCount = 0u;
+            VkDeviceSize buildCount = 0ull;
 
             // Compaction queries
             for (auto i = 0u; i < m_substructures.GetCount(); ++i)
@@ -244,7 +244,7 @@ namespace PK
 
                 auto buildGeometryInfos = m_driver->arena.Allocate<VkAccelerationStructureBuildGeometryInfoKHR>(buildCount);
                 auto buildStructureRangeInfoPtrs = m_driver->arena.Allocate<VkAccelerationStructureBuildRangeInfoKHR*>(buildCount);
-                buildCount = 0u;
+                buildCount = 0ull;
 
                 // Full rebuild needed even if only one element compacted as buffer offsets have been recalculated.
                 for (auto i = 0u; i < m_substructures.GetCount(); ++i)
@@ -307,7 +307,7 @@ namespace PK
             }
         }
 
-        auto hasChanged = m_topologyHashPrev != m_topologyHashCurr;
+        const auto hasChanged = m_topologyHashPrev != m_topologyHashCurr;
 
         for (auto i = 0u; i < m_instanceCount && hasChanged; ++i)
         {
@@ -316,11 +316,9 @@ namespace PK
         }
 
         m_instanceInputBuffer->EndMap(m_instanceBufferOffset, sizeof(VkAccelerationStructureInstanceKHR) * m_instanceLimit);
-        m_writeBuffer = nullptr;
 
         if (hasChanged)
         {
-            m_topologyHashPrev = m_topologyHashCurr;
             auto buildInfo = m_structure.buildInfo;
             buildInfo.dstAccelerationStructure = m_structure.handle;
             buildInfo.scratchData.deviceAddress = m_scratchBuffer->deviceAddress + m_structure.scratchOffset;
@@ -329,6 +327,8 @@ namespace PK
             m_lastBuildFenceRef = m_cmd->GetFenceRef();
         }
 
+        m_topologyHashPrev = m_topologyHashCurr;
+        m_writeBuffer = nullptr;
         m_cmd = nullptr;
     }
 }

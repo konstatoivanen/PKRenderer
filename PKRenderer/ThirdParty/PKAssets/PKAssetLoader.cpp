@@ -64,7 +64,15 @@ namespace PKAssets
         }
 
         auto bufferSize = header.uncompressedSize + header.decodePadding * 16ull;
-        auto buffer = static_cast<uint8_t*>(malloc(bufferSize));
+
+        if (!asset->rawData || asset->bufferSize < bufferSize)
+        {
+            free(asset->rawData);
+            asset->rawData = malloc(bufferSize);
+            asset->bufferSize = bufferSize;
+        }
+
+        auto buffer = static_cast<uint8_t*>(asset->rawData);
 
         if (header.isCompressed)
         {

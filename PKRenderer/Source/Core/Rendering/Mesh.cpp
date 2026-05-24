@@ -228,8 +228,7 @@ namespace PK
 
     MeshStatic::MeshStatic(MeshStaticAllocator* allocator, const char* filepath)
     {
-        PKAssets::PKAsset asset;
-
+        PKAssets::PKAsset asset{};
         PK_FATAL_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_FATAL_ASSERT(asset.header->type == PKAssets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
 
@@ -330,8 +329,7 @@ namespace PK
 
     Mesh::Mesh(const char* filepath)
     {
-        PKAssets::PKAsset asset;
-
+        PKAssets::PKAsset asset{};
         PK_FATAL_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_FATAL_ASSERT(asset.header->type == PKAssets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
 

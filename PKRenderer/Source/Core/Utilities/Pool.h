@@ -9,6 +9,9 @@ namespace PK
     {
         using Type = T;
 
+        T* operator [](uint32_t index) { return GetData() + index; }
+        const T* operator [](uint32_t index) const { return GetData() + index; }
+
         virtual T* GetData() = 0;
         virtual const T* GetData() const = 0;
         virtual size_t GetCount() const = 0;
@@ -16,9 +19,6 @@ namespace PK
 
         virtual void Delete(const T* ptr, size_t count = 1ull) = 0;
         virtual void Clear() = 0;
-
-        T* operator [](uint32_t index) { return GetData() + index; }
-        const T* operator [](uint32_t index) const { return GetData() + index; }
 
         uint32_t GetIndex(const T* ptr) const
         {
@@ -57,14 +57,14 @@ namespace PK
         Pool(const Pool& other) noexcept : Pool() { Copy(other); }
         ~Pool() { Clear(); TData::Free(m_data); }
 
+        Pool& operator=(Pool&& other) noexcept { Move(PK::Forward<Pool>(other)); return *this; }
+        Pool& operator=(const Pool& other) noexcept { Copy(other); return *this; }
+
         T* GetData() final { return TData::GetPtr(m_data); }
         const T* GetData() const final { return TData::GetPtr(m_data); }
         size_t GetCount() const final { return m_mask.CountBits(); }
         size_t GetCapacity() const final { return TData::GetCount(m_data); }
         const TMask& GetActiveMask() { return m_mask; }
-
-        Pool& operator=(Pool&& other) noexcept { Move(PK::Forward<Pool>(other)); return *this; }
-        Pool& operator=(const Pool& other) noexcept { Copy(other); return *this; }
 
         inline void Copy(const Pool& other)
         {

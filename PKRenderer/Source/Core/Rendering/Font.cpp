@@ -11,8 +11,7 @@ namespace PK
 
     Font::Font(const char* filepath)
     {
-        PKAssets::PKAsset asset;
-
+        PKAssets::PKAsset asset{};
         PK_FATAL_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_FATAL_ASSERT(asset.header->type == PKAssets::PKAssetType::Font, "Trying to read a font from a non font file!")
 

@@ -11,8 +11,7 @@ namespace PK
 {
     TextureAsset::TextureAsset(const char* filepath)
     {
-        PKAssets::PKAssetStream asset;
-
+        PKAssets::PKAssetStream asset{};
         PK_FATAL_ASSERT(PKAssets::OpenAssetStream(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_FATAL_ASSERT(asset.header.type == PKAssets::PKAssetType::Texture, "Trying to read a texture from a non texture file!")
 

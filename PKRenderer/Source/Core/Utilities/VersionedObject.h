@@ -12,9 +12,9 @@ namespace PK
         constexpr uint64_t Version() const { return m_version; }
         inline void IncrementVersion() { m_version = ++s_globalVersion; }
 
-        private:
-            uint64_t m_version;
-            inline static uint64_t s_globalVersion = 0ull;
+    private:
+        uint64_t m_version;
+        inline static uint64_t s_globalVersion = 0ull;
     };
 
     template<typename T>

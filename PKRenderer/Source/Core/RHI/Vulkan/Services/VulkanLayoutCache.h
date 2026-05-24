@@ -26,25 +26,24 @@ namespace PK
         inline bool operator == (const PipelineLayoutKey& r) const noexcept { return memcmp(this, &r, sizeof(PipelineLayoutKey)) == 0; }
     };
 
-    class VulkanLayoutCache : public NoCopy
+    struct VulkanLayoutCache : public NoCopy
     {
         using TDescriptorHash = Hash::TMurmurHash<DescriptorSetLayoutKey>;
         using TPipelineHash = Hash::TMurmurHash<PipelineLayoutKey>;
 
-        public:
-            VulkanLayoutCache(VkDevice device) : m_device(device), m_setLayoutMap(128ull, 3ull), m_pipelineLayoutMap(128ull, 3ull) {}
+        VulkanLayoutCache(VkDevice device) : m_device(device), m_setLayoutMap(128ull, 3ull), m_pipelineLayoutMap(128ull, 3ull) {}
 
-            const VulkanDescriptorSetLayout* GetSetLayout(const DescriptorSetLayoutKey& key);
-            const VulkanPipelineLayout* GetPipelineLayout(const PipelineLayoutKey& key, const char* name);
-            void ReleaseSetLayout(const VulkanDescriptorSetLayout* layout, const FenceRef& releaseFence);
-            void ReleasePipelineLayout(const VulkanPipelineLayout* layout, const FenceRef& releaseFence);
-            void Prune();
+        const VulkanDescriptorSetLayout* GetSetLayout(const DescriptorSetLayoutKey& key);
+        const VulkanPipelineLayout* GetPipelineLayout(const PipelineLayoutKey& key, const char* name);
+        void ReleaseSetLayout(const VulkanDescriptorSetLayout* layout, const FenceRef& releaseFence);
+        void ReleasePipelineLayout(const VulkanPipelineLayout* layout, const FenceRef& releaseFence);
+        void Prune();
 
-        private:
-            VkDevice m_device;
-            FixedPool<VulkanDescriptorSetLayout, PK_VK_MAX_DESCRIPTOR_SET_LAYOUTS> m_setLayoutPool;
-            FixedMap16<DescriptorSetLayoutKey, uint16_t, PK_VK_MAX_DESCRIPTOR_SET_LAYOUTS, TDescriptorHash> m_setLayoutMap;
-            FixedPool<VulkanPipelineLayout, PK_VK_MAX_PIPELINE_LAYOUTS> m_pipelineLayoutPool;
-            FixedMap16<PipelineLayoutKey, uint16_t, PK_VK_MAX_PIPELINE_LAYOUTS, TPipelineHash> m_pipelineLayoutMap;
+    private:
+        VkDevice m_device;
+        FixedPool<VulkanDescriptorSetLayout, PK_VK_MAX_DESCRIPTOR_SET_LAYOUTS> m_setLayoutPool;
+        FixedMap16<DescriptorSetLayoutKey, uint16_t, PK_VK_MAX_DESCRIPTOR_SET_LAYOUTS, TDescriptorHash> m_setLayoutMap;
+        FixedPool<VulkanPipelineLayout, PK_VK_MAX_PIPELINE_LAYOUTS> m_pipelineLayoutPool;
+        FixedMap16<PipelineLayoutKey, uint16_t, PK_VK_MAX_PIPELINE_LAYOUTS, TPipelineHash> m_pipelineLayoutMap;
     };
 }

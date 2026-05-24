@@ -221,16 +221,17 @@ namespace PK
         IHashSet(IHashSet&& other) noexcept { Base::Move(PK::Forward<TAllocator>(other)); }
         IHashSet(const IHashSet& other) noexcept { Base::Copy(other); }
 
+        const Value& operator[](uint32_t index) const { return Base::m_values[index]; }
+        Value& operator[](uint32_t index) { return Base::m_values[index]; }
+        IHashSet& operator=(IHashSet&& other) noexcept { Base::Move(PK::Forward<TAllocator>(other)); return *this; }
+        IHashSet& operator=(const IHashSet& other) noexcept { Base::Copy(other); return *this; }
+
         constexpr uint32_t GetCount() const { return Base::m_count; }
         constexpr uint32_t GetCapacity() const { return Base::m_capacity; }
         constexpr const Value* GetValues() const { return Base::m_values; }
         Value* GetValues() { return Base::m_values; }
         constexpr Value const* begin() const { return Base::m_values; }
         constexpr Value const* end() const { return Base::m_values + Base::m_count; }
-        const Value& operator[](uint32_t index) const { return Base::m_values[index]; }
-        Value& operator[](uint32_t index) { return Base::m_values[index]; }
-        IHashSet& operator=(IHashSet&& other) noexcept { Base::Move(PK::Forward<TAllocator>(other)); return *this; }
-        IHashSet& operator=(const IHashSet& other) noexcept { Base::Copy(other); return *this; }
 
         // Special case access where key is inlined into value.
         const Value* GetValuePtr(const Value& value) const { auto index = GetIndex(value); return index != -1 ? &Base::m_values[index] : nullptr; }
@@ -480,16 +481,17 @@ namespace PK
         IHashMap(IHashMap&& other) noexcept { Base::Move(PK::Forward<Base>(other)); }
         IHashMap(const IHashMap& other) noexcept { Base::Copy(other); }
 
+        const KeyValueConst operator[](uint32_t index) const { return { Base::m_nodes[index].key, Base::m_values[index] }; }
+        KeyValue operator[](uint32_t index) { return { Base::m_nodes[index].key, Base::m_values[index] }; }
+        IHashMap& operator=(IHashMap&& other) noexcept { Base::Move(PK::Forward<Base>(other)); return *this; }
+        IHashMap& operator=(const IHashMap& other) noexcept { Base::Copy(other); return *this; }
+
         constexpr uint32_t GetCount() const { return Base::m_count; }
         constexpr size_t GetCapacity() const { return Base::m_capacity; }
         constexpr const Value* GetValues() const { return Base::m_values; }
         Value* GetValues() { return Base::m_values; }
         constexpr Value const* begin() const { return Base::m_values; }
         constexpr Value const* end() const { return Base::m_values + Base::m_count; }
-        const KeyValueConst operator[](uint32_t index) const { return { Base::m_nodes[index].key, Base::m_values[index] }; }
-        KeyValue operator[](uint32_t index) { return { Base::m_nodes[index].key, Base::m_values[index] }; }
-        IHashMap& operator=(IHashMap&& other) noexcept { Base::Move(PK::Forward<Base>(other)); return *this; }
-        IHashMap& operator=(const IHashMap& other) noexcept { Base::Copy(other); return *this; }
 
         const Value* GetValuePtr(const Key& key) const { auto index = GetIndex(key); return index != -1 ? &Base::m_values[index] : nullptr; }
         Value* GetValuePtr(const Key& key) { auto index = GetIndex(key); return index != -1 ? &Base::m_values[index] : nullptr; }

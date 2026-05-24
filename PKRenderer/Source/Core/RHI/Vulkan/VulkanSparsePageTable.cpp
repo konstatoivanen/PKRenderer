@@ -6,36 +6,6 @@
 
 namespace PK
 {
-    VulkanSparsePageTable::Page* VulkanSparsePageTable::CreatePage(Page* next, uint32_t beg, uint32_t end)
-    {
-        auto page = m_pages.New();
-        const auto alignedBeg = beg * m_memoryRequirements.alignment;
-        const auto alugnedEnd = end * m_memoryRequirements.alignment;
-        
-        FixedString128 name("%s.Page(%lli-%lli)", m_name.c_str(), alignedBeg, alugnedEnd);
-        
-        VkMemoryRequirements requirements{};
-        requirements.size = alugnedEnd - alignedBeg;
-        requirements.alignment = m_memoryRequirements.alignment;
-        requirements.memoryTypeBits = m_memoryRequirements.memoryTypeBits;
-
-        VmaAllocationInfo allocationInfo{};
-        VK_ASSERT_RESULT_CTX(vmaAllocateMemoryPages(m_driver->allocator, &requirements, &m_pageCreateInfo, 1, &page->memory, &allocationInfo), "Failed to allocate memory page!");
-        VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)allocationInfo.deviceMemory, name.c_str());
-
-        page->beg = beg;
-        page->end = end;
-        page->next = next;
-
-        auto bindInfo = m_driver->arena.Allocate<VkSparseMemoryBind>(1u);
-        bindInfo->resourceOffset = alignedBeg;
-        bindInfo->size = alugnedEnd - alignedBeg;
-        bindInfo->memory = allocationInfo.deviceMemory;
-        bindInfo->memoryOffset = allocationInfo.offset;
-        bindInfo->flags = 0u;
-        return page;
-    }
-
     VulkanSparsePageTable::VulkanSparsePageTable(const VulkanDriver* driver, const VkBuffer buffer, VmaMemoryUsage memoryUsage, const char* name) :
         m_driver(driver),
         m_targetBuffer(buffer),
@@ -59,6 +29,7 @@ namespace PK
         }
     }
 
+    
     void VulkanSparsePageTable::AllocateRange(const BufferIndexRange& range, QueueType type)
     {
         const auto alignment = m_memoryRequirements.alignment;
@@ -136,5 +107,36 @@ namespace PK
 
             next = &curr->next;
         }
+    }
+
+
+    VulkanSparsePageTable::Page* VulkanSparsePageTable::CreatePage(Page* next, uint32_t beg, uint32_t end)
+    {
+        auto page = m_pages.New();
+        const auto alignedBeg = beg * m_memoryRequirements.alignment;
+        const auto alugnedEnd = end * m_memoryRequirements.alignment;
+        
+        FixedString128 name("%s.Page(%lli-%lli)", m_name.c_str(), alignedBeg, alugnedEnd);
+        
+        VkMemoryRequirements requirements{};
+        requirements.size = alugnedEnd - alignedBeg;
+        requirements.alignment = m_memoryRequirements.alignment;
+        requirements.memoryTypeBits = m_memoryRequirements.memoryTypeBits;
+
+        VmaAllocationInfo allocationInfo{};
+        VK_ASSERT_RESULT_CTX(vmaAllocateMemoryPages(m_driver->allocator, &requirements, &m_pageCreateInfo, 1, &page->memory, &allocationInfo), "Failed to allocate memory page!");
+        VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)allocationInfo.deviceMemory, name.c_str());
+
+        page->beg = beg;
+        page->end = end;
+        page->next = next;
+
+        auto bindInfo = m_driver->arena.Allocate<VkSparseMemoryBind>(1u);
+        bindInfo->resourceOffset = alignedBeg;
+        bindInfo->size = alugnedEnd - alignedBeg;
+        bindInfo->memory = allocationInfo.deviceMemory;
+        bindInfo->memoryOffset = allocationInfo.offset;
+        bindInfo->flags = 0u;
+        return page;
     }
 }

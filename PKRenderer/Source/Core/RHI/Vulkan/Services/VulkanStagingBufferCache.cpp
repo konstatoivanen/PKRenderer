@@ -79,12 +79,11 @@ namespace PK
 
             if (buffer->isPersistentMap)
             {
-                auto deleter = [](void* c, void* v)
+                m_disposer->Dispose(this, buffer, [](void* c, void* v)
                 {
                     static_cast<VulkanStagingBufferCache*>(c)->m_bufferPool.Delete(static_cast<VulkanStagingBuffer*>(v));
-                };
-
-                m_disposer->Dispose(this, buffer, deleter, fence);
+                }, 
+                fence);
             }
             else
             {

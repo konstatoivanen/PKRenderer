@@ -5,31 +5,30 @@
 
 namespace PK
 {
-    class VulkanBindSet : public RHIBindSet<RHITexture>,
-                            public RHIBindSet<RHIBuffer>
+    struct VulkanBindSet : public RHIBindSet<RHITexture>,
+                           public RHIBindSet<RHIBuffer>
     {
-        public:
-            VulkanBindSet(size_t capacity);
+        VulkanBindSet(size_t capacity);
 
-            const VulkanBindHandle* const* GetHandles(uint32_t* version, uint32_t* count) const;
+        const VulkanBindHandle* const* GetHandles(uint32_t* version, uint32_t* count) const;
 
-            int32_t Add(RHITexture* value, void* bindInfo) final;
-            int32_t Add(RHITexture* value) final;
-            int32_t Add(RHIBuffer* value, void* bindInfo) final;
-            int32_t Add(RHIBuffer* value) final;
-            uint3 GetBoundTextureSize(uint32_t index) const final;
-            BufferIndexRange GetBoundBufferRange(uint32_t index) const final;
+        int32_t Add(RHITexture* value, void* bindInfo) final;
+        int32_t Add(RHITexture* value) final;
+        int32_t Add(RHIBuffer* value, void* bindInfo) final;
+        int32_t Add(RHIBuffer* value) final;
+        uint3 GetBoundTextureSize(uint32_t index) const final;
+        BufferIndexRange GetBoundBufferRange(uint32_t index) const final;
 
-            void Clear() final { m_set.ClearFast(); }
+        void Clear() final { m_set.ClearFast(); }
 
-        private:
-            int32_t Add(const VulkanBindHandle* handle);
+    private:
+        int32_t Add(const VulkanBindHandle* handle);
 
-            HashSet16<const VulkanBindHandle*> m_set;
+        HashSet16<const VulkanBindHandle*> m_set;
 
-            // Hackedy hack dirty stuff
-            mutable bool m_isDirty = false;
-            mutable size_t m_previousCount = 0ull;
-            mutable uint32_t m_version = 0u;
+        // Hackedy hack dirty stuff
+        mutable bool m_isDirty = false;
+        mutable size_t m_previousCount = 0ull;
+        mutable uint32_t m_version = 0u;
     };
 }

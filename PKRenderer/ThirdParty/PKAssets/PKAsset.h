@@ -70,6 +70,8 @@ namespace PKAssets
             void* rawData = nullptr;
             PKAssetHeader* header;
         };
+
+        size_t bufferSize;
     };
 
     struct PKAssetStream

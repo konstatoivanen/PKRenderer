@@ -20,21 +20,6 @@ namespace PK
             bool isVariableSize;
         };
 
-        VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, uint32_t maxSets, initializer_list<Pair<const VkDescriptorType, uint32_t>> poolSizes);
-
-        const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
-            const DescriptorBinding* bindings,
-            const uint32_t bindingCount,
-            const FenceRef& fence, 
-            const char* name);
-
-        void SetDescriptorSetFence(const VulkanDescriptorSet* set, const FenceRef& fence) const;
-
-        void Prune();
-
-     private:
-         VulkanDescriptorSet* AllocateDescriptorSet(VkDescriptorSetLayout layout, const uint32_t variableSize, const FenceRef& fence, const char* name);
-
         struct SetKey
         {
             const DescriptorBinding* bindings = nullptr;
@@ -48,6 +33,20 @@ namespace PK
         {
             size_t operator()(const SetKey& k) const noexcept;
         };
+
+        VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, uint32_t maxSets, initializer_list<Pair<const VkDescriptorType, uint32_t>> poolSizes);
+
+        const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
+            const DescriptorBinding* bindings,
+            const uint32_t bindingCount,
+            const FenceRef& fence, 
+            const char* name);
+
+        void SetDescriptorSetFence(const VulkanDescriptorSet* set, const FenceRef& fence) const;
+        void Prune();
+
+    private:
+        VulkanDescriptorSet* AllocateDescriptorSet(VkDescriptorSetLayout layout, const uint32_t variableSize, const FenceRef& fence, const char* name);
 
         VkDescriptorPoolSize m_poolSizes[PK_VK_MAX_DESCRIPTOR_TYPE_POOL_SIZES]{};
         VkDescriptorPoolCreateInfo m_poolCreateInfo;

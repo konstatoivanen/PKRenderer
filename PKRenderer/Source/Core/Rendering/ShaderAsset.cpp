@@ -115,8 +115,7 @@ namespace PK
     {
         ReleaseVariants();
 
-        PKAssets::PKAsset asset;
-
+        PKAssets::PKAsset asset{};
         PK_FATAL_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_FATAL_ASSERT(asset.header->type == PKAssets::PKAssetType::Shader, "Trying to read a shader from a non shader file!")
 

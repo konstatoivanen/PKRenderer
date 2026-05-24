@@ -23,6 +23,13 @@ namespace PK
         Array(const T* elements, size_t count) noexcept : Array() { Copy(elements, count); }
         ~Array() { TData::Free(m_data); }
 
+        T& operator [](size_t i) { return GetData()[i]; }
+        T const& operator [](size_t i) const { return GetData()[i]; }
+        operator T* () { return GetData(); }
+        operator T const* () const { return GetData(); }
+        Array& operator=(Array&& other) noexcept { Move(PK::Forward<Array>(other)); return *this; }
+        Array& operator=(const Array& other) noexcept { Copy(other); return *this; }
+
         constexpr T* GetData() { return TData::GetPtr(m_data); }
         constexpr T const* GetData() const { return TData::GetPtr(m_data); }
         constexpr size_t GetCount() const { return TData::GetCount(m_data); }
@@ -36,13 +43,6 @@ namespace PK
         constexpr T const* begin() const { return GetData(); }
         constexpr T const* end() const { return GetData() + GetCount(); }
         
-        T& operator [](size_t i) { return GetData()[i]; }
-        T const& operator [](size_t i) const { return GetData()[i]; }
-        operator T* () { return GetData(); }
-        operator T const* () const { return GetData(); }
-        Array& operator=(Array&& other) noexcept { Move(PK::Forward<Array>(other)); return *this; }
-        Array& operator=(const Array& other) noexcept { Copy(other); return *this; }
-
         inline void Copy(const T* elements, size_t count)
         {
             Reserve(count, false);
@@ -114,6 +114,13 @@ namespace PK
         List(const T* elements, size_t count) noexcept : List() { Copy(elements, count); }
         ~List() { Clear(); TData::Free(m_data); }
 
+        T& operator [](size_t i) { return GetData()[i]; }
+        T const& operator [](size_t i) const { return GetData()[i]; }
+        operator T* () { return GetData(); }
+        operator T const* () const { return GetData(); }
+        List& operator=(List&& other) noexcept { Move(PK::Forward<List>(other)); return *this; }
+        List& operator=(const List& other) noexcept { Copy(other); return *this; }
+
         constexpr T* GetData() { return TData::GetPtr(m_data); }
         constexpr T const* GetData() const { return TData::GetPtr(m_data); }
         constexpr size_t GetCount() const { return m_count; }
@@ -126,13 +133,6 @@ namespace PK
         T* end() { return GetData() + m_count; }
         constexpr T const* begin() const { return GetData(); }
         constexpr T const* end() const { return GetData() + m_count; }
-
-        T& operator [](size_t i) { return GetData()[i]; }
-        T const& operator [](size_t i) const { return GetData()[i]; }
-        operator T* () { return GetData(); }
-        operator T const* () const { return GetData(); }
-        List& operator=(List&& other) noexcept { Move(PK::Forward<List>(other)); return *this; }
-        List& operator=(const List& other) noexcept { Copy(other); return *this; }
 
         inline void Copy(const T* elements, size_t count)
         {

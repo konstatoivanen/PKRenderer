@@ -4,6 +4,17 @@
 
 namespace PK
 {
+    constexpr static uint64_t GetViewKey(const TextureViewRange& range, TextureBindMode mode)
+    {
+        uint64_t h = 0ull;
+        h |= range.level & 0xFFull;
+        h |= (range.levels & 0xFFull) << 8ull;
+        h |= (uint64_t)range.layer << 16ull;
+        h |= (uint64_t)range.layers << 32ull;
+        h |= (uint64_t)mode << 48ull;
+        return h;
+    }
+
     VulkanTexture::VulkanTexture(struct VulkanDriver* driver, const TextureDescriptor& descriptor, const char* name) :
         m_name(name),
         m_driver(driver),
@@ -84,7 +95,7 @@ namespace PK
             imageCreateInfo.usage &= ~(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
             imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
             // Not supported on desktop
-            //allocation.usage = VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED;
+            // allocation.usage = VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED;
         }
 
         if (imageCreateInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)

@@ -41,6 +41,12 @@ namespace PK
             inline bool operator == (const MeshPipelineKey& r) const noexcept { return memcmp(this, &r, sizeof(MeshPipelineKey)) == 0; }
         };
 
+        struct PipelineValue
+        {
+            VulkanPipeline* pipeline = nullptr;
+            uint64_t pruneTick = 0;
+        };
+
         using PipelineKeyHash = Hash::TMurmurHash<PipelineKey>;
         using MeshPipelineKeyHash = Hash::TMurmurHash<MeshPipelineKey>;
 
@@ -54,30 +60,24 @@ namespace PK
 
         ~VulkanPipelineCache();
 
-        struct PipelineValue
-        {
-            VulkanPipeline* pipeline = nullptr;
-            uint64_t pruneTick = 0;
-        };
-
         const VulkanPipeline* GetPipeline(const PipelineKey& key);
         const VulkanPipeline* GetGraphicsPipeline(const PipelineKey& key);
         const VulkanPipeline* GetComputePipeline(const VersionHandle<VulkanShader>& shader);
         const VulkanPipeline* GetRayTracingPipeline(const VersionHandle<VulkanShader>& shader);
         void Prune();
 
-        private:
-            const VkDevice m_device;
-            const float m_maxOverEstimation;
-            const bool m_allowUnderEstimation;
+    private:
+        const VkDevice m_device;
+        const float m_maxOverEstimation;
+        const bool m_allowUnderEstimation;
 
-            VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
-            FixedString256 m_workingDirectory;
-            FixedPool<VulkanPipeline, PK_VK_MAX_PIPELINES> m_pipelinePool;
-            FixedMap16<PipelineKey, PipelineValue, PK_VK_MAX_PIPELINES_VERTEX, PipelineKeyHash> m_vertexPipelines;
-            FixedMap16<MeshPipelineKey, PipelineValue, PK_VK_MAX_PIPELINES_MESH, MeshPipelineKeyHash> m_meshPipelines;
-            FixedMap16<VersionHandle<VulkanShader>, PipelineValue, PK_VK_MAX_PIPELINES_GENERIC> m_otherPipelines;
-            uint64_t m_currentPruneTick = 0;
-            uint64_t m_pruneDelay = 0;
+        VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
+        FixedString256 m_workingDirectory;
+        FixedPool<VulkanPipeline, PK_VK_MAX_PIPELINES> m_pipelinePool;
+        FixedMap16<PipelineKey, PipelineValue, PK_VK_MAX_PIPELINES_VERTEX, PipelineKeyHash> m_vertexPipelines;
+        FixedMap16<MeshPipelineKey, PipelineValue, PK_VK_MAX_PIPELINES_MESH, MeshPipelineKeyHash> m_meshPipelines;
+        FixedMap16<VersionHandle<VulkanShader>, PipelineValue, PK_VK_MAX_PIPELINES_GENERIC> m_otherPipelines;
+        uint64_t m_currentPruneTick = 0;
+        uint64_t m_pruneDelay = 0;
     };
 }

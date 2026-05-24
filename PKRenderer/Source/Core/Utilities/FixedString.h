@@ -107,8 +107,15 @@ namespace PK
         constexpr TChar Back() const { return m_string[m_length > 0ull ? m_length - 1ull : 0u]; }
         constexpr bool IsFull() const { return m_length == max_length; }
 
-        int64_t Find(size_t offset, TChar c) const { return static_cast<int64_t>(String::Chr(m_string + offset, c) - m_string); }
-        IFixedString Slice(size_t offset, size_t count = max_length) const { return IFixedString(offset + count > m_length ? m_length - offset : count, m_string + offset); }
+        int64_t Find(size_t offset, TChar c) const 
+        { 
+            return static_cast<int64_t>(String::Chr(m_string + offset, c) - m_string); 
+        }
+
+        IFixedString Slice(size_t offset, size_t count = max_length) const 
+        { 
+            return IFixedString(offset + count > m_length ? m_length - offset : count, m_string + offset); 
+        }
 
         void AppendFormat(const TChar* format, ...)
         {

@@ -4,7 +4,7 @@
 
 namespace PK
 {
-    class VulkanRenderState;
+    struct VulkanRenderState;
 
     struct VulkanCommandBuffer : public RHICommandBuffer
     {
@@ -83,15 +83,15 @@ namespace PK
         inline VkPipelineStageFlags GetLastCommandStage() { return m_lastCommandStage; }
         inline VkSemaphore GetImageSignal() { return m_imageSignal; }
         
-        private:
-            VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
-            VkSemaphore m_imageSignal = VK_NULL_HANDLE;
-            VkFence m_fence = VK_NULL_HANDLE;
-            uint16_t m_queueFamily = 0u;
-            VulkanRenderState* m_renderState = nullptr;
-            
-            uint64_t m_invocationIndex = 0ull;
-            VkPipelineStageFlags m_lastCommandStage = 0u;
-            bool m_isInActiveRenderPass = false;
+    private:
+        VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
+        VkSemaphore m_imageSignal = VK_NULL_HANDLE;
+        VkFence m_fence = VK_NULL_HANDLE;
+        uint16_t m_queueFamily = 0u;
+        VulkanRenderState* m_renderState = nullptr;
+        
+        uint64_t m_invocationIndex = 0ull;
+        VkPipelineStageFlags m_lastCommandStage = 0u;
+        bool m_isInActiveRenderPass = false;
     };
 }

@@ -18,11 +18,11 @@ namespace PK
         RangeTable(size_t capacity) noexcept : RangeTable() { Resize(capacity); }
         RangeTable(RangeTable&& other) noexcept : RangeTable() { Move(PK::Forward<RangeTable>(other)); }
         RangeTable(const RangeTable& other) noexcept : RangeTable() { Copy(other); }
-       
-        constexpr size_t GetCapacity() const { return ranges.GetCapacity(); }
 
         RangeTable& operator=(RangeTable&& other) noexcept { Move(PK::Forward<RangeTable>(other)); return *this; }
         RangeTable& operator=(const RangeTable& other) noexcept { Copy(other); return *this; }
+ 
+        constexpr size_t GetCapacity() const { return ranges.GetCapacity(); }
 
         inline void Copy(const RangeTable& other)
         {

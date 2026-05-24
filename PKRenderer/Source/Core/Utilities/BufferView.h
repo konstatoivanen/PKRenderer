@@ -8,30 +8,21 @@ namespace PK
     {
         T* data = nullptr;
         size_t count = 0;
-        T& operator[](size_t);
+
+        T& operator[](size_t index) { return data[index]; }
     };
-    
-    template<typename T>
-    T& BufferView<T>::operator[](size_t index)
-    {
-        return data[index];
-    }
 
     template<typename T>
     struct ConstBufferView
     {
         const T* data = nullptr;
         size_t count = 0;
+        
         constexpr ConstBufferView() = default;
         constexpr ConstBufferView(const T* data, size_t count) : data(data), count(count) {}
-        const T& operator[](size_t);
-    };
 
-    template<typename T>
-    const T& ConstBufferView<T>::operator[](size_t index)
-    {
-        return data[index];
-    }
+        const T& operator[](size_t index) const { return data[index]; }
+    };
 
     template<typename T>
     struct InterleavedBufferView
@@ -40,12 +31,7 @@ namespace PK
         size_t count = 0;
         size_t stride = 0;
         size_t offset = 0;
-        const T& operator[](size_t);
+    
+        const T& operator[](size_t index) const { return *reinterpret_cast<T*>(data + index * stride + offset); }
     };
-
-    template<typename T>
-    const T& InterleavedBufferView<T>::operator[](size_t index)
-    {
-        return *reinterpret_cast<T*>(data + index * stride + offset);  
-    }
 }

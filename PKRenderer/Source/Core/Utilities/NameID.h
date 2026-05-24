@@ -19,8 +19,9 @@ namespace PK
         constexpr NameID(const NameID& name) : identifier(name.identifier) {}
         constexpr NameID(uint32_t identifier) : identifier(identifier) {}
 
-        const char* c_str() const { return s_Provider->INameIDProvider_IDToString(identifier); }
         constexpr operator const uint32_t() const { return identifier; }
+
+        const char* c_str() const { return s_Provider->INameIDProvider_IDToString(identifier); }
 
         static void SetProvider(INameIDProvider* provider) { s_Provider = provider; }
 

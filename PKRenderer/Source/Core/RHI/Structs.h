@@ -268,9 +268,9 @@ namespace PK
 
     struct TextureClearValue
     {
-        private: 
-            struct Depth { float depth; uint32_t stencil; };
-        public:
+    private: 
+        struct Depth { float depth; uint32_t stencil; };
+    public:
 
         constexpr TextureClearValue() : float32(PK_FLOAT4_ZERO) {}
         constexpr TextureClearValue(const float4& v) : float32(v) {}

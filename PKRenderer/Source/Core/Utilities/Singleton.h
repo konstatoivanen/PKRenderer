@@ -14,9 +14,10 @@ namespace PK
         }
 
         virtual ~Singleton() = default;
+
         inline static T* Get() { return s_Instance; }
     
-        private: 
-            inline static T* s_Instance = nullptr;
+    private: 
+        inline static T* s_Instance = nullptr;
     };
 }

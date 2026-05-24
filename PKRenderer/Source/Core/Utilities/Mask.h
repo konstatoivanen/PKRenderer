@@ -24,9 +24,9 @@ namespace PK
             constexpr ConstIterator(TMask const* mask, size_t index) : m_mask(mask), m_index(index) {}
             operator bool() const noexcept { return m_mask->GetAt(m_index); }
             const ConstIterator& operator*() const { return *this; }
-            constexpr size_t index() const noexcept { return m_index; }
             bool operator != (const ConstIterator& iterator) const { return m_mask != iterator.m_mask || m_index != iterator.m_index; }
             ConstIterator operator++() { ++m_index; m_index = m_mask->GetData()[m_index >> 6ull] ? m_index : ((m_index >> 6ull) + 1ull) << 6ull; return *this; }
+            constexpr size_t index() const noexcept { return m_index; }
             TMask const* m_mask;
             size_t m_index;
         };
@@ -51,17 +51,17 @@ namespace PK
         Mask(Mask&& other) noexcept : Mask() { Move(PK::Forward<Mask>(other)); }
         Mask(const Mask& other) noexcept : Mask() { Copy(other); }
 
+        constexpr bool operator[](size_t i) const { return GetAt(i); }
+        Reference operator[](size_t i) { return Reference(*this, i); }
+        Mask& operator=(Mask&& other) noexcept { Move(PK::Forward<Mask>(other)); return *this; }
+        Mask& operator=(const Mask& other) noexcept { Copy(other); return *this; }
+
         constexpr size_t GetCapacity() const { return TData::GetSize(m_data) * 8ull; }
         constexpr size_t GetBlockCount() const { return TData::GetCount(m_data); }
         constexpr uint64_t* GetData() { return TData::GetPtr(m_data); }
         constexpr const uint64_t* GetData() const { return TData::GetPtr(m_data); }
         constexpr ConstIterator begin() const { return ConstIterator(this, 0ull); }
         constexpr ConstIterator end() const { return ConstIterator(this, GetCapacity()); }
-
-        constexpr bool operator[](size_t i) const { return GetAt(i); }
-        Reference operator[](size_t i) { return Reference(*this, i); }
-        Mask& operator=(Mask&& other) noexcept { Move(PK::Forward<Mask>(other)); return *this; }
-        Mask& operator=(const Mask& other) noexcept { Copy(other); return *this; }
 
         inline void Copy(const Mask& other)
         {

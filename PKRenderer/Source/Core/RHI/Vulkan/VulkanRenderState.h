@@ -73,78 +73,77 @@ namespace PK
         Attachment depth{};
     };
 
-    class VulkanRenderState : NoCopy
+    struct VulkanRenderState : NoCopy
     {
-        public:
-            VulkanRenderState(const VulkanServiceContext& services) : m_services(services) {}
+        VulkanRenderState(const VulkanServiceContext& services) : m_services(services) {}
 
-            constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
-            constexpr VulkanServiceContext* GetServices() { return &m_services; }
-            constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
-            constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
-            constexpr VkShaderStageFlags GetPipelinePushConstantStageFlags() const { return m_pipelineKey.shader->GetPipelineLayout()->pushConstantStageFlags; }
-            inline const ShaderPushConstantLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetPushConstantLayout(); }
-            constexpr VkDescriptorSet GetDescriptorSet() const { return m_descritorState.descriptorSet->set; }
-            inline uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
-            const char* GetShaderName() const { return m_pipelineKey.shader->GetName(); }
-            inline VkPipelineBindPoint GetPipelineBindPoint() const { return VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
-            VkRenderingInfo GetRenderPassInfo() const;
-            VulkanVertexBufferBundle GetVertexBufferBundle() const;
-            VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
-            const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
+        constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
+        constexpr VulkanServiceContext* GetServices() { return &m_services; }
+        constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
+        constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
+        constexpr VkShaderStageFlags GetPipelinePushConstantStageFlags() const { return m_pipelineKey.shader->GetPipelineLayout()->pushConstantStageFlags; }
+        inline const ShaderPushConstantLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetPushConstantLayout(); }
+        constexpr VkDescriptorSet GetDescriptorSet() const { return m_descritorState.descriptorSet->set; }
+        inline uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
+        const char* GetShaderName() const { return m_pipelineKey.shader->GetName(); }
+        inline VkPipelineBindPoint GetPipelineBindPoint() const { return VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
+        VkRenderingInfo GetRenderPassInfo() const;
+        VulkanVertexBufferBundle GetVertexBufferBundle() const;
+        VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
+        const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
 
-            void Reset();
+        void Reset();
 
-            bool SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports);
-            bool SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors);
-            void SetStageExcludeMask(const ShaderStageFlags mask);
-            void SetBlending(const BlendParameters& blend);
-            void SetRasterization(const RasterizationParameters& rasterization);
-            void SetDepthStencil(const DepthStencilParameters& depthStencil);
-            void SetMultisampling(const MultisamplingParameters& multisampling);
+        bool SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports);
+        bool SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors);
+        void SetStageExcludeMask(const ShaderStageFlags mask);
+        void SetBlending(const BlendParameters& blend);
+        void SetRasterization(const RasterizationParameters& rasterization);
+        void SetDepthStencil(const DepthStencilParameters& depthStencil);
+        void SetMultisampling(const MultisamplingParameters& multisampling);
 
-            void SetRenderTarget(const VulkanRenderTargetBindings& target);
-            void SetShader(const VulkanShader* shader);
-            void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
-            void SetVertexStreams(const VertexStreamElement* elements, uint32_t count);
-            void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
-            void SetShaderBindingTableAddress(RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size);
+        void SetRenderTarget(const VulkanRenderTargetBindings& target);
+        void SetShader(const VulkanShader* shader);
+        void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
+        void SetVertexStreams(const VertexStreamElement* elements, uint32_t count);
+        void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
+        void SetShaderBindingTableAddress(RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size);
 
-            // AccessRecord Utilities
-            void RecordBuffer(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access);
-            
-            void RecordImage(const VulkanBindHandle* handle, 
-                VkPipelineStageFlags stage, 
-                VkAccessFlags access, 
-                VkImageLayout overrideLayout = VK_IMAGE_LAYOUT_MAX_ENUM, 
-                uint8_t options = PK_RHI_ACCESS_OPT_BARRIER);
-            
-            VkImageLayout RecordRenderTarget(const VulkanBindHandle* handle, 
-                VkPipelineStageFlags stage, 
-                VkAccessFlags access,
-                VkImageLayout layout,
-                uint8_t options);
-
-            PKRenderStateDirtyFlags ResolvePipelineState(const FenceRef& fence);
-
-        private:
-            VulkanServiceContext m_services;
+        // AccessRecord Utilities
+        void RecordBuffer(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access);
         
-            VulkanDescriptorState m_descritorState{};
-            VulkanPipelineCache::PipelineKey m_pipelineKey{};
-            VulkanRenderTargetBindings m_renderTarget{};
-            VkImageLayout m_depthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)RayTracingShaderGroup::MaxCount]{};
+        void RecordImage(const VulkanBindHandle* handle, 
+            VkPipelineStageFlags stage, 
+            VkAccessFlags access, 
+            VkImageLayout overrideLayout = VK_IMAGE_LAYOUT_MAX_ENUM, 
+            uint8_t options = PK_RHI_ACCESS_OPT_BARRIER);
         
-            VertexStreamElement m_vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
-            const VulkanBindHandle* m_vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
-            const VulkanBindHandle* m_indexBuffer = nullptr;
-            VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;
-            
-            VkViewport m_viewports[PK_RHI_MAX_VIEWPORTS]{};
-            VkRect2D m_scissors[PK_RHI_MAX_VIEWPORTS]{};
-            uint32_t m_dirtyFlags = 0u;
+        VkImageLayout RecordRenderTarget(const VulkanBindHandle* handle, 
+            VkPipelineStageFlags stage, 
+            VkAccessFlags access,
+            VkImageLayout layout,
+            uint8_t options);
 
-            const VulkanPipeline* m_pipeline = nullptr;
+        PKRenderStateDirtyFlags ResolvePipelineState(const FenceRef& fence);
+
+    private:
+        VulkanServiceContext m_services;
+    
+        VulkanDescriptorState m_descritorState{};
+        VulkanPipelineCache::PipelineKey m_pipelineKey{};
+        VulkanRenderTargetBindings m_renderTarget{};
+        VkImageLayout m_depthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)RayTracingShaderGroup::MaxCount]{};
+    
+        VertexStreamElement m_vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
+        const VulkanBindHandle* m_vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
+        const VulkanBindHandle* m_indexBuffer = nullptr;
+        VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;
+        
+        VkViewport m_viewports[PK_RHI_MAX_VIEWPORTS]{};
+        VkRect2D m_scissors[PK_RHI_MAX_VIEWPORTS]{};
+        uint32_t m_dirtyFlags = 0u;
+
+        const VulkanPipeline* m_pipeline = nullptr;
     };
 }

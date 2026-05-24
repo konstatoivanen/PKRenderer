@@ -7,10 +7,16 @@ namespace PK
     struct IArena : public NoCopy
     {
         template<typename T>
-        T* GetHead() { return reinterpret_cast<T*>(GetAlignedHead(alignof(T))); }
+        T* GetHead() 
+        {
+            return reinterpret_cast<T*>(GetAlignedHead(alignof(T))); 
+        }
 
         template<typename T>
-        size_t GetHeadDelta(const T* element) const { return (size_t)(reinterpret_cast<const T*>(GetAlignedHead(alignof(T))) - element); }
+        size_t GetHeadDelta(const T* element) const 
+        { 
+            return (size_t)(reinterpret_cast<const T*>(GetAlignedHead(alignof(T))) - element); 
+        }
 
         template<typename T>
         T* Allocate(size_t count)
@@ -42,12 +48,17 @@ namespace PK
     template<size_t capacity>
     struct FixedArena : public IArena
     {
-        FixedArena()
-        {
+        FixedArena() {}
+
+        uint64_t GetAlignedHead(size_t alignment) const final 
+        { 
+            return ((reinterpret_cast<uint64_t>(m_data + m_head) + alignment - 1ull) & ~(alignment - 1ull)); 
         }
 
-        uint64_t GetAlignedHead(size_t alignment) const final { return ((reinterpret_cast<uint64_t>(m_data + m_head) + alignment - 1ull) & ~(alignment - 1ull)); }
-        uint64_t GetRelativeHead(size_t alignment) const final { return GetAlignedHead(alignment) - reinterpret_cast<uint64_t>(m_data); }
+        uint64_t GetRelativeHead(size_t alignment) const final 
+        {
+            return GetAlignedHead(alignment) - reinterpret_cast<uint64_t>(m_data); 
+        }
 
         void* AllocateBlock(size_t size, size_t alignment) final
         {
