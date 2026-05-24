@@ -340,15 +340,6 @@ namespace PK
         VkDeviceAddress deviceAddress;
     };
 
-    struct VulkanRawAccelerationStructure : public VersionedObject
-    {
-        VulkanRawAccelerationStructure(VkDevice device, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name);
-        ~VulkanRawAccelerationStructure();
-        const VkDevice device;
-        VkAccelerationStructureKHR structure;
-        VkDeviceAddress deviceAddress;
-    };
-
     struct VulkanPipeline : public NoCopy
     {
         VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name);

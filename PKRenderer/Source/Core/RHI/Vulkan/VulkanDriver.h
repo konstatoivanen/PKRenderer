@@ -139,7 +139,6 @@ namespace PK
         mutable FixedTypeSet<
             FixedPool<VulkanBufferView, PK_VK_MAX_BUFFER_VIEWS>,
             FixedPool<VulkanImageView, PK_VK_MAX_IMAGE_VIEWS>,
-            FixedPool<VulkanRawBuffer, PK_VK_MAX_RAW_BUFFERS>,
-            FixedPool<VulkanRawAccelerationStructure, PK_VK_MAX_ACCELERATION_STRUCTURES>> objectPools;
+            FixedPool<VulkanRawBuffer, PK_VK_MAX_RAW_BUFFERS>> objectPools;
     };
 }

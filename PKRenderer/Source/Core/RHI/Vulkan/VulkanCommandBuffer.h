@@ -60,7 +60,7 @@ namespace PK
         // Vulkan specific interface
         void BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
         void CopyAccelerationStructure(const VkCopyAccelerationStructureInfoKHR* pInfo);
-        int32_t QueryAccelerationStructureCompactSize(const VulkanRawAccelerationStructure* structure, VulkanQueryPool* pool);
+        int32_t QueryAccelerationStructureCompactSize(const VkAccelerationStructureKHR structure, VulkanQueryPool* pool);
         void TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range);
         void PipelineBarrier(const VulkanBarrierInfo& barrier);
         

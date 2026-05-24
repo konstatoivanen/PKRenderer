@@ -484,20 +484,6 @@ namespace PK
         }
     }
 
-    VulkanRawAccelerationStructure::VulkanRawAccelerationStructure(VkDevice device, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name) : device(device)
-    {
-        VK_ASSERT_RESULT_CTX(vkCreateAccelerationStructureKHR(device, &createInfo, nullptr, &structure), "Failed to create acceleration structure!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, (uint64_t)structure, name);
-        VkAccelerationStructureDeviceAddressInfoKHR addressInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR, nullptr, structure };
-        deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(device, &addressInfo);
-    }
-
-    VulkanRawAccelerationStructure::~VulkanRawAccelerationStructure()
-    {
-        vkDestroyAccelerationStructureKHR(device, structure, nullptr);
-    }
-
-
     VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name) : device(device)
     {
         VK_ASSERT_RESULT_CTX(vkCreateGraphicsPipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");

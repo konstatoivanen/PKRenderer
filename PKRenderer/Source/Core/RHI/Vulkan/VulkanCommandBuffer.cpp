@@ -534,14 +534,14 @@ namespace PK
         vkCmdCopyAccelerationStructureKHR(m_commandBuffer, pInfo);
     }
 
-    int32_t VulkanCommandBuffer::QueryAccelerationStructureCompactSize(const VulkanRawAccelerationStructure* structure, VulkanQueryPool* pool)
+    int32_t VulkanCommandBuffer::QueryAccelerationStructureCompactSize(const VkAccelerationStructureKHR structure, VulkanQueryPool* pool)
     {
         PK_DEBUG_FATAL_ASSERT(pool->type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "Invalid query pool type");
         auto queryIndex = pool->AddQuery(GetFenceRef());
 
         if (queryIndex != -1)
         {
-            vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure->structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, (uint32_t)queryIndex);
+            vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, (uint32_t)queryIndex);
         }
 
         return queryIndex;
