@@ -392,32 +392,26 @@ namespace PK::App
 
             if (m_gizmos_vertexCount <= m_gizmos_maxVertices)
             {
-                auto min = aabb.min;
-                auto max = aabb.max;
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, min.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(min.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, min.z, 1.0f)).xyz, m_gizmos_color };
-                m_gizmos_vertexView[idx++] = { (m_gizmos_matrix * float4(max.x, max.y, max.z, 1.0f)).xyz, m_gizmos_color };
+                auto min = &aabb.min.x;
+                auto max = &aabb.max.x;
+
+                for (auto i = 0u; i < 4u; ++i)
+                {
+                    m_gizmos_vertexView[idx++] = { float3(m_gizmos_matrix * float4(min[0], i & 1u ? min[1] : max[1], i & 2u ? min[2] : max[2], 1.0f)), m_gizmos_color };
+                    m_gizmos_vertexView[idx++] = { float3(m_gizmos_matrix * float4(max[0], i & 1u ? min[1] : max[1], i & 2u ? min[2] : max[2], 1.0f)), m_gizmos_color };
+                }
+
+                for (auto i = 0u; i < 4u; ++i)
+                {
+                    m_gizmos_vertexView[idx++] = { float3(m_gizmos_matrix * float4(i & 1u ? min[0] : max[0], min[1], i & 2u ? min[2] : max[2], 1.0f)), m_gizmos_color };
+                    m_gizmos_vertexView[idx++] = { float3(m_gizmos_matrix * float4(i & 1u ? min[0] : max[0], max[1], i & 2u ? min[2] : max[2], 1.0f)), m_gizmos_color };
+                }
+
+                for (auto i = 0u; i < 4u; ++i)
+                {
+                    m_gizmos_vertexView[idx++] = { float3(m_gizmos_matrix * float4(i & 1u ? min[0] : max[0], i & 2u ? min[1] : max[1], min[2], 1.0f)), m_gizmos_color };
+                    m_gizmos_vertexView[idx++] = { float3(m_gizmos_matrix * float4(i & 1u ? min[0] : max[0], i & 2u ? min[1] : max[1], max[2], 1.0f)), m_gizmos_color };
+                }
             }
         }
     }

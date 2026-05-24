@@ -325,7 +325,20 @@ namespace PK
                     Reload(AssetID(args[0]));
                 }, "Expected a filepath argument", 1u);
         }
-
+     
         return &m_assetTypes[infoIndex];
+    }
+
+    uint32_t AssetDatabase::LinkAsset(TypeInfo* typeInfo, AssetObjectBase* object, AssetID assetId, CacheMode cacheMode)
+    {
+        object->typeInfo = typeInfo;
+        object->assetId = assetId;
+        object->version = 0u;
+        object->indexNext = typeInfo->headIndex;
+        object->cacheMode = (uint16_t)cacheMode;
+        object->isLoaded = false;
+        object->isVirtual = false;
+        typeInfo->headIndex = m_assets.Add(object);
+        return typeInfo->headIndex;
     }
 }

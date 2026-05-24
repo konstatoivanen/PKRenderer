@@ -73,14 +73,10 @@ namespace PK
         bool missingFeatures = false;
 
         #define PK_TEST_FEATURE(field) \
-            if (requirements.field && !available.field) \
-            { \
-                PK_LOG_INFO("Feature.Unavailable: " #field); \
-                missingFeatures |= true; \
-            } \
-            else if (requirements.field) \
-            { \
-                PK_LOG_INFO("Feature.Available: " #field); \
+            if (requirements.field)\
+            { \                    
+                PK_LOG_INFO("Feature.%s: " #field, available.field ? "Available" : "Unavailable"); \
+                missingFeatures |= !available.field; \
             } \
 
         {

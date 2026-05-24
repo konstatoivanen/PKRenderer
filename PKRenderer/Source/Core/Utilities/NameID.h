@@ -14,14 +14,14 @@ namespace PK
     {
         uint32_t identifier = 0u;
 
-        NameID() {}
-        NameID(const char* name) : identifier(s_Provider->INameIDProvider_StringToID(name)) {}
+        constexpr NameID() = default;
+        inline NameID(const char* name) : identifier(s_Provider->INameIDProvider_StringToID(name)) {}
         constexpr NameID(const NameID& name) : identifier(name.identifier) {}
         constexpr NameID(uint32_t identifier) : identifier(identifier) {}
 
         constexpr operator const uint32_t() const { return identifier; }
 
-        const char* c_str() const { return s_Provider->INameIDProvider_IDToString(identifier); }
+        inline const char* c_str() const { return s_Provider->INameIDProvider_IDToString(identifier); }
 
         static void SetProvider(INameIDProvider* provider) { s_Provider = provider; }
 

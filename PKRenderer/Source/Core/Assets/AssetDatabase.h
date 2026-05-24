@@ -246,16 +246,7 @@ namespace PK
             {
                 auto typeInfo = CreateTypeInfo<T>();
                 auto newAsset = Memory::New<AssetObject<T>>();
-                newAsset->typeInfo = typeInfo;
-                newAsset->assetId = assetId;
-                newAsset->version = 0u;
-                newAsset->indexNext = typeInfo->headIndex;
-                newAsset->cacheMode = (uint16_t)cacheMode;
-                newAsset->isLoaded = false;
-                newAsset->isVirtual = false;
-                assetIndex = m_assets.Add(newAsset);
-                typeInfo->headIndex = assetIndex;
-                return newAsset;
+                assetIndex = LinkAsset(typeInfo, newAsset, assetId, cacheMode);
             }
 
             return static_cast<AssetObject<T>*>(m_assets[assetIndex]);
@@ -264,6 +255,7 @@ namespace PK
         void LoadAsset(AssetObjectBase* object, bool isReload);
         uint32_t GetTypeHead(uint32_t typeIndex) const;
         TypeInfo* CreateTypeInfo(uint32_t typeIndex, const ConstBufferView<char>& name);
+        uint32_t LinkAsset(TypeInfo* typeInfo, AssetObjectBase* object, AssetID assetId, CacheMode cacheMode);
 
         HashSet<AssetObjectBase*, AssetObjectHash> m_assets;
         HashSet<TypeInfo, TypeInfoHash> m_assetTypes;

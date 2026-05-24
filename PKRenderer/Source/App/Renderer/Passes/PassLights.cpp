@@ -57,7 +57,7 @@ namespace PK::App
         uint4 packed2 = PK_UINT4_ZERO;
     };
 
-    static PackedLight PackLight(const SceneLight& light)
+    PK_FORCE_NOINLINE static PackedLight PackLight(const SceneLight& light)
     {
         float2 spotAngles = float2(-2, 1);
 
