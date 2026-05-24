@@ -237,13 +237,6 @@ namespace PK
         void* swapchainPNext = nullptr;
     };
 
-    struct VulkanTimelineSemaphore
-    {
-        VkSemaphore semaphore = VK_NULL_HANDLE;
-        VkPipelineStageFlags waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        uint64_t counter = 0ull;
-    };
-
     struct VulkanBufferCreateInfo
     {
         VulkanBufferCreateInfo() {};
@@ -308,6 +301,13 @@ namespace PK
         bool isTracked = true;
 
         VulkanBindHandle() : image{}{};
+    };
+
+    struct VulkanTimelineSemaphore
+    {
+        VkSemaphore semaphore = VK_NULL_HANDLE;
+        VkPipelineStageFlags waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        uint64_t counter = 0ull;
     };
 
     struct VulkanBufferView : public LinkedListElement<VulkanBufferView, BufferIndexRange>, public VulkanBindHandle

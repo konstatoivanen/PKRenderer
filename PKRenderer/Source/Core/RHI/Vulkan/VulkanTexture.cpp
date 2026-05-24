@@ -7,6 +7,8 @@ namespace PK
     VulkanTexture::VulkanTexture(struct VulkanDriver* driver, const TextureDescriptor& descriptor, const char* name) :
         m_name(name),
         m_driver(driver),
+        m_format(VulkanEnumConvert::GetFormat(descriptor.format)),
+        m_formatAlias(VulkanEnumConvert::GetFormat(descriptor.formatAlias)),
         m_descriptor(descriptor)
     {
         auto& families = m_driver->queues->GetSelectedFamilies();
@@ -14,7 +16,7 @@ namespace PK
         VkImageCreateInfo imageCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         imageCreateInfo.flags = 0u;
         imageCreateInfo.imageType = descriptor.type == TextureType::Texture3D ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
-        imageCreateInfo.format = VulkanEnumConvert::GetFormat(descriptor.format);
+        imageCreateInfo.format = m_format;
         imageCreateInfo.extent = { descriptor.resolution.x, descriptor.resolution.y, descriptor.resolution.z };
         imageCreateInfo.mipLevels = descriptor.levels;
         imageCreateInfo.arrayLayers = descriptor.layers;
@@ -25,11 +27,6 @@ namespace PK
         imageCreateInfo.sharingMode = (descriptor.usage & TextureUsage::Concurrent) != 0 ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
         imageCreateInfo.pQueueFamilyIndices = families.indices;
         imageCreateInfo.queueFamilyIndexCount = families.count;
-        m_samples = imageCreateInfo.samples;
-        m_format = imageCreateInfo.format;
-        m_formatAlias = VulkanEnumConvert::GetFormat(descriptor.formatAlias);
-        m_type = imageCreateInfo.imageType;
-        m_extent = imageCreateInfo.extent;
 
         VmaAllocationCreateInfo allocationCreateInfo{};
         allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -200,8 +197,8 @@ namespace PK
         handle->image.alias = m_imageAlias;
         handle->image.layout = GetImageLayout();
         handle->image.format = m_format;
-        handle->image.extent = m_extent;
-        handle->image.samples = m_samples;
+        handle->image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
+        handle->image.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
         handle->image.range = VulkanConvertRange(normalizedRange, handle->image.format);
  
         if (bindMode == TextureBindMode::SampledTexture)
@@ -228,9 +225,9 @@ namespace PK
             info.format = m_format;
             info.formatAlias = m_formatAlias;
             info.layout = GetImageLayout();
-            info.samples = m_samples;
+            info.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
             info.components = mode == TextureBindMode::SampledTexture ? swizzle : (VkComponentMapping{});
-            info.extent = m_extent;
+            info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
             info.isConcurrent = IsConcurrent();
             info.isTracked = IsTracked();
             info.isAlias = useAlias;

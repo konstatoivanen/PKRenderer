@@ -43,16 +43,12 @@ namespace PK
 
             const FixedString64 m_name;
             const VulkanDriver* m_driver;
+            const VkFormat m_format;
+            const VkFormat m_formatAlias;
             TextureDescriptor m_descriptor;
             VmaAllocation m_memory;
             VkImage m_image;
             VkImage m_imageAlias;
-            VkSampleCountFlagBits m_samples;
-            VkFormat m_format;
-            VkFormat m_formatAlias;
-            VkImageType m_type;
-            VkExtent3D m_extent;
-
             LinkedList<VulkanImageView, uint64_t> m_firstView = nullptr;
     };
 }
