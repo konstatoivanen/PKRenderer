@@ -12,7 +12,12 @@ namespace PK::App
     class EngineInput : public InputHandler, public IStepFrameUpdate<>
     {
     public:
-        EngineInput(Sequencer* sequencer) : m_sequencer(sequencer) {}
+        EngineInput(Sequencer* sequencer) : 
+            m_sequencer(sequencer), 
+            m_lastDevice(nullptr), 
+            m_deltaMillis(0u)
+        {
+        }
 
         void OnStepFrameUpdate(FrameContext* ctx) final;
 

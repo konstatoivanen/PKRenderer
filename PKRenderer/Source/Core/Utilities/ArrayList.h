@@ -12,13 +12,14 @@ namespace PK
     template<typename T, typename TAllocation>
     struct Array : NoCopy
     {
+        using TArray = Array<T, TAllocation>;
         using TData = typename TAllocation::template Data<T>;
 
         constexpr Array() : m_data() {}
         Array(size_t capacity) noexcept : Array() { Reserve(capacity, false); }
-        Array(Array&& other) noexcept : Array() { Move(PK::Forward<Array>(other)); }
-        Array(initializer_list<T>&& other) noexcept : Array() { Move(other.begin(), other.size())); }
-        Array(const Array& other) noexcept : Array() { Copy(other.GetData(), other.GetCount()); }
+        Array(TArray&& other) noexcept : Array() { Move(PK::Forward<TArray>(other)); }
+        Array(initializer_list<T>&& other) noexcept : Array() { Move(other.begin(), other.size()); }
+        Array(const TArray& other) noexcept : Array() { Copy(other.GetData(), other.GetCount()); }
         Array(const initializer_list<T>& other) noexcept : Array() { Copy(other.begin(), other.size()); }
         Array(const T* elements, size_t count) noexcept : Array() { Copy(elements, count); }
         ~Array() { TData::Free(m_data); }
@@ -27,8 +28,8 @@ namespace PK
         T const& operator [](size_t i) const { return GetData()[i]; }
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
-        Array& operator=(Array&& other) noexcept { Move(PK::Forward<Array>(other)); return *this; }
-        Array& operator=(const Array& other) noexcept { Copy(other); return *this; }
+        TArray& operator=(TArray&& other) noexcept { Move(PK::Forward<TArray>(other)); return *this; }
+        TArray& operator=(const TArray& other) noexcept { Copy(other); return *this; }
 
         constexpr T* GetData() { return TData::GetPtr(m_data); }
         constexpr T const* GetData() const { return TData::GetPtr(m_data); }
@@ -49,7 +50,7 @@ namespace PK
             Memory::CopyArray(GetData(), elements, count);
         }
 
-        inline void Copy(const Array& other)
+        inline void Copy(const TArray& other)
         {
             Copy(other.GetData(), other.GetCount());
         }
@@ -60,7 +61,7 @@ namespace PK
             Memory::MoveArray(GetData(), elements, count);
         }
 
-        inline void Move(Array&& other)
+        inline void Move(TArray&& other)
         {
             if (this != &other)
             {
@@ -103,13 +104,14 @@ namespace PK
     template<typename T, typename TAllocation>
     struct List : NoCopy
     {
+        using TList = List<T, TAllocation>;
         using TData = typename TAllocation::template Data<T>;
 
         constexpr List() : m_data(), m_count(0ull) {}
         List(size_t capacity) noexcept : List() { Reserve(capacity); }
-        List(List&& other) noexcept : List() { Move(PK::Forward<List>(other)); }
-        List(initializer_list<T>&& other) noexcept : List() { Move(other.begin(), other.size())); }
-        List(const List& other) noexcept : List() { Copy(other.GetData(), other.GetCount()); }
+        List(TList&& other) noexcept : List() { Move(PK::Forward<TList>(other)); }
+        List(initializer_list<T>&& other) noexcept : List() { Move(other.begin(), other.size()); }
+        List(const TList& other) noexcept : List() { Copy(other.GetData(), other.GetCount()); }
         List(const initializer_list<T>& other) noexcept : List() { Copy(other.begin(), other.size()); }
         List(const T* elements, size_t count) noexcept : List() { Copy(elements, count); }
         ~List() { Clear(); TData::Free(m_data); }
@@ -118,8 +120,8 @@ namespace PK
         T const& operator [](size_t i) const { return GetData()[i]; }
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
-        List& operator=(List&& other) noexcept { Move(PK::Forward<List>(other)); return *this; }
-        List& operator=(const List& other) noexcept { Copy(other); return *this; }
+        TList& operator=(TList&& other) noexcept { Move(PK::Forward<TList>(other)); return *this; }
+        TList& operator=(const TList& other) noexcept { Copy(other); return *this; }
 
         constexpr T* GetData() { return TData::GetPtr(m_data); }
         constexpr T const* GetData() const { return TData::GetPtr(m_data); }
@@ -142,7 +144,7 @@ namespace PK
             m_count = count;
         }
 
-        inline void Copy(const List& other)
+        inline void Copy(const TList& other)
         {
             Copy(other.GetData(), other.GetCount());
         }
@@ -154,7 +156,7 @@ namespace PK
             m_count = count;
         }
 
-        inline void Move(List&& other)
+        inline void Move(TList&& other)
         {
             if (this != &other)
             {
@@ -170,7 +172,7 @@ namespace PK
             {
                 auto newData = TData::Allocate(newCapacity);
 
-                if (preserve && m_count > 0u)
+                if (preserve && m_count > 0ull)
                 {
                     Memory::MoveArray(TData::GetPtr(newData), TData::GetPtr(m_data), m_count);
                 }
@@ -207,7 +209,7 @@ namespace PK
         template<typename ... Args>
         T* Add(Args&& ... args)
         {
-            Reserve(m_count + 1u, true);
+            Reserve(m_count + 1ull, true);
             return Memory::Construct(GetData() + m_count++, PK::Forward<Args>(args)...);
         }
 
@@ -250,7 +252,7 @@ namespace PK
                 return true;
             }
 
-            if (m_count > 0u)
+            if (m_count > 0ull)
             {
                 GetData()[i] = PK::MoveTemp(GetData()[m_count]);
                 return true;
@@ -261,7 +263,7 @@ namespace PK
 
     private:
         TData m_data;
-        uint32_t m_count;
+        size_t m_count;
     };
 
 

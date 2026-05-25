@@ -450,13 +450,14 @@ namespace PK
         uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % Base::GetBucketCount()); }
         void SetValueIndexInBuckets(uint32_t i, int32_t value) { Base::GetBuckets()[i] = value + 1; }
         int32_t GetValueIndexFromBuckets(uint32_t i) const { return Base::GetBuckets()[i] - 1; }
-        void ClearBuckets() { memset(Base::GetBuckets(), 0, sizeof(Index) * Base::GetBucketCount()); }
+        void ClearBuckets() { Memory::Memset<Index>(Base::GetBuckets(), 0, Base::GetBucketCount()); }
     };
 
     template<typename TAllocator, typename THash>
     struct IHashMap : public TAllocator
     {
         using Base = TAllocator;
+        using Index = typename Base::Index;
         using Node = typename Base::Node;
         using Value = typename Base::Value;
         using Key = typename Base::Node::Key;
@@ -696,7 +697,7 @@ namespace PK
             uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % Base::GetBucketCount()); }
             void SetValueIndexInBuckets(uint32_t i, int32_t value) { Base::GetBuckets()[i] = value + 1; }
             int32_t GetValueIndexFromBuckets(uint32_t i) const { return Base::GetBuckets()[i] - 1; }
-            void ClearBuckets() { memset(Base::GetBuckets(), 0, sizeof(int32_t) * Base::GetBucketCount()); }
+            void ClearBuckets() { Memory::Memset<Index>(Base::GetBuckets(), 0, Base::GetBucketCount()); }
     };
 
 

@@ -10,13 +10,13 @@ namespace PK
 
     struct InputDeviceStatePair
     {
-        const InputDevice* device;
-        InputState* state;
+        const InputDevice* device = nullptr;
+        InputState* state = nullptr;
     };
 
     struct InputDeviceFilePaths
     {
-        const InputDevice* device;
+        const InputDevice* device = nullptr;
         CArgumentsInlineDefault paths;
     };
 

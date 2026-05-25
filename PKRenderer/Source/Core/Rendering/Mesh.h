@@ -206,7 +206,7 @@ namespace PK
         VertexBuffers m_vertexBuffers;
         RHIBufferRef m_indexBuffer;
         VertexStreamLayout m_streamLayout;
-        uint32_t m_indexSize;
+        uint32_t m_indexSize = 0u;
         InlineList<SubMesh, 1ull> m_submeshes;
         SubMesh m_fullrange{};
         uint32_t m_positionAttributeIndex = ~0u;

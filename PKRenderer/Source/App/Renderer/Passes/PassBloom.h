@@ -18,10 +18,10 @@ namespace PK::App
             void Render(CommandBufferExt cmd, struct RenderPipelineContext* ctx);
 
         private:
-            ShaderAsset* m_computeBloom = nullptr;
+            ShaderAsset* m_computeBloom;
             RHITexture* m_bloomLensDirtTexture;
-            uint32_t m_passDownsample0 = 0;
-            uint32_t m_passDownsample = 0;
-            uint32_t m_passUpsample = 0;
+            uint32_t m_passDownsample0;
+            uint32_t m_passDownsample;
+            uint32_t m_passUpsample;
     };
 }

@@ -25,8 +25,8 @@ namespace PK
         uint8_t data[PK_ECS_IMPLEMENTER_BUCKET_SIZE];
         void (*destroyAt)(ImplementerBucket* bucket, uint32_t index);
         ImplementerBucket* previous;
-        uint32_t capacity;
-        uint32_t freeCount;
+        uint64_t capacity;
+        uint64_t freeCount;
 
         ~ImplementerBucket() 
         { 

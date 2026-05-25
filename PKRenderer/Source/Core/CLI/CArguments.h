@@ -32,7 +32,7 @@ namespace PK
         char* arguments[maxArguments];
         uint32_t count;
 
-        CArgumentsInline() : count(0u)
+        constexpr CArgumentsInline() : count(0u)
         {
             arguments[0] = argumentData;
             argumentData[0] = '\0';

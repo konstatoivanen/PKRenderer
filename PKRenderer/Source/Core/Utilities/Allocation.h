@@ -24,7 +24,7 @@ namespace PK
                 return {};
             }
 
-            inline static void Free(Data<T>& data) {}
+            inline static void Free([[maybe_unused]] Data<T>& data) {}
         };
     };
 

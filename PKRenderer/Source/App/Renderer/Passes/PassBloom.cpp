@@ -16,13 +16,14 @@
 
 namespace PK::App
 {
-    PassBloom::PassBloom(AssetDatabase* assetDatabase)
+    PassBloom::PassBloom(AssetDatabase* assetDatabase) : 
+        m_computeBloom(assetDatabase->Find<ShaderAsset>("CS_Bloom").get()),
+        m_bloomLensDirtTexture(nullptr),
+        m_passDownsample0(m_computeBloom->GetRHIIndex("PASS_DOWNSAMPLE0")),
+        m_passDownsample(m_computeBloom->GetRHIIndex("PASS_DOWNSAMPLE1")),
+        m_passUpsample(m_computeBloom->GetRHIIndex("PASS_UPSAMPLE"))
     {
         PK_LOG_VERBOSE_FUNC();
-        m_computeBloom = assetDatabase->Find<ShaderAsset>("CS_Bloom").get();
-        m_passDownsample0 = m_computeBloom->GetRHIIndex("PASS_DOWNSAMPLE0");
-        m_passDownsample = m_computeBloom->GetRHIIndex("PASS_DOWNSAMPLE1");
-        m_passUpsample = m_computeBloom->GetRHIIndex("PASS_UPSAMPLE");
     }
 
     void PassBloom::SetViewConstants(RenderView* view)
