@@ -2,6 +2,7 @@
 #include "Core/Platform/Platform.h"
 #define VMA_SYSTEM_ALIGNED_MALLOC(size, alignment) PK::Memory::AllocateAligned(size, alignment)
 #define VMA_SYSTEM_FREE(ptr) PK::Memory::Free(ptr)
+#define VMA_STATS_STRING_ENABLED 0
 #include "vulkan/vulkan.h"
 #include "VMA/vk_mem_alloc.h"
 #include "Core/Utilities/FixedString.h"

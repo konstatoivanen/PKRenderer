@@ -43,11 +43,10 @@ namespace PK::YAML
     {                                                                                                               \
         if (node.is_flow_sl() && node.num_children() == (countx * county))                                          \
         {                                                                                                           \
-            auto maxidx = (uint32_t)node.num_children() - 1u;                                                       \
             for (auto y = 0u; y < county; ++y)                                                                      \
             for (auto x = 0u; x < countx; ++x)                                                                      \
             {                                                                                                       \
-                node[math::min(maxidx, x + y * countx)] >> (*rhs)[y][x];                                            \
+                node[x + y * countx] >> (*rhs)[y][x];                                                               \
             }                                                                                                       \
         }                                                                                                           \
         return true;                                                                                                \

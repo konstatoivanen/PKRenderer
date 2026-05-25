@@ -11,7 +11,7 @@ namespace PK
         NameIDProviderDefault() : m_names(1024u, 3u)
         {
             NameID::SetProvider(this);
-            m_names.Add("NULL_ID");
+            INameIDProvider_StringToID("NULL_ID");
         }
 
         uint32_t INameIDProvider_StringToID(const char* name) final;

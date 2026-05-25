@@ -1,10 +1,10 @@
 #include "PrecompiledHeader.h"
+#define VMA_IMPLEMENTATION
+#include <vulkan/vk_enum_string_helper.h>
 #include "Core/Utilities/Memory.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/CLI/Log.h"
-#define VMA_IMPLEMENTATION
 #include "VulkanCommon.h"
-#include <vulkan/vk_enum_string_helper.h>
 
 PFN_vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT = nullptr;
 PFN_vkSetDebugUtilsObjectTagEXT pkfn_vkSetDebugUtilsObjectTagEXT = nullptr;
@@ -74,10 +74,10 @@ namespace PK
 
         #define PK_TEST_FEATURE(field) \
             if (requirements.field)\
-            { \                    
-                PK_LOG_INFO("Feature.%s: " #field, available.field ? "Available" : "Unavailable"); \
-                missingFeatures |= !available.field; \
-            } \
+            {\
+                PK_LOG_INFO("Feature.%s: " #field, available.field ? "Available" : "Unavailable");\
+                missingFeatures |= !available.field;\
+            }\
 
         {
             PK_LOG_INDENT(PK_LOG_LVL_INFO);
