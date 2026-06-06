@@ -257,6 +257,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
   <ItemGroup>
     <ClInclude Include="Source\App\ECS\ComponentTime.h" />
     <ClInclude Include="Source\App\ECS\ComponentViewInput.h" />
+    <ClInclude Include="Source\App\ECS\EntityLightSphere.h" />
+    <ClInclude Include="Source\Core\ECS\EntitySerializable.h" />
+    <ClInclude Include="Source\Core\ECS\EntityFactoryRegister.h" />
     <ClInclude Include="Source\App\Engines\EngineGUIRenderer.h" />
     <ClInclude Include="Source\App\Engines\EngineProfiler.h" />
     <ClInclude Include="Source\App\Engines\EngineViewUpdate.h" />
@@ -267,6 +270,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h" />
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
     <ClInclude Include="Source\Core\ECS\EntityComponentRef.h" />
+    <ClInclude Include="Source\Core\ECS\EntityFactory.h" />
     <ClInclude Include="Source\Core\Input\InputStateCollection.h" />
     <ClInclude Include="Source\Core\Input\InputDevice.h" />
     <ClInclude Include="Source\Core\Input\InputState.h" />
@@ -302,6 +306,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\TypeIndex.h" />
     <ClInclude Include="Source\Core\Utilities\Pair.h" />
     <ClInclude Include="Source\Core\Utilities\Templates.h" />
+    <ClInclude Include="Source\Core\Utilities\UUID128.h" />
     <ClInclude Include="Source\Core\Yaml\RapidyamlFwd.h" />
     <ClInclude Include="Source\Core\Yaml\RapidyamlPrivate.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />
@@ -368,7 +373,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Timers\TimeFrameInfo.h" />
     <ClInclude Include="Source\Core\Utilities\NameIDProviderDefault.h" />
     <ClInclude Include="Source\Core\Yaml\StructMacros.h" />
-    <ClInclude Include="Source\App\ECS\Builders.h" />
     <ClInclude Include="Source\App\ECS\ComponentBounds.h" />
     <ClInclude Include="Source\App\ECS\ComponentFlyCamera.h" />
     <ClInclude Include="Source\App\ECS\ComponentLight.h" />
@@ -385,9 +389,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\ECS\EntityViewScenePrimitive.h" />
     <ClInclude Include="Source\App\ECS\EntityViewMeshStatic.h" />
     <ClInclude Include="Source\App\ECS\EntityViewTransform.h" />
-    <ClInclude Include="Source\App\ECS\ImplementerFlyCamera.h" />
-    <ClInclude Include="Source\App\ECS\ImplementerLight.h" />
-    <ClInclude Include="Source\App\ECS\ImplementerMeshStatic.h" />
+    <ClInclude Include="Source\App\ECS\EntityFlyCamera.h" />
+    <ClInclude Include="Source\App\ECS\EntityLight.h" />
+    <ClInclude Include="Source\App\ECS\EntityMeshStatic.h" />
     <ClInclude Include="Source\App\Engines\EngineCommandInput.h" />
     <ClInclude Include="Source\App\Engines\EngineDebug.h" />
     <ClInclude Include="Source\App\Engines\EngineDrawGeometry.h" />
@@ -631,12 +635,17 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Textures\T_OEM_Trail.ktx2" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\App\ECS\EntityFlyCamera.cpp" />
+    <ClCompile Include="Source\App\ECS\EntityLightSphere.cpp" />
+    <ClCompile Include="Source\App\ECS\EntityLight.cpp" />
+    <ClCompile Include="Source\App\ECS\EntityMeshStatic.cpp" />
     <ClCompile Include="Source\App\Engines\EngineGUIRenderer.cpp" />
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp" />
     <ClCompile Include="Source\App\Engines\EngineViewUpdate.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp" />
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp" />
     <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp" />
+    <ClCompile Include="Source\Core\ECS\EntityFactoryRegister.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
     <ClCompile Include="Source\Core\Math\Random.cpp" />
     <ClCompile Include="Source\Core\Platform\Platform.cpp" />
@@ -700,7 +709,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Yaml\SerializeMathTypes.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeShader.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeTextureAsset.cpp" />
-    <ClCompile Include="Source\App\ECS\Builders.cpp" />
     <ClCompile Include="Source\App\ECS\ComponentProjection.cpp" />
     <ClCompile Include="Source\App\Engines\EngineCommandInput.cpp" />
     <ClCompile Include="Source\App\Engines\EngineDebug.cpp" />

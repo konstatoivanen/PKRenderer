@@ -6,9 +6,8 @@
 
 namespace PK::App
 {
-    struct EntityViewTransform : public IEntityView
-    {
-        EntityComponentRef<ComponentTransform> transform;
-        EntityComponentRef<ComponentBounds> bounds;
-    };
+    PK_ECS_VIEW_BEGIN(EntityViewTransform)
+        PK_ECS_VIEW_COMPONENT(ComponentTransform, transform)
+        PK_ECS_VIEW_COMPONENT(ComponentBounds, bounds)
+    PK_ECS_VIEW_END()
 }

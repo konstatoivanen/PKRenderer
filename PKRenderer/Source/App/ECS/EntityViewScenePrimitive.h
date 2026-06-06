@@ -6,9 +6,8 @@
 
 namespace PK::App
 {
-    struct EntityViewScenePrimitive : public IEntityView
-    {
-        EntityComponentRef<ComponentBounds> bounds;
-        EntityComponentRef<ComponentScenePrimitive> primitive;
-    };
+    PK_ECS_VIEW_BEGIN(EntityViewScenePrimitive)
+        PK_ECS_VIEW_COMPONENT(ComponentBounds, bounds)
+        PK_ECS_VIEW_COMPONENT(ComponentScenePrimitive, primitive)
+    PK_ECS_VIEW_END()
 }

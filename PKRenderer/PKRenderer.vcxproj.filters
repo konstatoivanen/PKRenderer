@@ -180,9 +180,6 @@
     <ClInclude Include="Source\App\BaseRendererConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\ECS\Builders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\App\ECS\ComponentBounds.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -231,13 +228,13 @@
     <ClInclude Include="Source\App\ECS\EntityViewTransform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\ECS\ImplementerFlyCamera.h">
+    <ClInclude Include="Source\App\ECS\EntityFlyCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\ECS\ImplementerLight.h">
+    <ClInclude Include="Source\App\ECS\EntityLight.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\ECS\ImplementerMeshStatic.h">
+    <ClInclude Include="Source\App\ECS\EntityMeshStatic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Engines\EngineCommandInput.h">
@@ -672,6 +669,21 @@
     <ClInclude Include="Source\Core\Utilities\Sort.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\ECS\EntityFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Utilities\UUID128.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\ECS\EntitySerializable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\ECS\EntityFactoryRegister.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\App\ECS\EntityLightSphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
@@ -884,9 +896,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\RendererApplication.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\App\ECS\Builders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Engines\EngineCommandInput.cpp">
@@ -1166,6 +1175,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\ECS\EntityFactoryRegister.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\App\ECS\EntityMeshStatic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\App\ECS\EntityLight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\App\ECS\EntityLightSphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\App\ECS\EntityFlyCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

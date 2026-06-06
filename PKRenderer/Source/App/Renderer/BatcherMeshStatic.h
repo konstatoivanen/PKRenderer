@@ -34,25 +34,10 @@ namespace PK::App
                     uint16_t group;
                 };
                 
-                #if defined(__clang__)
-                __uint128_t value;
-                #else
-                struct
-                {
-                    uint64_t low;
-                    uint64_t high;
-                };
-                #endif
+                UUID128 value;
             };
 
-            constexpr bool operator < (const DrawInfo& b) const
-            {
-                #if defined(__clang__)
-                return value < b.value;
-                #else
-                return high != b.high ? high < b.high : low < b.low;
-                #endif
-            }
+            constexpr bool operator < (const DrawInfo& b) const { return value < b.value; }
         };
 
         struct DrawCall

@@ -149,12 +149,11 @@ namespace PK
             return static_cast<TView*>(view);
         }
 
-        template<typename TImpl, typename TView, typename ...M>
-        TView* NewView(TImpl* implementer, const EGID& egid, M TView::* ...params)
+        template<typename TView, typename TImpl>
+        TView* NewView(TImpl* implementer, const EGID& egid)
         {
             auto* view = NewView<TView>(egid);
-            static_assert((... && __is_assignable(decltype(view->*params), TImpl*)), "Components are not present in implementer");
-            ((view->*params = implementer), ...);
+            view->template SetImplementer<TImpl>(implementer);
             return view;
         }
 

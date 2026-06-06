@@ -8,11 +8,10 @@
 
 namespace PK::App
 {
-    struct EntityViewLight : public IEntityView
-    {
-        EntityComponentRef<ComponentTransform> transform;
-        EntityComponentRef<ComponentBounds> bounds;
-        EntityComponentRef<ComponentLight> light;
-        EntityComponentRef<ComponentScenePrimitive> primitive;
-    };
+    PK_ECS_VIEW_BEGIN(EntityViewLight)
+        PK_ECS_VIEW_COMPONENT(ComponentTransform, transform)
+        PK_ECS_VIEW_COMPONENT(ComponentBounds, bounds)
+        PK_ECS_VIEW_COMPONENT(ComponentLight, light)
+        PK_ECS_VIEW_COMPONENT(ComponentScenePrimitive, primitive)
+    PK_ECS_VIEW_END()
 }

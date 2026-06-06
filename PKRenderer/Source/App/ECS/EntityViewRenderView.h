@@ -9,12 +9,11 @@
 
 namespace PK::App
 {
-    struct EntityViewRenderView : public IEntityView
-    {
-        EntityComponentRef<ComponentTransform> transform;
-        EntityComponentRef<ComponentProjection> projection;
-        EntityComponentRef<ComponentRenderView> renderView;
-        EntityComponentRef<ComponentViewInput> input;
-        EntityComponentRef<ComponentTime> time;
-    };
+    PK_ECS_VIEW_BEGIN(EntityViewRenderView)
+        PK_ECS_VIEW_COMPONENT(ComponentTransform, transform)
+        PK_ECS_VIEW_COMPONENT(ComponentProjection, projection)
+        PK_ECS_VIEW_COMPONENT(ComponentRenderView, renderView)
+        PK_ECS_VIEW_COMPONENT(ComponentViewInput, input)
+        PK_ECS_VIEW_COMPONENT(ComponentTime, time)
+    PK_ECS_VIEW_END()
 }

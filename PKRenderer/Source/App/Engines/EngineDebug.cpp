@@ -11,13 +11,16 @@
 #include "Core/Rendering/Window.h"
 #include "Core/IApplication.h"
 #include "App/Engines/EngineTime.h"
-#include "App/ECS/Builders.h"
 #include "App/ECS/EntityViewScenePrimitive.h"
 #include "App/ECS/EntityViewFlyCamera.h"
 #include "App/ECS/EntityViewRenderView.h"
 #include "App/Renderer/IGUIRenderer.h"
 #include "App/Renderer/Passes/PassLights.h"
 #include "App/Renderer/HashCache.h"
+#include "App/ECS/EntityLight.h"
+#include "App/ECS/EntityMeshStatic.h"
+#include "App/ECS/EntityLightSphere.h"
+#include "App/ECS/EntityFlyCamera.h"
 #include "EngineDebug.h"
 
 namespace PK::App
@@ -42,65 +45,100 @@ namespace PK::App
         auto minpos = float3(-70, -6, -70);
         auto maxpos = float3(+70, -4, +70);
 
-        EntityBuilders::CreateEntityMeshStatic(m_entityDb, planeMesh, { {materialSand,0} }, { 0, -5, 0 }, float3(90, 0, 0) * PK_FLOAT_DEG2RAD, 80.0f);
-        EntityBuilders::CreateEntityMeshStatic(m_entityDb, columnMesh, { {materialAsphalt,0} }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
-
-        auto submeshCount = rocksMesh->GetSubmeshCount();
-
-        for (auto i = 0; i < 128; ++i)
+        // Floor mesh
         {
-            auto submesh = math::randomRange(0u, submeshCount);
-            auto pos = math::halton(i, uint3(7,11,17)) * (maxpos - minpos) + minpos;
-            auto rot = math::randomRadianFloat3();
-            auto size = math::randomRange(1.0f, 3.0f);
-            EntityBuilders::CreateEntityMeshStatic(m_entityDb, rocksMesh, { { materialMarble,submesh} }, pos, rot, size);
+            MaterialTarget material { materialSand, 0u };
+            EntityMeshStatic desc;
+            desc.flags = ScenePrimitiveFlags::DefaultMesh;
+            desc.mesh = planeMesh;
+            desc.materials = { &material, 1u };
+            desc.position = { 0.0f, -5.0f, 0.0f };
+            desc.rotation = { 90.0f * PK_FLOAT_DEG2RAD, 0.0f, 0.0f };
+            desc.scale = 80.0f * PK_FLOAT3_ONE;
+            EntityFactory<EntityMeshStatic>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
         }
 
-        for (auto i = 0; i < 128; ++i)
+        // Columns mesh
         {
-            auto submesh = math::randomRange(0u, submeshCount);
-            auto pos = math::halton(i + 128, uint3(7,11,17)) * (maxpos - minpos) + minpos;
-            auto rot = math::randomRadianFloat3();
-            auto size = math::randomRange(1.0f, 3.0f);
-            EntityBuilders::CreateEntityMeshStatic(m_entityDb, rocksMesh, { {materialPlaster,submesh} }, pos, rot, size);
+            MaterialTarget material = { materialAsphalt, 0u };
+            EntityMeshStatic desc;
+            desc.flags = ScenePrimitiveFlags::DefaultMesh;
+            desc.mesh = columnMesh;
+            desc.materials = { &material, 1u };
+            desc.position = { -20.0f, 5.0f, -20.0f };
+            desc.rotation = PK_FLOAT3_ZERO;
+            desc.scale = 3.0f * PK_FLOAT3_ONE;
+            EntityFactory<EntityMeshStatic>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
         }
 
-        for (uint32_t i = 0u; i < config->LightCount; ++i)
+        // Rock meshes
         {
-            auto pos = math::randomRange(minpos, maxpos) + PK_FLOAT3_UP * 4.0f;
-            auto type = i % 2 == 0 ? LightType::Spot : LightType::Point;
-            auto color = math::hueToRgb(math::randomRange(0.0f, 1.0f)) * math::randomRange(8.0f, 128.0f);
-            EntityBuilders::CreateEntityLightSphere(m_entityDb, m_assetDatabase, pos, type, LightCookie::Circle0, color, true);
+            auto maxsubmesh = rocksMesh->GetSubmeshCount() - 1u;
+
+            for (auto i = 0u; i < 256u; ++i)
+            {
+                MaterialTarget material { i < 128u ? materialMarble : materialPlaster, math::randomRange(0u, maxsubmesh) };
+                EntityMeshStatic desc;
+                desc.flags = ScenePrimitiveFlags::DefaultMesh;
+                desc.mesh = rocksMesh;
+                desc.materials = { &material, 1u };
+                desc.position = math::halton(i, uint3(7, 11, 17)) * (maxpos - minpos) + minpos;
+                desc.rotation = math::randomRadianFloat3();
+                desc.scale = math::randomRange(1.0f, 3.0f) * PK_FLOAT3_ONE;
+                EntityFactory<EntityMeshStatic>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
+            }
+        }
+        
+        // Local lights
+        for (auto i = 0u; i < config->LightCount; ++i)
+        {
+            EntityLightSphere desc;
+            desc.assetDatabase = m_assetDatabase;
+            desc.type = i % 2 == 0 ? LightType::Spot : LightType::Point;
+            desc.cookie = LightCookie::Circle0;
+            desc.position = math::randomRange(minpos, maxpos) + PK_FLOAT3_UP * 4.0f;
+            desc.rotation = PK_FLOAT3_ZERO;// math::randomRange(float3(0.0f, 0.0f, 0.0f), float3(0.0f, PK_FLOAT_PI * 2.0f, 0.0f));
+            desc.color = math::hueToRgb(math::randomRange(0.0f, 1.0f)) * math::randomRange(8.0f, 128.0f);
+            desc.angle = 90.0f;
+            desc.radius = 20.0f;
+            desc.sourceRadius = 0.2f;
+            desc.castShadow = true;
+            EntityFactory<EntityLightSphere>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
         }
 
-        auto color = math::hexToRgb<float>(0xFF5E19FFu) * 24.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
+        // Directional light
+        {
+            EntityLight desc;
+            desc.type = LightType::Directional;
+            desc.cookie = LightCookie::Circle0;
+            desc.position = PK_FLOAT3_ZERO;
+            desc.rotation = float3(10, -35, 0) * PK_FLOAT_DEG2RAD;
+            desc.color = math::hexToRgb<float>(0xFF5E19FFu) * 24.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
+            desc.angle = 90.0f;
+            desc.radius = 1000.0f;
+            desc.sourceRadius = 0.1f;
+            desc.castShadow = true;
+            EntityFactory<EntityLight>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
+        }
 
-        EntityBuilders::CreateEntityLight(m_entityDb, 
-            PK_FLOAT3_ZERO, 
-            float3(10, -35, 0) * PK_FLOAT_DEG2RAD, 
-            LightType::Directional, 
-            LightCookie::Circle0, 
-            color, 
-            90.0f, 
-            1000.0f, 
-            true);
-
-        m_cameraEgid = EntityBuilders::CreateEntityFlyCamera(m_entityDb,
-            "Scene",
-            PK_UINT4_MAX,
-            /*isWindowTarget*/ true,
-            config->CameraStartPosition,
-            config->CameraStartRotation,
-            config->CameraSpeed,
-            config->CameraFov,
-            config->CameraZNear,
-            config->CameraZFar,
-            config->CameraMoveSmoothing,
-            config->CameraLookSmoothing,
-            config->CameraLookSensitivity);
-
-        auto cameraRenderView = m_entityDb->Query<EntityViewRenderView>(m_cameraEgid);
-        cameraRenderView->renderView->settingsRef = &config->ViewSettings;
+        // Fly camera
+        {
+            EntityFlyCamera desc;
+            desc.name = "Scene";
+            desc.desiredRect = PK_UINT4_MAX;
+            desc.isWindowTarget = true;
+            desc.position = config->CameraStartPosition;
+            desc.rotation = config->CameraStartRotation;
+            desc.moveSpeed = config->CameraSpeed;
+            desc.fieldOfView = config->CameraFov;
+            desc.zNear = config->CameraZNear;
+            desc.zFar = config->CameraZFar;
+            desc.moveSmoothing = config->CameraMoveSmoothing;
+            desc.rotationSmoothing = config->CameraLookSmoothing;
+            desc.sensitivity = config->CameraLookSensitivity;
+            desc.settings = &config->ViewSettings;
+            m_cameraEgid = EntityFactory<EntityFlyCamera>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
+        }
     }
 
     void EngineDebug::OnStepFrameUpdate([[maybe_unused]] FrameContext* ctx)

@@ -8,11 +8,10 @@
 
 namespace PK::App
 {
-    struct EntityViewMeshStatic : public IEntityView
-    {
-        EntityComponentRef<ComponentScenePrimitive> primitive;
-        EntityComponentRef<ComponentTransform> transform;
-        EntityComponentRef<ComponentMeshStatic> staticMesh;
-        EntityComponentRef<ComponentMaterials> materials;
-    };
+    PK_ECS_VIEW_BEGIN(EntityViewMeshStatic)
+        PK_ECS_VIEW_COMPONENT(ComponentScenePrimitive, primitive)
+        PK_ECS_VIEW_COMPONENT(ComponentTransform, transform)
+        PK_ECS_VIEW_COMPONENT(ComponentMeshStatic, staticMesh)
+        PK_ECS_VIEW_COMPONENT(ComponentMaterials, materials)
+    PK_ECS_VIEW_END()
 }

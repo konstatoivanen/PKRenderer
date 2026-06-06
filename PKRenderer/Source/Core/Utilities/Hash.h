@@ -1,5 +1,5 @@
 #pragma once
-#include <stdint.h>
+#include "UUID128.h"
 #include "Templates.h"
 
 namespace PK::Hash
@@ -9,10 +9,12 @@ namespace PK::Hash
     inline size_t ExpandPrime(size_t oldSize) { return ExpandPrime((uint32_t)oldSize); }
     inline size_t ExpandSize(size_t capacity, size_t size) { return ExpandSize((uint32_t)capacity, (uint32_t)size); }
 
-    uint32_t ByteArrayHash(const void* data, size_t count);
-    uint64_t MurmurHash(const void* data, size_t count, uint64_t seed);
-    uint64_t FNV1AHash(const void* data, size_t count);
+    uint32_t ByteArrayHash(const void* data, size_t size);
+    uint64_t MurmurHash(const void* data, size_t size, uint64_t seed);
+    uint64_t FNV1AHash(const void* data, size_t size);
     uint64_t InterlaceHash32x2(uint32_t a, uint32_t b);
+
+    UUID128 MurmurHash128(const void* data, size_t size);
 
     template<typename T>
     inline size_t GetHash(const T& k) 

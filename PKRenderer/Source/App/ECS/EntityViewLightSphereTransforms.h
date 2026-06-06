@@ -5,9 +5,8 @@
 
 namespace PK::App
 {
-    struct EntityViewLightSphereTransforms : public IEntityView
-    {
-        EntityComponentRef<ComponentTransform> transformMesh;
-        EntityComponentRef<ComponentTransform> transformLight;
-    };
+    PK_ECS_VIEW_BEGIN(EntityViewLightSphereTransforms)
+        PK_ECS_VIEW_COMPONENT(ComponentTransform, transformMesh)
+        PK_ECS_VIEW_COMPONENT(ComponentTransform, transformLight)
+    PK_ECS_VIEW_END()
 }
