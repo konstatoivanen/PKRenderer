@@ -33,7 +33,7 @@ namespace PK
         implementer->radius = radius;
         implementer->sourceRadius = desc.sourceRadius;
         implementer->angle = desc.angle;
-        implementer->cookie = desc.cookie;
+        implementer->iesProfile = desc.iesProfile;
         implementer->type = desc.type;
         implementer->flags = App::ScenePrimitiveFlags::Light;
         implementer->flags = desc.castShadow ? implementer->flags | App::ScenePrimitiveFlags::CastShadows : implementer->flags;

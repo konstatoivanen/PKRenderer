@@ -26,18 +26,6 @@ namespace PK::App
         TypeCount
     };
 
-    enum class LightCookie : uint8_t
-    {
-        Circle0,
-        Circle1,
-        Circle2,
-        Square0,
-        Square1,
-        Square2,
-        Triangle,
-        Star,
-    };
-
     static constexpr ScenePrimitiveFlags operator | (const ScenePrimitiveFlags& a, const ScenePrimitiveFlags& b) { return (ScenePrimitiveFlags)((uint32_t)a | (uint32_t)b); }
     static constexpr ScenePrimitiveFlags operator |= (const ScenePrimitiveFlags& a, const ScenePrimitiveFlags& b) { return a | b; }
     static constexpr ScenePrimitiveFlags operator & (const ScenePrimitiveFlags& a, const ScenePrimitiveFlags& b) { return (ScenePrimitiveFlags)((uint32_t)a & (uint32_t)b); }

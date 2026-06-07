@@ -13,12 +13,14 @@ namespace PKAssets
     PKMesh* ReadAsMesh(PKAsset* asset);
     PKFont* ReadAsFont(PKAsset* asset);
     PKTexture* ReadAsTexture(PKAsset* asset);
+    PKIESProfile* ReadAsIESProfile(PKAsset* asset);
 
     int StreamData(PKAssetStream* stream, void* dst, size_t offset, size_t size);
     int StreamAsShader(PKAssetStream* stream, PKShader* outvalue);
     int StreamAsMesh(PKAssetStream* stream, PKMesh* outvalue);
     int StreamAsFont(PKAssetStream* stream, PKFont* outvalue);
     int StreamAsTexture(PKAssetStream* stream, PKTexture* outvalue);
+    int StreamAsIESProfile(PKAssetStream* stream, PKIESProfile* outvalue);
 
     PKAssetMeta OpenAssetMeta(const char* filepath);
     void CloseAssetMeta(PKAssetMeta* meta);

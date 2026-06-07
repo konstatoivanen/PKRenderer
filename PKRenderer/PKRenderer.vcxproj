@@ -288,6 +288,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Platform\Windows\Win32Internal.h" />
     <ClInclude Include="Source\Core\Platform\Windows\Win32Window.h" />
     <ClInclude Include="Source\Core\Rendering\Font.h" />
+    <ClInclude Include="Source\Core\Rendering\IESProfile.h" />
     <ClInclude Include="Source\Core\Rendering\Window.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanLimits.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
@@ -481,6 +482,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Configs\DebugEngine.cfg" />
+    <None Include="Content\IESProfiles\IES_10W_10D.ies" />
+    <None Include="Content\IESProfiles\IES_10W_35D.ies" />
+    <None Include="Content\IESProfiles\IES_150W_45D.ies" />
+    <None Include="Content\IESProfiles\IES_20W_15D.ies" />
+    <None Include="Content\IESProfiles\IES_300W_85D.ies" />
+    <None Include="Content\IESProfiles\IES_45W_45D.ies" />
     <None Include="Content\Shaders\CS_Distort.shader" />
     <None Include="Content\Shaders\CS_IntegrateDFG.shader" />
     <None Include="Content\Shaders\CS_SceneEnv_IntegrateISL.shader" />
@@ -625,7 +632,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Textures\Environment\T_Wood_Floor_S.ktx2" />
     <None Include="Content\Textures\T_Bloom_LensDirt.ktx2" />
     <None Include="Content\Textures\Default\T_Bluenoise256.ktx2" />
-    <None Include="Content\Textures\Default\T_LightCookies.ktx2" />
     <None Include="Content\Textures\T_CC_LUT32.ktx2" />
     <None Include="Content\Textures\T_OEM_Desert.ktx2" />
     <None Include="Content\Textures\T_OEM_Mountains.ktx2" />
@@ -652,6 +658,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Platform\Windows\Win32Platform.cpp" />
     <ClCompile Include="Source\Core\Platform\Windows\Win32Window.cpp" />
     <ClCompile Include="Source\Core\Rendering\Font.cpp" />
+    <ClCompile Include="Source\Core\Rendering\IESProfile.cpp" />
     <ClCompile Include="Source\Core\Rendering\Window.cpp" />
     <ClCompile Include="Source\Core\RHI\Structs.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />

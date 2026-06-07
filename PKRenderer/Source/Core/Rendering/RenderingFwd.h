@@ -19,6 +19,8 @@ namespace PK
     struct MeshStaticAllocator;
     struct MeshStatic;
     struct Mesh;
+    struct IESProfileAtlas;
+    struct IESProfile;
     struct ConstantBuffer;
     struct CommandBufferExt;
     struct ShaderBindingTable;
@@ -34,6 +36,8 @@ namespace PK
     typedef Ref<Font> FontRef;
     typedef Ref<Mesh> MeshRef;
     typedef Ref<MeshStatic> MeshStaticRef;
+    typedef Ref<IESProfileAtlas> IESProfileAtlasRef;
+    typedef Ref<IESProfile> IESProfileRef;
     typedef Ref<ConstantBuffer> ConstantBufferRef;
     typedef Unique<Window> WindowScope;
 

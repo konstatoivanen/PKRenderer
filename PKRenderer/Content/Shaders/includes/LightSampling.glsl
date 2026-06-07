@@ -30,6 +30,21 @@ float Lights_ConeAttenuation(float3 L, float3 D, float2 A)
     return pow2(saturate((dot(L, -D) - A.x) * A.y));
 }
 
+float Lights_ApplyIESProfile(float3 L, float3 D, uint profile)
+{
+    float value = 1.0f;
+
+    [[branch]]
+    if (profile > 0u)
+    {
+        // @TODO support both angles.
+        float angle = acos(-dot(L, D)) / PK_PI;
+        value = textureLod(pk_IESProfiles, float3(angle, 0.5f, 0.0f), 0).r;
+    }
+    
+    return value;
+}
+
 float2 Lights_GetClipUv(const float3 world_pos, const uint matrix_index)
 {
     return ClipToUv((pk_LightMatrices[matrix_index] * float4(world_pos, 1.0f)).xyw);
@@ -70,6 +85,7 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
     float3 radiance = light.color;
     radiance *= Lights_FalloffAttenuation(dist_to_light, light.radius);
     radiance *= Lights_ConeAttenuation(L, light_forward, light.spot_angles);
+    radiance *= Lights_ApplyIESProfile(L, light_forward, light.index_ies);
 
     float shadow = 1.0f;
     {

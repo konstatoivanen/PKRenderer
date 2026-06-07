@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/CLI/CVariable.h"
+#include "Core/Rendering/IESProfile.h"
 #include "App/Renderer/RenderView.h"
 
 namespace PK { class AssetDatabase; }
@@ -68,6 +69,7 @@ namespace PK::App
             RHITextureRef m_depthTarget2D;
             RHITextureRef m_depthTargetCube;
             RHITextureRef m_shadowTargetCube;
+            IESProfileAtlas m_iesAtlas;
             
             CVariableField<float> m_cascadeDistribution = { "Renderer.Lights.CascadeDistribution", 0.5f };
             CVariableField<float> m_tileZDistribution = { "Renderer.Lights.TileZDistribution", 10.0f };

@@ -16,7 +16,7 @@ namespace PK
     {
         App::EntityLight descLight;
         descLight.type = desc.type;
-        descLight.cookie = desc.cookie;
+        descLight.iesProfile = desc.iesProfile;
         descLight.position = desc.position;
         descLight.rotation = desc.rotation;
         descLight.color = desc.color;

@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Math/Math.h"
+#include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
 
 namespace PK::App
@@ -14,7 +15,7 @@ namespace PK::App
         float angle = 45.0f;
         float angleFade = 0.01f;
         LightType type = LightType::Point;
-        LightCookie cookie = LightCookie::Circle0;
+        IESProfileRef iesProfile = nullptr;
         virtual ~ComponentLight() = default;
     };
 }

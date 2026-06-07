@@ -48,6 +48,7 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
   <summary>Analytic Lights</summary>
   
   - Spot, point & directional lights.
+  - IES profile support.
   - Spherical area light estimation for all types.
   - Poisson PCF shadow filtering.
   - PCSS shadow filtering for directional lights.

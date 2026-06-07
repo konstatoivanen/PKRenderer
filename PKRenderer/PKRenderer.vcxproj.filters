@@ -684,6 +684,9 @@
     <ClInclude Include="Source\App\ECS\EntityLightSphere.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Rendering\IESProfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
@@ -714,7 +717,6 @@
     <None Include="Content\Shaders\MS_Mat_Unlit_Color.shader" />
     <None Include="Content\Textures\T_OEM_Trail.ktx2" />
     <None Include="Content\Textures\T_OEM_Park.ktx2" />
-    <None Include="Content\Textures\Default\T_LightCookies.ktx2" />
     <None Include="Content\Textures\T_OEM_Desert.ktx2" />
     <None Include="Content\Textures\T_OEM_Mountains.ktx2" />
     <None Include="Content\Textures\T_OEM_Night.ktx2" />
@@ -839,6 +841,12 @@
     <None Include="Content\Shaders\includes\Quaternion.glsl" />
     <None Include="Content\Shaders\CS_VolumetricFog.shader" />
     <None Include="Content\Shaders\includes\ffx_spd.glsl" />
+    <None Include="Content\IESProfiles\IES_10W_10D.ies" />
+    <None Include="Content\IESProfiles\IES_10W_35D.ies" />
+    <None Include="Content\IESProfiles\IES_20W_15D.ies" />
+    <None Include="Content\IESProfiles\IES_45W_45D.ies" />
+    <None Include="Content\IESProfiles\IES_150W_45D.ies" />
+    <None Include="Content\IESProfiles\IES_300W_85D.ies" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\PKAssets\PKAssetLoader.cpp">
@@ -1190,6 +1198,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\ECS\EntityFlyCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Rendering\IESProfile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

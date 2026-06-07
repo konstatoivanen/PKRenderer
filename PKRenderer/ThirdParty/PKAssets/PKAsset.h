@@ -17,6 +17,7 @@ namespace PKAssets
     constexpr static const char* PK_ASSET_EXTENSION_MESH = ".pkmesh";
     constexpr static const char* PK_ASSET_EXTENSION_FONT = ".pkfont";
     constexpr static const char* PK_ASSET_EXTENSION_TEXTURE = ".pktexture";
+    constexpr static const char* PK_ASSET_EXTENSION_IESPROFILE = ".pkiesprofile";
 
     // Base asset types
     enum class PKAssetType : uint8_t
@@ -25,7 +26,8 @@ namespace PKAssets
         Shader,
         Mesh,
         Font,
-        Texture
+        Texture,
+        IESProfile
     };
 
     template<typename T>
@@ -79,60 +81,6 @@ namespace PKAssets
         void* stream = nullptr;
         PKAssetHeader header;
     };
-
-    constexpr const static char* PK_SHADER_ENTRY_POINT_NAME = "main";
-
-    constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#pragma pk_log_verbose";
-    constexpr const static char* PK_SHADER_ATTRIB_GENERATEDEBUGINFO = "#pragma pk_generate_debug_info";
-    constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#pragma pk_zwrite ";
-    constexpr const static char* PK_SHADER_ATTRIB_ZTEST = "#pragma pk_ztest ";
-    constexpr const static char* PK_SHADER_ATTRIB_BLENDCOLOR = "#pragma pk_blend_color ";
-    constexpr const static char* PK_SHADER_ATTRIB_BLENDALPHA = "#pragma pk_blend_alpha ";
-    constexpr const static char* PK_SHADER_ATTRIB_COLORMASK = "#pragma pk_color_mask ";
-    constexpr const static char* PK_SHADER_ATTRIB_CULL = "#pragma pk_cull ";
-    constexpr const static char* PK_SHADER_ATTRIB_OFFSET = "#pragma pk_offset ";
-    constexpr const static char* PK_SHADER_ATTRIB_RASTERMODE = "#pragma pk_raster_mode ";
-    constexpr const static char* PK_SHADER_ATTRIB_MULTI_COMPILE = "#pragma pk_multi_compile ";
-    constexpr const static char* PK_SHADER_ATTRIB_MATERIAL_PROP = "#pragma pk_material_property ";
-    constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_PROP = "#pragma pk_enable_instancing";
-    constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_NOFRAG_PROP = "#pragma pk_disable_fragment_instancing";
-    constexpr const static char* PK_SHADER_ATTRIB_PROGRAM = "#pragma pk_program ";
-    constexpr const static char* PK_SHADER_ATTRIB_LOCAL_OPEN = "[pk_local(";
-    constexpr const static char* PK_SHADER_ATTRIB_LOCAL_CLOSE = ")]";
-    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_OPEN = "[pk_numthreads(";
-    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_CLOSE = ")]";
-    constexpr const static char* PK_SHADER_ATTRIB_ALIAS = "_pkalias";
-
-    constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";
-    constexpr const static char* PK_SHADER_INSTANCING_INDICES = "pk_Instancing_Indices";
-    constexpr const static char* PK_SHADER_INSTANCING_PROPERTIES = "pk_Instancing_Properties";
-    constexpr const static char* PK_SHADER_INSTANCING_TEXTURES2D = "pk_Instancing_Textures2D";
-    constexpr const static char* PK_SHADER_INSTANCING_TEXTURES3D = "pk_Instancing_Textures3D";
-    constexpr const static char* PK_SHADER_INSTANCING_TEXTURESCUBE = "pk_Instancing_TexturesCube";
-    constexpr const static char* PK_SHADER_SET_NAMES[4] =
-    {
-        "GLOBAL",
-        "PASS",
-        "SHADER",
-        "DRAW"
-    };
-
-    constexpr const static char* PK_MESH_VS_POSITION = "in_POSITION";
-    constexpr const static char* PK_MESH_VS_NORMAL = "in_NORMAL";
-    constexpr const static char* PK_MESH_VS_TANGENT = "in_TANGENT";
-    constexpr const static char* PK_MESH_VS_COLOR = "in_COLOR";
-    constexpr const static char* PK_MESH_VS_TEXCOORD0 = "in_TEXCOORD0";
-    constexpr const static char* PK_MESH_VS_TEXCOORD1 = "in_TEXCOORD1";
-    constexpr const static char* PK_MESH_VS_TEXCOORD2 = "in_TEXCOORD2";
-    constexpr const static char* PK_MESH_VS_TEXCOORD3 = "in_TEXCOORD3";
-
-    constexpr static const uint32_t PK_MESHLET_MAX_VERTICES = 64u;
-    constexpr static const uint32_t PK_MESHLET_MAX_TRIANGLES = 124u;
-    constexpr static const float PK_MESHLET_CONE_WEIGHT = 0.9f;
-    constexpr static const float PK_MESHLET_BOUNDS_SPLIT_FACTOR = 0.5f;
-    constexpr static const float PK_MESHLET_LOD_MAX_ERROR = 65504.0f;
- 
-    constexpr static const float PK_FONT_MSDF_UNIT = 4.0f;
 
 
     enum class PKElementType : uint16_t
@@ -452,6 +400,65 @@ namespace PKAssets
         UnderEstimate,
     };
 
+    constexpr const static char* PK_SHADER_ENTRY_POINT_NAME = "main";
+
+    constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#pragma pk_log_verbose";
+    constexpr const static char* PK_SHADER_ATTRIB_GENERATEDEBUGINFO = "#pragma pk_generate_debug_info";
+    constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#pragma pk_zwrite ";
+    constexpr const static char* PK_SHADER_ATTRIB_ZTEST = "#pragma pk_ztest ";
+    constexpr const static char* PK_SHADER_ATTRIB_BLENDCOLOR = "#pragma pk_blend_color ";
+    constexpr const static char* PK_SHADER_ATTRIB_BLENDALPHA = "#pragma pk_blend_alpha ";
+    constexpr const static char* PK_SHADER_ATTRIB_COLORMASK = "#pragma pk_color_mask ";
+    constexpr const static char* PK_SHADER_ATTRIB_CULL = "#pragma pk_cull ";
+    constexpr const static char* PK_SHADER_ATTRIB_OFFSET = "#pragma pk_offset ";
+    constexpr const static char* PK_SHADER_ATTRIB_RASTERMODE = "#pragma pk_raster_mode ";
+    constexpr const static char* PK_SHADER_ATTRIB_MULTI_COMPILE = "#pragma pk_multi_compile ";
+    constexpr const static char* PK_SHADER_ATTRIB_MATERIAL_PROP = "#pragma pk_material_property ";
+    constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_PROP = "#pragma pk_enable_instancing";
+    constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_NOFRAG_PROP = "#pragma pk_disable_fragment_instancing";
+    constexpr const static char* PK_SHADER_ATTRIB_PROGRAM = "#pragma pk_program ";
+    constexpr const static char* PK_SHADER_ATTRIB_LOCAL_OPEN = "[pk_local(";
+    constexpr const static char* PK_SHADER_ATTRIB_LOCAL_CLOSE = ")]";
+    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_OPEN = "[pk_numthreads(";
+    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_CLOSE = ")]";
+    constexpr const static char* PK_SHADER_ATTRIB_ALIAS = "_pkalias";
+
+    constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";
+    constexpr const static char* PK_SHADER_INSTANCING_INDICES = "pk_Instancing_Indices";
+    constexpr const static char* PK_SHADER_INSTANCING_PROPERTIES = "pk_Instancing_Properties";
+    constexpr const static char* PK_SHADER_INSTANCING_TEXTURES2D = "pk_Instancing_Textures2D";
+    constexpr const static char* PK_SHADER_INSTANCING_TEXTURES3D = "pk_Instancing_Textures3D";
+    constexpr const static char* PK_SHADER_INSTANCING_TEXTURESCUBE = "pk_Instancing_TexturesCube";
+    constexpr const static char* PK_SHADER_SET_NAMES[4] =
+    {
+        "GLOBAL",
+        "PASS",
+        "SHADER",
+        "DRAW"
+    };
+
+    constexpr const static char* PK_MESH_VS_POSITION = "in_POSITION";
+    constexpr const static char* PK_MESH_VS_NORMAL = "in_NORMAL";
+    constexpr const static char* PK_MESH_VS_TANGENT = "in_TANGENT";
+    constexpr const static char* PK_MESH_VS_COLOR = "in_COLOR";
+    constexpr const static char* PK_MESH_VS_TEXCOORD0 = "in_TEXCOORD0";
+    constexpr const static char* PK_MESH_VS_TEXCOORD1 = "in_TEXCOORD1";
+    constexpr const static char* PK_MESH_VS_TEXCOORD2 = "in_TEXCOORD2";
+    constexpr const static char* PK_MESH_VS_TEXCOORD3 = "in_TEXCOORD3";
+
+    constexpr static const uint32_t PK_MESHLET_MAX_VERTICES = 64u;
+    constexpr static const uint32_t PK_MESHLET_MAX_TRIANGLES = 124u;
+    constexpr static const float PK_MESHLET_CONE_WEIGHT = 0.9f;
+    constexpr static const float PK_MESHLET_BOUNDS_SPLIT_FACTOR = 0.5f;
+    constexpr static const float PK_MESHLET_LOD_MAX_ERROR = 65504.0f;
+ 
+    constexpr static const float PK_FONT_MSDF_UNIT = 4.0f;
+
+    constexpr static const uint32_t PK_IES_PROFILE_WIDTH = 256u;
+    constexpr static const uint32_t PK_IES_PROFILE_HEIGHT = 256u;
+    constexpr static const PKTextureFormat PK_IES_PROFILE_FORMAT = PKTextureFormat::R16F;
+
+
     // This is not an asset class. use this class to provide draw infos to instancing shaders
     // Packed as uint4
     struct PKDrawInfo
@@ -462,7 +469,6 @@ namespace PKAssets
         uint32_t submesh;
         uint32_t userdata;
     };
-
 
 
     // Shader asset types
@@ -678,6 +684,14 @@ namespace PKAssets
         uint8_t __padding0;                 // 36 bytes
     };
 
+    // IES profile asset type
+    struct alignas(4) PKIESProfile
+    {
+        RelativePtr<void> data;              // 4 bytes
+        float lumens;                        // 8 bytes 
+        float candelaMax;                    // 12 bytes 
+        float candelaAverage;                // 16 bytes 
+    };
 
     uint32_t PKElementTypeToSize(PKElementType type);
     uint32_t PKElementTypeToAlignment(PKElementType type);

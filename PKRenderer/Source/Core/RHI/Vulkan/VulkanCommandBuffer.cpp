@@ -340,12 +340,9 @@ namespace PK
         auto srcBlockSize = VulkanEnumConvert::GetFormatBlockSize(src->image.format);
         auto dstBlockSize = VulkanEnumConvert::GetFormatBlockSize(dst->image.format);
         auto useCopy = srcBlockSize == dstBlockSize;
-        useCopy &= blitRegion.srcOffsets[0].x == blitRegion.dstOffsets[0].x;
-        useCopy &= blitRegion.srcOffsets[0].y == blitRegion.dstOffsets[0].y;
-        useCopy &= blitRegion.srcOffsets[0].z == blitRegion.dstOffsets[0].z;
-        useCopy &= blitRegion.dstOffsets[1].x == blitRegion.dstOffsets[1].x;
-        useCopy &= blitRegion.srcOffsets[1].y == blitRegion.dstOffsets[1].y;
-        useCopy &= blitRegion.srcOffsets[1].z == blitRegion.dstOffsets[1].z;
+        useCopy &= blitRegion.srcOffsets[1].x - blitRegion.srcOffsets[0].x == blitRegion.dstOffsets[1].x - blitRegion.dstOffsets[0].x;
+        useCopy &= blitRegion.srcOffsets[1].y - blitRegion.srcOffsets[0].y == blitRegion.dstOffsets[1].y - blitRegion.dstOffsets[0].y;
+        useCopy &= blitRegion.srcOffsets[1].z - blitRegion.srcOffsets[0].z == blitRegion.dstOffsets[1].z - blitRegion.dstOffsets[0].z;
         useCopy &= blitRegion.srcSubresource.mipLevel == blitRegion.dstSubresource.mipLevel;
         useCopy &= blitRegion.srcSubresource.layerCount == blitRegion.dstSubresource.layerCount;
 
@@ -364,7 +361,9 @@ namespace PK
             copyRegion.srcOffset = blitRegion.srcOffsets[0];
             copyRegion.dstSubresource = blitRegion.dstSubresource;
             copyRegion.dstOffset = blitRegion.srcOffsets[0];
-            copyRegion.extent = { (uint32_t)blitRegion.dstOffsets[1].x, (uint32_t)blitRegion.dstOffsets[1].y, (uint32_t)blitRegion.dstOffsets[1].z };
+            copyRegion.extent.width = (uint32_t)blitRegion.dstOffsets[1].x - (uint32_t)blitRegion.dstOffsets[0].x;
+            copyRegion.extent.height = (uint32_t)blitRegion.dstOffsets[1].y - (uint32_t)blitRegion.dstOffsets[0].y;
+            copyRegion.extent.depth = (uint32_t)blitRegion.dstOffsets[1].z - (uint32_t)blitRegion.dstOffsets[0].z;
             vkCmdCopyImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
         }
         else

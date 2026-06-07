@@ -10,7 +10,7 @@ namespace PK::App
     {
         AssetDatabase* assetDatabase;
         LightType type;
-        LightCookie cookie;
+        IESProfileRef iesProfile;
         float3 position;
         float3 rotation;
         color color;

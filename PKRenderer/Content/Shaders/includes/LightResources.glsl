@@ -24,7 +24,7 @@ struct SceneLight
     float near_clip;
     float exponent;
     uint light_type; 
-    uint index_mask;
+    uint index_ies;
     uint index_shadow; 
 };
 
@@ -44,7 +44,7 @@ struct LightTile
     uint cascade;
 };
 
-uniform sampler2DArray pk_LightCookies;
+uniform sampler2DArray pk_IESProfiles;
 uniform Buffer<uint4> pk_Lights;
 uniform Buffer<float4x4> pk_LightMatrices;
 
@@ -62,7 +62,7 @@ SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)
     l.position = uintBitsToFloat(packed0.xyz);
     l.radius = unpackHalf2x16(packed0.w).x;
     l.light_type = bitfieldExtract(packed0.w, 16, 4);
-    l.index_mask = bitfieldExtract(packed0.w, 20, 12);
+    l.index_ies = bitfieldExtract(packed0.w, 20, 12);
     l.color.xy = unpackHalf2x16(packed1.x);
     l.color.z = unpackHalf2x16(packed1.y).x;
     l.source_radius = unpackHalf2x16(packed1.y).y;

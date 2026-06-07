@@ -91,7 +91,7 @@ namespace PK::App
 
         DECLARE_HASH(pk_ShadowmapAtlas)
         DECLARE_HASH(pk_ShadowmapScreenSpace)
-        DECLARE_HASH(pk_LightCookies)
+        DECLARE_HASH(pk_IESProfiles)
         DECLARE_HASH(pk_Bluenoise256)
         DECLARE_HASH(pk_Bluenoise128x64)
 

@@ -46,7 +46,7 @@ namespace PK::App
         float near_clip;
         float exponent;
         uint light_type;
-        uint index_mask;
+        uint index_ies;
         uint index_shadow;
     };
 
@@ -73,9 +73,9 @@ namespace PK::App
 
         PackedLight packed{};
         const auto radiusfp16 = (uint32_t)math::f32tof16(light.radius);
-        const auto typeAndMaskIndex = (uint32_t)light.light_type | (uint32_t)(light.index_mask << 4u);
+        const auto typeAndIESIndex = (uint32_t)light.light_type | (uint32_t)(light.index_ies << 4u);
         packed.packed0.xyz = math::asuint(light.position);
-        packed.packed0.w = (radiusfp16 & 0xFFFFu) | (typeAndMaskIndex << 16u);
+        packed.packed0.w = (radiusfp16 & 0xFFFFu) | (typeAndIESIndex << 16u);
         packed.packed1.x = math::f32tof16_pack(light.color.xy);
         packed.packed1.y = math::f32tof16_pack({ light.color.z, light.source_radius });
         packed.packed1.z = math::f32tof16_pack(spotAngles);
@@ -87,13 +87,15 @@ namespace PK::App
         return packed;
     }
 
-    PassLights::PassLights(AssetDatabase* assetDatabase) 
+    PassLights::PassLights(AssetDatabase* assetDatabase) : m_iesAtlas(32ull)
     {
         PK_LOG_VERBOSE_FUNC();
 
         m_computeLightAssignment = assetDatabase->Find<ShaderAsset>("CS_LightAssignment").get();
         m_computeCopyCubeShadow = assetDatabase->Find<ShaderAsset>("CS_CopyCubeShadow").get();
         m_computeScreenSpaceShadow = assetDatabase->Find<ShaderAsset>("CS_ScreenspaceShadow").get();
+
+        assetDatabase->RegisterFactory<IESProfile>(&m_iesAtlas);
 
         auto shadowCubeFaceSize = (uint)math::sqrt((m_shadowmapSize * m_shadowmapSize) / 6.0f);
         TextureDescriptor depthDesc;
@@ -138,14 +140,7 @@ namespace PK::App
         m_lightMatricesBuffer = RHI::CreateBuffer<float4x4>(32ull, BufferUsage::PersistentStorage, "Lights.Matrices");
 
         auto hash = HashCache::Get();
-        auto lightCookies = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_LightCookies.pktexture")->GetRHI();
-
-        auto sampler = lightCookies->GetSamplerDescriptor();
-        sampler.wrap[0] = WrapMode::Clamp;
-        sampler.wrap[1] = WrapMode::Clamp;
-        sampler.wrap[2] = WrapMode::Clamp;
-        lightCookies->SetSampler(sampler);
-        RHI::SetTexture(hash->pk_LightCookies, lightCookies);
+        RHI::SetTexture(hash->pk_IESProfiles, m_iesAtlas.GetRHI());
         RHI::SetBuffer(hash->pk_LightCounter, m_lightsCounter.get());
     }
 
@@ -226,8 +221,15 @@ namespace PK::App
             light.near_clip = view->light->nearClip;
             light.exponent = view->light->exponent;
             light.light_type = (uint)view->light->type;
-            light.index_mask = (uint)view->light->cookie;
             light.index_shadow = 0u;
+
+            if (view->light->iesProfile)
+            {
+                const auto candelaMax = view->light->iesProfile->GetCandelaMax();
+                const auto candelaAvg = view->light->iesProfile->GetCandelaAverage();
+                light.index_ies = view->light->iesProfile->GetAtlasIndex();
+                light.color *= candelaMax / candelaAvg;
+            }
 
             RequestEntityCullResults shadowCasters{};
             ShadowCascadeCreateInfo cascadeInfo{};

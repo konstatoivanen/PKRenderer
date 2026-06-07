@@ -19,7 +19,7 @@ namespace PK::App
     struct EntityLight : EntityFactory<EntityLight>
     {
         LightType type;
-        LightCookie cookie;
+        IESProfileRef iesProfile;
         float3 position;
         float3 rotation;
         color color;

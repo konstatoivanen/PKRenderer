@@ -42,6 +42,8 @@ namespace PK::App
         auto materialMarble = assetDatabase->Load<Material>("Content/Materials/M_Marble.material", CacheMode::Shared);
         auto materialPlaster = assetDatabase->Load<Material>("Content/Materials/M_Plaster.material", CacheMode::Shared);
 
+        auto profile = assetDatabase->Load<IESProfile>("Content/IESProfiles/IES_150W_45D.pkiesprofile", CacheMode::Shared);
+
         auto minpos = float3(-70, -6, -70);
         auto maxpos = float3(+70, -4, +70);
 
@@ -95,7 +97,7 @@ namespace PK::App
             EntityLightSphere desc;
             desc.assetDatabase = m_assetDatabase;
             desc.type = i % 2 == 0 ? LightType::Spot : LightType::Point;
-            desc.cookie = LightCookie::Circle0;
+            desc.iesProfile = i % 2 == 0 ? profile : nullptr;
             desc.position = math::randomRange(minpos, maxpos) + PK_FLOAT3_UP * 4.0f;
             desc.rotation = PK_FLOAT3_ZERO;// math::randomRange(float3(0.0f, 0.0f, 0.0f), float3(0.0f, PK_FLOAT_PI * 2.0f, 0.0f));
             desc.color = math::hueToRgb(math::randomRange(0.0f, 1.0f)) * math::randomRange(8.0f, 128.0f);
@@ -110,7 +112,7 @@ namespace PK::App
         {
             EntityLight desc;
             desc.type = LightType::Directional;
-            desc.cookie = LightCookie::Circle0;
+            desc.iesProfile = nullptr;
             desc.position = PK_FLOAT3_ZERO;
             desc.rotation = float3(10, -35, 0) * PK_FLOAT_DEG2RAD;
             desc.color = math::hexToRgb<float>(0xFF5E19FFu) * 24.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF

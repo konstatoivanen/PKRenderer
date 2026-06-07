@@ -188,6 +188,17 @@ namespace PKAssets
         return reinterpret_cast<PKTexture*>(assetPtr);
     }
 
+    PKIESProfile* ReadAsIESProfile(PKAsset* asset)
+    {
+        if (asset->header == nullptr || asset->header->type != PKAssetType::IESProfile)
+        {
+            return nullptr;
+        }
+
+        auto assetPtr = static_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
+        return reinterpret_cast<PKIESProfile*>(assetPtr);
+    }
+
 
     int StreamData(PKAssetStream* stream, void* dst, size_t offset, size_t size)
     {
@@ -234,6 +245,16 @@ namespace PKAssets
         }
 
         return StreamData(stream, outvalue, sizeof(PKAssetHeader), sizeof(PKTexture));
+    }
+
+    int StreamAsIESProfile(PKAssetStream* stream, PKIESProfile* outvalue)
+    {
+        if (stream->stream == nullptr || stream->header.type != PKAssetType::IESProfile)
+        {
+            return -1;
+        }
+
+        return StreamData(stream, outvalue, sizeof(PKAssetHeader), sizeof(PKIESProfile));
     }
 
 
