@@ -101,10 +101,11 @@ void LightAssignmentCs()
     {
         const uint light_index = min(batch * THREAD_COUNT + thread, pk_LastLightIndex);
         const SceneLight scene_light = Lights_LoadLight(light_index);
+        const float4 scene_light_rot = Quat_Inverse(scene_light.rotation_inv);
 
         SharedLight light;
         light.position = WorldToViewPos(scene_light.position);
-        light.direction = WorldToViewVec(Quat_MultiplyVector(scene_light.rotation, float3(0,0,1)));
+        light.direction = WorldToViewVec(Quat_MultiplyVector(scene_light_rot, float3(0,0,1)));
         light.radius = scene_light.radius;
         light.cosAngle = scene_light.spot_angles.x;
         light.type = scene_light.light_type;

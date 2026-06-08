@@ -17,7 +17,7 @@ struct SceneLight
 {
     float3 position;
     float3 color;
-    float4 rotation;
+    float4 rotation_inv;
     float2 spot_angles;
     float radius;
     float source_radius;
@@ -68,8 +68,8 @@ SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)
     l.source_radius = unpackHalf2x16(packed1.y).y;
     l.spot_angles = unpackHalf2x16(packed1.z);
     l.index_shadow = packed1.w;
-    l.rotation.xy = unpackHalf2x16(packed2.x);
-    l.rotation.zw = unpackHalf2x16(packed2.y);
+    l.rotation_inv.xy = unpackHalf2x16(packed2.x);
+    l.rotation_inv.zw = unpackHalf2x16(packed2.y);
     l.near_clip = unpackHalf2x16(packed2.z).x;
     l.exponent = unpackHalf2x16(packed2.z).y;
     return l;

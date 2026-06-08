@@ -74,14 +74,15 @@ namespace PK::App
         PackedLight packed{};
         const auto radiusfp16 = (uint32_t)math::f32tof16(light.radius);
         const auto typeAndIESIndex = (uint32_t)light.light_type | (uint32_t)(light.index_ies << 4u);
+        const auto rotation_inv = math::inverse(light.rotation);
         packed.packed0.xyz = math::asuint(light.position);
         packed.packed0.w = (radiusfp16 & 0xFFFFu) | (typeAndIESIndex << 16u);
         packed.packed1.x = math::f32tof16_pack(light.color.xy);
         packed.packed1.y = math::f32tof16_pack({ light.color.z, light.source_radius });
         packed.packed1.z = math::f32tof16_pack(spotAngles);
         packed.packed1.w = light.index_shadow;// | (light.index_matrix << 16u);
-        packed.packed2.x = math::f32tof16_pack(light.rotation.xy);
-        packed.packed2.y = math::f32tof16_pack(light.rotation.zw);
+        packed.packed2.x = math::f32tof16_pack(rotation_inv.xy);
+        packed.packed2.y = math::f32tof16_pack(rotation_inv.zw);
         packed.packed2.z = math::f32tof16_pack({ light.near_clip, light.exponent});
         packed.packed2.w = 0u; // unused atm.
         return packed;

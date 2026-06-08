@@ -4,9 +4,9 @@
 
 float4 Quat_Conjugate(float4 q) { return float4(-q.x, -q.y, -q.z, q.w); }
 
-float4 Quat_inverse(float4 q) { return Quat_Conjugate(q) / (q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w); }
+float4 Quat_Inverse(float4 q) { return Quat_Conjugate(q) / (q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w); }
 
-float4 Quat_Relative(float4 q0, float4 q1) { return q1 * Quat_inverse(q0); }
+float4 Quat_Relative(float4 q0, float4 q1) { return q1 * Quat_Inverse(q0); }
 
 float4 Quat_Multiply(float4 q0, float4 q1) { return float4(q1.xyz * q0.w + q0.xyz * q1.w + cross(q0.xyz, q1.xyz), q0.w * q1.w - dot(q0.xyz, q1.xyz)); }
 

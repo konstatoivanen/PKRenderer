@@ -25,21 +25,21 @@ float Lights_FalloffAttenuation(float dist, float radius)
     return pow2(saturate(1.0f - pow4(dist/radius))) / (pow2(dist) + 1.0f); 
 }
 
-float Lights_ConeAttenuation(float3 L, float3 D, float2 A)
+float Lights_ConeAttenuation(float3 L, float2 A)
 {
-    return pow2(saturate((dot(L, -D) - A.x) * A.y));
+    return pow2(saturate((-L.z - A.x) * A.y));
 }
 
-float Lights_ApplyIESProfile(float3 L, float3 D, uint profile)
+float Lights_ApplyIESProfile(float3 L, uint profile)
 {
     float value = 1.0f;
 
     [[branch]]
     if (profile > 0u)
     {
-        // @TODO support both angles.
-        float angle = acos(-dot(L, D)) / PK_PI;
-        value = textureLod(pk_IESProfiles, float3(angle, 0.5f, 0.0f), 0).r;
+        const float angleH = acos(-L.z) / PK_PI;
+        const float angleV = fma(atan(L.x, L.y), PK_INV_TWO_PI, 0.5f);
+        value = textureLod(pk_IESProfiles, float3(angleH, angleV, profile - 1u), 0).r;
     }
     
     return value;
@@ -72,20 +72,21 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
 {
     const SceneLight light = Lights_LoadLight(index);
     
-    const float3 light_forward = Quat_MultiplyVector(light.rotation, float3(0,0,1));
     const bool is_directional = light.light_type == LIGHT_TYPE_DIRECTIONAL;
-
+    
     const float3 pos_to_light = lerp(light.position - world_pos, -light.position, is_directional.xxx);
-
+    
     const float dist_to_light = lerp(length(pos_to_light), 0.0f, is_directional);
     const float dist_volumetric = dist_to_light + 1e+4f * uint(is_directional); 
     const float source_radius = light.source_radius / (dist_to_light + uint(is_directional));
+    
     const float3 L = pos_to_light / (dist_to_light + uint(is_directional));
+    const float3 L_local = Quat_MultiplyVector(light.rotation_inv, L);
     
     float3 radiance = light.color;
     radiance *= Lights_FalloffAttenuation(dist_to_light, light.radius);
-    radiance *= Lights_ConeAttenuation(L, light_forward, light.spot_angles);
-    radiance *= Lights_ApplyIESProfile(L, light_forward, light.index_ies);
+    radiance *= Lights_ConeAttenuation(L_local, light.spot_angles);
+    radiance *= Lights_ApplyIESProfile(L_local, light.index_ies);
 
     float shadow = 1.0f;
     {
