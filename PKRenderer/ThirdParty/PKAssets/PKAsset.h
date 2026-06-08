@@ -454,9 +454,10 @@ namespace PKAssets
  
     constexpr static const float PK_FONT_MSDF_UNIT = 4.0f;
 
-    constexpr static const uint32_t PK_IES_PROFILE_WIDTH = 256u;
-    constexpr static const uint32_t PK_IES_PROFILE_HEIGHT = 256u;
-    constexpr static const PKTextureFormat PK_IES_PROFILE_FORMAT = PKTextureFormat::R16F;
+    constexpr static const uint32_t PK_IES_PROFILE_WIDTH = 512u;
+    constexpr static const uint32_t PK_IES_PROFILE_HEIGHT = 512u;
+    constexpr static const uint32_t PK_IES_PROFILE_DATA_SIZE = (PK_IES_PROFILE_WIDTH * PK_IES_PROFILE_HEIGHT) / 2u;
+    constexpr static const PKTextureFormat PK_IES_PROFILE_FORMAT = PKTextureFormat::BC4;
 
 
     // This is not an asset class. use this class to provide draw infos to instancing shaders

@@ -58,7 +58,6 @@ namespace PK
         m_residency.FlipAt(index);
 
         auto profile = PKAssets::ReadAsIESProfile(&asset);
-        auto dataSize = PKAssets::PK_IES_PROFILE_WIDTH * PKAssets::PK_IES_PROFILE_HEIGHT * sizeof(uint16_t);
 
         TextureDataRegion region{};
         region.layer = static_cast<uint64_t>(index);
@@ -67,7 +66,7 @@ namespace PK
         region.extent = m_texture->GetResolution();
 
         auto cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-        cmd->CopyToTexture(m_texture.get(), profile->data.Get(asset.rawData), dataSize, &region, 1u);
+        cmd->CopyToTexture(m_texture.get(), profile->data.Get(asset.rawData), PKAssets::PK_IES_PROFILE_DATA_SIZE, &region, 1u);
 
         Memory::Construct(memory, this, static_cast<uint32_t>(index) + 1u, profile->lumens, profile->candelaMax, profile->candelaAverage);
         PKAssets::CloseAsset(&asset);
