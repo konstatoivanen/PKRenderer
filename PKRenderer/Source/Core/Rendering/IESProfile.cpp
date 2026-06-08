@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
+#include "Core/Math/Color.h"
 #include "Core/ControlFlow/FenceRef.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Structs.h"
@@ -46,9 +47,6 @@ namespace PK
         PK_FATAL_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_FATAL_ASSERT(asset.header->type == PKAssets::PKAssetType::IESProfile, "Trying to read a IES profile from a non IES profile file!")
 
-        auto profile = PKAssets::ReadAsIESProfile(&asset);
-        auto base = asset.rawData;
-
         auto index = m_residency.FindFirstZero();
 
         if (index == -1)
@@ -59,6 +57,7 @@ namespace PK
 
         m_residency.FlipAt(index);
 
+        auto profile = PKAssets::ReadAsIESProfile(&asset);
         auto dataSize = PKAssets::PK_IES_PROFILE_WIDTH * PKAssets::PK_IES_PROFILE_HEIGHT * sizeof(uint16_t);
 
         TextureDataRegion region{};
@@ -67,11 +66,8 @@ namespace PK
         region.offset = PK_UINT3_ZERO;
         region.extent = m_texture->GetResolution();
 
-        RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(),
-            profile->data.Get(base),
-            dataSize,
-            &region,
-            1u);
+        auto cmd = RHI::GetCommandBuffer(QueueType::Transfer);
+        cmd->CopyToTexture(m_texture.get(), profile->data.Get(asset.rawData), dataSize, &region, 1u);
 
         Memory::Construct(memory, this, static_cast<uint32_t>(index) + 1u, profile->lumens, profile->candelaMax, profile->candelaAverage);
         PKAssets::CloseAsset(&asset);
@@ -86,7 +82,27 @@ namespace PK
     }
 
     RHITexture* IESProfileAtlas::GetRHI() { return m_texture.get(); }
+    
     const RHITexture* IESProfileAtlas::GetRHI() const { return m_texture.get(); }
+    
     IESProfileAtlas::operator RHITexture* () { return m_texture.get(); }
+
     IESProfileAtlas::operator const RHITexture* () const { return m_texture.get(); }
+    
+    color IESProfile::PreprocessColor(const color& input, bool applyProfileCandelas) const
+    {
+        float3 output = input.rgb;
+
+        if (applyProfileCandelas)
+        {
+            output = math::normalizeColor(input).rgb;
+            output *= m_candelaMax;
+        }
+        else
+        {
+            output *= m_candelaMax / m_candelaAverage;
+        }
+
+        return color(output, input.a);
+    }
 }

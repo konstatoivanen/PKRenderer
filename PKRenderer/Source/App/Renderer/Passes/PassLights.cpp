@@ -208,6 +208,7 @@ namespace PK::App
             auto view = resources->lightViews[lightIndex];
             const auto& transform = view->transform;
             const auto& worldToLocal = transform->worldToLocal;
+            const auto& IESProfile = view->light->IESProfile;
             const auto& shadowTypeInfo = SHADOW_TYPE_INFOS[(uint32_t)view->light->type];
             const auto castShadows = (view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
             float4x4 matrices[ShadowCascadeCount];
@@ -223,13 +224,12 @@ namespace PK::App
             light.exponent = view->light->exponent;
             light.light_type = (uint)view->light->type;
             light.index_shadow = 0u;
+            light.index_ies = 0u;
 
-            if (view->light->iesProfile)
+            if (IESProfile)
             {
-                const auto candelaMax = view->light->iesProfile->GetCandelaMax();
-                const auto candelaAvg = view->light->iesProfile->GetCandelaAverage();
-                light.index_ies = view->light->iesProfile->GetAtlasIndex();
-                light.color *= candelaMax / candelaAvg;
+                light.index_ies = IESProfile->GetAtlasIndex();
+                light.color = IESProfile->PreprocessColor(view->light->color, view->light->useIESCandelas).rgb;
             }
 
             RequestEntityCullResults shadowCasters{};

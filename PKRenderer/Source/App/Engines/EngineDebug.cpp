@@ -97,7 +97,7 @@ namespace PK::App
             EntityLightSphere desc;
             desc.assetDatabase = m_assetDatabase;
             desc.type = i % 2 == 0 ? LightType::Spot : LightType::Point;
-            desc.iesProfile = i % 2 == 0 ? profile : nullptr;
+            desc.IESProfile = i % 2 == 0 ? profile : nullptr;
             desc.position = math::randomRange(minpos, maxpos) + PK_FLOAT3_UP * 4.0f;
             desc.rotation = PK_FLOAT3_ZERO;// math::randomRange(float3(0.0f, 0.0f, 0.0f), float3(0.0f, PK_FLOAT_PI * 2.0f, 0.0f));
             desc.color = math::hueToRgb(math::randomRange(0.0f, 1.0f)) * math::randomRange(8.0f, 128.0f);
@@ -105,6 +105,7 @@ namespace PK::App
             desc.radius = 20.0f;
             desc.sourceRadius = 0.2f;
             desc.castShadow = true;
+            desc.useIESCandelas = true;
             EntityFactory<EntityLightSphere>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
         }
 
@@ -112,7 +113,7 @@ namespace PK::App
         {
             EntityLight desc;
             desc.type = LightType::Directional;
-            desc.iesProfile = nullptr;
+            desc.IESProfile = nullptr;
             desc.position = PK_FLOAT3_ZERO;
             desc.rotation = float3(10, -35, 0) * PK_FLOAT_DEG2RAD;
             desc.color = math::hexToRgb<float>(0xFF5E19FFu) * 24.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
@@ -120,6 +121,7 @@ namespace PK::App
             desc.radius = 1000.0f;
             desc.sourceRadius = 0.1f;
             desc.castShadow = true;
+            desc.useIESCandelas = false;
             EntityFactory<EntityLight>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
         }
 

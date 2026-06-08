@@ -9,14 +9,15 @@ namespace PK::App
     struct EntityLightSphere : EntityFactory<EntityLightSphere>
     {
         AssetDatabase* assetDatabase;
-        LightType type;
-        IESProfileRef iesProfile;
+        IESProfileRef IESProfile;
         float3 position;
         float3 rotation;
         color color;
         float angle;
         float radius;
         float sourceRadius;
+        LightType type;
+        bool useIESCandelas;
         bool castShadow;
     };
 }

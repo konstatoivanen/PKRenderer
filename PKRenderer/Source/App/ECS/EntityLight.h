@@ -18,14 +18,15 @@ namespace PK::App
 
     struct EntityLight : EntityFactory<EntityLight>
     {
-        LightType type;
-        IESProfileRef iesProfile;
+        IESProfileRef IESProfile;
         float3 position;
         float3 rotation;
         color color;
         float angle;
         float radius;
         float sourceRadius;
+        LightType type;
+        bool useIESCandelas;
         bool castShadow;
     };
 

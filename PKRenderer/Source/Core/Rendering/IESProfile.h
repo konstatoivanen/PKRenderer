@@ -46,7 +46,8 @@ namespace PK
         constexpr float GetLumens() const { return m_lumens; }
         constexpr float GetCandelaMax() const { return m_candelaMax; }
         constexpr float GetCandelaAverage() const { return m_candelaAverage; }
-    
+        color PreprocessColor(const color& input, bool applyProfileCandelas) const;
+
     private:
         IESProfileAtlas* m_parent = nullptr;
         uint32_t m_index = 0u;

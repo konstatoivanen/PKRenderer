@@ -27,7 +27,7 @@ namespace PK::math
         return vector<T,4>(abs(q.z + (q.w - q.y) / (static_cast<T>(6.0) * d + e)), d / (q.x + e), q.x, c.a);
     }
 
-    template<typename T> vector<T,4> hsvToRgb(float3 c)
+    template<typename T> vector<T,4> hsvToRgb(const vector<T,3>& c)
     {
         const auto k = vector<T,4>(static_cast<T>(1.0), static_cast<T>(2.0 / 3.0), static_cast<T>(1.0 / 3.0), static_cast<T>(3.0));
         const auto p = abs(frac(c.xxx + k.xyz) * static_cast<T>(6.0) - k.www);

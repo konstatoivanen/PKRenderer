@@ -33,8 +33,9 @@ namespace PK
         implementer->radius = radius;
         implementer->sourceRadius = desc.sourceRadius;
         implementer->angle = desc.angle;
-        implementer->iesProfile = desc.iesProfile;
         implementer->type = desc.type;
+        implementer->IESProfile = desc.IESProfile;
+        implementer->useIESCandelas = desc.useIESCandelas;
         implementer->flags = App::ScenePrimitiveFlags::Light;
         implementer->flags = desc.castShadow ? implementer->flags | App::ScenePrimitiveFlags::CastShadows : implementer->flags;
         implementer->flags = desc.type == App::LightType::Directional ? implementer->flags | App::ScenePrimitiveFlags::NeverCull : implementer->flags;

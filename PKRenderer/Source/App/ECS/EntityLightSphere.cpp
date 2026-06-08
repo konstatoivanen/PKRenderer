@@ -15,14 +15,15 @@ namespace PK
     EGID EntityFactory<App::EntityLightSphere>::Create(EntityDatabase* entityDb, EGID egid, const App::EntityLightSphere& desc)
     {
         App::EntityLight descLight;
-        descLight.type = desc.type;
-        descLight.iesProfile = desc.iesProfile;
+        descLight.IESProfile = desc.IESProfile;
         descLight.position = desc.position;
         descLight.rotation = desc.rotation;
         descLight.color = desc.color;
         descLight.angle = desc.angle;
         descLight.radius = desc.radius;
         descLight.sourceRadius = desc.sourceRadius;
+        descLight.type = desc.type;
+        descLight.useIESCandelas = desc.useIESCandelas;
         descLight.castShadow = desc.castShadow;
         auto lightEgid = EntityFactory<App::EntityLight>::Create(entityDb, egid, descLight);
 

@@ -7,6 +7,7 @@ namespace PK::App
 {
     struct ComponentLight
     {
+        IESProfileRef IESProfile = nullptr;
         color color = PK_COLOR_WHITE;
         float sourceRadius = 0.1f;
         float nearClip = 0.1f;
@@ -15,7 +16,7 @@ namespace PK::App
         float angle = 45.0f;
         float angleFade = 0.01f;
         LightType type = LightType::Point;
-        IESProfileRef iesProfile = nullptr;
+        bool useIESCandelas = false;
         virtual ~ComponentLight() = default;
     };
 }
