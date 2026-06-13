@@ -500,6 +500,17 @@ namespace PK
     }
 
 
+    void VulkanCommandBuffer::InvalidateTexture(RHITexture* texture)
+    {
+        PK_DEBUG_FATAL_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture invalidation is only supported for sampled | upload | readonly textures!");
+        auto vkTexture = static_cast<VulkanTexture*>(texture);
+        auto layout = vkTexture->GetImageLayout();
+        auto vkImage = texture->GetNativeHandle<VkImage>();
+        auto resourceRange = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS };
+        TransitionImageLayout(vkImage, VK_IMAGE_LAYOUT_UNDEFINED, layout, resourceRange);
+    }
+
+
     void VulkanCommandBuffer::BeginDebugScope(const char* name, const color& color)
     {
         if (vkCmdBeginDebugUtilsLabelEXT)

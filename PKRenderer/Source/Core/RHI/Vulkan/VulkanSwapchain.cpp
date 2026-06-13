@@ -242,6 +242,7 @@ namespace PK
 
         VkSwapchainCreateInfoKHR swapchainCreateInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
         swapchainCreateInfo.pNext = &presentScalingInfo;
+        swapchainCreateInfo.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT;
         swapchainCreateInfo.surface = m_surface;
         swapchainCreateInfo.minImageCount = m_imageCount;
         swapchainCreateInfo.imageFormat = m_format.format;

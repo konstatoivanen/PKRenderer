@@ -173,7 +173,7 @@ namespace PK
 
         virtual void Clear(RHIBuffer* dst, size_t offset, size_t size, uint32_t value) = 0;
         virtual void Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value) = 0;
-
+        
         virtual void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, const void* data) = 0;
         virtual void CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size) = 0;
         virtual void* BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size) = 0;
@@ -181,6 +181,8 @@ namespace PK
 
         virtual void CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount) = 0;
         virtual void CopyToTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount) = 0;
+        
+        virtual void InvalidateTexture(RHITexture* texture) = 0;
 
         virtual void BeginDebugScope(const char* name, const color& color) = 0;
         virtual void EndDebugScope() = 0;

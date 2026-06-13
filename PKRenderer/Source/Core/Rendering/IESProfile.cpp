@@ -29,10 +29,13 @@ namespace PK
             desc.sampler.filterMin = FilterMode::Bilinear;
             desc.sampler.filterMag = FilterMode::Bilinear;
             auto newTexture = RHI::CreateTexture(desc, "IESProfile.Atlas");
+            auto cmd = RHI::GetCommandBuffer(QueueType::Transfer);
+
+            // Mark entire resource as readable 
+            cmd->InvalidateTexture(newTexture.get());
 
             if (m_texture != nullptr)
             {
-                auto cmd = RHI::GetCommandBuffer(QueueType::Transfer);
                 cmd->Blit(m_texture.get(), newTexture.get(), {}, {}, FilterMode::Point);
             }
 
@@ -81,11 +84,8 @@ namespace PK
     }
 
     RHITexture* IESProfileAtlas::GetRHI() { return m_texture.get(); }
-    
     const RHITexture* IESProfileAtlas::GetRHI() const { return m_texture.get(); }
-    
     IESProfileAtlas::operator RHITexture* () { return m_texture.get(); }
-
     IESProfileAtlas::operator const RHITexture* () const { return m_texture.get(); }
     
     color IESProfile::PreprocessColor(const color& input, bool applyProfileCandelas) const

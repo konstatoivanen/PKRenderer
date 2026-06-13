@@ -54,6 +54,8 @@ namespace PK
         void CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount) final;
         void CopyToTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount) final;
 
+        void InvalidateTexture(RHITexture* texture) final;
+
         void BeginDebugScope(const char* name, const color& color) final;
         void EndDebugScope() final;
 

@@ -669,6 +669,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Utilities\Ref.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeCVariablesYaml.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeFixedString.cpp" />
+    <ClCompile Include="Source\Core\Yaml\SerializeMaterial.cpp" />
+    <ClCompile Include="Source\Core\Yaml\SerializeMesh.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeRHIStructs.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeWindowDescriptor.cpp" />
     <ClCompile Include="ThirdParty\mikktspace\mikktspace.c">
