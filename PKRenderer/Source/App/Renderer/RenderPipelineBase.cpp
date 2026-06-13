@@ -104,7 +104,7 @@ namespace PK::App
         {
             TextureDescriptor descr{};
             descr.type = TextureType::Texture2D;
-            descr.format = TextureFormat::RGBA16F;
+            descr.format = TextureFormat::RGBA16_Float;
             descr.sampler.filterMin = FilterMode::Bilinear;
             descr.sampler.filterMag = FilterMode::Bilinear;
             descr.sampler.wrap[0] = WrapMode::Clamp;

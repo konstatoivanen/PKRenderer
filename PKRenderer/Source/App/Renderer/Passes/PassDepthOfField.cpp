@@ -61,8 +61,8 @@ namespace PK::App
         {
             TextureDescriptor descriptor{};
             descriptor.type = TextureType::Texture2DArray;
-            descriptor.format = TextureFormat::RGB9E5;
-            descriptor.formatAlias = TextureFormat::R32UI;
+            descriptor.format = TextureFormat::RGB9E5_Float;
+            descriptor.formatAlias = TextureFormat::R32_Uint;
             descriptor.resolution = quarterres;
             descriptor.layers = 3;
             descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
@@ -70,7 +70,7 @@ namespace PK::App
             descriptor.sampler.filterMag = FilterMode::Bilinear;
             RHI::ValidateTexture(resources->colorTarget, descriptor, "DepthOfField.Target.Color");
 
-            descriptor.format = TextureFormat::R16F;
+            descriptor.format = TextureFormat::R16_Float;
             descriptor.formatAlias = TextureFormat::Invalid;
             descriptor.layers = 2;
             descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;

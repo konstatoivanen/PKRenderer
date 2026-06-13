@@ -44,8 +44,8 @@ namespace PK::App
         resolution.y *= 2;
 
         TextureDescriptor descriptor{};
-        descriptor.format = TextureFormat::RGB9E5;
-        descriptor.formatAlias = TextureFormat::R32UI;
+        descriptor.format = TextureFormat::RGB9E5_Float;
+        descriptor.formatAlias = TextureFormat::R32_Uint;
         descriptor.resolution = resolution;
         descriptor.layers = 2;
         descriptor.sampler.filterMin = FilterMode::Bilinear;

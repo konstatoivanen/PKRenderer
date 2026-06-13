@@ -62,7 +62,7 @@ namespace PK
         descriptor.resolution = { font->atlasResolution[0], font->atlasResolution[1], 1 };
         descriptor.layers = 1u;
         descriptor.levels = 1u;
-        descriptor.format = TextureFormat::RGBA8;
+        descriptor.format = PKAssets::PK_FONT_FORMAT;
         descriptor.type = TextureType::Texture2D;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;

@@ -169,15 +169,15 @@ namespace PK::App
             auto view = context->views[i];
         
             GBuffersFullDescriptor desc;
-            desc.current[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::RTColorSample | TextureUsage::Storage, false };
-            desc.current[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::RTColorSample, true };
-            desc.current[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::RTColorSample, true };
-            desc.current[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample, true };
+            desc.current[GBuffers::Color] = { TextureFormat::RGBA16_Float, TextureUsage::RTColorSample | TextureUsage::Storage, false };
+            desc.current[GBuffers::Normals] = { TextureFormat::RGB10A2_Unorm, TextureUsage::RTColorSample, true };
+            desc.current[GBuffers::DepthBiased] = { TextureFormat::R32_Float, TextureUsage::RTColorSample, true };
+            desc.current[GBuffers::Depth] = { TextureFormat::Depth32_Float, TextureUsage::RTDepthSample, true };
 
-            desc.previous[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::Default | TextureUsage::Storage, false };
-            desc.previous[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::RTColorSample, true };
-            desc.previous[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::RTColorSample, true };
-            desc.previous[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample, true };
+            desc.previous[GBuffers::Color] = { TextureFormat::RGBA16_Float, TextureUsage::Default | TextureUsage::Storage, false };
+            desc.previous[GBuffers::Normals] = { TextureFormat::RGB10A2_Unorm, TextureUsage::RTColorSample, true };
+            desc.previous[GBuffers::DepthBiased] = { TextureFormat::R32_Float, TextureUsage::RTColorSample, true };
+            desc.previous[GBuffers::Depth] = { TextureFormat::Depth32_Float, TextureUsage::RTDepthSample, true };
             
             ValidateViewGBuffers(view, desc);
             BeginWriteViewConstantBuffer(view, context->frameArena, m_constantsLayout);

@@ -33,7 +33,7 @@ namespace PK::App
 
         TextureDescriptor descr{};
         descr.type = TextureType::Texture3D;
-        descr.format = TextureFormat::RGBA16F;
+        descr.format = TextureFormat::RGBA16_Float;
         descr.sampler.filterMin = FilterMode::Trilinear;
         descr.sampler.filterMag = FilterMode::Trilinear;
         descr.sampler.wrap[0] = WrapMode::Border;
@@ -45,7 +45,7 @@ namespace PK::App
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_voxels = RHI::CreateTexture(descr, "GI.VoxelVolume");
 
-        descr.format = TextureFormat::R8UI;
+        descr.format = TextureFormat::R8_Uint;
         descr.sampler.borderColor = BorderColor::IntClear;
         descr.levels = 1u;
         m_voxelMask = RHI::CreateTexture(descr, "GI.VoxelVolumeMask");
@@ -106,7 +106,7 @@ namespace PK::App
         resources->hasResisedTargets = false;
         {
             TextureDescriptor descr{};
-            descr.format = TextureFormat::RGBA32UI;
+            descr.format = TextureFormat::RGBA32_Uint;
             descr.usage = TextureUsage::Sample | TextureUsage::Storage;
             descr.type = TextureType::Texture2DArray;
             descr.resolution = resolution;
@@ -118,27 +118,27 @@ namespace PK::App
             descr.sampler.wrap[2] = WrapMode::Clamp;
             resources->hasResisedTargets |= RHI::ValidateTexture(resources->packedGIDiff, descr, "GI.PackedGI.Diff");
 
-            descr.format = TextureFormat::RG32UI;
+            descr.format = TextureFormat::RG32_Uint;
             resources->hasResisedTargets |= RHI::ValidateTexture(resources->packedGISpec, descr, "GI.PackedGI.Spec");
 
             descr.type = TextureType::Texture2D;
             descr.layers = 1u;
             descr.levels = 1u;
             descr.usage = TextureUsage::Storage;
-            descr.format = TextureFormat::RG32UI;
+            descr.format = TextureFormat::RG32_Uint;
             descr.resolution = GetCheckerboardResolution(descr.resolution, m_settings.checkerboardTrace);
             resources->hasResisedTargets |= RHI::ValidateTexture(resources->rayhits, descr, "GI.RayHits");
 
             descr.type = TextureType::Texture2DArray;
             descr.layers = 2;
-            descr.format = TextureFormat::RGBA32UI;
+            descr.format = TextureFormat::RGBA32_Uint;
             resources->hasResisedTargets |= RHI::ValidateTexture(resources->reservoirs0, descr, "GI.Reservoirs0");
-            descr.format = TextureFormat::RG32UI;
+            descr.format = TextureFormat::RG32_Uint;
             resources->hasResisedTargets |= RHI::ValidateTexture(resources->reservoirs1, descr, "GI.Reservoirs1");
 
             descr.type = TextureType::Texture2D;
             descr.layers = 1;
-            descr.format = TextureFormat::RGBA32UI;
+            descr.format = TextureFormat::RGBA32_Uint;
             descr.usage = TextureUsage::Storage | TextureUsage::Sample;
             descr.resolution = resolution;
             resources->hasResisedTargets |= RHI::ValidateTexture(resources->resolvedGI, descr, "GI.Resolved.DiffSpec");

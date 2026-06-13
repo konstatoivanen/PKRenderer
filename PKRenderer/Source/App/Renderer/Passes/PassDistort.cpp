@@ -68,8 +68,8 @@ namespace PK::App
             TextureDescriptor descriptor{};
             descriptor.type = TextureType::Texture2D;
             descriptor.usage = TextureUsage::DefaultStorage;
-            descriptor.format = TextureFormat::RGB9E5;
-            descriptor.formatAlias = TextureFormat::R32UI;
+            descriptor.format = TextureFormat::RGB9E5_Float;
+            descriptor.formatAlias = TextureFormat::R32_Uint;
             descriptor.layers = 1;
             descriptor.levels = 1;
             descriptor.resolution = resolution;

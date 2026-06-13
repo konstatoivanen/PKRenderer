@@ -17,7 +17,7 @@ namespace PK::App
         m_computeFilmGrain = assetDatabase->Find<ShaderAsset>("CS_FilmGrain").get();
 
         TextureDescriptor descriptor{};
-        descriptor.format = TextureFormat::RGBA8;
+        descriptor.format = TextureFormat::RGBA8_Unorm;
         descriptor.resolution.x = 256;
         descriptor.resolution.y = 256;
         descriptor.sampler.filterMin = FilterMode::Bilinear;

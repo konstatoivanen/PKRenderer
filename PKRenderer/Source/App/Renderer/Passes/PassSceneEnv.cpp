@@ -79,8 +79,8 @@ namespace PK::App
             texture->SetSampler(sampler);
 
             auto descriptor = texture->GetDescriptor();
-            descriptor.format = TextureFormat::RGB9E5;
-            descriptor.formatAlias = TextureFormat::R32UI;
+            descriptor.format = TextureFormat::RGB9E5_Float;
+            descriptor.formatAlias = TextureFormat::R32_Uint;
             descriptor.usage = TextureUsage::DefaultStorage;
             RHI::ValidateTexture(resources->sceneEnvIBL, descriptor, "Scene.Env.Texture");
             RHI::SetTexture(hash->pk_SceneEnv, resources->sceneEnvIBL.get());

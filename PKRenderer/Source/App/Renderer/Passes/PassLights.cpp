@@ -113,7 +113,7 @@ namespace PK::App
         m_depthTargetCube = RHI::CreateTexture(depthDesc, "Lights.DepthTarget.Cube");
 
         depthDesc.usage = TextureUsage::RTColorSample;
-        depthDesc.format = TextureFormat::R32F;
+        depthDesc.format = TextureFormat::R32_Float;
         m_shadowTargetCube = RHI::CreateTexture(depthDesc, "Lights.ShadowTarget.Cube");
 
         depthDesc.type = TextureType::Texture2DArray;
@@ -125,7 +125,7 @@ namespace PK::App
 
         TextureDescriptor atlasDesc;
         atlasDesc.type = TextureType::Texture2DArray;
-        atlasDesc.format = TextureFormat::R32F;
+        atlasDesc.format = TextureFormat::R32_Float;
         atlasDesc.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
         atlasDesc.layers = ShadowCascadeCount * 2; // initial size assume 1 active directional light.
         atlasDesc.resolution = { m_shadowmapSize.Value, m_shadowmapSize.Value, 1u };
@@ -405,7 +405,7 @@ namespace PK::App
         {
             TextureDescriptor screenSpaceDesc;
             screenSpaceDesc.type = TextureType::Texture2D;
-            screenSpaceDesc.format = TextureFormat::R8;
+            screenSpaceDesc.format = TextureFormat::R8_Unorm;
             screenSpaceDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
             screenSpaceDesc.layers = 1;
             screenSpaceDesc.resolution = resolution;
@@ -472,7 +472,7 @@ namespace PK::App
 
         TextureDescriptor imageDescriptor;
         imageDescriptor.type = TextureType::Texture3D;
-        imageDescriptor.format = TextureFormat::R32UI;
+        imageDescriptor.format = TextureFormat::R32_Uint;
         imageDescriptor.usage = TextureUsage::Storage | TextureUsage::Concurrent;
         imageDescriptor.resolution = resolution;
         imageDescriptor.sampler.filterMin = FilterMode::Point;

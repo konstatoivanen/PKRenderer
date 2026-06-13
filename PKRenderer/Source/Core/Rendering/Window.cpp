@@ -51,7 +51,7 @@ namespace PK
         SwapchainDescriptor swapchainDescriptor{};
         swapchainDescriptor.desiredResolution = descriptor.size;
         swapchainDescriptor.desiredImageCount = descriptor.swapchainImageCount;
-        swapchainDescriptor.desiredFormat = TextureFormat::BGRA8;
+        swapchainDescriptor.desiredFormat = TextureFormat::BGRA8_Unorm;
         swapchainDescriptor.desiredColorSpace = ColorSpace::sRGB_NonLinear;
         swapchainDescriptor.desiredVSyncMode = descriptor.vsync;
         swapchainDescriptor.nativeWindowHandle = m_native->GetNativeWindowHandle();

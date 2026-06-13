@@ -501,7 +501,7 @@ namespace PK
     {
         uint2 desiredResolution = PK_UINT2_ZERO;
         uint desiredImageCount = 4u;
-        TextureFormat desiredFormat = TextureFormat::BGRA8;
+        TextureFormat desiredFormat = TextureFormat::BGRA8_Unorm;
         ColorSpace desiredColorSpace = ColorSpace::sRGB_NonLinear;
         VSyncMode desiredVSyncMode = VSyncMode::Fifo;
         const void* nativeMonitorHandle = nullptr;
@@ -544,7 +544,7 @@ namespace PK
 
     struct TextureDescriptor
     {
-        TextureFormat format = TextureFormat::RGBA8;
+        TextureFormat format = TextureFormat::RGBA8_Unorm;
         TextureFormat formatAlias = TextureFormat::Invalid;
         TextureUsage usage = TextureUsage::Default;
         TextureType type = TextureType::Texture2D;

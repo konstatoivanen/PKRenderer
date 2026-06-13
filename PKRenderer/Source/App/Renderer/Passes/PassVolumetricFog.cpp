@@ -58,7 +58,7 @@ namespace PK::App
         {
             TextureDescriptor descriptor{};
             descriptor.type = TextureType::Texture3D;
-            descriptor.format = TextureFormat::RGBA16F;
+            descriptor.format = TextureFormat::RGBA16_Float;
             descriptor.sampler.filterMin = FilterMode::Bilinear;
             descriptor.sampler.filterMag = FilterMode::Bilinear;
             descriptor.sampler.wrap[0] = WrapMode::Clamp;
@@ -68,12 +68,12 @@ namespace PK::App
             descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
             hasResized |= RHI::ValidateTexture(resources->volumeScatter, descriptor, "Fog.ScatterVolume");
 
-            descriptor.format = TextureFormat::RGB9E5;
-            descriptor.formatAlias = TextureFormat::R32UI;
+            descriptor.format = TextureFormat::RGB9E5_Float;
+            descriptor.formatAlias = TextureFormat::R32_Uint;
             hasResized |= RHI::ValidateTexture(resources->volumeInject[0], descriptor, "Fog.InjectVolume0");
             hasResized |= RHI::ValidateTexture(resources->volumeInject[1], descriptor, "Fog.InjectVolume1");
 
-            descriptor.format = TextureFormat::R16F;
+            descriptor.format = TextureFormat::R16_Float;
             descriptor.formatAlias = TextureFormat::Invalid;
             descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
             hasResized |= RHI::ValidateTexture(resources->volumeDensity[0], descriptor, "Fog.DensityVolume0");
