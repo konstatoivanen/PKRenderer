@@ -16,6 +16,16 @@ namespace PK
         properties(properties),
         globalResources(PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE, PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT)
     {
+        // Disable potential random overlay crap.
+        #if PK_PLATFORM_WINDOWS
+        _putenv_s("VK_LOADER_LAYERS_DISABLE",
+            "VK_LAYER_VALVE_steam_overlay,"
+            "VK_LAYER_VALVE_steam_fossilize,"
+            "VK_LAYER_ROCKSTAR_GAMES_social_club,"
+            "VK_LAYER_EOS_Overlay"
+        );
+        #endif
+
         vkHandle = Platform::LoadLibrary(PK_VK_LIBRARY_NAME);
 
         VulkanAssertAPIVersion(properties.apiVersionMajor, properties.apiVersionMinor);
@@ -328,23 +338,23 @@ namespace PK
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
-            PK_FATAL_ERROR("Vulkan Validation Error: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+            PK_FATAL_ERROR("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
-            PK_LOG_WARNING("Vulkan Validation Warning: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+            PK_LOG_WARNING("VK Warning: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
         {
-            PK_LOG_INFO("Vulkan Validation Info: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+            PK_LOG_INFO("VK Info: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 
-        PK_LOG_RHI("Vulkan Validation Verbose: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+        PK_LOG_RHI("VK Verbose: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
         return VK_FALSE;
     }
 }
