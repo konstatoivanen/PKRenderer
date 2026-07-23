@@ -139,7 +139,7 @@ namespace PK
 
         void Delete(const TMask& mask)
         {
-            for (auto& bit : m_mask)
+            for (auto& bit : mask)
             {
                 if (bit)
                 {

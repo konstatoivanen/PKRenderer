@@ -25,7 +25,7 @@ namespace PK
     private: \
         typedef TView meta_TView; \
         struct meta_FirstId {}; \
-        template<typename TImpl> inline static void* meta_AssignPrev(meta_FirstId, [[maybe_unused]] meta_TView* view, TImpl* impl) \
+        template<typename TImpl> inline static void* meta_AssignPrev(meta_FirstId, [[maybe_unused]] meta_TView* view, [[maybe_unused]] TImpl* impl) \
         { \
             return nullptr; \
         } \

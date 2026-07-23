@@ -208,7 +208,7 @@ namespace PK
 
     namespace String
     {
-        template<typename T> inline T To(const char* str) { return T(); }
+        template<typename T> inline T To([[maybe_unused]] const char* str) { return T(); }
         template<> inline uint8_t To(const char* str) { return (uint8_t)atoi(str); }
         template<> inline int8_t To(const char* str) { return (int8_t)atoi(str); }
         template<> inline uint16_t To(const char* str) { return (uint16_t)atoi(str); }
@@ -220,7 +220,7 @@ namespace PK
         template<> inline float To(const char* str) { return (float)atof(str); }
         template<> inline bool To(const char* str) { return strcmp(str, "True") == 0 ? true : (strcmp(str, "False") == 0 ? false : (bool)atoi(str)); }
 
-        template<typename T> inline FixedString32 From(const T& value) { return FixedString32("unsupported"); }
+        template<typename T> inline FixedString32 From([[maybe_unused]] const T& value) { return FixedString32("unsupported"); }
         template<> inline FixedString32 From(const uint8_t& value) { return FixedString32("%u", value); }
         template<> inline FixedString32 From(const int8_t& value) { return FixedString32("%i", value); }
         template<> inline FixedString32 From(const uint16_t& value) { return FixedString32("%u", value); }

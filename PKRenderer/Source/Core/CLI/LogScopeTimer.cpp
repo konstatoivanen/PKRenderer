@@ -45,7 +45,7 @@ namespace PK
     {
         auto delta = (TimeHelpers::GetSteadySeconds() - start);
         state->elapsed += delta;
-        state->ticks++;
+        state->ticks = state->ticks + 1ull;
         delta = (state->elapsed / state->ticks) * 1000.0;
         StaticLog::Log(LogSeverity::PK_LOG_LVL_INFO, LogColor::PK_LOG_COLOR_INFO, "ScopeTimer Avg: %.*s, %4.4f ms, %ull ticks", (int32_t)length, name, delta, state->ticks);
     }
