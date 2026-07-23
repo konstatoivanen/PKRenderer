@@ -50,6 +50,7 @@ namespace PK
         Mask(size_t capacity) noexcept : Mask() { Reserve(capacity, false); }
         Mask(Mask&& other) noexcept : Mask() { Move(PK::Forward<Mask>(other)); }
         Mask(const Mask& other) noexcept : Mask() { Copy(other); }
+        ~Mask() { TData::Free(m_data); }
 
         constexpr bool operator[](size_t i) const { return GetAt(i); }
         Reference operator[](size_t i) { return Reference(*this, i); }

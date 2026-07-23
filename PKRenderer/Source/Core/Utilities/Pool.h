@@ -2,6 +2,11 @@
 #include "Mask.h"
 #include "Ref.h"
 
+// MSVC adds an extra 16 bytes of padding to the members here for some reason.
+// Even though both members are size aligned to 16 bytes... ????
+#pragma warning( push )
+#pragma warning( disable : 4324 )
+
 namespace PK
 {
     template<typename T>
@@ -234,3 +239,5 @@ namespace PK
     template<typename T>
     using HeapRefPool = RefPool<T, HeapPool<PooledSharedObject<T>>>;
 }
+
+#pragma warning( pop )

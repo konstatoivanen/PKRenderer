@@ -13,6 +13,7 @@ namespace PK::App
 
         UUID128 uuid;
         FixedString32 name;
+        uint32_t typeIndex;
         FuncDeserialize deserialize;
         FuncSerialize serialize;
 

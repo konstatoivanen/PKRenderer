@@ -139,7 +139,7 @@ namespace PK::App
 
                 indexView[i] = PKAssets::PackPKDrawInfo
                 (
-                    (uint32_t)info->material + (uint32_t)m_shaders[info->shader].materialFirstIndex,
+                    (uint16_t)m_shaders[info->shader].materialFirstIndex + info->material,
                     m_transforms[info->transform]->minUniformScale,
                     info->transform, 
                     info->submesh, 
@@ -199,10 +199,10 @@ namespace PK::App
         PK_FATAL_ASSERT(mesh->GetAllocator() == &m_meshAllocator, "Cannot submit draws for meshes not registered in the scene mesh of this geometry batcher!");
 
         auto info = m_drawArena.Allocate<DrawInfo>(1u);
-        info->shader = m_shaders.Add({ shader, 0ull, 0ull });
+        info->shader = (uint16_t)m_shaders.Add({ shader, 0ull, 0ull });
         info->material = 0u;
-        info->transform = m_transforms.Add(transform);
-        info->submesh = mesh->GetGlobalSubmeshIndex(submesh);
+        info->transform = (uint16_t)m_transforms.Add(transform);
+        info->submesh = (uint16_t)mesh->GetGlobalSubmeshIndex(submesh);
         info->userdata = userdata;
         info->group = m_groupIndex - 1;
         info->sortDepth = sortDepth;
@@ -223,7 +223,7 @@ namespace PK::App
                 m_materials[materialIndex].shaderIndex = info->shader;
             }
 
-            info->material = m_materials[materialIndex].batchIndex;
+            info->material = (uint16_t)m_materials[materialIndex].batchIndex;
         }
 
         auto meshletCount = mesh->GetSubmesh(submesh).meshletCount;

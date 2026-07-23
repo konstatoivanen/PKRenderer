@@ -57,8 +57,8 @@ namespace PK::App
             descriptor.usage = TextureUsage::DefaultStorage;
             descriptor.format = TextureFormat::RGB9E5_Float;
             descriptor.formatAlias = TextureFormat::R32_Uint;
-            descriptor.layers = 1;
-            descriptor.levels = levelCount;
+            descriptor.layers = 1u;
+            descriptor.levels = (uint8_t)levelCount;
             descriptor.resolution = resolution;
             descriptor.sampler.filterMin = FilterMode::Trilinear;
             descriptor.sampler.filterMag = FilterMode::Trilinear;

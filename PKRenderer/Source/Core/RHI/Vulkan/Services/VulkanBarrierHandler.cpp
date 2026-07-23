@@ -210,7 +210,7 @@ namespace PK
                 // As of now we cant anticipate if future use requires a release barrier. 
                 // This works on NVIDIA as they probably dont care about this. might break on AMD.
                 //@TODO FIX THIS Hack to ignore queue families for now.
-                copy.queueFamily = copy.queueFamily != 0xFFFF ? m_queueFamily : 0xFFFF;
+                copy.queueFamily = copy.queueFamily != 0xFFFFu ? m_queueFamily : 0xFFFFu;
                 copy.access = 0u;
                 copy.stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 

@@ -124,9 +124,9 @@ namespace PK
         const auto handleAlignment = deviceProperties.rayTracing.shaderGroupHandleAlignment;
         const auto tableAlignment = deviceProperties.rayTracing.shaderGroupBaseAlignment;
 
-        info.handleSize = handleSize;
-        info.handleSizeAligned = math::align(handleSize, handleAlignment);
-        info.tableAlignment = tableAlignment;
+        info.handleSize = (uint16_t)handleSize;
+        info.handleSizeAligned = (uint16_t)math::align(handleSize, handleAlignment);
+        info.tableAlignment = (uint16_t)tableAlignment;
         info.totalTableSize = 0u;
 
         RayTracingShaderGroup currentGroup = RayTracingShaderGroup::MaxCount;

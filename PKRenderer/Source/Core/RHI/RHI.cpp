@@ -239,7 +239,7 @@ namespace PK
 
         auto descriptor = inoutTexture->GetDescriptor();
         descriptor.resolution = resolution;
-        descriptor.levels = levels;
+        descriptor.levels = (uint8_t)levels;
         inoutTexture = RHI::CreateTexture(descriptor, inoutTexture->GetDebugName());
         return true;
     }
@@ -255,8 +255,8 @@ namespace PK
         }
 
         auto descriptor = inoutTexture->GetDescriptor();
-        descriptor.levels = levels;
-        descriptor.layers = layers;
+        descriptor.levels = (uint8_t)levels;
+        descriptor.layers = (uint16_t)layers;
         inoutTexture = RHI::CreateTexture(descriptor, inoutTexture->GetDebugName());
         return true;
     }

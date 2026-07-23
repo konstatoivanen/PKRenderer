@@ -317,10 +317,10 @@ namespace PK
                 if (valueIndex != INVALID_INDEX)
                 {
                     Base::m_collisions++;
-                    Base::m_nodes[valueIndex].next = index;
+                    Base::m_nodes[valueIndex].next = static_cast<Index>(index);
                 }
 
-                SetValueIndexInBuckets(bucketIndex, index);
+                SetValueIndexInBuckets(bucketIndex, static_cast<Index>(index));
             }
             else // Dead code elimination should remove this for fixed versions.
             {
@@ -330,14 +330,14 @@ namespace PK
                 {
                     const auto existingBucketIndex = GetBucketIndex(Hash(Base::m_values[newValueIndex]));
                     const auto existingValueIndex = GetValueIndexFromBuckets(existingBucketIndex);
-                    SetValueIndexInBuckets(existingBucketIndex, newValueIndex);
+                    SetValueIndexInBuckets(existingBucketIndex, static_cast<Index>(newValueIndex));
 
                     if (existingValueIndex != INVALID_INDEX)
                     {
                         ++Base::m_collisions;
                         Base::m_nodes[newValueIndex].previous = existingValueIndex;
                         Base::m_nodes[newValueIndex].next = INVALID_INDEX;
-                        Base::m_nodes[existingValueIndex].next = newValueIndex;
+                        Base::m_nodes[existingValueIndex].next = static_cast<Index>(newValueIndex);
                     }
                     else
                     {
@@ -557,10 +557,10 @@ namespace PK
                 if (valueIndex != INVALID_INDEX)
                 {
                     Base::m_collisions++;
-                    Base::m_nodes[valueIndex].next = index;
+                    Base::m_nodes[valueIndex].next = static_cast<Index>(index);
                 }
 
-                SetValueIndexInBuckets(bucketIndex, index);
+                SetValueIndexInBuckets(bucketIndex, static_cast<Index>(index));
             }
             else // Dead code elimination should remove this for fixed versions.
             {
@@ -570,14 +570,14 @@ namespace PK
                 {
                     const auto existingBucketIndex = GetBucketIndex(Base::m_nodes[newValueIndex].hashcode);
                     const auto existingValueIndex = GetValueIndexFromBuckets(existingBucketIndex);
-                    SetValueIndexInBuckets(existingBucketIndex, newValueIndex);
+                    SetValueIndexInBuckets(existingBucketIndex, static_cast<Index>(newValueIndex));
 
                     if (existingValueIndex != INVALID_INDEX)
                     {
                         Base::m_collisions++;
                         Base::m_nodes[newValueIndex].previous = existingValueIndex;
                         Base::m_nodes[newValueIndex].next = INVALID_INDEX;
-                        Base::m_nodes[existingValueIndex].next = newValueIndex;
+                        Base::m_nodes[existingValueIndex].next = static_cast<Index>(newValueIndex);
                     }
                     else
                     {
@@ -642,7 +642,7 @@ namespace PK
 
                 if (GetValueIndexFromBuckets(movingBucketIndex) == Base::m_count)
                 {
-                    SetValueIndexInBuckets(movingBucketIndex, index);
+                    SetValueIndexInBuckets(movingBucketIndex, static_cast<Index>(index));
                 }
 
                 const auto next = Base::m_nodes[Base::m_count].next;
@@ -650,12 +650,12 @@ namespace PK
 
                 if (next != INVALID_INDEX)
                 {
-                    Base::m_nodes[next].previous = index;
+                    Base::m_nodes[next].previous = static_cast<Index>(index);
                 }
 
                 if (previous != INVALID_INDEX)
                 {
-                    Base::m_nodes[previous].next = index;
+                    Base::m_nodes[previous].next = static_cast<Index>(index);
                 }
 
                 Base::m_nodes[index] = Base::m_nodes[Base::m_count];

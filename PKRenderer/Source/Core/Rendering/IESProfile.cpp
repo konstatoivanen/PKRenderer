@@ -25,7 +25,7 @@ namespace PK
             desc.resolution = { PKAssets::PK_IES_PROFILE_WIDTH, PKAssets::PK_IES_PROFILE_HEIGHT, 1u };
             desc.levels = 1u;
             desc.samples = 1u;
-            desc.layers = capacity;
+            desc.layers = (uint16_t)capacity;
             desc.sampler.filterMin = FilterMode::Bilinear;
             desc.sampler.filterMag = FilterMode::Bilinear;
             auto newTexture = RHI::CreateTexture(desc, "IESProfile.Atlas");
@@ -63,8 +63,8 @@ namespace PK
         auto profile = PKAssets::ReadAsIESProfile(&asset);
 
         TextureDataRegion region{};
-        region.layer = static_cast<uint64_t>(index);
-        region.layers = 1ull;
+        region.layer = static_cast<uint32_t>(index);
+        region.layers = 1u;
         region.offset = PK_UINT3_ZERO;
         region.extent = m_texture->GetResolution();
 

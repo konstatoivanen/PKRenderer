@@ -245,6 +245,7 @@ namespace PK::App
                 cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                 cascadeInfo.count = ShadowCascadeCount;
                 BuildShadowCascadeMatrices(cascadeInfo, matrices);
+
                 const auto nearPlane = math::nearPlane(*matrices);
                 light.position = float3(nearPlane.xyz);
                 light.radius = nearPlane.w;
@@ -302,7 +303,14 @@ namespace PK::App
 
                         if (shader)
                         {
-                            context->batcher->SubmitMeshStaticDraw(*entity->transform, shader, nullptr, mesh, kv.submesh, userdata, info.depth);
+                            context->batcher->SubmitMeshStaticDraw(
+                                *entity->transform, 
+                                shader, 
+                                nullptr, 
+                                mesh, 
+                                (uint16_t)kv.submesh, 
+                                userdata, 
+                                info.depth);
                         }
                     }
                 }
@@ -367,6 +375,7 @@ namespace PK::App
                 auto targetDist = RenderTargetBinding(m_shadowTargetCube.get(), range0, LoadOp::Clear, StoreOp::Store, float4(PK_HALF_MAX) );
                 cmd.SetRenderTarget({ targetDepth, targetDist }, true);
                 context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
+
                 RHI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
                 RHI::SetImage(hash->pk_Image, m_shadowmaps.get(), range1);
                 cmd.Dispatch(m_computeCopyCubeShadow, 0, { m_shadowmaps->GetResolution().xy, tileCount });

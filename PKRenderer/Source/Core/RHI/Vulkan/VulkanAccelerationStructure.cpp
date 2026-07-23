@@ -291,7 +291,7 @@ namespace PK
 
                 if (buildCount)
                 {
-                    m_cmd->BuildAccelerationStructures(buildCount, buildGeometryInfos, buildStructureRangeInfoPtrs);
+                    m_cmd->BuildAccelerationStructures((uint32_t)buildCount, buildGeometryInfos, buildStructureRangeInfoPtrs);
                 }
 
                 VkMemoryBarrier memoryBarrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER };
@@ -323,7 +323,7 @@ namespace PK
             buildInfo.dstAccelerationStructure = m_structure.handle;
             buildInfo.scratchData.deviceAddress = m_scratchBuffer->deviceAddress + m_structure.scratchOffset;
             const auto* pBuildStructureRangeInfo = &m_structure.range;
-            m_cmd->BuildAccelerationStructures(1, &buildInfo, &pBuildStructureRangeInfo);
+            m_cmd->BuildAccelerationStructures(1u, &buildInfo, &pBuildStructureRangeInfo);
             m_lastBuildFenceRef = m_cmd->GetFenceRef();
         }
 

@@ -48,7 +48,7 @@ namespace PK
     {
         for (auto& element : other)
         {
-            Add(element)->stream = stream;
+            Add(element)->stream = (uint8_t)stream;
         }
 
         CalculateOffsetsAndStride();

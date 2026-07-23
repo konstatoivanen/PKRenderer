@@ -93,7 +93,7 @@ namespace PK
             if (RHIEnumConvert::IsResourceHandle(element.format))
             {
                 m_strideMaterial = math::align(m_strideMaterial, 8u);
-                element.offsetHandle = m_strideMaterial;
+                element.offsetHandle = (uint16_t)m_strideMaterial;
                 m_strideMaterial += 8ull;
             }
         }

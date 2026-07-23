@@ -70,7 +70,7 @@ namespace PK::App
                 value = 255;
             }
 
-            pixels[i] = value;
+            pixels[i] = (uint8_t)value;
         }
 
         FixedString32 filename("Screenshot0.bmp");

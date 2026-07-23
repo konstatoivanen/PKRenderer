@@ -4,6 +4,7 @@
 namespace PK
 {
     // Modify these if running into limits or resizes.
+    constexpr static const uint16_t PK_VK_QUEUE_FAMILY_IGNORED = 65535u;
 
     constexpr static const uint64_t PK_VK_FRAME_ARENA_SIZE = 16384ull;
 

@@ -209,7 +209,7 @@ namespace PK
         handle->image.layout = GetImageLayout();
         handle->image.format = m_format;
         handle->image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
-        handle->image.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
+        handle->image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
         handle->image.range = VulkanConvertRange(normalizedRange, handle->image.format);
  
         if (bindMode == TextureBindMode::SampledTexture)

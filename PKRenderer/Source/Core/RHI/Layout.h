@@ -146,8 +146,8 @@ namespace PK
 
     struct ShaderBindingTableInfo
     {
-        enum { HandleMaxSize = 64 };
-        enum { MaxHandles = 8 };
+        constexpr static const uint32_t HandleMaxSize = 64u;
+        constexpr static const uint32_t MaxHandles = 8u;
 
         uint8_t handleData[HandleMaxSize * MaxHandles];
         uint16_t byteOffsets[(uint32_t)RayTracingShaderGroup::MaxCount];

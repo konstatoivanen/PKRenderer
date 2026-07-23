@@ -281,8 +281,8 @@ namespace PK
 
     #define PK_VK_BIND_HANDLES(name, assigner, count)\
         auto handles = PK_STACK_ALLOC(const VulkanBindHandle*, count);\
-        for (auto i = 0u; i < count; ++i) handles[i] = assigner;\
-        globalResources.Set(name, handles, count)                   
+        for (auto i = 0u; i < (uint32_t)count; ++i) handles[i] = assigner;\
+        globalResources.Set(name, handles, (uint32_t)count)                   
 
     void VulkanDriver::SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanBuffer*>(buffers[i])->GetBindHandle(ranges[i]), count); }
     void VulkanDriver::SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) { globalResources.Set(name, static_cast<const VulkanBindSet*>(bufferArray)); }

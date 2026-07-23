@@ -39,8 +39,8 @@ namespace PK
     {
         SetKey key;
         key.bindings = bindings;
-        key.count = bindingCount;
-        key.poolIndex = m_poolPool.GetIndex(m_currentPool);
+        key.count = (uint16_t)bindingCount;
+        key.poolIndex = (uint16_t)m_poolPool.GetIndex(m_currentPool);
         key.stageFlags = layout->stageFlags;
 
         uint32_t index = 0u;
@@ -65,7 +65,7 @@ namespace PK
 
         FixedString128 setName({ layout->name.c_str(), ".", name });
         m_sets[index].value = AllocateDescriptorSet(layout->layout, variableSize, fence, setName.c_str());
-        m_sets[index].key.poolIndex = m_poolPool.GetIndex(m_currentPool);
+        m_sets[index].key.poolIndex = (uint16_t)m_poolPool.GetIndex(m_currentPool);
         m_sets[index].key.bindings = static_cast<DescriptorBinding*>(memcpy(m_bindingPool.NewArray(bindingCount), bindings, sizeof(DescriptorBinding) * bindingCount));
 
         m_writeArena.Clear();
@@ -80,7 +80,7 @@ namespace PK
             auto type = VulkanEnumConvert::GetDescriptorType(bind->type);
 
             write->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            write->dstArrayElement = 0;
+            write->dstArrayElement = 0u;
             write->descriptorCount = bind->count;
             write->descriptorType = type;
             write->dstBinding = i;
@@ -94,11 +94,11 @@ namespace PK
                 auto buffers = m_writeArena.Allocate<VkDescriptorBufferInfo>(bind->count);
                 write->pBufferInfo = buffers;
 
-                for (auto i = 0; i < bind->count; ++i)
+                for (auto j = 0u; j < bind->count; ++j)
                 {
-                    buffers[i].buffer = handles[i]->buffer.buffer;
-                    buffers[i].offset = handles[i]->buffer.offset;
-                    buffers[i].range = handles[i]->buffer.range;
+                    buffers[j].buffer = handles[j]->buffer.buffer;
+                    buffers[j].offset = handles[j]->buffer.offset;
+                    buffers[j].range = handles[j]->buffer.range;
                 }
                 continue;
             }
@@ -111,11 +111,11 @@ namespace PK
                 auto images = m_writeArena.Allocate<VkDescriptorImageInfo>(bind->count);
                 write->pImageInfo = images;
 
-                for (auto i = 0; i < bind->count; ++i)
+                for (auto j = 0u; j < bind->count; ++j)
                 {
-                    images[i].sampler = type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || type == VK_DESCRIPTOR_TYPE_SAMPLER ? handles[i]->image.sampler : VK_NULL_HANDLE;
-                    images[i].imageView = type != VK_DESCRIPTOR_TYPE_SAMPLER ? handles[i]->image.view : VK_NULL_HANDLE;
-                    images[i].imageLayout = type != VK_DESCRIPTOR_TYPE_SAMPLER ? handles[i]->image.layout : VK_IMAGE_LAYOUT_UNDEFINED;
+                    images[j].sampler = type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || type == VK_DESCRIPTOR_TYPE_SAMPLER ? handles[j]->image.sampler : VK_NULL_HANDLE;
+                    images[j].imageView = type != VK_DESCRIPTOR_TYPE_SAMPLER ? handles[j]->image.view : VK_NULL_HANDLE;
+                    images[j].imageLayout = type != VK_DESCRIPTOR_TYPE_SAMPLER ? handles[j]->image.layout : VK_IMAGE_LAYOUT_UNDEFINED;
                 }
                 continue;
             }
@@ -125,11 +125,11 @@ namespace PK
                 auto acclerationStructures = m_writeArena.Allocate<VkWriteDescriptorSetAccelerationStructureKHR>(bind->count);
                 write->pNext = acclerationStructures;
 
-                for (auto i = 0; i < bind->count; ++i)
+                for (auto j = 0u; j < bind->count; ++j)
                 {
-                    acclerationStructures[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-                    acclerationStructures[i].accelerationStructureCount = 1;
-                    acclerationStructures[i].pAccelerationStructures = &handles[i]->acceleration.structure;
+                    acclerationStructures[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                    acclerationStructures[j].accelerationStructureCount = 1u;
+                    acclerationStructures[j].pAccelerationStructures = &handles[j]->acceleration.structure;
                 }
                 continue;
             }

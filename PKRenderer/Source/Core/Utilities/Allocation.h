@@ -3,6 +3,14 @@
 
 namespace PK
 {
+    template<typename T, size_t N, size_t C>
+    inline constexpr size_t pk_align_inline_16() 
+    { 
+        constexpr const auto size = (N > 0ull ? sizeof(T) * N : sizeof(T*)) + C;
+        constexpr const auto aligned = ((size + 15ull) / 16ull) * 16ull;
+        return aligned - C;
+    }
+
     template<size_t size>
     struct AllocationFixed
     {
@@ -11,7 +19,7 @@ namespace PK
         template<typename T> 
         struct alignas(16) Data 
         { 
-            alignas(T) uint8_t buffer[sizeof(T) * size];
+            alignas(T) uint8_t buffer[pk_align_inline_16<T, size, 0>()];
         
             constexpr static size_t GetCount([[maybe_unused]] const Data& data) { return size; }
             constexpr static size_t GetSize([[maybe_unused]] const Data& data) { return sizeof(T) * size; }
@@ -36,7 +44,7 @@ namespace PK
         template<typename T>
         struct alignas(16) Data
         {
-            union { T* ptr; alignas(T) uint8_t inl[inline_size > 0ull ? sizeof(T) * inline_size : sizeof(T*)]; };
+            union { T* ptr; alignas(T) uint8_t inl[pk_align_inline_16<T, inline_size, 8>()]; };
             size_t size;
 
             constexpr static const size_t inline_element_count = sizeof(inl) / sizeof(T);

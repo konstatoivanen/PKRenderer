@@ -46,7 +46,7 @@ namespace PK
         auto newLayout = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags, layoutName.c_str());
         newLayout->referenceCount = 1u;
         newLayout->releaseFence.Invalidate();
-        m_setLayoutMap[index].value = m_setLayoutPool.GetIndex(newLayout);
+        m_setLayoutMap[index].value = (uint16_t)m_setLayoutPool.GetIndex(newLayout);
         return newLayout;
     }
 
@@ -69,7 +69,7 @@ namespace PK
         auto newLayout = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo, FixedString64("%s.PipelineLayout", name).c_str());
         newLayout->referenceCount = 1u;
         newLayout->releaseFence.Invalidate();
-        m_pipelineLayoutMap[index].value = m_pipelineLayoutPool.GetIndex(newLayout);
+        m_pipelineLayoutMap[index].value = (uint16_t)m_pipelineLayoutPool.GetIndex(newLayout);
         return newLayout;
     }
 

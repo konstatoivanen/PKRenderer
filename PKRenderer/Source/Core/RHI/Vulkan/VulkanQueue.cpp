@@ -288,7 +288,7 @@ namespace PK
         auto currentIndex = (int64_t)(m_currentCommandBuffer - m_commandWrappers);
         auto commandBuffer = m_commandBuffers[currentIndex];
         auto fence = m_commandFences[currentIndex];
-        m_currentCommandBuffer->BeginRecord(commandBuffer, fence, m_family, &m_renderState);
+        m_currentCommandBuffer->BeginRecord(commandBuffer, fence, (uint16_t)m_family, &m_renderState);
         return m_currentCommandBuffer;
     }
 

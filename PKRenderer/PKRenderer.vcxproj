@@ -271,6 +271,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
     <ClInclude Include="Source\Core\ECS\EntityComponentRef.h" />
     <ClInclude Include="Source\Core\ECS\EntityFactory.h" />
+    <ClInclude Include="Source\Core\ECS\IEntityImplementerBucket.h" />
     <ClInclude Include="Source\Core\Input\InputStateCollection.h" />
     <ClInclude Include="Source\Core\Input\InputDevice.h" />
     <ClInclude Include="Source\Core\Input\InputState.h" />

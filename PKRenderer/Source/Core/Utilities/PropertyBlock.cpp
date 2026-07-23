@@ -110,7 +110,7 @@ namespace PK
 
         if (!resized)
         {
-            m_properties[index].previous = valueIndex;
+            m_properties[index].previous = (int16_t)valueIndex;
             SetValueIndexInBuckets(bucketIndex, index);
         }
         else
@@ -120,7 +120,7 @@ namespace PK
                 const auto existingBucketIndex = GetBucketIndex(m_properties[newValueIndex].key);
                 const auto existingValueIndex = GetValueIndexFromBuckets(existingBucketIndex);
                 SetValueIndexInBuckets(existingBucketIndex, newValueIndex);
-                m_properties[newValueIndex].previous = existingValueIndex;
+                m_properties[newValueIndex].previous = (int16_t)existingValueIndex;
             }
         }
 

@@ -14,30 +14,8 @@ namespace PK
         ACTIVE = 1,
         FREE = 2
     };
-
-    constexpr static const uint32_t PK_ECS_IMPLEMENTER_BUCKET_SIZE = 32768u;
     
     typedef void (*EntityViewDeleter)(void*);
-
-    struct alignas(16) ImplementerBucket
-    {
-
-        uint8_t data[PK_ECS_IMPLEMENTER_BUCKET_SIZE];
-        void (*destroyAt)(ImplementerBucket* bucket, uint32_t index);
-        ImplementerBucket* previous;
-        uint64_t capacity;
-        uint64_t freeCount;
-
-        ~ImplementerBucket() 
-        { 
-            Memory::Delete(previous);
-
-            for (auto i = 0u; i < capacity; ++i)
-            {
-                destroyAt(this, i);
-            }
-        }
-    };
 
     struct ImplementerContainer
     {
@@ -85,7 +63,7 @@ namespace PK
         {
             static_assert(__is_base_of(IEntityImplementer, T), "Template argument type does not derive from IImplementer!");
 
-            const auto elementsPerBucket = PK_ECS_IMPLEMENTER_BUCKET_SIZE / sizeof(T);
+            const auto elementsPerBucket = ImplementerBucket::SIZE / sizeof(T);
             const auto containerIndex = m_implementers.AddKey(pk_base_type_index<T>());
             auto& container = m_implementers[containerIndex].value;
             auto bucket = container.bucketHead;

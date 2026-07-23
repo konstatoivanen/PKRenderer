@@ -35,9 +35,9 @@ namespace PK::App
         auto hash = HashCache::Get();
         auto resources = view->GetResource<ViewResources>();
 
-        uint16_t historyRead = m_historyLayerIndex++;
+        auto historyRead = (uint16_t)m_historyLayerIndex++;
         m_historyLayerIndex %= 2;
-        uint16_t historyWrite = m_historyLayerIndex;
+        auto historyWrite = (uint16_t)m_historyLayerIndex;
 
         auto resolution = source->GetResolution();
         resolution.x *= 2;

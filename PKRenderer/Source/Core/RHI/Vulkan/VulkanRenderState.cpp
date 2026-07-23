@@ -283,7 +283,7 @@ namespace PK
             record.access = access;
             record.bufferRange.offset = (uint32_t)handle->buffer.offset;
             record.bufferRange.size = (uint32_t)handle->buffer.range;
-            record.queueFamily = handle->isConcurrent ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+            record.queueFamily = handle->isConcurrent ? PK_VK_QUEUE_FAMILY_IGNORED : (uint16_t)handler->GetQueueFamily();
             handler->Record(handle->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
         }
     }
@@ -293,13 +293,14 @@ namespace PK
         if (handle->isTracked)
         {
             auto handler = m_services.barrierHandler;
+
             VulkanBarrierHandler::AccessRecord record{};
             record.stage = stage;
             record.access = access;
             record.imageRange = VulkanConvertRange(handle->image.range);
-            record.aspect = handle->image.range.aspectMask;
+            record.aspect = (uint16_t)handle->image.range.aspectMask;
             record.layout = overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM ? overrideLayout : handle->image.layout;
-            record.queueFamily = handle->isConcurrent ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+            record.queueFamily = handle->isConcurrent ? PK_VK_QUEUE_FAMILY_IGNORED : (uint16_t)handler->GetQueueFamily();
             handler->Record(handle->image.image, record, options);
 
             // Track alias as well so that layout stays consistent
@@ -322,9 +323,9 @@ namespace PK
         record.stage = stage;
         record.access = access;
         record.imageRange = VulkanConvertRange(handle->image.range);
-        record.aspect = handle->image.range.aspectMask;
+        record.aspect = (uint16_t)handle->image.range.aspectMask;
         record.layout = layout;
-        record.queueFamily = handle->isConcurrent ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+        record.queueFamily = handle->isConcurrent ? PK_VK_QUEUE_FAMILY_IGNORED : (uint16_t)handler->GetQueueFamily();
 
         if (handle->isTracked)
         {
@@ -543,7 +544,7 @@ namespace PK
             {
                 const auto& element = resourceLayout[index];
                 const auto access = element.writeMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
-                const auto stageFlags = VulkanEnumConvert::GetPipelineStageFlags(descriptorLayout->stageFlags);
+                const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags(descriptorLayout->stageFlags);
                 const auto isVariableSize = element.count == PK_RHI_MAX_UNBOUNDED_SIZE;
              
                 auto& binding = m_descritorState.bindings[index];
@@ -561,7 +562,7 @@ namespace PK
                     auto size = 0ull;
                     PK_FATAL_ASSERT(resources->TryGet<const VulkanBindHandle*>(element.name, &handles, &size), "Descriptor '%s' not bound!", element.name.c_str());
                     PK_FATAL_ASSERT(size == sizeof(void*) * element.count, "Descriptor '%s' bound array size '%u' doesn't match size '%u' in shader", element.name.c_str(), size / sizeof(void*), element.count);
-                    version = handles[0]->Version();
+                    version = (uint32_t)handles[0]->Version();
                     count = element.count;
                 }
 
@@ -577,7 +578,7 @@ namespace PK
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
                     binding.handles = handles;
-                    binding.count = count;
+                    binding.count = (uint16_t)count;
                     binding.type = element.type;
                     binding.version = version;
                     binding.isVariableSize = isVariableSize;
@@ -589,17 +590,17 @@ namespace PK
                 {
                     if (binding.type == ShaderResourceType::SamplerTexture || binding.type == ShaderResourceType::Texture || binding.type == ShaderResourceType::Image)
                     {
-                        RecordImage(handles[i], stageFlags, access | VK_ACCESS_SHADER_READ_BIT);
+                        RecordImage(handles[i], layoutStageFlags, access | VK_ACCESS_SHADER_READ_BIT);
                     }
                     
                     if (binding.type == ShaderResourceType::StorageBuffer || binding.type == ShaderResourceType::DynamicStorageBuffer)
                     {
-                        RecordBuffer(handles[i], stageFlags, access | VK_ACCESS_SHADER_READ_BIT);
+                        RecordBuffer(handles[i], layoutStageFlags, access | VK_ACCESS_SHADER_READ_BIT);
                     }
                     
                     if (binding.type == ShaderResourceType::ConstantBuffer || binding.type == ShaderResourceType::DynamicConstantBuffer)
                     {
-                        RecordBuffer(handles[i], stageFlags, access | VK_ACCESS_UNIFORM_READ_BIT);
+                        RecordBuffer(handles[i], layoutStageFlags, access | VK_ACCESS_UNIFORM_READ_BIT);
                     }
                 }
             }
@@ -607,7 +608,7 @@ namespace PK
             if (m_descritorState.bindingCount != resourceLayout.GetCount())
             {
                 m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-                m_descritorState.bindingCount = resourceLayout.GetCount();
+                m_descritorState.bindingCount = (uint32_t)resourceLayout.GetCount();
             }
 
             if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_DESCRIPTORS)

@@ -1,11 +1,11 @@
 #pragma once
-#include <stdint.h>
+#include "IEntityImplementerBucket.h"
 
 namespace PK
 {
     struct IEntityImplementer
     {
-        struct ImplementerBucket* bucket = nullptr;
+        ImplementerBucket* bucket = nullptr;
         uint32_t referenceCount = 0u;
         uint32_t index = 0u;
 

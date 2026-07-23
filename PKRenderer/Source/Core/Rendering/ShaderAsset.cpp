@@ -28,8 +28,8 @@ namespace PK
 
         keywordValues[keywordCount] = (value & 0xFu) | (directive << 4u);
         keywords[keywordCount] = name;
-        offsets[keywordCount] = keywordCount;
-        buckets[bucketIndex] = keywordCount;
+        offsets[keywordCount] = (uint8_t)keywordCount;
+        buckets[bucketIndex] = (uint8_t)keywordCount;
         keywordCount++;
     }
 

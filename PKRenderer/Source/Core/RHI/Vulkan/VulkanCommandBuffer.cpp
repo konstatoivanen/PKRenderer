@@ -141,7 +141,7 @@ namespace PK
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -165,7 +165,7 @@ namespace PK
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -189,7 +189,7 @@ namespace PK
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -211,7 +211,7 @@ namespace PK
         record.bufferRange.size = maxDrawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkbufferIndirect, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         auto vkbufferCount = countBuffer->GetNativeHandle<VkBuffer>();
@@ -219,7 +219,7 @@ namespace PK
         record.bufferRange.size = sizeof(uint32_t);
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkbufferCount, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -425,7 +425,7 @@ namespace PK
         record.bufferRange.size = (uint32_t)copyRegion.size;
         record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
-        record.queueFamily = dst->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = dst->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkdstBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
     }
 

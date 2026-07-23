@@ -10,7 +10,7 @@ namespace PK::App
 {
     EntityFactoryRegister::EntityFactoryRegister(EntityDatabase* entityDb, const initializer_list<EntitySerializer>& serializers) :
         m_entityDb(entityDb),
-        m_serializers(serializers.size(), 3ull)
+        m_serializers((uint32_t)serializers.size(), 3u)
     {
         for (auto& serializer : serializers)
         {

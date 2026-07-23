@@ -312,7 +312,7 @@ namespace PK
             {
                 if (native_to_keycode[i] != InputKey::None)
                 {
-                    keycode_to_native[(uint32_t)native_to_keycode[i]] = i;
+                    keycode_to_native[(uint32_t)native_to_keycode[i]] = static_cast<int16_t>(i);
                 }
             }
         }
