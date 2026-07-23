@@ -12,6 +12,9 @@ namespace PK
         constexpr EGID(uint64_t identifier) : identifier(identifier) {}
         constexpr EGID(uint32_t entityID, uint32_t groupID) : identifier(((uint64_t)groupID << 32ull) | ((uint64_t)entityID & 0xFFFFFFFFull)) {}
         constexpr bool IsValid() const { return identifier > 0; }
+
+        constexpr EGID& operator=(const EGID&) = default;
+        constexpr EGID& operator=(EGID&&) = default;
         constexpr bool operator ==(const EGID& obj2) const { return identifier == obj2.identifier; }
         constexpr bool operator !=(const EGID& obj2) const { return identifier != obj2.identifier; }
         constexpr bool operator <(const EGID& obj2) const { return identifier < obj2.identifier; }

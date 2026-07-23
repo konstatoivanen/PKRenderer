@@ -108,6 +108,8 @@ namespace PK
         constexpr FrustumPlanes() = default;
         constexpr FrustumPlanes(const FrustumPlanes& p) = default;
         constexpr FrustumPlanes(const math::convex<float,6>& p) : math::convex<float, 6>(p) {};
+        constexpr FrustumPlanes& operator=(const FrustumPlanes&) = default;
+        constexpr FrustumPlanes& operator=(FrustumPlanes&&) = default;
         float4& left() { return planes[0]; }
         float4& right() { return planes[1]; }
         float4& top() { return planes[2]; }

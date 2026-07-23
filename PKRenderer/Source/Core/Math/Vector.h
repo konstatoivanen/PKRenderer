@@ -677,7 +677,8 @@ namespace PK::math
 
         constexpr T& operator[](int i) { switch (i) { default: case 0: return x; case 1: return y; } }
         constexpr const T& operator[](int i) const { switch (i) { default: case 0: return x; case 1: return y; }}
-        constexpr vector& operator=(const vector& v) = default;
+        constexpr vector& operator=(const vector&) = default;
+        constexpr vector& operator=(vector&&) = default;
         template<int E0,int E1> constexpr vector& operator=(const swizzle<T,2,E0,E1,-1,-2>& s) { *this = s(); return *this; }
         template<typename U> constexpr vector& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); return *this; }
         template<typename U> constexpr vector& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); return *this; }
@@ -788,7 +789,8 @@ namespace PK::math
 
         constexpr T& operator[](int i) { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; } }
         constexpr const T& operator[](int i) const { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; } }
-        constexpr vector& operator=(const vector& v) = default;
+        constexpr vector& operator=(const vector&) = default;
+        constexpr vector& operator=(vector&&) = default;
         template<int E0,int E1,int E2> constexpr vector& operator=(const swizzle<T,3,E0,E1,E2,-1>& s) { *this = s(); return *this; }
         template<typename U> constexpr vector& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); z = static_cast<T>(s); return *this; }
         template<typename U> constexpr vector& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); z += static_cast<T>(s); return *this; }
@@ -906,7 +908,8 @@ namespace PK::math
 
         constexpr T& operator[](int i) { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; case 3: return w; } }
         constexpr const T& operator[](int i) const { switch (i) { default: case 0: return x; case 1: return y; case 2: return z; case 3: return w; } }
-        constexpr vector& operator=(const vector& v) = default;
+        constexpr vector& operator=(const vector&) = default;
+        constexpr vector& operator=(vector&&) = default;
         template<int E0,int E1,int E2,int E3> constexpr vector& operator=(const swizzle<T,4,E0,E1,E2,E3>& s) { *this = s(); return *this; }
         template<typename U> constexpr vector& operator=(U s) { x = static_cast<T>(s); y = static_cast<T>(s); z = static_cast<T>(s); w = static_cast<T>(s); return *this; }
         template<typename U> constexpr vector& operator+=(U s) { x += static_cast<T>(s); y += static_cast<T>(s); z += static_cast<T>(s); w += static_cast<T>(s); return *this; }
@@ -1006,6 +1009,8 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
+        constexpr matrix& operator=(const matrix&) = default;
+        constexpr matrix& operator=(matrix&&) = default;
         template<typename U> constexpr matrix& operator=(const matrix<U,2,2>& m) { columns[0] = m[0]; columns[1] = m[1]; return *this; }
         template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; return *this; }
         template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; return *this; }
@@ -1113,6 +1118,8 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
+        constexpr matrix& operator=(const matrix&) = default;
+        constexpr matrix& operator=(matrix&&) = default;
         template<typename U> constexpr matrix& operator=(const matrix<U,2,3>& m) { columns[0] = m[0]; columns[1] = m[1]; return *this; }
         template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; return *this; }
         template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; return *this; }
@@ -1223,6 +1230,8 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
+        constexpr matrix& operator=(const matrix&) = default;
+        constexpr matrix& operator=(matrix&&) = default;
         template<typename U> constexpr matrix& operator=(const matrix<U,2,4>& m) { columns[0] = m[0]; columns[1] = m[1]; return *this; }
         template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; return *this; }
         template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; return *this; }
@@ -1342,7 +1351,9 @@ namespace PK::math
         constexpr explicit matrix(const matrix<T,4,3>& m) : columns{ col_type(m[0]), col_type(m[1]), col_type(m[2]) } {}
 
         constexpr col_type& operator[](int i) { return columns[i]; }
-        constexpr const col_type& operator[](int i) const { return columns[i]; }    
+        constexpr const col_type& operator[](int i) const { return columns[i]; }
+        constexpr matrix& operator=(const matrix&) = default;
+        constexpr matrix& operator=(matrix&&) = default;
         template<typename U> constexpr matrix& operator=(const matrix<U,3,2>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; return *this; }
         template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; return *this; }
         template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; return *this; }
@@ -1444,6 +1455,8 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
+        constexpr matrix& operator=(const matrix&) = default;
+        constexpr matrix& operator=(matrix&&) = default;
         template<typename U> constexpr matrix& operator=(const matrix<U,3,3>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; return *this; }
         template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; return *this; }
         template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; return *this; }
@@ -1563,6 +1576,8 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
+        constexpr matrix& operator=(const matrix&) = default;
+        constexpr matrix& operator=(matrix&&) = default;
         template<typename U> constexpr matrix& operator=(const matrix<U,3,4>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; return *this; }
         template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; return *this; }
         template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; return *this; }
@@ -1687,6 +1702,8 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
+        constexpr matrix& operator=(const matrix&) = default;
+        constexpr matrix& operator=(matrix&&) = default;
         template<typename U> constexpr matrix& operator=(const matrix<U,4,2>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
         template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
         template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
@@ -1790,6 +1807,8 @@ namespace PK::math
 
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
+        constexpr matrix& operator=(const matrix&) = default;
+        constexpr matrix& operator=(matrix&&) = default;
         template<typename U> constexpr matrix& operator=(const matrix<U,4,3>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
         template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
         template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }
@@ -1905,6 +1924,8 @@ namespace PK::math
         
         constexpr col_type& operator[](int i) { return columns[i]; }
         constexpr const col_type& operator[](int i) const { return columns[i]; }
+        constexpr matrix& operator=(const matrix&) = default;
+        constexpr matrix& operator=(matrix&&) = default;
         template<typename U> constexpr matrix& operator=(const matrix<U,4,4>& m) { columns[0] = m[0]; columns[1] = m[1]; columns[2] = m[2]; columns[3] = m[3]; return *this; }
         template<typename U> constexpr matrix& operator+=(U s) { columns[0] += s; columns[1] += s; columns[2] += s; columns[3] += s; return *this; }
         template<typename U> constexpr matrix& operator-=(U s) { columns[0] -= s; columns[1] -= s; columns[2] -= s; columns[3] -= s; return *this; }

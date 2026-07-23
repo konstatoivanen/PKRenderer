@@ -64,6 +64,9 @@ namespace PK::math
             vector<T,4>::z = (n.y - b.x) / (4.0f * w);
             vector<T,4>::w = w;
         }
+
+        constexpr quaternion& operator=(const quaternion&) = default;
+        constexpr quaternion& operator=(quaternion&&) = default;
     };
 
     template<typename T> quaternion<T> conjugate(const quaternion<T>& q) { return quaternion<T>(-q.x,-q.y,-q.z,q.w); }

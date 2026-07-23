@@ -344,6 +344,8 @@ namespace PK::math
         constexpr convex(const convex& m) = default;
         constexpr const vector<T,4>& operator[](size_t i) const { return planes[i]; }
         constexpr vector<T,4>& operator[](size_t i) { return planes[i]; }
+        constexpr convex& operator=(const convex&) = default;
+        constexpr convex& operator=(convex&&) = default;
         constexpr const vector<T,4>* array_ptr() const { return planes; }
         constexpr vector<T,4>* array_ptr() { return planes; }
     };
