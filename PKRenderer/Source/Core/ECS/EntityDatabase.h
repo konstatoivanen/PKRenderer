@@ -2,8 +2,9 @@
 #include "Core/Utilities/BufferView.h"
 #include "Core/Utilities/HashMap.h"
 #include "Core/Utilities/TypeIndex.h"
+#include "Core/Utilities/Reflect.h"
 #include "Core/ECS/EGID.h"
-#include "Core/ECS/IEntityView.h"
+#include "Core/ECS/EntityComponentRef.h"
 #include "Core/ECS/IEntityImplementer.h"
 
 namespace PK
@@ -16,6 +17,12 @@ namespace PK
     };
     
     typedef void (*EntityViewDeleter)(void*);
+
+    template<typename TView>
+    struct EntityView : public TView
+    {
+        EGID GID;
+    };
 
     struct ImplementerContainer
     {
@@ -105,9 +112,10 @@ namespace PK
         }
 
         template<typename TView>
-        TView* NewView(const EGID& egid)
+        EntityView<TView>* NewView(const EGID& egid)
         {
-            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
+            using TEntityView = EntityView<TView>;
+            
             Memory::Assert(egid.IsValid(), "Invalid Egid!");
 
             uint32_t groupIndex = 0u;
@@ -115,73 +123,61 @@ namespace PK
             
             if (m_typedGroups.AddKey(GroupKey(egid.groupID(), pk_base_type_index<TView>()), &groupIndex))
             {
-                CreateViewArray(m_typedGroups[groupIndex].value, [](void* memory) { Memory::Destruct(static_cast<TView*>(memory)); }, sizeof(TView));
+                CreateViewArray(m_typedGroups[groupIndex].value, [](void* memory) 
+                { 
+                    Memory::Destruct(static_cast<TEntityView*>(memory));
+                }, 
+                sizeof(TEntityView));
             }
 
             if (ReserveView(m_typedGroups[groupIndex].value, egid.entityID(), &view))
             {
-                Memory::Construct(static_cast<TView*>(view));
-                static_cast<TView*>(view)->GID = egid;
+                Memory::Construct(static_cast<TEntityView*>(view));
+                static_cast<TEntityView*>(view)->GID = egid;
             }
 
-            return static_cast<TView*>(view);
+            return static_cast<TEntityView*>(view);
         }
 
         template<typename TView, typename TImpl>
-        TView* NewView(TImpl* implementer, const EGID& egid)
+        EntityView<TView>* NewView(TImpl* implementer, const EGID& egid)
         {
             auto* view = NewView<TView>(egid);
-            view->template SetImplementer<TImpl>(implementer);
+
+            PK::ReflectFields(*static_cast<TView*>(view), [implementer](auto& value)
+            {
+                using TField = std::remove_cvref<decltype(value)>::type;
+
+                if constexpr (TIsSpecialization<TField, EntityComponentRef> && 
+                              TIsConvertible<TImpl*, typename TField::Type*>)
+                {
+                    value = implementer;
+                }
+            });
+
             return view;
         }
 
         template<typename TView>
-        const BufferView<TView> Query(const uint32_t groupId)
+        const BufferView<EntityView<TView>> Query(const uint32_t groupId)
         {
-            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
             const auto views = m_typedGroups.GetValuePtr(GroupKey(groupId, pk_base_type_index<TView>()));
-            return { static_cast<TView*>(GetViewArrayData(views)), (size_t)GetViewArrayCount(views) };
+            return { static_cast<EntityView<TView>*>(GetViewArrayData(views)), (size_t)GetViewArrayCount(views) };
         }
 
         template<typename TView>
-        TView* Query(const EGID& egid)
+        EntityView<TView>* Query(const EGID& egid)
         {
-            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
             const auto views = m_typedGroups.GetValuePtr(GroupKey(egid.groupID(), pk_base_type_index<TView>()));
             const auto index = GetViewIndex(views, egid.entityID());
-            return index != ~0u ? static_cast<TView*>(GetViewArrayData(views)) + index : nullptr;
+            return index != ~0u ? static_cast<EntityView<TView>*>(GetViewArrayData(views)) + index : nullptr;
         }
 
-        template<typename TView>
-        void DeleteAllOfType()
-        {
-            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
-            Delete(pk_base_type_index<TView>() + 1u, 0u, 0u);
-        }
-        
-        template<typename TView>
-        void DeleteGroupOfType(uint32_t groupId)
-        {
-            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
-            Delete(pk_base_type_index<TView>() + 1u, groupId, 0u);
-        }
-
-        template<typename TView>
-        void DeleteOfType(const EGID& egid)
-        {
-            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
-            Delete(pk_base_type_index<TView>() + 1u, egid.groupID(), egid.entityID());
-        }
-
-        inline void DeleteGroup(uint32_t groupId) 
-        { 
-            Delete(0u, groupId, 0u); 
-        }
-
-        inline void Delete(const EGID& egid) 
-        { 
-            Delete(0u, egid.groupID(), egid.entityID()); 
-        }
+        template<typename TView> void DeleteAllOfType() { Delete(pk_base_type_index<TView>() + 1u, 0u, 0u); }
+        template<typename TView> void DeleteGroupOfType(uint32_t groupId) { Delete(pk_base_type_index<TView>() + 1u, groupId, 0u); }
+        template<typename TView> void DeleteOfType(const EGID& egid) { Delete(pk_base_type_index<TView>() + 1u, egid.groupID(), egid.entityID()); }
+        inline void DeleteGroup(uint32_t groupId) { Delete(0u, groupId, 0u);  }
+        inline void Delete(const EGID& egid) { Delete(0u, egid.groupID(), egid.entityID()); }
 
     private:
         void Delete(uint32_t typeIndex, uint32_t groupId, uint32_t entityId);

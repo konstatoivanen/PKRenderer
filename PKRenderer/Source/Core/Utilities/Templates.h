@@ -26,6 +26,12 @@ namespace PK
     template <typename> constexpr bool TIsRValueRef = false; 
     template <typename T> constexpr bool TIsRValueRef<T&&> = true;
 
+    template <class T, template <class...> class Template>
+    inline constexpr bool TIsSpecialization = false;
+
+    template <template <class...> class Template, class... Args>
+    inline constexpr bool TIsSpecialization<Template<Args...>, Template> = true;
+
     template<bool predicate, typename T = void> struct TEnableIf;
     template<typename T> struct TEnableIf<true, T> { using Type = T; };
     template<typename T> struct TEnableIf<false, T> {};
@@ -49,6 +55,7 @@ namespace PK
     template<typename T> using TRemoveRef_T = typename TRemoveRef<T>::Type;
     template<typename T> using TRemovePtr_T = typename TRemovePtr<T>::Type;
     template<typename T> using TRemoveCV_T = typename TRemoveCV<T>::Type;
+
     template<typename T, T N> struct TIntegerConstant { using Type = T; static constexpr T Value = N; };
     template<size_t Index> using TIndexConstant = TIntegerConstant<size_t, Index>;
     
@@ -61,7 +68,7 @@ namespace PK
     template<size_t N> using TMakeIndexSequence = TMakeIntegerSequence<size_t, N>;
     template<typename ... Types> using TIndexSequenceFor = TMakeIndexSequence<sizeof...(Types)>;
 
-    struct TAny { TAny(size_t); template<typename T>constexpr operator T() const noexcept; };
+    struct TAny { TAny(size_t); template<typename T> constexpr operator T() const noexcept; };
 
     template<typename T, size_t n>
     static consteval bool TIsConstructible()

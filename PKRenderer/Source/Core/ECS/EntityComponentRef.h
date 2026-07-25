@@ -1,14 +1,25 @@
 #pragma once
 #include "IEntityImplementer.h"
-#include "Core/Utilities/NoCopy.h"
 
 namespace PK
 {
+    // Note that reference count access isnt protected against null data.
+    // Such cases are erroneous and we would ideally crash anyway.
     template<typename T>
-    struct EntityComponentRef : NoCopy
+    struct EntityComponentRef
     {
-        IEntityImplementer* shared;
-        T* pointer;
+        using Type = T;
+        IEntityImplementer* shared = nullptr;
+        T* pointer = nullptr;
+
+        constexpr EntityComponentRef() = default;
+
+        EntityComponentRef(const EntityComponentRef& other) noexcept
+        {
+            shared = other.shared;
+            pointer = other.pointer;
+            shared->referenceCount++;
+        }
 
         ~EntityComponentRef() 
         {

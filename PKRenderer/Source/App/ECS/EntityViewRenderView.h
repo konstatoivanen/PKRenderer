@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/ECS/IEntityView.h"
 #include "Core/ECS/EntityComponentRef.h"
 #include "App/ECS/ComponentTransform.h"
 #include "App/ECS/ComponentRenderView.h"
@@ -9,11 +8,12 @@
 
 namespace PK::App
 {
-    PK_ECS_VIEW_BEGIN(EntityViewRenderView)
-        PK_ECS_VIEW_COMPONENT(ComponentTransform, transform)
-        PK_ECS_VIEW_COMPONENT(ComponentProjection, projection)
-        PK_ECS_VIEW_COMPONENT(ComponentRenderView, renderView)
-        PK_ECS_VIEW_COMPONENT(ComponentViewInput, input)
-        PK_ECS_VIEW_COMPONENT(ComponentTime, time)
-    PK_ECS_VIEW_END()
+    struct EntityViewRenderView
+    {
+        EntityComponentRef<ComponentTransform> transform;
+        EntityComponentRef<ComponentProjection> projection;
+        EntityComponentRef<ComponentRenderView> renderView;
+        EntityComponentRef<ComponentViewInput> input;
+        EntityComponentRef<ComponentTime> time;
+    };
 }

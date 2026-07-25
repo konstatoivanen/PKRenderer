@@ -416,7 +416,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\ECS\EGID.h" />
     <ClInclude Include="Source\Core\ECS\EntityDatabase.h" />
     <ClInclude Include="Source\Core\ECS\IEntityImplementer.h" />
-    <ClInclude Include="Source\Core\ECS\IEntityView.h" />
     <ClInclude Include="Source\Core\Math\Color.h" />
     <ClInclude Include="Source\Core\Math\Bounds.h" />
     <ClInclude Include="Source\Core\Math\Extended.h" />

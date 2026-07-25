@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/Utilities/UUID128.h"
 #include "Core/Utilities/FixedString.h"
-#include "Core/ECS/IEntityView.h"
 #include "Core/ECS/EntityComponentRef.h"
 
 namespace PK
@@ -12,7 +11,7 @@ namespace PK
         UUID128 typeUUID;
     };
 
-    struct EntityViewSerializable : public IEntityView
+    struct EntityViewSerializable
     {
         EntityComponentRef<ComponentSerial> serial;
     };

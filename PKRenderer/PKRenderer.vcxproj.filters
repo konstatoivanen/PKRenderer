@@ -504,9 +504,6 @@
     <ClInclude Include="Source\Core\ECS\IEntityImplementer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\ECS\IEntityView.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\IApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>

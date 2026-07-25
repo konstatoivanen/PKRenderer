@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/ECS/IEntityView.h"
 #include "Core/ECS/EntityComponentRef.h"
 #include "App/ECS/ComponentScenePrimitive.h"
 #include "App/ECS/ComponentTransform.h"
@@ -8,10 +7,11 @@
 
 namespace PK::App
 {
-    PK_ECS_VIEW_BEGIN(EntityViewMeshStatic)
-        PK_ECS_VIEW_COMPONENT(ComponentScenePrimitive, primitive)
-        PK_ECS_VIEW_COMPONENT(ComponentTransform, transform)
-        PK_ECS_VIEW_COMPONENT(ComponentMeshStatic, staticMesh)
-        PK_ECS_VIEW_COMPONENT(ComponentMaterials, materials)
-    PK_ECS_VIEW_END()
+    struct EntityViewMeshStatic
+    {
+        EntityComponentRef<ComponentScenePrimitive> primitive;
+        EntityComponentRef<ComponentTransform> transform;
+        EntityComponentRef<ComponentMeshStatic> staticMesh;
+        EntityComponentRef<ComponentMaterials> materials;
+    };
 }

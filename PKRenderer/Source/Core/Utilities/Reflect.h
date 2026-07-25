@@ -5,6 +5,9 @@
 
 namespace PK
 {
+    #pragma warning(push)
+    #pragma warning(disable : 4200)
+
     template<typename T, size_t N = 0>
     static consteval size_t ReflectionCountFields()
     {
@@ -1574,4 +1577,6 @@ namespace PK
             }
         });
     }
+
+    #pragma warning(pop)
 }
