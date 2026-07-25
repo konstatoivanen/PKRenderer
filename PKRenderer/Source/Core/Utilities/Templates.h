@@ -12,7 +12,7 @@ namespace PK
     template<typename TFrom, typename TTo> inline constexpr bool TIsConvertible = __is_convertible_to(TFrom, TTo);
 
     template<typename> inline constexpr bool TIsArray = false;
-    template<typename T, size_t size> inline constexpr bool TIsArray<T[size]> = true;
+    template<typename T, size_t N> inline constexpr bool TIsArray<T[N]> = true;
     template<typename T> inline constexpr bool TIsArray<T[]> = true;
 
     template<typename> inline constexpr bool TIsPointer = false; 
@@ -22,6 +22,9 @@ namespace PK
     template<typename T> inline constexpr bool TIsPointer<T* const volatile> = true;
 
     template<typename T> inline constexpr bool TIsEnum = __is_enum(T);
+
+    template <typename> constexpr bool TIsRValueRef = false; 
+    template <typename T> constexpr bool TIsRValueRef<T&&> = true;
 
     template<bool predicate, typename T = void> struct TEnableIf;
     template<typename T> struct TEnableIf<true, T> { using Type = T; };
@@ -46,6 +49,25 @@ namespace PK
     template<typename T> using TRemoveRef_T = typename TRemoveRef<T>::Type;
     template<typename T> using TRemovePtr_T = typename TRemovePtr<T>::Type;
     template<typename T> using TRemoveCV_T = typename TRemoveCV<T>::Type;
+    template<typename T, T N> struct TIntegerConstant { using Type = T; static constexpr T Value = N; };
+    template<size_t Index> using TIndexConstant = TIntegerConstant<size_t, Index>;
+    
+    using TTrue = TIntegerConstant<bool, true>;
+    using TFalse = TIntegerConstant<bool, false>;
+
+    template<typename T, T... Values> struct TIntegerSequence { using Type = T; static constexpr size_t size() noexcept { return sizeof...(Values); } };
+    template<typename T, T N> using TMakeIntegerSequence = __make_integer_seq<TIntegerSequence, T, N>;
+    template<size_t... Values> using TIndexSequence = TIntegerSequence<size_t, Values...>;
+    template<size_t N> using TMakeIndexSequence = TMakeIntegerSequence<size_t, N>;
+    template<typename ... Types> using TIndexSequenceFor = TMakeIndexSequence<sizeof...(Types)>;
+
+    struct TAny { TAny(size_t); template<typename T>constexpr operator T() const noexcept; };
+
+    template<typename T, size_t n>
+    static consteval bool TIsConstructible()
+    {
+        return[]<size_t... is>(PK::TIndexSequence<is...>) { return requires { T{ TAny(is)... }; }; } (PK::TMakeIndexSequence<n>());
+    }
 
     template<typename T> [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>& v) noexcept { return static_cast<T&&>(v); }
     template<typename T> [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>&& v) noexcept { return static_cast<T&&>(v); }

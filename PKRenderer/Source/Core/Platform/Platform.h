@@ -5,8 +5,8 @@
 
 // Compiler defines
 #if defined(__clang__)
-    #if __cplusplus < 201703L
-        #error "C++ 17 support or newer required!"
+    #if __cplusplus < 202002l
+        #error "C++ 20 support or newer required!"
     #endif
     #define PK_DLLEXPORT __attribute__ ((__visibility__ ("default")))
     #define PK_DLLIMPORT
@@ -22,8 +22,8 @@
     #define PK_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
     #define PK_OFFSET_OF(X, Y) __builtin_offsetof(X, Y)
 #elif defined(_MSC_VER)
-    #if _MSVC_LANG < 201703L
-        #error "MSVC with c++ 17 support or newer required!"
+    #if _MSVC_LANG < 202002l
+        #error "MSVC with c++ 20 support or newer required!"
     #endif
     #define PK_DLLEXPORT __declspec(dllexport)
     #define PK_DLLIMPORT __declspec(dllimport)

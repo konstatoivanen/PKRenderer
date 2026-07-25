@@ -280,7 +280,7 @@ Physical Device Requirements:
 > The project has only been tested on an NVIDIA RTX 2080 TI, support for other vendors or devices is untested.
 
 > **Warning**
-> Building requires MSBuild and a C++17 standard compatible version of MSCV or clang-cl.
+> Building requires MSBuild and a C++ 20 standard compatible version of MSCV or clang-cl.
 
 > **Warning**
 > Building only the PKRenderer project requires a compatible build of PKAssetTools.
