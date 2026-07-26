@@ -1,8 +1,8 @@
 #include "PrecompiledHeader.h"
-#include "Core/Input/InputKeyBinding.h"
 #include "Core/Yaml/Serialize.h"
+#include "Core/Input/InputKeyBinding.h"
 
-namespace PK::YAML
+namespace PK::Serialize
 {
     template<>
     void Read<CommandInputKeyBindingMap>(const ConstNode& node, CommandInputKeyBindingMap* rhs)

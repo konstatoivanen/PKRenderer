@@ -166,7 +166,7 @@ namespace PK::App
         }
     }
 
-    void EngineCommandInput::Step(AssetImportEvent<InputKeyConfig>* evt)
+    void EngineCommandInput::Step(AssetImportEvent<Config<InputKeyConfig>>* evt)
     {
         m_inputKeyCommands.memory.Copy(evt->asset->InputKeyCommands.memory);
         m_inputKeyCommands.count = evt->asset->InputKeyCommands.count;

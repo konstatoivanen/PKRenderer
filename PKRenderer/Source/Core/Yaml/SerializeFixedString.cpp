@@ -1,8 +1,8 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/FixedString.h"
 #include "Core/Yaml/Serialize.h"
+#include "Core/Utilities/FixedString.h"
 
-namespace PK::YAML
+namespace PK::Serialize
 {
     #define DECLARE_FIXEDSTRING_SERIALIZE(type)                                                                                             \
     template<> void Read<type>(const ConstNode& node, type* rhs) { auto substr = node.val(); *rhs = type(substr.len, substr.data());; }     \

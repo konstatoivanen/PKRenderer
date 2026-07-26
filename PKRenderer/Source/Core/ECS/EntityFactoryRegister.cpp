@@ -70,7 +70,7 @@ namespace PK::App
         }
 
         auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
-        YAML::ConstNode root = tree.rootref();
+        Serialize::ConstNode root = tree.rootref();
 
         auto entities = root.find_child("Entities");
 
@@ -82,8 +82,8 @@ namespace PK::App
 
                 if (type.readable())
                 {
-                    auto uuidStr = YAML::Read<FixedString32>(type);
-                    auto name = YAML::ReadKey<FixedString32>(entity);
+                    auto uuidStr = Serialize::Read<FixedString32>(type);
+                    auto name = Serialize::ReadKey<FixedString32>(entity);
                     auto uuid = Memory::BitCast<FixedString32, UUID128>(&uuidStr);
 
                     auto serializer = m_serializers.GetValuePtr(uuid);

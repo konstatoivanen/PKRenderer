@@ -1,8 +1,8 @@
 #include "PrecompiledHeader.h"
-#include "Core/Math/Math.h"
 #include "Core/Yaml/Serialize.h"
+#include "Core/Math/Math.h"
 
-namespace PK::YAML
+namespace PK::Serialize
 {
     #define DECLARE_SCALAR_SERIALIZE(type)                                                          \
     template<> void Read<type>(const ConstNode& node, type* rhs) { node >> *rhs; }                  \

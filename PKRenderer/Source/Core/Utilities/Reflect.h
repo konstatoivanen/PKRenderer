@@ -8,6 +8,11 @@ namespace PK
     #pragma warning(push)
     #pragma warning(disable : 4200)
 
+    #ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wundefined-var-template"
+    #endif
+
     template<typename T, size_t N = 0>
     static consteval size_t ReflectionCountFields()
     {
@@ -1455,6 +1460,7 @@ namespace PK
     template<typename T> extern const TReflectionFieldNameWrapper <T> ReflectionLocalTypeAssert;
     template<typename T> constexpr const T& ReflectionFieldNameObject() noexcept { return ReflectionLocalTypeAssert<T>.value; }
     template<size_t N> struct TReflectionFieldName { char str[N]; };
+    template<size_t N> struct TReflectionFieldNameArray { constexpr static const size_t Size = N; const char* names[N]; };
 
     template<bool TReturnOffsetOrCount>
     consteval size_t ReflectionGetFieldNameScope(const char* str, const size_t length) noexcept
@@ -1482,7 +1488,8 @@ namespace PK
         return TReturnOffsetOrCount ? start + 1ull : end - start - 1ull;
     }
     
-    template<auto ptr>
+    // T needed as otherwise msvc breaks the deduction
+    template<typename T, auto ptr>
     consteval auto ReflectionGetFieldName() noexcept 
     {
         #if defined(__FUNCSIG__)
@@ -1510,8 +1517,20 @@ namespace PK
     }
 
     template <typename T, size_t I> 
-    inline constexpr auto pk_field_name = ReflectionGetFieldName<__builtin_addressof(ReflectionGetField<I>(ReflectionBind(ReflectionFieldNameObject<T>())))>();
+    inline constexpr auto pk_field_name = ReflectionGetFieldName<T, __builtin_addressof(ReflectionGetField<I>(ReflectionBind(ReflectionFieldNameObject<T>())))>();
     
+    template <typename T, size_t... I>
+    constexpr auto ReflectionNamesArrayImpl(PK::TIndexSequence<I...>) noexcept
+    {
+        return TReflectionFieldNameArray<sizeof...(I)>{ pk_field_name<T, I>.str... };
+    }
+
+    template <typename T>
+    constexpr auto ReflectionNamesArray() noexcept
+    {
+        return ReflectionNamesArrayImpl<T>(PK::TMakeIndexSequence<pk_field_count<T>>{});
+    }
+
     // Note cannot use immediately invoked template lambdas with msvc :/
     template <typename T, typename F, typename I, typename = decltype(std::declval<F>()(std::declval<T>(), I{})) >
     constexpr void ReflectionIteratorCallField(T&& v, F&& f, I i, long)
@@ -1577,6 +1596,10 @@ namespace PK
             }
         });
     }
+
+    #ifdef __clang__
+    #pragma clang diagnostic pop
+    #endif 
 
     #pragma warning(pop)
 }

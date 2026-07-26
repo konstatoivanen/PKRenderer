@@ -29,7 +29,7 @@ namespace PK::App
     {
         m_entityDb = entityDb;
         m_assetDatabase = assetDatabase;
-        auto config = assetDatabase->Load<EngineDebugConfig>("Content/Configs/DebugEngine.cfg");
+        auto config = assetDatabase->Load<Config<EngineDebugConfig>>("Content/Configs/DebugEngine.cfg");
 
         auto columnMesh = assetDatabase->Load<MeshStatic>("Content/Models/MDL_Columns.pkmesh", CacheMode::Shared);
         auto rocksMesh = assetDatabase->Load<MeshStatic>("Content/Models/MDL_Rocks.pkmesh", CacheMode::Shared);
@@ -224,7 +224,7 @@ namespace PK::App
         }
     }
 
-    void EngineDebug::Step(AssetImportEvent<EngineDebugConfig>* token)
+    void EngineDebug::Step(AssetImportEvent<Config<EngineDebugConfig>>* token)
     {
         auto entity = m_entityDb->Query<EntityViewFlyCamera>(m_cameraEgid);
         auto config = token->asset;

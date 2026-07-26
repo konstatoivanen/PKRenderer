@@ -29,7 +29,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <EnableASAN>false</EnableASAN>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
@@ -45,7 +45,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <EnableASAN>false</EnableASAN>
@@ -317,6 +317,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\Pair.h" />
     <ClInclude Include="Source\Core\Utilities\Templates.h" />
     <ClInclude Include="Source\Core\Utilities\UUID128.h" />
+    <ClInclude Include="Source\Core\Yaml\Serializables.h" />
     <ClInclude Include="Source\Core\Yaml\Serialize.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />
     <ClInclude Include="ThirdParty\mikktspace\mikktspace.h" />
@@ -381,7 +382,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Engines\EngineTime.h" />
     <ClInclude Include="Source\Core\Timers\TimeFrameInfo.h" />
     <ClInclude Include="Source\Core\Utilities\NameIDProviderDefault.h" />
-    <ClInclude Include="Source\Core\Yaml\StructMacros.h" />
+    <ClInclude Include="Source\Core\Yaml\Config.h" />
     <ClInclude Include="Source\App\ECS\ComponentBounds.h" />
     <ClInclude Include="Source\App\ECS\ComponentFlyCamera.h" />
     <ClInclude Include="Source\App\ECS\ComponentLight.h" />
@@ -678,8 +679,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Yaml\SerializeFixedString.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeMaterial.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeMesh.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeRHIStructs.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeWindowDescriptor.cpp" />
+    <ClCompile Include="Source\Core\Yaml\SerializeRHIEnums.cpp" />
     <ClCompile Include="ThirdParty\mikktspace\mikktspace.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'">NotUsing</PrecompiledHeader>
@@ -720,7 +720,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\ServiceRegister.cpp" />
     <ClCompile Include="Source\App\Engines\EngineTime.cpp" />
     <ClCompile Include="Source\Core\Utilities\NameIDProviderDefault.cpp" />
-    <ClCompile Include="Source\Core\Yaml\StructMacros.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeInputKeyBindings.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeMathTypes.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeShader.cpp" />

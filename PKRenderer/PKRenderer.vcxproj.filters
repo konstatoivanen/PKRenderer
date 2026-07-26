@@ -168,7 +168,7 @@
     <ClInclude Include="Source\Core\Timers\TimeFrameInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\StructMacros.h">
+    <ClInclude Include="Source\Core\Yaml\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\RendererApplication.h">
@@ -687,6 +687,9 @@
     <ClInclude Include="Source\Core\Utilities\Reflect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Yaml\Serializables.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
@@ -886,9 +889,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Engines\EngineTime.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\StructMacros.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Yaml\SerializeInputKeyBindings.cpp">
@@ -1152,13 +1152,10 @@
     <ClCompile Include="Source\Core\Rendering\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeRHIStructs.cpp">
+    <ClCompile Include="Source\Core\Yaml\SerializeRHIEnums.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Structs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeWindowDescriptor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp">

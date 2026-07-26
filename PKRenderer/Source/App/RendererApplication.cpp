@@ -61,7 +61,7 @@ namespace PK::App
         PK_LOG_TIMER_FUNC();
         PK_LOG_HEADER_SCOPE("----------RendererApplication.Ctor Begin----------");
 
-        BaseRendererConfig config("Content/Configs/BaseRenderer.cfg");
+        auto config = Serialize::LoadStruct<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
         m_inactiveFrameInterval = config.InactiveFrameInterval;
         m_RHIDriver = RHI::CreateDriver(GetWorkingDirectory(), config.RHIDesc);
 
@@ -85,7 +85,7 @@ namespace PK::App
 
         auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic);
 
-        auto inputConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg").get();
+        auto inputConfig = assetDatabase->Load<Config<InputKeyConfig>>("Content/Configs/Input.keycfg").get();
         auto remoteProcessRunner = GetServices()->Create<RemoteProcessRunner>();
         auto engineViewUpdate = GetServices()->Create<EngineViewUpdate>(sequencer, entityDb);
         auto engineCommands = GetServices()->Create<EngineCommandInput>(sequencer, inputConfig);
@@ -157,9 +157,9 @@ namespace PK::App
                 {
                     assetDatabase,
                     {
-                        Sequencer::Step::Create<AssetImportEvent<EngineDebugConfig>*>(engineDebug),
-                        Sequencer::Step::Create<AssetImportEvent<InputKeyConfig>*>(engineFlyCamera),
-                        Sequencer::Step::Create<AssetImportEvent<InputKeyConfig>*>(engineCommands)
+                        Sequencer::Step::Create<AssetImportEvent<Config<EngineDebugConfig>>*>(engineDebug),
+                        Sequencer::Step::Create<AssetImportEvent<Config<InputKeyConfig>>*>(engineFlyCamera),
+                        Sequencer::Step::Create<AssetImportEvent<Config<InputKeyConfig>>*>(engineCommands)
                     }
                 },
             });

@@ -49,13 +49,13 @@ namespace PK
     }
 
     template<>
-    EGID EntityFactory<App::EntityFlyCamera>::Deserialize(EntityDatabase* entityDb, const YAML::ConstNode& parent, uint32_t group)
+    EGID EntityFactory<App::EntityFlyCamera>::Deserialize(EntityDatabase* entityDb, const Serialize::ConstNode& parent, uint32_t group)
     {
         return EGIDInvalid;
     }
 
     template<>
-    void EntityFactory<App::EntityFlyCamera>::Serialize(EntityDatabase* entityDb, YAML::Node& parent, const EGID& egid)
+    void EntityFactory<App::EntityFlyCamera>::Serialize(EntityDatabase* entityDb, Serialize::Node& parent, const EGID& egid)
     {
     }
 }

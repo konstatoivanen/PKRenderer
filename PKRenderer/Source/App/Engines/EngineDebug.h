@@ -2,7 +2,7 @@
 #include "Core/Math/Math.h"
 #include "Core/ECS/EGID.h"
 #include "Core/Rendering/RenderingFwd.h"
-#include "Core/Yaml/StructMacros.h"
+#include "Core/Yaml/Config.h"
 #include "App/FrameStep.h"
 #include "App/Renderer/RenderViewSettings.h"
 
@@ -13,31 +13,32 @@ namespace PK::App
 {
     struct IGizmosRenderer;
 
-    PK_YAML_ASSET_BEGIN(EngineDebugConfig, "*.cfg")
-        PK_YAML_MEMBER(float3, CameraStartPosition, PK_FLOAT3_ZERO)
-        PK_YAML_MEMBER(float3, CameraStartRotation, PK_FLOAT3_ZERO)
-        PK_YAML_MEMBER(float, CameraSpeed, 5.0f)
-        PK_YAML_MEMBER(float, CameraLookSensitivity, 1.0f)
-        PK_YAML_MEMBER(float, CameraMoveSmoothing, 0.0f)
-        PK_YAML_MEMBER(float, CameraLookSmoothing, 0.0f)
-        PK_YAML_MEMBER(float, CameraFov, 75.0f)
-        PK_YAML_MEMBER(float, CameraZNear, 0.1f)
-        PK_YAML_MEMBER(float, CameraZFar, 200.0f)
-        PK_YAML_MEMBER(uint, LightCount, 0u)
-        PK_YAML_MEMBER_STRUCT(RenderViewSettings, ViewSettings)
-    PK_YAML_ASSET_END()
+    struct EngineDebugConfig 
+    {
+        float3 CameraStartPosition = PK_FLOAT3_ZERO;
+        float3 CameraStartRotation = PK_FLOAT3_ZERO;
+        float CameraSpeed = 5.0f;
+        float CameraLookSensitivity = 1.0f;
+        float CameraMoveSmoothing = 0.0f;
+        float CameraLookSmoothing = 0.0f;
+        float CameraFov = 75.0f;
+        float CameraZNear = 0.1f;
+        float CameraZFar = 200.0f;
+        uint LightCount = 0u;
+        RenderViewSettings ViewSettings = {};
+    };
 
     // Dumping ground for all loose hooks that have not been implemented yet.
     class EngineDebug : 
         public IStepFrameUpdate<>,
         public IStep<IGizmosRenderer*>,
-        public IStep<AssetImportEvent<EngineDebugConfig>*>
+        public IStep<AssetImportEvent<Config<EngineDebugConfig>>*>
     {
     public:
         EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticAllocator* meshAllocator);
         virtual void OnStepFrameUpdate(FrameContext* ctx) final;
         virtual void Step(IGizmosRenderer* gui) final;
-        virtual void Step(AssetImportEvent<EngineDebugConfig>* token) final;
+        virtual void Step(AssetImportEvent<Config<EngineDebugConfig>>* token) final;
 
     private:
         EGID m_cameraEgid{};
@@ -46,4 +47,5 @@ namespace PK::App
     };
 }
 
-PK_YAML_ASSET_ASSETDATABSE_INTERFACE(PK::App::EngineDebugConfig)
+template<> inline const char* PK::Asset::GetExtension<PK::Config<PK::App::EngineDebugConfig>>() { return "*.cfg"; }
+

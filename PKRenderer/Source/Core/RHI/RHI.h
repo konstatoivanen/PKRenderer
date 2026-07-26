@@ -93,6 +93,8 @@ namespace PK
     enum class InputRate : uint8_t;
     enum class BufferUsage : uint32_t;
     enum class TextureUsage : uint16_t;
+    enum class ColorSpace : uint8_t;
+    enum class VSyncMode : uint8_t;
     enum class RayTracingShaderGroup;
 
     struct RHIDriver;

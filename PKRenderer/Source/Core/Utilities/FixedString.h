@@ -169,21 +169,21 @@ namespace PK
     template<size_t capacity> using FixedString = IFixedString<char, capacity>;
     template<size_t capacity> using FixedWString = IFixedString<wchar_t, capacity>;
 
-    typedef FixedString<16> FixedString16;
-    typedef FixedString<32> FixedString32;
-    typedef FixedString<64> FixedString64;
-    typedef FixedString<128> FixedString128;
-    typedef FixedString<256> FixedString256;
-    typedef FixedString<512> FixedString512;
-    typedef FixedString<1024> FixedString1024;
+    using FixedString16 = FixedString<16>;
+    using FixedString32 = FixedString<32>;
+    using FixedString64 = FixedString<64>;
+    using FixedString128 = FixedString<128>;
+    using FixedString256 = FixedString<256>;
+    using FixedString512 = FixedString<512>;
+    using FixedString1024 = FixedString<1024>;
 
-    typedef FixedWString<16> FixedWString16;
-    typedef FixedWString<32> FixedWString32;
-    typedef FixedWString<64> FixedWString64;
-    typedef FixedWString<128> FixedWString128;
-    typedef FixedWString<256> FixedWString256;
-    typedef FixedWString<512> FixedWString512;
-    typedef FixedWString<1024> FixedWString1024;
+    using FixedWString16 = FixedWString<16>;
+    using FixedWString32 = FixedWString<32>;
+    using FixedWString64 = FixedWString<64>;
+    using FixedWString128 = FixedWString<128>;
+    using FixedWString256 = FixedWString<256>;
+    using FixedWString512 = FixedWString<512>;
+    using FixedWString1024 = FixedWString<1024>;
 
     namespace Hash
     {

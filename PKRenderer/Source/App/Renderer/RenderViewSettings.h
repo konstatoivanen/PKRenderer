@@ -1,148 +1,165 @@
 #pragma once
 #include "Core/Math/Math.h"
-#include "Core/Yaml/StructMacros.h"
+
+namespace PK
+{
+    struct TextureAsset;
+}
 
 namespace PK::App
 {
-    PK_YAML_STRUCT_BEGIN(PostEffectsSettings)
-        PK_YAML_MEMBER(bool, Vignette, true)
-        PK_YAML_MEMBER(bool, Bloom, true)
-        PK_YAML_MEMBER(bool, Tonemap, true)
-        PK_YAML_MEMBER(bool, Filmgrain, true)
-        PK_YAML_MEMBER(bool, Colorgrading, false)
-        PK_YAML_MEMBER(bool, LUTColorGrading, true)
-    PK_YAML_STRUCT_END()
+    struct PostEffectsSettings
+    {
+        bool Vignette = true;
+        bool Bloom = true;
+        bool Tonemap = true;
+        bool Filmgrain = true;
+        bool Colorgrading = false;
+        bool LUTColorGrading = true;
+    };
 
-    PK_YAML_STRUCT_BEGIN(RenderingDebugSettings)
-        PK_YAML_MEMBER(bool, GIDiff, false)
-        PK_YAML_MEMBER(bool, GISpec, false)
-        PK_YAML_MEMBER(bool, GIVX, false)
-        PK_YAML_MEMBER(bool, LightTiles, false)
-        PK_YAML_MEMBER(bool, Normal, false)
-        PK_YAML_MEMBER(bool, Roughness, false)
-        PK_YAML_MEMBER(bool, HalfScreen, false)
-        PK_YAML_MEMBER(bool, Zoom, false)
-    PK_YAML_STRUCT_END()
+    struct RenderingDebugSettings
+    {
+        bool GIDiff = false;
+        bool GISpec = false;
+        bool GIVX = false;
+        bool LightTiles = false;
+        bool Normal = false;
+        bool Roughness = false;
+        bool HalfScreen = false;
+        bool Zoom = false;
+    };
 
-    PK_YAML_STRUCT_BEGIN(DepthOfFieldSettings)
-        PK_YAML_MEMBER(float, FocalLength, 0.05f)
-        PK_YAML_MEMBER(float, FNumber, 1.40f)
-        PK_YAML_MEMBER(float, FilmHeight, 0.024f)
-        PK_YAML_MEMBER(float, FocusSpeed, 5.0f)
-    PK_YAML_STRUCT_END()
+    struct DepthOfFieldSettings
+    {
+        float FocalLength = 0.05f;
+        float FNumber = 1.40f;
+        float FilmHeight = 0.024f;
+        float FocusSpeed = 5.0f;
+    };
 
-    PK_YAML_STRUCT_BEGIN(AutoExposureSettings)
-        PK_YAML_MEMBER(float, LogLuminanceRange, 1.0f)
-        PK_YAML_MEMBER(float, ExposureMin, 0.01f)
-        PK_YAML_MEMBER(float, ExposureMax, 1.0f)
-        PK_YAML_MEMBER(float, ExposureTarget, 1.0f)
-        PK_YAML_MEMBER(float, ExposureSpeed, 1.0f)
-    PK_YAML_STRUCT_END()
+    struct AutoExposureSettings
+    {
+        float LogLuminanceRange = 1.0f;
+        float ExposureMin = 0.01f;
+        float ExposureMax = 1.0f;
+        float ExposureTarget = 1.0f;
+        float ExposureSpeed = 1.0f;
+    };
 
-    PK_YAML_STRUCT_BEGIN(FilmGrainSettings)
-        PK_YAML_MEMBER(float, Intensity, 0.25f)
-        PK_YAML_MEMBER(float, Luminance, 0.25f)
-        PK_YAML_MEMBER(float, ExposureSensitivity, 1.0f)
-    PK_YAML_STRUCT_END()
+    struct FilmGrainSettings
+    {
+        float Intensity = 0.25f;
+        float Luminance = 0.25f;
+        float ExposureSensitivity = 1.0f;
+    };
 
-    PK_YAML_STRUCT_BEGIN(VignetteSettings)
-        PK_YAML_MEMBER(float, Intensity, 15.0f)
-        PK_YAML_MEMBER(float, Power, 0.25f)
-    PK_YAML_STRUCT_END()
+    struct VignetteSettings
+    {
+        float Intensity = 15.0f;
+        float Power = 0.25f;
+    };
 
-    PK_YAML_STRUCT_BEGIN(DistortSettings)
-        PK_YAML_MEMBER(float, PaniniProjectionAmount, 0.0f)
-        PK_YAML_MEMBER(float, PaniniProjectionScreenFit, 1.0f)
-        PK_YAML_MEMBER(float, ChromaticAberrationAmount, 0.0f)
-        PK_YAML_MEMBER(float, ChromaticAberrationPower, 1.0f)
-    PK_YAML_STRUCT_END()
+    struct DistortSettings
+    {
+        float PaniniProjectionAmount = 0.0f;
+        float PaniniProjectionScreenFit = 1.0f;
+        float ChromaticAberrationAmount = 0.0f;
+        float ChromaticAberrationPower = 1.0f;
+    };
 
-    PK_YAML_STRUCT_BEGIN(ColorGradingSettings)
-        PK_YAML_MEMBER(float, Contribution, 1.0f)
-        PK_YAML_MEMBER(float, TemperatureShift, 0.0f)
-        PK_YAML_MEMBER(float, Tint, 0.0f)
-        PK_YAML_MEMBER(float, Hue, 0.0f)
-        PK_YAML_MEMBER(float, Saturation, 1.0f)
-        PK_YAML_MEMBER(float, Vibrance, 0.0f)
-        PK_YAML_MEMBER(float, Value, 1.0f)
-        PK_YAML_MEMBER(float, Contrast, 1.0f)
-        PK_YAML_MEMBER(float, Gain, 1.0f)
-        PK_YAML_MEMBER(float, Gamma, 1.0f)
-        PK_YAML_MEMBER(uint, Shadows, 0x000000FF)
-        PK_YAML_MEMBER(uint, Midtones, 0x7F7F7FFF)
-        PK_YAML_MEMBER(uint, Highlights, 0xFFFFFFFF)
-        PK_YAML_MEMBER(uint, ChannelMixerRed, 0xFF0000FF)
-        PK_YAML_MEMBER(uint, ChannelMixerGreen, 0x00FF00FF)
-        PK_YAML_MEMBER(uint, ChannelMixerBlue, 0x0000FFFF)
-        PK_YAML_MEMBER(TextureAsset*, LutTextureAsset, nullptr)
-        PK_YAML_MEMBER(TextureAsset*, TonemapLutTextureAsset, nullptr)
-    PK_YAML_STRUCT_END()
+    struct ColorGradingSettings
+    {
+        float Contribution = 1.0f;
+        float TemperatureShift = 0.0f;
+        float Tint = 0.0f;
+        float Hue = 0.0f;
+        float Saturation = 1.0f;
+        float Vibrance = 0.0f;
+        float Value = 1.0f;
+        float Contrast = 1.0f;
+        float Gain = 1.0f;
+        float Gamma = 1.0f;
+        uint Shadows = 0x000000FF;
+        uint Midtones = 0x7F7F7FFF;
+        uint Highlights = 0xFFFFFFFF;
+        uint ChannelMixerRed = 0xFF0000FF;
+        uint ChannelMixerGreen = 0x00FF00FF;
+        uint ChannelMixerBlue = 0x0000FFFF;
+        TextureAsset* LutTextureAsset = nullptr;
+        TextureAsset* TonemapLutTextureAsset = nullptr;
+    };
 
-    PK_YAML_STRUCT_BEGIN(BloomSettings)
-        PK_YAML_MEMBER(float, Intensity, 0.0f)
-        PK_YAML_MEMBER(float, Diffusion, 1.0f)
-        PK_YAML_MEMBER(bool,  BorderClip, true)
-        PK_YAML_MEMBER(float, LensDirtIntensity, 0.0f)
-        PK_YAML_MEMBER(TextureAsset*, LensDirtTextureAsset, nullptr)
-    PK_YAML_STRUCT_END()
+    struct BloomSettings
+    {
+        float Intensity = 0.0f;
+        float Diffusion = 1.0f;
+        bool  BorderClip = true;
+        float LensDirtIntensity = 0.0f;
+        TextureAsset* LensDirtTextureAsset = nullptr;
+    };
 
+    struct TemporalAntialiasingSettings
+    {
+        float Sharpness = 0.5f;
+        float BlendingStatic = 0.99f;
+        float BlendingMotion = 0.85f;
+        float MotionAmplification = 600.0f;
+    };
 
-    PK_YAML_STRUCT_BEGIN(TemporalAntialiasingSettings)
-        PK_YAML_MEMBER(float, Sharpness, 0.5f)
-        PK_YAML_MEMBER(float, BlendingStatic, 0.99f)
-        PK_YAML_MEMBER(float, BlendingMotion, 0.85f)
-        PK_YAML_MEMBER(float, MotionAmplification, 600.0f)
-    PK_YAML_STRUCT_END()
+    struct FogExponentialSettings
+    {
+        float Constant = 0.0f;
+        float HeightExponent = 0.0f;
+        float HeightOffset = 0.0f;
+        float HeightAmount = 0.0f;
+    };
 
-    PK_YAML_STRUCT_BEGIN(FogExponentialSettings)
-        PK_YAML_MEMBER(float, Constant, 0.0f)
-        PK_YAML_MEMBER(float, HeightExponent, 0.0f)
-        PK_YAML_MEMBER(float, HeightOffset, 0.0f)
-        PK_YAML_MEMBER(float, HeightAmount, 0.0f)
-    PK_YAML_STRUCT_END()
+    struct FogSettings
+    {
+        float ZNear = 0.2f;
+        float ZFar = 200.0f;
+        float ZDistribution = 0.185f;
+        float FadeShadowsDirect = 0.05f;
+        float FadeShadowsVolumetric = 0.25f;
+        float FadeStatic = 0.25f;
+        float FadeGroundOcclusion = 3.0f;
+        float3 Albedo = PK_FLOAT3_ONE;
+        float3 Absorption = PK_FLOAT3_ONE;
+        float Phase0 = 0.25f;
+        float Phase1 = 0.95f;
+        float PhaseW = 0.5f;
+        float3 WindDirection = PK_FLOAT3_FORWARD;
+        float WindSpeed = 0.0f;
+        float Density = 0.0f;
+        float DensityNoiseAmount = 0.0f;
+        float DensityNoiseScale = 0.0f;
+        FogExponentialSettings Exponential0;
+        FogExponentialSettings Exponential1;
+    };
 
-    PK_YAML_STRUCT_BEGIN(FogSettings)
-        PK_YAML_MEMBER(float, ZNear, 0.2f)
-        PK_YAML_MEMBER(float, ZFar, 200.0f)
-        PK_YAML_MEMBER(float, ZDistribution, 0.185f)
-        PK_YAML_MEMBER(float, FadeShadowsDirect, 0.05f)
-        PK_YAML_MEMBER(float, FadeShadowsVolumetric, 0.25f)
-        PK_YAML_MEMBER(float, FadeStatic, 0.25f)
-        PK_YAML_MEMBER(float, FadeGroundOcclusion, 3.0f)
-        PK_YAML_MEMBER(float3, Albedo, PK_FLOAT3_ONE)
-        PK_YAML_MEMBER(float3, Absorption, PK_FLOAT3_ONE)
-        PK_YAML_MEMBER(float, Phase0, 0.25f)
-        PK_YAML_MEMBER(float, Phase1, 0.95f)
-        PK_YAML_MEMBER(float, PhaseW, 0.5f)
-        PK_YAML_MEMBER(float3, WindDirection, PK_FLOAT3_FORWARD)
-        PK_YAML_MEMBER(float, WindSpeed, 0.0f)
-        PK_YAML_MEMBER(float, Density, 0.0f)
-        PK_YAML_MEMBER(float, DensityNoiseAmount, 0.0f)
-        PK_YAML_MEMBER(float, DensityNoiseScale, 0.0f)
-        PK_YAML_MEMBER_STRUCT(FogExponentialSettings, Exponential0)
-        PK_YAML_MEMBER_STRUCT(FogExponentialSettings, Exponential1)
-    PK_YAML_STRUCT_END()
+    struct EnvBackgroundSettings
+    {
+        float Exposure = 1.0f;
+        bool CaptureUsesViewOrigin = false;
+        int32_t CaptureInterval = -1;
+        float3 CaptureOffset = PK_FLOAT3_ZERO;
+        TextureAsset* EnvironmentTextureAsset = nullptr;
+    };
 
-    PK_YAML_STRUCT_BEGIN(EnvBackgroundSettings)
-        PK_YAML_MEMBER(float, Exposure, 1.0f)
-        PK_YAML_MEMBER(bool, CaptureUsesViewOrigin, false)
-        PK_YAML_MEMBER(int32_t, CaptureInterval, -1)
-        PK_YAML_MEMBER(float3, CaptureOffset, PK_FLOAT3_ZERO)
-        PK_YAML_MEMBER(TextureAsset*, EnvironmentTextureAsset, nullptr)
-    PK_YAML_STRUCT_END()
-
-    PK_YAML_STRUCT_BEGIN(RenderViewSettings)
-        PK_YAML_MEMBER_STRUCT(PostEffectsSettings, PostEffectSettings)
-        PK_YAML_MEMBER_STRUCT(RenderingDebugSettings, RenderingDebugSettings)
-        PK_YAML_MEMBER_STRUCT(DepthOfFieldSettings, DepthOfFieldSettings)
-        PK_YAML_MEMBER_STRUCT(AutoExposureSettings, AutoExposureSettings)
-        PK_YAML_MEMBER_STRUCT(FilmGrainSettings, FilmGrainSettings)
-        PK_YAML_MEMBER_STRUCT(VignetteSettings, VignetteSettings)
-        PK_YAML_MEMBER_STRUCT(DistortSettings, DistortSettings)
-        PK_YAML_MEMBER_STRUCT(ColorGradingSettings, ColorGradingSettings)
-        PK_YAML_MEMBER_STRUCT(BloomSettings, BloomSettings)
-        PK_YAML_MEMBER_STRUCT(TemporalAntialiasingSettings, TemporalAntialiasingSettings)
-        PK_YAML_MEMBER_STRUCT(FogSettings, FogSettings)
-        PK_YAML_MEMBER_STRUCT(EnvBackgroundSettings, EnvBackgroundSettings)
-    PK_YAML_STRUCT_END()
+    struct RenderViewSettings
+    {
+        PostEffectsSettings PostEffectSettings;
+        RenderingDebugSettings RenderingDebugSettings;
+        DepthOfFieldSettings DepthOfFieldSettings;
+        AutoExposureSettings AutoExposureSettings;
+        FilmGrainSettings FilmGrainSettings;
+        VignetteSettings VignetteSettings;
+        DistortSettings DistortSettings;
+        ColorGradingSettings ColorGradingSettings;
+        BloomSettings BloomSettings;
+        TemporalAntialiasingSettings TemporalAntialiasingSettings;
+        FogSettings FogSettings;
+        EnvBackgroundSettings EnvBackgroundSettings;
+    };
 }

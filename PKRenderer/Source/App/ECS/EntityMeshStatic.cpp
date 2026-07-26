@@ -50,14 +50,14 @@ namespace PK
     }
 
     template<>
-    EGID EntityFactory<App::EntityMeshStatic>::Deserialize(EntityDatabase* entityDb, const YAML::ConstNode& parent, uint32_t group)
+    EGID EntityFactory<App::EntityMeshStatic>::Deserialize(EntityDatabase* entityDb, const Serialize::ConstNode& parent, uint32_t group)
     {
         App::EntityMeshStatic descriptor;
-        YAML::Read<float3>(parent, "position", &descriptor.position);
-        YAML::Read<float3>(parent, "rotation", &descriptor.rotation);
-        YAML::Read<float3>(parent, "scale", &descriptor.scale);
-        YAML::Read<uint8_t>(parent, "flags", reinterpret_cast<uint8_t*>(&descriptor.flags));
-        YAML::Read<MeshStaticRef>(parent, "mesh", &descriptor.mesh);
+        Serialize::Read<float3>(parent, "position", &descriptor.position);
+        Serialize::Read<float3>(parent, "rotation", &descriptor.rotation);
+        Serialize::Read<float3>(parent, "scale", &descriptor.scale);
+        Serialize::Read<uint8_t>(parent, "flags", reinterpret_cast<uint8_t*>(&descriptor.flags));
+        Serialize::Read<MeshStaticRef>(parent, "mesh", &descriptor.mesh);
         
         auto materials = parent.find_child("materials");
         auto materialCount = materials.num_children();
@@ -65,7 +65,7 @@ namespace PK
 
         for (auto i = 0u; i < materialCount; ++i)
         {
-            YAML::Read<MaterialTarget>(materials[i], materialArray + i);
+            Serialize::Read<MaterialTarget>(materials[i], materialArray + i);
         }
 
         descriptor.materials = { materialArray, materialCount };
@@ -74,17 +74,17 @@ namespace PK
     }
 
     template<>
-    void EntityFactory<App::EntityMeshStatic>::Serialize(EntityDatabase* entityDb, YAML::Node& parent, const EGID& egid)
+    void EntityFactory<App::EntityMeshStatic>::Serialize(EntityDatabase* entityDb, Serialize::Node& parent, const EGID& egid)
     {
         auto viewTransform = entityDb->Query<App::EntityViewTransform>(egid);
         auto viewMeshStatic = entityDb->Query<App::EntityViewMeshStatic>(egid);
         auto rotationEuler = math::euler(viewTransform->transform->rotation);
 
-        YAML::Write<float3>(parent, "position", &viewTransform->transform->position);
-        YAML::Write<float3>(parent, "rotation", &rotationEuler);
-        YAML::Write<float3>(parent, "scale", &viewTransform->transform->scale);
-        YAML::Write<uint8_t>(parent, "flags", reinterpret_cast<const uint8_t*>(&viewMeshStatic->primitive->flags));
-        YAML::Write<MeshStaticRef>(parent, "mesh", &viewMeshStatic->staticMesh->sharedMesh);
+        Serialize::Write<float3>(parent, "position", &viewTransform->transform->position);
+        Serialize::Write<float3>(parent, "rotation", &rotationEuler);
+        Serialize::Write<float3>(parent, "scale", &viewTransform->transform->scale);
+        Serialize::Write<uint8_t>(parent, "flags", reinterpret_cast<const uint8_t*>(&viewMeshStatic->primitive->flags));
+        Serialize::Write<MeshStaticRef>(parent, "mesh", &viewMeshStatic->staticMesh->sharedMesh);
 
         auto materials = parent["materials"];
         materials |= ryml::SEQ;
@@ -92,7 +92,7 @@ namespace PK
         for (auto i = 0u; i < viewMeshStatic->materials->materials.GetCount(); ++i)
         {
             auto node = materials.append_child();
-            YAML::Write<MaterialTarget>(node, nullptr, &viewMeshStatic->materials->materials[i]);
+            Serialize::Write<MaterialTarget>(node, nullptr, &viewMeshStatic->materials->materials[i]);
         }
     }
 }

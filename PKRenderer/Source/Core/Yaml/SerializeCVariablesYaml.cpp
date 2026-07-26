@@ -4,7 +4,7 @@
 #include "Core/CLI/CVariablesYaml.h"
 #include "Core/Yaml/Serialize.h"
 
-namespace PK::YAML
+namespace PK::Serialize
 {
     static void AddArg(char* buff, const char** args, ryml::csubstr substr, size_t& head, uint32_t& count)
     {

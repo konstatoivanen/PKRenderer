@@ -26,12 +26,12 @@ namespace PK::App
 
     class EngineFlyCamera : 
         public IStepFrameUpdate<>,
-        public IStep<AssetImportEvent<InputKeyConfig>*>
+        public IStep<AssetImportEvent<Config<InputKeyConfig>>*>
     {
     public:
         EngineFlyCamera(EntityDatabase* entityDb, InputKeyConfig* keyConfig);
         virtual void OnStepFrameUpdate(FrameContext* ctx) final;
-        virtual void Step(AssetImportEvent<InputKeyConfig>* evt) final { m_keys.SetKeysFrom(evt->asset); }
+        virtual void Step(AssetImportEvent<Config<InputKeyConfig>>* evt) final { m_keys.SetKeysFrom(evt->asset); }
 
         void TransformsLog() const;
         void TransformsReset();

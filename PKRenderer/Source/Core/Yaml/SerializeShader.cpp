@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
+#include "Core/Yaml/Serialize.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/Rendering/ShaderAsset.h"
-#include "Core/Yaml/Serialize.h"
 
-namespace PK::YAML
+namespace PK::Serialize
 {
     template<>
     void Read<ShaderAsset*>(const ConstNode& node, ShaderAsset** rhs)

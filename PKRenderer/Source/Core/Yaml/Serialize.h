@@ -4,22 +4,30 @@
 #endif
 #include <rapidyaml/ryaml.h>
 #include "Core/Utilities/Reflect.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/FileIO.h"
 
-namespace PK::YAML
+namespace PK::Serialize
 {
     typedef ryml::ConstNodeRef ConstNode;
     typedef ryml::NodeRef Node;
 
-    template<typename T> void Read(const ConstNode& node, T* rhs);
-    template<typename T> void Write(Node& node, const T* rhs);
-
-    template<typename T> concept TReadable = requires(const ConstNode & node, T * rhs) { Read<T>(node, rhs); };
-    template<typename T> concept TWritable = requires(Node & node, const T * rhs) { Write<T>(node, rhs); };
-
+    template<typename T> void Read(const ConstNode& node, T* rhs) = delete;
+    template<typename T> void Write(Node& node, const T* rhs) = delete;
     // This is a bit bad as it creates an assumption that keys can be parsed to anything other than strings.
-    template<typename T> void ReadKey(const ConstNode& node, T* rhs);
+    template<typename T> void ReadKey(const ConstNode& node, T* rhs) = delete;
 
+    template<typename T> concept TReadable = requires(const ConstNode & node, T * rhs) { Read(node, rhs); };
+    template<typename T> concept TTKeyReadable = requires(const ConstNode & node, T * rhs) { ReadKey(node, rhs); };
+    template<typename T> concept TWritable = requires(Node & node, const T * rhs) { Write(node, rhs); };
+}
+
+#define PK_CUSTOM_SERIALIZABLES
+#include "Serializables.h"
+#undef PK_CUSTOM_SERIALIZERS
+
+namespace PK::Serialize
+{
     template<typename T>
     void Read(const ConstNode& node, const char* memberName, T* rhs)
     {
@@ -71,15 +79,23 @@ namespace PK::YAML
 
             auto member = node.find_child(name);
 
+            // Allow declaring members with absolute path in relation to type name so that configs can be more readable.
+            if (!member.readable())
+            {
+                auto typeName = pk_base_type_name<T>();
+                FixedString64 absoluteName("%.*s.%s", typeName.count, typeName.data, name);
+                member = node.find_child(absoluteName.c_str());
+            }
+
             if (member.readable())
             {
                 if constexpr (TReadable<TField>)
                 {
-                    Read(member, name, &value);
+                    Read<TField>(member, &value);
                 }
                 else
                 {
-                    ReadStruct(node, &value);
+                    ReadStruct<TField>(member, &value);
                 }
             }
         });
@@ -97,7 +113,7 @@ namespace PK::YAML
         }
 
         auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
-        YAML::ConstNode root = tree.rootref();
+        Serialize::ConstNode root = tree.rootref();
 
         ReadStruct(root, rhs);
 

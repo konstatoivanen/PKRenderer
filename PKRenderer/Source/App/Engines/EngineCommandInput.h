@@ -3,6 +3,7 @@
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/Input/InputKeyBinding.h"
+#include "Core/Yaml/Config.h"
 #include "App/FrameStep.h"
 
 namespace PK { struct Sequencer; }
@@ -16,7 +17,7 @@ namespace PK::App
     struct EngineCommandInput : 
         public IStep<IGUIRenderer*>,
         public IStepFrameUpdate<>,
-        public IStep<AssetImportEvent<InputKeyConfig>*>
+        public IStep<AssetImportEvent<Config<InputKeyConfig>>*>
     {
         constexpr const static uint32_t LINE_COUNT = 32u;
         constexpr const static uint32_t LINE_LENGTH = 128u;
@@ -25,7 +26,7 @@ namespace PK::App
 
         virtual void Step(IGUIRenderer* gui) final;
         virtual void OnStepFrameUpdate(FrameContext* ctx) final;
-        virtual void Step(AssetImportEvent<InputKeyConfig>* evt) final;
+        virtual void Step(AssetImportEvent<Config<InputKeyConfig>>* evt) final;
 
     private:
         Sequencer* m_sequencer = nullptr;

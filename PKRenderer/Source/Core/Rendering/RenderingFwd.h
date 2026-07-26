@@ -7,6 +7,7 @@ namespace PK
     struct TextureAsset;
     struct ShaderAsset;
     struct Material;
+    struct MaterialTarget;
     struct Font;
     struct FontStyle;
     struct SubMesh;
@@ -40,5 +41,4 @@ namespace PK
     typedef Ref<IESProfile> IESProfileRef;
     typedef Ref<ConstantBuffer> ConstantBufferRef;
     typedef Unique<Window> WindowScope;
-
 }

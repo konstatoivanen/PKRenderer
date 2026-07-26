@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
+#include "Core/Yaml/Serialize.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/Rendering/Mesh.h"
-#include "Core/Yaml/Serialize.h"
 
-namespace PK::YAML
+namespace PK::Serialize
 {
     template<>
     void Read<MeshStatic*>(const ConstNode& node, MeshStatic** rhs)
