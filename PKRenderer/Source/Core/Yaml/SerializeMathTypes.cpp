@@ -1,68 +1,61 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/Math.h"
-#include "Core/Yaml/RapidyamlPrivate.h"
+#include "Core/Yaml/Serialize.h"
 
 namespace PK::YAML
 {
-    #define DECLARE_SCALAR_SERIALIZE(type)                                                                                                  \
-    template<> bool Read<type>(const ConstNode& node, type* rhs) { node >> *rhs; return true; }                                             \
-    template<> void Write<type>(Node& parent, const char* memberName, const type* rhs) { parent[memberName] << *rhs |= ryml::VAL_PLAIN; }   \
-    PK_YAML_DECLARE_READ_MEMBER(type)                                                                                                       \
+    #define DECLARE_SCALAR_SERIALIZE(type)                                                          \
+    template<> void Read<type>(const ConstNode& node, type* rhs) { node >> *rhs; }                  \
+    template<> void Write<type>(Node& node, const type* rhs) { node<< *rhs |= ryml::VAL_PLAIN; }    \
 
 
-    #define DECLARE_VECTOR_SERIALIZE(type, count)                                           \
+    #define DECLARE_VECTOR_SERIALIZE(type, count)                   \
+    template<>                                                      \
+    void Read<type##count>(const ConstNode& node, type##count* rhs) \
+    {                                                               \
+        if (node.is_flow_sl() && node.num_children() > 0u)          \
+        {                                                           \
+            auto maxidx = (uint32_t)node.num_children() - 1u;       \
+            for (auto i = 0u; i < count; ++i)                       \
+            {                                                       \
+                node[math::min(maxidx, i)] >> (*rhs)[i];            \
+            }                                                       \
+        }                                                           \
+    }                                                               \
+    template<>                                                      \
+    void Write<type##count>(Node& node, const type##count* rhs)     \
+    {                                                               \
+        node |= ryml::SEQ | ryml::FLOW_SL;                          \
+        for (auto i = 0u; i < count; ++i)                           \
+        {                                                           \
+            node.append_child() << (*rhs)[i];                       \
+        }                                                           \
+    }                                                               \
+
+
+    #define DECLARE_MATRIX_SERIALIZE(type, countx, county)									\
     template<>                                                                              \
-    bool Read<type##count>(const ConstNode& node, type##count* rhs)                         \
+    void Read<type##countx##x##county>(const ConstNode& node, type##countx##x##county* rhs) \
     {                                                                                       \
-        if (node.is_flow_sl() && node.num_children() > 0u)                                  \
+        if (node.is_flow_sl() && node.num_children() == (countx * county))                  \
         {                                                                                   \
-            auto maxidx = (uint32_t)node.num_children() - 1u;                               \
-            for (auto i = 0u; i < count; ++i)                                               \
+            for (auto y = 0u; y < county; ++y)                                              \
+            for (auto x = 0u; x < countx; ++x)                                              \
             {                                                                               \
-                node[math::min(maxidx, i)] >> (*rhs)[i];                                    \
+                node[x + y * countx] >> (*rhs)[y][x];                                       \
             }                                                                               \
         }                                                                                   \
-        return true;                                                                        \
     }                                                                                       \
     template<>                                                                              \
-    void Write<type##count>(Node& parent, const char* memberName, const type##count* rhs)   \
+    void Write<type##countx##x##county>(Node& node, const type##countx##x##county* rhs)     \
     {                                                                                       \
-        auto node = parent[memberName];                                                     \
         node |= ryml::SEQ | ryml::FLOW_SL;                                                  \
-        for (auto i = 0u; i < count; ++i)                                                   \
+        for (auto y = 0u; y < county; ++y)                                                  \
+        for (auto x = 0u; x < countx; ++x)                                                  \
         {                                                                                   \
-            node.append_child() << (*rhs)[i];                                               \
+            node.append_child() << (*rhs)[y][x];                                            \
         }                                                                                   \
     }                                                                                       \
-    PK_YAML_DECLARE_READ_MEMBER(type##count)                                                \
-
-
-    #define DECLARE_MATRIX_SERIALIZE(type, countx, county)										                    \
-    template<>                                                                                                      \
-    bool Read<type##countx##x##county>(const ConstNode& node, type##countx##x##county* rhs)                         \
-    {                                                                                                               \
-        if (node.is_flow_sl() && node.num_children() == (countx * county))                                          \
-        {                                                                                                           \
-            for (auto y = 0u; y < county; ++y)                                                                      \
-            for (auto x = 0u; x < countx; ++x)                                                                      \
-            {                                                                                                       \
-                node[x + y * countx] >> (*rhs)[y][x];                                                               \
-            }                                                                                                       \
-        }                                                                                                           \
-        return true;                                                                                                \
-    }                                                                                                               \
-    template<>                                                                                                      \
-    void Write<type##countx##x##county>(Node& parent, const char* memberName, const type##countx##x##county* rhs)   \
-    {                                                                                                               \
-        auto node = parent[memberName];                                                                             \
-        node |= ryml::SEQ | ryml::FLOW_SL;                                                                          \
-        for (auto y = 0u; y < county; ++y)                                                                          \
-        for (auto x = 0u; x < countx; ++x)                                                                          \
-        {                                                                                                           \
-            node.append_child() << (*rhs)[y][x];                                                                    \
-        }                                                                                                           \
-    }                                                                                                               \
-    PK_YAML_DECLARE_READ_MEMBER(type##countx##x##county)                                                            \
 
     DECLARE_SCALAR_SERIALIZE(bool)
     DECLARE_SCALAR_SERIALIZE(uint8_t)
@@ -130,7 +123,7 @@ namespace PK::YAML
     DECLARE_MATRIX_SERIALIZE(ushort,3,4)
     DECLARE_MATRIX_SERIALIZE(ushort,4,4)
 
-#undef DECLARE_SCALAR_SERIALIZE
-#undef DECLARE_VECTOR_SERIALIZE
-#undef DECLARE_MATRIX_SERIALIZE
+    #undef DECLARE_SCALAR_SERIALIZE
+    #undef DECLARE_VECTOR_SERIALIZE
+    #undef DECLARE_MATRIX_SERIALIZE
 }

@@ -55,6 +55,7 @@ namespace PK
     template<typename T> using TRemoveRef_T = typename TRemoveRef<T>::Type;
     template<typename T> using TRemovePtr_T = typename TRemovePtr<T>::Type;
     template<typename T> using TRemoveCV_T = typename TRemoveCV<T>::Type;
+    template<typename T> using TRemoveCVRef_T = typename TRemoveCV<typename TRemoveRef<T>::Type>::Type;
 
     template<typename T, T N> struct TIntegerConstant { using Type = T; static constexpr T Value = N; };
     template<size_t Index> using TIndexConstant = TIntegerConstant<size_t, Index>;

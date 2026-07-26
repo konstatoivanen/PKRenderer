@@ -1,14 +1,13 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/FixedString.h"
-#include "Core/Yaml/RapidyamlPrivate.h"
+#include "Core/Yaml/Serialize.h"
 
 namespace PK::YAML
 {
-    #define DECLARE_FIXEDSTRING_SERIALIZE(type)                                                                                                         \
-    template<> bool Read<type>(const ConstNode& node, type* rhs) { auto substr = node.val(); *rhs = type(substr.len, substr.data()); return true; }     \
-    template<> bool ReadKey<type>(const ConstNode& node, type* rhs) { auto substr = node.key(); *rhs = type(substr.len, substr.data()); return true; }  \
-    template<> void Write<type>(Node& parent, const char* memberName, const type* rhs) { parent[memberName] << rhs->c_str() |= ryml::VAL_DQUO; }        \
-    PK_YAML_DECLARE_READ_MEMBER(type)                                                                                                                   \
+    #define DECLARE_FIXEDSTRING_SERIALIZE(type)                                                                                             \
+    template<> void Read<type>(const ConstNode& node, type* rhs) { auto substr = node.val(); *rhs = type(substr.len, substr.data());; }     \
+    template<> void ReadKey<type>(const ConstNode& node, type* rhs) { auto substr = node.key(); *rhs = type(substr.len, substr.data()); }   \
+    template<> void Write<type>(Node& node, const type* rhs) { node << rhs->c_str() |= ryml::VAL_DQUO; }                                    \
 
     DECLARE_FIXEDSTRING_SERIALIZE(FixedString16)
     DECLARE_FIXEDSTRING_SERIALIZE(FixedString32)

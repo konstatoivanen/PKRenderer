@@ -546,16 +546,13 @@
     <ClInclude Include="ThirdParty\rapidyaml\rapidyaml-0.7.1.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\RapidyamlFwd.h">
+    <ClInclude Include="Source\Core\Yaml\Serialize.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\rapidyaml\ryaml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\RapidyamlPrivate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\ECS\ComponentViewInput.h">

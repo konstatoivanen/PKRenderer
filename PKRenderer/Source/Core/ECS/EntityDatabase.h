@@ -146,7 +146,7 @@ namespace PK
 
             PK::ReflectFields(*static_cast<TView*>(view), [implementer](auto& value)
             {
-                using TField = std::remove_cvref<decltype(value)>::type;
+                using TField = PK::TRemoveCVRef_T<decltype(value)>;
 
                 if constexpr (TIsSpecialization<TField, EntityComponentRef> && 
                               TIsConvertible<TImpl*, typename TField::Type*>)

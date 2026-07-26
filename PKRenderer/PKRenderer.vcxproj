@@ -317,8 +317,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\Pair.h" />
     <ClInclude Include="Source\Core\Utilities\Templates.h" />
     <ClInclude Include="Source\Core\Utilities\UUID128.h" />
-    <ClInclude Include="Source\Core\Yaml\RapidyamlFwd.h" />
-    <ClInclude Include="Source\Core\Yaml\RapidyamlPrivate.h" />
+    <ClInclude Include="Source\Core\Yaml\Serialize.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />
     <ClInclude Include="ThirdParty\mikktspace\mikktspace.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAsset.h" />

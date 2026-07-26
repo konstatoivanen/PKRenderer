@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/ECS/EGID.h"
-#include "Core/Yaml/RapidyamlFwd.h"
+#include "Core/Yaml/Serialize.h"
 
 namespace PK
 {

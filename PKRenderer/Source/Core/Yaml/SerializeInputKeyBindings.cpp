@@ -1,11 +1,11 @@
 #include "PrecompiledHeader.h"
 #include "Core/Input/InputKeyBinding.h"
-#include "Core/Yaml/RapidyamlPrivate.h"
+#include "Core/Yaml/Serialize.h"
 
 namespace PK::YAML
 {
     template<>
-    bool Read<CommandInputKeyBindingMap>(const ConstNode& node, CommandInputKeyBindingMap* rhs)
+    void Read<CommandInputKeyBindingMap>(const ConstNode& node, CommandInputKeyBindingMap* rhs)
     {
         auto& map = *rhs;
         map.Reserve((uint32_t)node.num_children());
@@ -18,16 +18,14 @@ namespace PK::YAML
             FixedString32 namestr(name.len, name.data());
             map.AddValue(namestr, PK::StringToInputKey(keystr));
         }
-
-        return true;
     }
 
     template<>
-    bool Read<InputKeyCommandBindings>(const ConstNode& node, InputKeyCommandBindings* rhs)
+    void Read<InputKeyCommandBindings>(const ConstNode& node, InputKeyCommandBindings* rhs)
     {
         if (node.num_children() == 0)
         {
-            return true;
+            return;
         }
 
         auto& keyCommands = *rhs;
@@ -54,10 +52,5 @@ namespace PK::YAML
             head[name.len] = '\0';
             head += name.len + 1u;
         }
-
-        return true;
     }
-
-    PK_YAML_DECLARE_READ_MEMBER(CommandInputKeyBindingMap)
-    PK_YAML_DECLARE_READ_MEMBER(InputKeyCommandBindings)
 }

@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
 #include "Core/Utilities/FileIO.h"
-#include "Core/Yaml/RapidyamlPrivate.h"
+#include "Core/Yaml/Serialize.h"
 #include "StructMacros.h"
 
 namespace PK

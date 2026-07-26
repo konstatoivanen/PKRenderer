@@ -2,7 +2,7 @@
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/CLI/CVariablesYaml.h"
-#include "Core/Yaml/RapidyamlPrivate.h"
+#include "Core/Yaml/Serialize.h"
 
 namespace PK::YAML
 {
@@ -19,8 +19,8 @@ namespace PK::YAML
         head += substr.len + 1ull;
     }
 
-    template<>
-    bool Read<CVariablesYaml>(const ConstNode& node, [[maybe_unused]] CVariablesYaml* rhs)
+    template<> 
+    void Read<CVariablesYaml>(const ConstNode& node, [[maybe_unused]] CVariablesYaml* rhs)
     {
         char buffer[512];
         const char* arguments[32];
@@ -45,9 +45,5 @@ namespace PK::YAML
 
             PK::CVariableRegister::Execute(arguments, count);
         }
-
-        return true;
     }
-
-    PK_YAML_DECLARE_READ_MEMBER(CVariablesYaml)
 }

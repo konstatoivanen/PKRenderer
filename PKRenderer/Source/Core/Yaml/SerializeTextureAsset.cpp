@@ -1,51 +1,44 @@
 #include "PrecompiledHeader.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/Rendering/TextureAsset.h"
-#include "Core/Yaml/RapidyamlPrivate.h"
+#include "Core/Yaml/Serialize.h"
 
 namespace PK::YAML
 {
     template<>
-    bool Read<TextureAsset*>(const ConstNode& node, TextureAsset** rhs)
+    void Read<TextureAsset*>(const ConstNode& node, TextureAsset** rhs)
     {
         auto pathsubstr = node.val();
         FixedString128 path(pathsubstr.len, pathsubstr.data());
         *rhs = AssetDatabase::Get()->Load<TextureAsset>(path).get();
-        return *rhs != nullptr;
     }
 
     template<>
-    bool Read<TextureAssetRef>(const ConstNode& node, TextureAssetRef* rhs)
+    void Read<TextureAssetRef>(const ConstNode& node, TextureAssetRef* rhs)
     {
         auto pathsubstr = node.val();
         FixedString128 path(pathsubstr.len, pathsubstr.data());
         *rhs = AssetDatabase::Get()->Load<TextureAsset>(path);
-        return *rhs != nullptr;
     }
 
     template<>
-    bool Read<RHITexture*>(const ConstNode& node, RHITexture** rhs)
+    void Read<RHITexture*>(const ConstNode& node, RHITexture** rhs)
     {
         auto pathsubstr = node.val();
         FixedString128 path(pathsubstr.len, pathsubstr.data());
         auto asset = AssetDatabase::Get()->Load<TextureAsset>(path);
         *rhs = asset ? asset->GetRHI() : nullptr;
-        return *rhs != nullptr;
     }
 
     template<>
-    void Write<TextureAsset*>(Node& parent, const char* memberName, TextureAsset* const* rhs)
+    void Write<TextureAsset*>(Node& node, TextureAsset* const* rhs)
     {
-        parent[memberName] << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
+        node << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
     }
 
     template<>
-    void Write<TextureAssetRef>(Node& parent, const char* memberName, const TextureAssetRef* rhs)
+    void Write<TextureAssetRef>(Node& node, const TextureAssetRef* rhs)
     {
-        parent[memberName] << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
+        node << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
     }
-
-    PK_YAML_DECLARE_READ_MEMBER(TextureAsset*)
-    PK_YAML_DECLARE_READ_MEMBER(TextureAssetRef)
-    PK_YAML_DECLARE_READ_MEMBER(RHITexture*)
 }

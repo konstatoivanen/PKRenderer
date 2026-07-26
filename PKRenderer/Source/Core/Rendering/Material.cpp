@@ -5,7 +5,7 @@
 #include "Core/RHI/BuiltInResources.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/TextureAsset.h"
-#include "Core/Yaml/RapidyamlPrivate.h"
+#include "Core/Yaml/Serialize.h"
 #include "Material.h"
 
 namespace PK

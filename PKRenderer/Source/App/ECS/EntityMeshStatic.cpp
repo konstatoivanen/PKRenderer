@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Yaml/RapidyamlPrivate.h"
+#include "Core/Yaml/Serialize.h"
 #include "Core/Math/Math.h"
 #include "Core/CLI/Log.h"
 #include "Core/ECS/EntityDatabase.h"

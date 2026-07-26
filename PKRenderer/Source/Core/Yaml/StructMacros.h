@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Yaml/RapidyamlFwd.h"
+#include "Core/Yaml/Serialize.h"
 #include "Core/Assets/Asset.h"
 
 namespace PK

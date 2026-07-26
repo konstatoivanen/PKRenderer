@@ -11,11 +11,7 @@ namespace PK
     inline const uint32_t pk_type_index = pk_type_index_counter++;
 
     template<typename T>
-    constexpr uint32_t pk_base_type_index()
-    {
-        using TBase = typename TRemoveCV<typename TRemoveRef<T>::Type>::Type;
-        return pk_type_index<TBase>;
-    }
+    constexpr uint32_t pk_base_type_index() { return pk_type_index<TRemoveCVRef_T<T>>; }
 
     // Source: https://github.com/Neargye/nameof
     constexpr ConstBufferView<char> pk_base_type_name(const char* name, size_t length) noexcept
