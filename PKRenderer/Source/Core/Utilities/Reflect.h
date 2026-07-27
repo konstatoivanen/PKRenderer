@@ -1459,8 +1459,6 @@ namespace PK
     template<typename T> struct TReflectionFieldNameWrapper { const T value; };
     template<typename T> extern const TReflectionFieldNameWrapper <T> ReflectionLocalTypeAssert;
     template<typename T> constexpr const T& ReflectionFieldNameObject() noexcept { return ReflectionLocalTypeAssert<T>.value; }
-    template<size_t N> struct TReflectionFieldName { char str[N]; };
-    template<size_t N> struct TReflectionFieldNameArray { constexpr static const size_t Size = N; const char* names[N]; };
 
     template<bool TReturnOffsetOrCount>
     consteval size_t ReflectionGetFieldNameScope(const char* str, const size_t length) noexcept
@@ -1503,14 +1501,11 @@ namespace PK
         constexpr size_t name_length = 0ull;
         #endif
     
-        TReflectionFieldName<name_length + 1u> res = {};
-    
-        auto* out = res.str;
+        TStringLiteral<name_length> res{};
     
         for (auto i = 0u; i < name_length; ++i)
         {
-            *out = name_data[i];
-            ++out;
+            res.str[i] = name_data[i];
         }
     
         return res;
@@ -1524,7 +1519,7 @@ namespace PK
     {
         return []<size_t... I>(PK::TIndexSequence<I...>) noexcept 
         { 
-            return TReflectionFieldNameArray<sizeof...(I)>{ pk_field_name<T, I>.str... }; 
+            return TStringLiteralArray<sizeof...(I)>{ pk_field_name<T, I>()... };
         }
         (PK::TMakeIndexSequence<pk_field_count<T>>{});
     }
@@ -1552,7 +1547,7 @@ namespace PK
 
             using TField = decltype(field);
 
-            constexpr auto name = pk_field_name<TNoRef, index>.str;
+            constexpr auto name = pk_field_name<TNoRef, index>();
 
             if constexpr (requires { PK::Forward<TFunc>(func)(name, PK::Forward<TField>(field)); })
             {

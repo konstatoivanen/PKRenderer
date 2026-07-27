@@ -3,6 +3,7 @@
 #define C4_USE_ASSERT 0
 #endif
 #include <rapidyaml/ryaml.h>
+#include "Core/Utilities/TypeIndex.h"
 #include "Core/Utilities/Reflect.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/FileIO.h"
@@ -82,8 +83,7 @@ namespace PK::Serialize
             // Allow declaring members with absolute path in relation to type name so that configs can be more readable.
             if (!member.readable())
             {
-                auto typeName = pk_base_type_name<T>();
-                FixedString64 absoluteName("%.*s.%s", typeName.count, typeName.data, name);
+                FixedString64 absoluteName("%s.%s", pk_outer_type_name<T>(), name);
                 member = node.find_child(absoluteName.c_str());
             }
 

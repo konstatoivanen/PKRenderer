@@ -41,7 +41,7 @@ namespace PK::App
                 // Default to typename + index if no user defined value was set.
                 if (!name.Length())
                 {
-                    name = FixedString64("%s%u", serializer->name.c_str(), i);
+                    name = FixedString64("%s%u", serializer->name, i);
                 }
 
                 // Copy byte data to string as yaml << operator doesn't support substr?

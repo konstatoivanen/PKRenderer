@@ -12,7 +12,7 @@ namespace PK::App
         typedef void (*FuncSerialize)(EntityDatabase*, Serialize::Node&, const EGID&);
 
         UUID128 uuid;
-        FixedString32 name;
+        const char* name;
         uint32_t typeIndex;
         FuncDeserialize deserialize;
         FuncSerialize serialize;
@@ -20,10 +20,10 @@ namespace PK::App
         template<typename TEntity>
         static EntitySerializer GetSerializer()
         {
-            constexpr auto name = pk_base_type_name<TEntity>();
+            constexpr auto name = pk_outer_type_name<TEntity>;
             EntitySerializer serializer;
-            serializer.name = FixedString32(name.count, name.data);
-            serializer.uuid = Hash::MurmurHash128(name.data, name.count);
+            serializer.name = name.str;
+            serializer.uuid = Hash::MurmurHash128(name.str, name.length);
             serializer.typeIndex = pk_base_type_index<TEntity>();
             serializer.deserialize = EntityFactory<TEntity>::Deserialize;
             serializer.serialize = EntityFactory<TEntity>::Serialize;

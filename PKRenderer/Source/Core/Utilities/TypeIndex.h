@@ -13,6 +13,16 @@ namespace PK
     template<typename T>
     constexpr uint32_t pk_base_type_index() { return pk_type_index<TRemoveCVRef_T<T>>; }
 
+    #if defined(__clang__)
+        #define PK_FUNC_SIG __PRETTY_FUNCTION__
+        #define PK_FUNC_SIG_LEN (sizeof(__PRETTY_FUNCTION__) - 2)
+    #elif defined(_MSC_VER)
+        #define PK_FUNC_SIG __FUNCSIG__
+        #define PK_FUNC_SIG_LEN (sizeof(__FUNCSIG__) - 17)
+    #else
+        #error "Unsupported compiler!"
+    #endif
+
     consteval bool pk_char_is_alpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_'); }
     consteval bool pk_char_is_numeric(char c) { return c >= '0' && c <= '9'; }
     consteval bool pk_char_is_alphanumeric(char c) { return pk_char_is_alpha(c) || pk_char_is_numeric(c); }
@@ -46,15 +56,13 @@ namespace PK
         {
             if (name[i - 1] == ')')
             {
-                ++h;
-                ++s;
+                ++h;++s;
                 continue;
             }
 
             if (name[i - 1] == '(')
             {
-                --h;
-                ++s;
+                --h;++s;
                 continue;
             }
 
@@ -63,6 +71,7 @@ namespace PK
                 length -= s;
                 break;
             }
+
             ++s;
         }
 
@@ -72,15 +81,13 @@ namespace PK
         {
             if (name[i - 1] == '>')
             {
-                ++h;
-                ++s;
+                ++h;++s;
                 continue;
             }
 
             if (name[i - 1] == '<')
             {
-                --h;
-                ++s;
+                --h;++s;
                 continue;
             }
 
@@ -112,7 +119,7 @@ namespace PK
         return { nullptr, 0ull };
     }
 
-    // Returns innermost type name. ie. T<N> -> N, if T is not a template it will return T.
+    // Returns innermost type name. ie. T<N> -> N, if T is not a template this returns T
     consteval ConstBufferView<char> pk_inner_type_name_view(const char* name, size_t length) noexcept
     {
         if (!pk_type_name_validate(name, length))
@@ -151,27 +158,27 @@ namespace PK
         return { nullptr, 0ull };
     }
 
-    template<typename T>
-    consteval ConstBufferView<char> pk_base_type_name() noexcept
+    // Save binary size by stripping the string.
+    template<bool inner_outer, typename T>
+    consteval auto pk_type_name_data() noexcept
     {
-    #if defined(__clang__)
-        return pk_outer_type_name_view(__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__) - 2);
-    #elif defined(_MSC_VER)
-        return pk_outer_type_name_view(__FUNCSIG__, sizeof(__FUNCSIG__) - 17);
-    #else
-        #error "Unsupported compiler!"
-    #endif
+        constexpr auto view = inner_outer ? 
+            pk_inner_type_name_view(PK_FUNC_SIG, PK_FUNC_SIG_LEN) :
+            pk_outer_type_name_view(PK_FUNC_SIG, PK_FUNC_SIG_LEN);
+
+        TStringLiteral<view.count> string{};
+
+        for (auto i = 0u; i < view.count; ++i)
+        {
+            string.str[i] = view.data[i];
+        }
+
+        return string;
     }
 
-    template<typename T>
-    consteval ConstBufferView<char> pk_inner_type_name() noexcept
-    {
-    #if defined(__clang__)
-        return pk_inner_type_name_view(__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__) - 2);
-    #elif defined(_MSC_VER)
-        return pk_inner_type_name_view(__FUNCSIG__, sizeof(__FUNCSIG__) - 17);
-    #else
-        #error "Unsupported compiler!"
-        #endif
-    }
+    template <typename T> inline constexpr auto pk_inner_type_name = pk_type_name_data<true, T>();
+    template <typename T> inline constexpr auto pk_outer_type_name = pk_type_name_data<false, T>();
+
+    #undef PK_FUNC_SIG
+    #undef PK_FUNC_SIG_LEN 
 }

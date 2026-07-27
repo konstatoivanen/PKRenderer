@@ -263,7 +263,7 @@ namespace PK
         if (!object->isVirtual && (!object->isLoaded || isReload))
         {
             FixedString128 filepath = object->assetId.c_str();
-            PK_LOG_VERBOSE_FUNC_FMT(": %.*s, %s", object->typeInfo->nameLength, object->typeInfo->name, filepath.c_str());
+            PK_LOG_VERBOSE_FUNC_FMT(": %s, %s", object->typeInfo->name, filepath.c_str());
             object->DestructAsset();
             object->ConstructAsset(this, filepath);
         }
@@ -275,7 +275,7 @@ namespace PK
         return infoIndex != -1 ? m_assetTypes[infoIndex].headIndex : INVALID_LINK;
     }
 
-    AssetDatabase::TypeInfo* AssetDatabase::CreateTypeInfo(uint32_t typeIndex, const ConstBufferView<char>& name)
+    AssetDatabase::TypeInfo* AssetDatabase::CreateTypeInfo(uint32_t typeIndex, const char* name)
     {
         auto infoIndex = m_assetTypes.GetHashIndex(typeIndex);
 
@@ -284,23 +284,22 @@ namespace PK
             TypeInfo info;
             info.typeIndex = typeIndex;
             info.headIndex = INVALID_LINK;
-            info.name = name.data;
-            info.nameLength = name.count;
+            info.name = name;
             info.factory = nullptr;
             infoIndex = m_assetTypes.Add(info);
 
-            FixedString128 cvarnameMeta("AssetDatabase.Query.Meta.%.*s", info.nameLength, info.name);
-            FixedString128 cvarnameLoaded("AssetDatabase.Query.Loaded.%.*s", info.nameLength, info.name);
-            FixedString128 cvarnameReloadAll("AssetDatabase.Reload.Cached.All.%.*s", info.nameLength, info.name);
-            FixedString128 cvarnameReload("AssetDatabase.Reload.Cached.%.*s", info.nameLength, info.name);
+            FixedString128 cvarnameMeta("AssetDatabase.Query.Meta.%s", info.name);
+            FixedString128 cvarnameLoaded("AssetDatabase.Query.Loaded.%s", info.name);
+            FixedString128 cvarnameReloadAll("AssetDatabase.Reload.Cached.All.%s", info.name);
+            FixedString128 cvarnameReload("AssetDatabase.Reload.Cached.%s", info.name);
 
-            CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name = info.name, nameLength = info.nameLength](const char* const* args, [[maybe_unused]] uint32_t count)
+            CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name = info.name](const char* const* args, [[maybe_unused]] uint32_t count)
                 {
                     PK_LOG_NEWLINE();
                     auto asset = Find(typeIndex, args[0]);
                     if (asset == nullptr)
                     {
-                        PK_LOG_WARNING("AssetDatabase.Query.Meta.%.*s Not Found With '%s'", nameLength, name, args[0]);
+                        PK_LOG_WARNING("AssetDatabase.Query.Meta.%s Not Found With '%s'", name, args[0]);
                     }
                     else
                     {

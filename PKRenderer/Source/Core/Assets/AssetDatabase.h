@@ -32,7 +32,6 @@ namespace PK
             uint32_t typeIndex;
             uint32_t headIndex;
             const char* name;
-            size_t nameLength;
             IAssetFactory* factory;
             
             bool operator == (const TypeInfo& other) { return typeIndex == other.typeIndex; }
@@ -140,9 +139,8 @@ namespace PK
         Ref<T> CreateVirtual(AssetID assetId, Args&& ... args)
         {
             auto object = CreateAssetObject<T>(assetId, CacheMode::Persistent);
-            constexpr auto name = pk_inner_type_name<T>();
             PK_FATAL_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
-            PK_LOG_VERBOSE_FUNC_FMT("%.*s, %s", name.count, name.data, assetId.c_str());
+            PK_LOG_VERBOSE_FUNC_FMT("%s, %s", pk_inner_type_name<T>(), assetId.c_str());
             object->ConstructVirtual(PK::Forward<Args>(args)...);
             return object->GetReference();
         }
@@ -171,8 +169,7 @@ namespace PK
         template<typename T>
         void LoadDirectory(const char* directory, bool forceReload = false)
         {
-            constexpr auto name = pk_inner_type_name<T>();
-            PK_LOG_VERBOSE_FUNC_FMT("%.*s, %s", name.count, name.data, directory);
+            PK_LOG_VERBOSE_FUNC_FMT("%s, %s", pk_inner_type_name<T>(), directory);
             SearchContext ctx{ this, forceReload };
             FileIO::FindFiles(&ctx, directory, Asset::GetExtension<T>(), false, [](void* ctx, const char* path)
             {
@@ -231,8 +228,7 @@ namespace PK
         template<typename T>
         TypeInfo* CreateTypeInfo() 
         {
-            constexpr auto typeName = pk_inner_type_name<T>();
-            return CreateTypeInfo(pk_base_type_index<T>(), typeName);
+            return CreateTypeInfo(pk_base_type_index<T>(), pk_inner_type_name<T>());
         }
 
         template<typename T>
@@ -254,7 +250,7 @@ namespace PK
 
         void LoadAsset(AssetObjectBase* object, bool isReload);
         uint32_t GetTypeHead(uint32_t typeIndex) const;
-        TypeInfo* CreateTypeInfo(uint32_t typeIndex, const ConstBufferView<char>& name);
+        TypeInfo* CreateTypeInfo(uint32_t typeIndex, const char* name);
         uint32_t LinkAsset(TypeInfo* typeInfo, AssetObjectBase* object, AssetID assetId, CacheMode cacheMode);
 
         HashSet<AssetObjectBase*, AssetObjectHash> m_assets;

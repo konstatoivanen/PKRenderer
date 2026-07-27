@@ -57,6 +57,20 @@ namespace PK
     template<typename T> using TRemoveCV_T = typename TRemoveCV<T>::Type;
     template<typename T> using TRemoveCVRef_T = typename TRemoveCV<typename TRemoveRef<T>::Type>::Type;
 
+    template<size_t N> struct TStringLiteral 
+    { 
+        constexpr static size_t length = N; 
+        char str[N + 1ull]; 
+        constexpr const char* operator()() const& noexcept { return str; }
+    };
+
+    template<size_t N> struct TStringLiteralArray 
+    { 
+        constexpr static const size_t size = N; 
+        const char* strings[N]; 
+        constexpr const char* const* operator()() const& noexcept { return strings; }
+    };
+
     template<typename T, T N> struct TIntegerConstant { using Type = T; static constexpr T Value = N; };
     template<size_t Index> using TIndexConstant = TIntegerConstant<size_t, Index>;
     
