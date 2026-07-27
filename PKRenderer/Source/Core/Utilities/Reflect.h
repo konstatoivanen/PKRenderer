@@ -1519,82 +1519,60 @@ namespace PK
     template <typename T, size_t I> 
     inline constexpr auto pk_field_name = ReflectionGetFieldName<T, __builtin_addressof(ReflectionGetField<I>(ReflectionBind(ReflectionFieldNameObject<T>())))>();
     
-    template <typename T, size_t... I>
-    constexpr auto ReflectionNamesArrayImpl(PK::TIndexSequence<I...>) noexcept
-    {
-        return TReflectionFieldNameArray<sizeof...(I)>{ pk_field_name<T, I>.str... };
-    }
-
     template <typename T>
     constexpr auto ReflectionNamesArray() noexcept
     {
-        return ReflectionNamesArrayImpl<T>(PK::TMakeIndexSequence<pk_field_count<T>>{});
+        return []<size_t... I>(PK::TIndexSequence<I...>) noexcept 
+        { 
+            return TReflectionFieldNameArray<sizeof...(I)>{ pk_field_name<T, I>.str... }; 
+        }
+        (PK::TMakeIndexSequence<pk_field_count<T>>{});
     }
 
-    // Note cannot use immediately invoked template lambdas with msvc :/
-    template <typename T, typename F, typename I, typename = decltype(std::declval<F>()(std::declval<T>(), I{})) >
-    constexpr void ReflectionIteratorCallField(T&& v, F&& f, I i, long)
-    {
-        PK::Forward<F>(f)(PK::Forward<T>(v), i);
-    }
-
-    template <typename T, typename F, typename I>
-    constexpr void ReflectionIteratorCallField(T&& v, F&& f, I, int)
-    {
-        PK::Forward<F>(f)(PK::Forward<T>(v));
-    }
-
-    template <typename T, typename F, size_t... I>
-    constexpr void ReflectionIteratorCallFields(T& t, F&& f, PK::TIndexSequence<I...>, PK::TFalse)
-    {
-        (ReflectionIteratorCallField(ReflectionGetField<I>(t), PK::Forward<F>(f), TIndexConstant<I>{}, 1L), ...);
-    }
-
-    template <typename T, typename F, size_t... I>
-    constexpr void ReflectionIteratorCallFields(T& t, F&& f, PK::TIndexSequence<I...>, PK::TTrue)
-    {
-        (ReflectionIteratorCallField(ReflectionGetField<I>(PK::MoveTemp(t)), PK::Forward<F>(f), TIndexConstant<I>{}, 1L), ...);
-    }
-
-    template <typename T, typename F, size_t... I>
-    constexpr void ReflectionIteratorDispatch(T& t, F&& f, PK::TIndexSequence<I...>)
-    {
-        PK::Forward<F>(f)(ReflectionBind(t));
-    }
-
-    template <typename T, typename F>
-    constexpr void ReflectFields(T&& value, F&& func)
+    template <typename T, typename TFunc, typename TBound, size_t... I>
+    constexpr void ReflectFieldsDispatch(TBound&& bound, TFunc&& func, PK::TIndexSequence<I...>)
     {
         using TNoRef = PK::TRemoveRef_T<T>;
 
-        ReflectionIteratorDispatch(value, [&func](auto&& t) mutable
+        auto iterator = [&](auto indexConstant)
         {
-            ReflectionIteratorCallFields(t, 
-                PK::Forward<F>(func), 
-                PK::TMakeIndexSequence<pk_field_count<TNoRef>>{}, 
-                PK::TIntegerConstant<bool, TIsRValueRef<T&&>>{});
-        },
-        PK::TMakeIndexSequence<pk_field_count<TNoRef>>{});
-    }
+            constexpr auto index = decltype(indexConstant)::Value;
 
-    template <typename T, typename F>
-    constexpr void ReflectFieldsWithName(T&& value, F&& func)
-    {
-        return ReflectFields(PK::Forward<T>(value), [&func](auto&& field, auto index)
-        {
-            using IndexType = decltype(index);
-            using FieldType = decltype(field);
-            constexpr auto name = pk_field_name<PK::TRemoveRef_T<T>, IndexType::Value>.str;
-            
-            if constexpr (std::is_invocable_v<F, const char*, FieldType, IndexType>) 
+            auto&& field = [&]() -> decltype(auto) 
             {
-                PK::Forward<F>(func)(name, PK::Forward<FieldType>(field), index);
+                if constexpr (TIsRValueRef<T&&>) 
+                {
+                    return ReflectionGetField<index>(PK::MoveTemp(bound));
+                }
+                else 
+                {
+                    return ReflectionGetField<index>(bound);
+                }
+            }();
+
+            using TField = decltype(field);
+
+            constexpr auto name = pk_field_name<TNoRef, index>.str;
+
+            if constexpr (requires { PK::Forward<TFunc>(func)(name, PK::Forward<TField>(field)); })
+            {
+                PK::Forward<TFunc>(func)(name, PK::Forward<TField>(field));
             }
             else 
             {
-                PK::Forward<F>(func)(name, PK::Forward<FieldType>(field));
+                PK::Forward<TFunc>(func)(PK::Forward<TField>(field));
             }
-        });
+        };
+
+        (iterator(TIndexConstant<I>{}), ...);
+    }
+
+    template <typename T, typename TFunc>
+    constexpr void ReflectFields(T&& value, TFunc&& func)
+    {
+        using TNoRef = PK::TRemoveRef_T<T>;
+        auto&& bound = ReflectionBind(value);
+        ReflectFieldsDispatch<T>(bound, PK::Forward<TFunc>(func), PK::TMakeIndexSequence<pk_field_count<TNoRef>>{});
     }
 
     #ifdef __clang__

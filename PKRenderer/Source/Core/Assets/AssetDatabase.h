@@ -140,7 +140,7 @@ namespace PK
         Ref<T> CreateVirtual(AssetID assetId, Args&& ... args)
         {
             auto object = CreateAssetObject<T>(assetId, CacheMode::Persistent);
-            constexpr auto name = pk_base_type_name<T>();
+            constexpr auto name = pk_inner_type_name<T>();
             PK_FATAL_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
             PK_LOG_VERBOSE_FUNC_FMT("%.*s, %s", name.count, name.data, assetId.c_str());
             object->ConstructVirtual(PK::Forward<Args>(args)...);
@@ -171,7 +171,7 @@ namespace PK
         template<typename T>
         void LoadDirectory(const char* directory, bool forceReload = false)
         {
-            constexpr auto name = pk_base_type_name<T>();
+            constexpr auto name = pk_inner_type_name<T>();
             PK_LOG_VERBOSE_FUNC_FMT("%.*s, %s", name.count, name.data, directory);
             SearchContext ctx{ this, forceReload };
             FileIO::FindFiles(&ctx, directory, Asset::GetExtension<T>(), false, [](void* ctx, const char* path)
@@ -231,7 +231,7 @@ namespace PK
         template<typename T>
         TypeInfo* CreateTypeInfo() 
         {
-            constexpr auto typeName = pk_base_type_name<T>();
+            constexpr auto typeName = pk_inner_type_name<T>();
             return CreateTypeInfo(pk_base_type_index<T>(), typeName);
         }
 

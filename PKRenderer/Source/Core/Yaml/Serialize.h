@@ -73,7 +73,7 @@ namespace PK::Serialize
     template<typename T>
     void ReadStruct(const ConstNode& node, T* rhs)
     {
-        ReflectFieldsWithName(*rhs, [node](const char* name, auto& value)
+        ReflectFields(*rhs, [node](const char* name, auto& value)
         {
             using TField = PK::TRemoveCVRef_T<decltype(value)>;
 
