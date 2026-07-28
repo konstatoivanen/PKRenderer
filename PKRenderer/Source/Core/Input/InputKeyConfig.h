@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Yaml/Config.h"
+#include "Core/Serialization/Config.h"
 #include "Core/Input/InputKeyBinding.h"
 
 namespace PK

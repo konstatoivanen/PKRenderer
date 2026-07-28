@@ -317,8 +317,16 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\Pair.h" />
     <ClInclude Include="Source\Core\Utilities\Templates.h" />
     <ClInclude Include="Source\Core\Utilities\UUID128.h" />
-    <ClInclude Include="Source\Core\Yaml\Serializables.h" />
-    <ClInclude Include="Source\Core\Yaml\Serialize.h" />
+    <ClInclude Include="Source\Core\Serialization\Common.h" />
+    <ClInclude Include="Source\Core\Serialization\ISerializer.h" />
+    <ClInclude Include="Source\Core\Serialization\Serialize.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeAsset.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeCVariablesYaml.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeFixedString.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeInputKeyBindings.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMaterialTarget.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMathVector.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeRHIEnums.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />
     <ClInclude Include="ThirdParty\mikktspace\mikktspace.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAsset.h" />
@@ -382,7 +390,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Engines\EngineTime.h" />
     <ClInclude Include="Source\Core\Timers\TimeFrameInfo.h" />
     <ClInclude Include="Source\Core\Utilities\NameIDProviderDefault.h" />
-    <ClInclude Include="Source\Core\Yaml\Config.h" />
+    <ClInclude Include="Source\Core\Serialization\Config.h" />
     <ClInclude Include="Source\App\ECS\ComponentBounds.h" />
     <ClInclude Include="Source\App\ECS\ComponentFlyCamera.h" />
     <ClInclude Include="Source\App\ECS\ComponentLight.h" />
@@ -675,11 +683,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp" />
     <ClCompile Include="Source\Core\Utilities\Mask.cpp" />
     <ClCompile Include="Source\Core\Utilities\Ref.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeCVariablesYaml.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeFixedString.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeMaterial.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeMesh.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeRHIEnums.cpp" />
+    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeCVariablesYaml.cpp" />
+    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeMaterialTarget.cpp" />
+    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeRHIEnums.cpp" />
     <ClCompile Include="ThirdParty\mikktspace\mikktspace.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'">NotUsing</PrecompiledHeader>
@@ -720,10 +726,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\ServiceRegister.cpp" />
     <ClCompile Include="Source\App\Engines\EngineTime.cpp" />
     <ClCompile Include="Source\Core\Utilities\NameIDProviderDefault.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeInputKeyBindings.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeMathTypes.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeShader.cpp" />
-    <ClCompile Include="Source\Core\Yaml\SerializeTextureAsset.cpp" />
+    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeInputKeyBindings.cpp" />
     <ClCompile Include="Source\App\ECS\ComponentProjection.cpp" />
     <ClCompile Include="Source\App\Engines\EngineCommandInput.cpp" />
     <ClCompile Include="Source\App\Engines\EngineDebug.cpp" />

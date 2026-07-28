@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
 #include "Core/Utilities/FileIO.h"
-#include "Core/Yaml/Serialize.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/ECS/EntitySerializable.h"
+#include "Core/Serialization/Serialize.h"
 #include "EntityFactoryRegister.h"
 
 namespace PK::App
@@ -70,7 +70,7 @@ namespace PK::App
         }
 
         auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
-        Serialize::ConstNode root = tree.rootref();
+        SerialNodeConst root = tree.rootref();
 
         auto entities = root.find_child("Entities");
 
@@ -82,7 +82,7 @@ namespace PK::App
 
                 if (type.readable())
                 {
-                    auto uuidStr = Serialize::Read<FixedString32>(type);
+                    auto uuidStr = Serialize::ReadVal<FixedString32>(type);
                     auto name = Serialize::ReadKey<FixedString32>(entity);
                     auto uuid = Memory::BitCast<FixedString32, UUID128>(&uuidStr);
 

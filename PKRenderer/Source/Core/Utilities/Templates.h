@@ -9,6 +9,7 @@ namespace PK
     template<typename T> constexpr bool TIsSame<T, T> = true;
     #endif 
 
+    template<typename TBase, typename TDerived> inline constexpr bool TIsBaseOf = __is_base_of(TBase, TDerived);
     template<typename TFrom, typename TTo> inline constexpr bool TIsConvertible = __is_convertible_to(TFrom, TTo);
 
     template<typename> inline constexpr bool TIsArray = false;

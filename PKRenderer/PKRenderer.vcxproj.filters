@@ -168,7 +168,7 @@
     <ClInclude Include="Source\Core\Timers\TimeFrameInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\Config.h">
+    <ClInclude Include="Source\Core\Serialization\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\RendererApplication.h">
@@ -546,7 +546,7 @@
     <ClInclude Include="ThirdParty\rapidyaml\rapidyaml-0.7.1.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\Serialize.h">
+    <ClInclude Include="Source\Core\Serialization\Serialize.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\rapidyaml\ryaml.h">
@@ -687,7 +687,31 @@
     <ClInclude Include="Source\Core\Utilities\Reflect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\Serializables.h">
+    <ClInclude Include="Source\Core\Serialization\ISerializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeFixedString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMathVector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeAsset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeCVariablesYaml.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeInputKeyBindings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMaterialTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeRHIEnums.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -891,16 +915,7 @@
     <ClCompile Include="Source\App\Engines\EngineTime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeInputKeyBindings.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeMathTypes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeShader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeTextureAsset.cpp">
+    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeInputKeyBindings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\RendererApplication.cpp">
@@ -1119,16 +1134,13 @@
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeCVariablesYaml.cpp">
+    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeCVariablesYaml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Rendering\Font.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Engines\EngineGUIRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeFixedString.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ThirdParty\rapidyaml\ryamlImpl.cpp">
@@ -1152,7 +1164,7 @@
     <ClCompile Include="Source\Core\Rendering\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeRHIEnums.cpp">
+    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeRHIEnums.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Structs.cpp">
@@ -1200,10 +1212,7 @@
     <ClCompile Include="Source\Core\Rendering\IESProfile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeMesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\SerializeMaterial.cpp">
+    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeMaterialTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

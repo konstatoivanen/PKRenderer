@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/ECS/EGID.h"
-#include "Core/Yaml/Serialize.h"
+#include "Core/Serialization/Serialize.h"
 
 namespace PK
 {
@@ -11,8 +11,8 @@ namespace PK
     {
         static EGID Create(EntityDatabase* entityDb, EGID egid, const TEntity& descriptor);
         static EGID CreateDefault(EntityDatabase* entityDb, EGID egid);
-        static EGID Deserialize(EntityDatabase* entityDb, const Serialize::ConstNode& parent, uint32_t group);
-        static void Serialize(EntityDatabase* entityDb, Serialize::Node& parent, const EGID& egid);
+        static EGID Deserialize(EntityDatabase* entityDb, const SerialNodeConst& parent, uint32_t group);
+        static void Serialize(EntityDatabase* entityDb, SerialNode& parent, const EGID& egid);
 
         inline static EGID Create(EntityDatabase* entityDb, uint32_t groupId, const TEntity& descriptor)
         {

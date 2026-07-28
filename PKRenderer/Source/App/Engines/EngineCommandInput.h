@@ -3,7 +3,7 @@
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/Input/InputKeyBinding.h"
-#include "Core/Yaml/Config.h"
+#include "Core/Serialization/Config.h"
 #include "App/FrameStep.h"
 
 namespace PK { struct Sequencer; }

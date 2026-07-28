@@ -1,11 +1,10 @@
 #include "PrecompiledHeader.h"
-#include "Core/Yaml/Serialize.h"
+#include "Core/Serialization/Serialize.h"
 #include "Core/Input/InputKeyBinding.h"
 
-namespace PK::Serialize
+namespace PK
 {
-    template<>
-    void Read<CommandInputKeyBindingMap>(const ConstNode& node, CommandInputKeyBindingMap* rhs)
+    void ISerializer<CommandInputKeyBindingMap>::ReadVal(const SerialNodeConst& node, CommandInputKeyBindingMap* rhs)
     {
         auto& map = *rhs;
         map.Reserve((uint32_t)node.num_children());
@@ -20,8 +19,7 @@ namespace PK::Serialize
         }
     }
 
-    template<>
-    void Read<InputKeyCommandBindings>(const ConstNode& node, InputKeyCommandBindings* rhs)
+    void ISerializer<InputKeyCommandBindings>::ReadVal(const SerialNodeConst& node, InputKeyCommandBindings* rhs)
     {
         if (node.num_children() == 0)
         {

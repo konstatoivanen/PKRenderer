@@ -1,10 +1,10 @@
 #include "PrecompiledHeader.h"
+#include "Core/Serialization/Serialize.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/CLI/CVariablesYaml.h"
-#include "Core/Yaml/Serialize.h"
 
-namespace PK::Serialize
+namespace PK
 {
     static void AddArg(char* buff, const char** args, ryml::csubstr substr, size_t& head, uint32_t& count)
     {
@@ -19,8 +19,7 @@ namespace PK::Serialize
         head += substr.len + 1ull;
     }
 
-    template<> 
-    void Read<CVariablesYaml>(const ConstNode& node, [[maybe_unused]] CVariablesYaml* rhs)
+    void ISerializer<CVariablesYaml>::ReadVal(const SerialNodeConst& node, [[maybe_unused]] CVariablesYaml* rhs)
     {
         char buffer[512];
         const char* arguments[32];

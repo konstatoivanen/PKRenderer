@@ -2,7 +2,7 @@
 #include "Core/Math/Math.h"
 #include "Core/ECS/EGID.h"
 #include "Core/Rendering/RenderingFwd.h"
-#include "Core/Yaml/Config.h"
+#include "Core/Serialization/Config.h"
 #include "App/FrameStep.h"
 #include "App/Renderer/RenderViewSettings.h"
 

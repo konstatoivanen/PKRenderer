@@ -8,6 +8,7 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/Mesh.h"
 #include "Core/Rendering/MeshUtilities.h"
+#include "Core/Rendering/TextureAsset.h"
 #include "Core/Rendering/Window.h"
 #include "Core/IApplication.h"
 #include "App/Engines/EngineTime.h"

@@ -1,0 +1,12 @@
+#pragma once
+#define PK_SERIALIZE_HEADER
+#include "ISerializer.h"
+#include "Common.h"
+#include "Serializers/SerializeFixedString.h"
+#include "Serializers/SerializeMathVector.h"
+#include "Serializers/SerializeAsset.h"
+#include "Serializers/SerializeCVariablesYaml.h"
+#include "Serializers/SerializeInputKeyBindings.h"
+#include "Serializers/SerializeMaterialTarget.h"
+#include "Serializers/SerializeRHIEnums.h"
+#undef PK_SERIALIZE_HEADER
