@@ -507,9 +507,3 @@ namespace PK
         return false;
     }
 }
-
-template<>
-const char* PK::Asset::GetExtension<PK::Mesh>() { return "*.pkmesh"; }
-
-template<>
-const char* PK::Asset::GetExtension<PK::MeshStatic>() { return "*.pkmesh"; }

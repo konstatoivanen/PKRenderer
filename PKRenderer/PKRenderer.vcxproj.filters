@@ -719,7 +719,7 @@
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
     <None Include="Content\Models\MDL_Cloth.mdl" />
     <None Include="Content\Configs\BaseRenderer.cfg" />
-    <None Include="Content\Configs\Input.keycfg" />
+    <None Include="Content\Configs\Input.cfg" />
     <None Include="Content\Shaders\includes\Utilities.glsl" />
     <None Include="Content\Shaders\includes\Common.glsl" />
     <None Include="Content\Shaders\CS_SceneEnv_IntegrateIBL.shader" />

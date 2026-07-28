@@ -281,6 +281,3 @@ namespace PK
         m_shaders.Clear();
     }
 }
-
-template<>
-const char* PK::Asset::GetExtension<PK::ShaderAsset>() { return "*.pkshader"; }

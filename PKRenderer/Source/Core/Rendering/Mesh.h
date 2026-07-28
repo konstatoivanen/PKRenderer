@@ -212,4 +212,16 @@ namespace PK
         uint32_t m_positionAttributeIndex = ~0u;
         mutable FenceRef m_uploadFence;
     };
+
+    template<>
+    struct AssetTraits<Mesh>
+    {
+        constexpr static const char* Extension = "*.pkmesh";
+    };
+
+    template<>
+    struct AssetTraits<MeshStatic>
+    {
+        constexpr static const char* Extension = "*.pkmesh";
+    };
 }

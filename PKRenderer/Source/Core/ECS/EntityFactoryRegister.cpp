@@ -70,7 +70,7 @@ namespace PK::App
         }
 
         auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
-        SerialNodeConst root = tree.rootref();
+        SerialNodeRead root = tree.rootref();
 
         auto entities = root.find_child("Entities");
 

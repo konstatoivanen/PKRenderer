@@ -171,7 +171,7 @@ namespace PK
         {
             PK_LOG_VERBOSE_FUNC_FMT("%s, %s", pk_inner_type_name<T>(), directory);
             SearchContext ctx{ this, forceReload };
-            FileIO::FindFiles(&ctx, directory, Asset::GetExtension<T>(), false, [](void* ctx, const char* path)
+            FileIO::FindFiles(&ctx, directory, AssetTraits<T>::Extension, false, [](void* ctx, const char* path)
             {
                 auto search = static_cast<SearchContext*>(ctx);
                 search->database->Load<T>(AssetID(path), CacheMode::Persistent, search->forceReload);

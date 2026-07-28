@@ -49,13 +49,13 @@ namespace PK
     }
 
     template<>
-    EGID EntityFactory<App::EntityFlyCamera>::Deserialize(EntityDatabase* entityDb, const SerialNodeConst& parent, uint32_t group)
+    EGID EntityFactory<App::EntityFlyCamera>::Deserialize(EntityDatabase* entityDb, SerialNodeRead parent, uint32_t group)
     {
         return EGIDInvalid;
     }
 
     template<>
-    void EntityFactory<App::EntityFlyCamera>::Serialize(EntityDatabase* entityDb, SerialNode& parent, const EGID& egid)
+    void EntityFactory<App::EntityFlyCamera>::Serialize(EntityDatabase* entityDb, SerialNodeWrite parent, const EGID& egid)
     {
     }
 }

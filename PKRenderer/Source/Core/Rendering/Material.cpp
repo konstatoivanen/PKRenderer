@@ -185,6 +185,3 @@ namespace PK
         }
     }
 }
-
-template<>
-const char* PK::Asset::GetExtension<PK::Material>() { return "*.material"; }

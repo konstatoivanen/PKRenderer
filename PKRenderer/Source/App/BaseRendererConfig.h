@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Math/Math.h"
 #include "Core/CLI/CVariablesYaml.h"
 #include "Core/Rendering/Window.h"
 #include "Core/RHI/Structs.h"

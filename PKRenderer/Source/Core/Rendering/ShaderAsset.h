@@ -66,4 +66,10 @@ namespace PK
         FixedFunctionShaderAttributes m_attributes;
         ShaderPropertyLayout m_materialPropertyLayout;
     };
+
+    template<>
+    struct AssetTraits<ShaderAsset>
+    {
+        constexpr static const char* Extension = "*.pkshader";
+    };
 }

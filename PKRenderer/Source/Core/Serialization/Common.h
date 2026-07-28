@@ -9,7 +9,7 @@
 namespace PK::Serialize
 {
     template<typename T>
-    void ReadVal(const SerialNodeConst& node, T* rhs)
+    void ReadVal(SerialNodeRead node, T* rhs)
     {
         if (node.readable())
         {
@@ -40,13 +40,13 @@ namespace PK::Serialize
     }
 
     template<typename T>
-    void ReadVal(const SerialNodeConst& node, const char* memberName, T* rhs)
+    void ReadVal(SerialNodeRead node, const char* memberName, T* rhs)
     {
         ReadVal(node.find_child(memberName), rhs);
     }
 
     template<typename T> 
-    T ReadVal(const SerialNodeConst& node)
+    T ReadVal(SerialNodeRead node)
     { 
         T value; 
         ReadVal(node, &value); 
@@ -54,7 +54,7 @@ namespace PK::Serialize
     }
 
     template<typename T>
-    T ReadVal(const SerialNodeConst& node, const char* memberName)
+    T ReadVal(SerialNodeRead node, const char* memberName)
     {
         T value;
         ReadVal(node, memberName, &value);
@@ -62,7 +62,7 @@ namespace PK::Serialize
     }
 
     template<typename T>
-    void ReadKey(const SerialNodeConst& node, T* rhs)
+    void ReadKey(SerialNodeRead node, T* rhs)
     {
         if constexpr (TSerializeReadableKey<T>)
         {
@@ -71,7 +71,7 @@ namespace PK::Serialize
     }
 
     template<typename T>
-    T ReadKey(const SerialNodeConst& node)
+    T ReadKey(SerialNodeRead node)
     {
         T outValue;
         ReadKey(node, &outValue);
@@ -79,7 +79,7 @@ namespace PK::Serialize
     }
 
     template<typename T>
-    void WriteVal(SerialNode& node, const T* rhs)
+    void WriteVal(SerialNodeWrite node, const T* rhs)
     {
         if constexpr (std::is_arithmetic_v<T>)
         {
@@ -93,44 +93,40 @@ namespace PK::Serialize
         {
             ReflectFields(*rhs, [&node](const char* name, auto& value)
             {
-                SerialNode child = node[FixedString64("%s.%s", pk_outer_type_name<T>(), name).c_str()];
-                WriteVal<PK::TRemoveCVRef_T<decltype(value)>>(child, &value);
+                WriteVal<PK::TRemoveCVRef_T<decltype(value)>>(
+                    node[FixedString64("%s.%s", pk_outer_type_name<T>(), name).c_str()], 
+                    &value);
             });
         }
     }
 
     template<typename T> 
-    void WriteVal(SerialNode& parent, const char* memberName, const T* rhs)
+    void WriteVal(SerialNodeWrite parent, const char* memberName, const T* rhs)
     {
-        SerialNode child = parent[memberName];
-        WriteVal(child, rhs);
+        WriteVal(parent[memberName], rhs);
     }
 
     template<typename T>
-    bool LoadStruct(const char* filepath, T* rhs)
+    bool Load(const char* filepath, T* rhs)
     {
         void* fileData = nullptr;
         size_t fileSize = 0ull;
 
-        if (FileIO::ReadBinary(filepath, false, &fileData, &fileSize) != 0)
+        if (FileIO::ReadBinary(filepath, false, &fileData, &fileSize) == 0)
         {
-            return false;
+            auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
+            ReadVal<T>(tree.rootref(), rhs);
+            Memory::Free(fileData);
         }
 
-        auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
-        SerialNodeConst root = tree.rootref();
-
-        ReadVal<T>(root, rhs);
-
-        Memory::Free(fileData);
-        return true;
+        return false;
     }
 
     template<typename T>
-    T LoadStruct(const char* filepath)
+    T Load(const char* filepath)
     {
         T value;
-        LoadStruct(filepath, &value);
+        Load(filepath, &value);
         return value;
     }
 }

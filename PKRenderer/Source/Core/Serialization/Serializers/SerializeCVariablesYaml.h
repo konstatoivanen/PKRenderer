@@ -5,6 +5,6 @@
 namespace PK
 {
     struct CVariablesYaml;
-    template<> struct ISerializer<CVariablesYaml>{ static void ReadVal(const SerialNodeConst& node, CVariablesYaml* rhs);};
+    template<> struct ISerializer<CVariablesYaml>{ static void ReadVal(SerialNodeRead node, CVariablesYaml* rhs);};
 }
 #endif

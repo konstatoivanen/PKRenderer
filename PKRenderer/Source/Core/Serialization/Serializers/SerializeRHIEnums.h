@@ -8,8 +8,8 @@ namespace PK
     #define PK_DECLARE_READ_WRITE(Type)                             \
     template<> struct ISerializer<Type>                             \
     {                                                               \
-        static void ReadVal(const SerialNodeConst& node, Type* rhs);\
-        static void WriteVal(SerialNode& node, Type const* rhs);    \
+        static void ReadVal(SerialNodeRead node, Type* rhs);        \
+        static void WriteVal(SerialNodeWrite node, Type const* rhs);\
     };                                                              \
 
     PK_DECLARE_READ_WRITE(ElementType)

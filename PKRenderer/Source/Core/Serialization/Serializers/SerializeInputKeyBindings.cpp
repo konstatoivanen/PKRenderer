@@ -4,7 +4,7 @@
 
 namespace PK
 {
-    void ISerializer<CommandInputKeyBindingMap>::ReadVal(const SerialNodeConst& node, CommandInputKeyBindingMap* rhs)
+    void ISerializer<CommandInputKeyBindingMap>::ReadVal(SerialNodeRead node, CommandInputKeyBindingMap* rhs)
     {
         auto& map = *rhs;
         map.Reserve((uint32_t)node.num_children());
@@ -19,7 +19,7 @@ namespace PK
         }
     }
 
-    void ISerializer<InputKeyCommandBindings>::ReadVal(const SerialNodeConst& node, InputKeyCommandBindings* rhs)
+    void ISerializer<InputKeyCommandBindings>::ReadVal(SerialNodeRead node, InputKeyCommandBindings* rhs)
     {
         if (node.num_children() == 0)
         {

@@ -8,8 +8,8 @@ namespace PK::App
 {
     struct EntitySerializer
     {
-        typedef EGID (*FuncDeserialize)(EntityDatabase*, const SerialNodeConst&, uint32_t);
-        typedef void (*FuncSerialize)(EntityDatabase*, SerialNode&, const EGID&);
+        typedef EGID (*FuncDeserialize)(EntityDatabase*, SerialNodeRead, uint32_t);
+        typedef void (*FuncSerialize)(EntityDatabase*, SerialNodeWrite, const EGID&);
 
         UUID128 uuid;
         const char* name;

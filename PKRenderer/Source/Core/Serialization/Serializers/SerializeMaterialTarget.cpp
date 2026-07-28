@@ -4,7 +4,7 @@
 
 namespace PK
 {
-    void ISerializer<MaterialTarget>::ReadVal(const SerialNodeConst& node, MaterialTarget* rhs)
+    void ISerializer<MaterialTarget>::ReadVal(SerialNodeRead node, MaterialTarget* rhs)
     {
         if (node.is_flow_sl() && node.num_children() == 2u)
         {
@@ -15,7 +15,7 @@ namespace PK
         }
     }
 
-    void ISerializer<MaterialTarget>::WriteVal(SerialNode& node, const MaterialTarget* rhs)
+    void ISerializer<MaterialTarget>::WriteVal(SerialNodeWrite node, const MaterialTarget* rhs)
     {
         node |= ryml::SEQ | ryml::FLOW_SL;
         node.append_child() << rhs->material->GetFileName() |= ryml::VAL_DQUO;

@@ -61,7 +61,7 @@ namespace PK::App
         PK_LOG_TIMER_FUNC();
         PK_LOG_HEADER_SCOPE("----------RendererApplication.Ctor Begin----------");
 
-        auto config = Serialize::LoadStruct<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
+        auto config = Serialize::Load<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
         m_inactiveFrameInterval = config.InactiveFrameInterval;
         m_RHIDriver = RHI::CreateDriver(GetWorkingDirectory(), config.RHIDesc);
 
@@ -85,7 +85,7 @@ namespace PK::App
 
         auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic);
 
-        auto inputConfig = assetDatabase->Load<Config<InputKeyConfig>>("Content/Configs/Input.keycfg").get();
+        auto inputConfig = assetDatabase->Load<Config<InputKeyConfig>>("Content/Configs/Input.cfg").get();
         auto remoteProcessRunner = GetServices()->Create<RemoteProcessRunner>();
         auto engineViewUpdate = GetServices()->Create<EngineViewUpdate>(sequencer, entityDb);
         auto engineCommands = GetServices()->Create<EngineCommandInput>(sequencer, inputConfig);

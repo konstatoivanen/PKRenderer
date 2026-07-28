@@ -12,7 +12,13 @@ namespace PK
         Config() {};
         Config(const char* filepath)
         {
-            Serialize::LoadStruct(filepath, static_cast<T*>(this));
+            Serialize::Load(filepath, static_cast<T*>(this));
         };
+    };
+
+    template<typename T>
+    struct AssetTraits<Config<T>>
+    {
+        constexpr static const char* Extension = "*.cfg";
     };
 }

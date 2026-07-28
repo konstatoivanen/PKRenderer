@@ -80,6 +80,3 @@ namespace PK
     TextureAsset::operator RHITexture* () { return m_texture.get(); }
     TextureAsset::operator const RHITexture* () const { return m_texture.get(); }
 }
-
-template<>
-const char* PK::Asset::GetExtension<PK::TextureAsset>() { return "*.pktexture"; }

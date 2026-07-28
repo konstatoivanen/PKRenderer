@@ -10,7 +10,7 @@ namespace PK
     {
         using Type = math::vector<T, N>;
 
-        static void ReadVal(const SerialNodeConst& node, Type* rhs)
+        static void ReadVal(SerialNodeRead node, Type* rhs)
         {
             if (node.is_flow_sl() && node.num_children() > 0u)
             {
@@ -22,7 +22,7 @@ namespace PK
             }
         }
 
-        static void WriteVal(SerialNode& node, const Type* rhs)
+        static void WriteVal(SerialNodeWrite node, const Type* rhs)
         {
             node |= ryml::SEQ | ryml::FLOW_SL;
             for (auto i = 0u; i < N; ++i)
@@ -37,7 +37,7 @@ namespace PK
     {
         using Type = math::matrix<T, C, R>;
 
-        static void ReadVal(const SerialNodeConst& node, Type* rhs)
+        static void ReadVal(SerialNodeRead node, Type* rhs)
         {
             if (node.is_flow_sl() && node.num_children() == (C * R))
             {
@@ -49,7 +49,7 @@ namespace PK
             }
         }
 
-        static void WriteVal(SerialNode& node, Type const* rhs)
+        static void WriteVal(SerialNodeWrite node, Type const* rhs)
         {
             node |= ryml::SEQ | ryml::FLOW_SL;
             for (auto y = 0u; y < R; ++y)

@@ -18,4 +18,10 @@ namespace PK
     private: 
         RHITextureRef m_texture = nullptr;
     };
+
+    template<>
+    struct AssetTraits<TextureAsset>
+    {
+        constexpr static const char* Extension = "*.pktexture";
+    };
 }

@@ -46,6 +46,3 @@ namespace PK::App
         AssetDatabase* m_assetDatabase;
     };
 }
-
-template<> inline const char* PK::Asset::GetExtension<PK::Config<PK::App::EngineDebugConfig>>() { return "*.cfg"; }
-

@@ -28,10 +28,7 @@ namespace PK
 
         template<typename T>
         Ref<T> CreateAliasRef(T* object) { return Ref<T>(m_sharedObject, object); }
-
-        template<typename T>
-        static const char* GetExtension();
-
+    
     private:
         SharedObject* m_sharedObject = nullptr;
     };
@@ -47,5 +44,12 @@ namespace PK
         friend class AssetDatabase;
         using TAsset = T;
         virtual void AssetConstruct(T* memory, const char* filepath) = 0;
+    };
+
+    // Add type traits here if needed.
+    template<typename T>
+    struct AssetTraits
+    {
+        constexpr static const char* Extension = "*.*";
     };
 }

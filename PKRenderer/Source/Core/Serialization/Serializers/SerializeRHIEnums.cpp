@@ -6,16 +6,17 @@
 namespace PK
 {
     #define DECLARE_RHI_ENUM_READ(TType)                                        \
-    void ISerializer<TType>::ReadVal(const SerialNodeConst& node, TType* rhs)   \
+    void ISerializer<TType>::ReadVal(SerialNodeRead node, TType* rhs)           \
     {                                                                           \
         auto value = node.val();                                                \
         FixedString128 valuestr(value.len, value.data());                       \
         *rhs = RHIEnumConvert::StringTo##TType(valuestr);                       \
     }                                                                           \
-    void ISerializer<TType>::WriteVal(SerialNode& node, const TType* rhs)       \
+    void ISerializer<TType>::WriteVal(SerialNodeWrite node, const TType* rhs)   \
     {                                                                           \
         node << RHIEnumConvert::TType##ToString(*rhs) |= ryml::VAL_DQUO;        \
     }                                                                           \
+
 
     DECLARE_RHI_ENUM_READ(ElementType)
     DECLARE_RHI_ENUM_READ(RHIAPI)

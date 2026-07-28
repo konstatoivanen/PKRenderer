@@ -225,6 +225,3 @@ namespace PK
         return rect_count;
     }
 }
-
-template<>
-const char* PK::Asset::GetExtension<PK::Font>() { return "*.pkfont"; }

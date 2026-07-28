@@ -47,4 +47,10 @@ namespace PK
         Ref<Material> material;
         uint32_t submesh;
     };
+
+    template<>
+    struct AssetTraits<Material>
+    {
+        constexpr static const char* Extension = "*.material";
+    };
 }

@@ -8,8 +8,8 @@ namespace PK
 
     template<> struct ISerializer<MaterialTarget>
     {
-        static void ReadVal(const SerialNodeConst& node, MaterialTarget* rhs);
-        static void WriteVal(SerialNode& node, MaterialTarget const* rhs);
+        static void ReadVal(SerialNodeRead node, MaterialTarget* rhs);
+        static void WriteVal(SerialNodeWrite node, MaterialTarget const* rhs);
     };
 }
 #endif

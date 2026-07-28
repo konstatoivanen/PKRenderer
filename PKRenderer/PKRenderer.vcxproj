@@ -516,7 +516,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Textures\T_Bloom_LensDirt2.ktx2" />
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
     <None Include="Content\Configs\BaseRenderer.cfg" />
-    <None Include="Content\Configs\Input.keycfg" />
+    <None Include="Content\Configs\Input.cfg" />
     <None Include="Content\Materials\M_Asphalt.material" />
     <None Include="Content\Materials\M_Cloth.material" />
     <None Include="Content\Materials\M_Gravel.material" />

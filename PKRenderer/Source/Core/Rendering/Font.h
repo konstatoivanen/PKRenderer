@@ -65,4 +65,10 @@ namespace PK
         float m_alignTop = 0.0f;
         float m_alignBottom = 0.0f;
     };
+
+    template<>
+    struct AssetTraits<Font>
+    {
+        constexpr static const char* Extension = "*.pkfont";
+    };
 }

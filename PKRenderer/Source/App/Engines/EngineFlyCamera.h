@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/Input/InputKeyStructMacros.h"
+#include "Core/Serialization/Config.h"
 #include "App/FrameStep.h"
 
 namespace PK { struct EntityDatabase; }

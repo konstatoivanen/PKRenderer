@@ -19,7 +19,7 @@ namespace PK
         head += substr.len + 1ull;
     }
 
-    void ISerializer<CVariablesYaml>::ReadVal(const SerialNodeConst& node, [[maybe_unused]] CVariablesYaml* rhs)
+    void ISerializer<CVariablesYaml>::ReadVal(SerialNodeRead node, [[maybe_unused]] CVariablesYaml* rhs)
     {
         char buffer[512];
         const char* arguments[32];

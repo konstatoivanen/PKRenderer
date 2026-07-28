@@ -50,7 +50,7 @@ namespace PK
     }
 
     template<>
-    EGID EntityFactory<App::EntityMeshStatic>::Deserialize(EntityDatabase* entityDb, const SerialNodeConst& parent, uint32_t group)
+    EGID EntityFactory<App::EntityMeshStatic>::Deserialize(EntityDatabase* entityDb, SerialNodeRead parent, uint32_t group)
     {
         App::EntityMeshStatic descriptor;
         Serialize::ReadVal<float3>(parent, "position", &descriptor.position);
@@ -74,7 +74,7 @@ namespace PK
     }
 
     template<>
-    void EntityFactory<App::EntityMeshStatic>::Serialize(EntityDatabase* entityDb, SerialNode& parent, const EGID& egid)
+    void EntityFactory<App::EntityMeshStatic>::Serialize(EntityDatabase* entityDb, SerialNodeWrite parent, const EGID& egid)
     {
         auto viewTransform = entityDb->Query<App::EntityViewTransform>(egid);
         auto viewMeshStatic = entityDb->Query<App::EntityViewMeshStatic>(egid);
