@@ -21,15 +21,7 @@ namespace PK::Serialize
             {
                 ReflectFields(*rhs, [node](const char* name, auto& value)
                 {
-                    auto member = node.find_child(name);
-
-                    // Allow declaring members with absolute path in relation to type name so that configs can be more readable.
-                    if (!member.readable())
-                    {
-                        member = node.find_child(FixedString64("%s.%s", pk_outer_type_name<T>(), name).c_str());
-                    }
-
-                    ReadVal<PK::TRemoveCVRef_T<decltype(value)>>(member, &value);
+                    ReadVal<PK::TRemoveCVRef_T<decltype(value)>>(node.find_child(name), &value);
                 });
             }
         }
@@ -46,9 +38,7 @@ namespace PK::Serialize
         {
             ReflectFields(*rhs, [&node](const char* name, auto& value)
             {
-                WriteVal<PK::TRemoveCVRef_T<decltype(value)>>(
-                    node[FixedString64("%s.%s", pk_outer_type_name<T>(), name).c_str()], 
-                    &value);
+                WriteVal<PK::TRemoveCVRef_T<decltype(value)>>(node[name],&value);
             });
         }
     }
@@ -62,7 +52,9 @@ namespace PK::Serialize
         if (FileIO::ReadBinary(filepath, false, &fileData, &fileSize) == 0)
         {
             auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
-            ReadVal<T>(tree.rootref(), rhs);
+            auto root = tree.rootref();
+            auto base = root[pk_outer_type_name<T>()];
+            ReadVal<T>(base, rhs);
             Memory::Free(fileData);
         }
 
