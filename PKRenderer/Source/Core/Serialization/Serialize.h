@@ -2,7 +2,9 @@
 #define PK_SERIALIZE_HEADER
 #include "ISerializer.h"
 #include "Common.h"
+#include "Serializers/SerializeScalar.h"
 #include "Serializers/SerializeFixedString.h"
+#include "Serializers/SerializeArrayList.h"
 #include "Serializers/SerializeMathVector.h"
 #include "Serializers/SerializeAsset.h"
 #include "Serializers/SerializeCVariablesYaml.h"

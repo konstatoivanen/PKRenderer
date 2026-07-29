@@ -13,11 +13,7 @@ namespace PK::Serialize
     {
         if (node.readable())
         {
-            if constexpr (std::is_arithmetic_v<T>)
-            {
-                node >> *rhs;
-            }
-            else if constexpr (TSerializeReadableVal<T>)
+            if constexpr (TSerializeReadableVal<T>)
             {
                 ISerializer<T>::ReadVal(node, rhs);
             }
@@ -40,52 +36,9 @@ namespace PK::Serialize
     }
 
     template<typename T>
-    void ReadVal(SerialNodeRead node, const char* memberName, T* rhs)
-    {
-        ReadVal(node.find_child(memberName), rhs);
-    }
-
-    template<typename T> 
-    T ReadVal(SerialNodeRead node)
-    { 
-        T value; 
-        ReadVal(node, &value); 
-        return value; 
-    }
-
-    template<typename T>
-    T ReadVal(SerialNodeRead node, const char* memberName)
-    {
-        T value;
-        ReadVal(node, memberName, &value);
-        return value;
-    }
-
-    template<typename T>
-    void ReadKey(SerialNodeRead node, T* rhs)
-    {
-        if constexpr (TSerializeReadableKey<T>)
-        {
-            ISerializer<T>::ReadKey(node, rhs);
-        }
-    }
-
-    template<typename T>
-    T ReadKey(SerialNodeRead node)
-    {
-        T outValue;
-        ReadKey(node, &outValue);
-        return outValue;
-    }
-
-    template<typename T>
     void WriteVal(SerialNodeWrite node, const T* rhs)
     {
-        if constexpr (std::is_arithmetic_v<T>)
-        {
-            node << *rhs |= ryml::VAL_PLAIN;
-        }
-        else if constexpr (TSerializeWritableVal<T>)
+        if constexpr (TSerializeWritableVal<T>)
         {
             ISerializer<T>::WriteVal(node, rhs);
         }
@@ -98,12 +51,6 @@ namespace PK::Serialize
                     &value);
             });
         }
-    }
-
-    template<typename T> 
-    void WriteVal(SerialNodeWrite parent, const char* memberName, const T* rhs)
-    {
-        WriteVal(parent[memberName], rhs);
     }
 
     template<typename T>
@@ -122,12 +69,12 @@ namespace PK::Serialize
         return false;
     }
 
-    template<typename T>
-    T Load(const char* filepath)
-    {
-        T value;
-        Load(filepath, &value);
-        return value;
-    }
+    template<typename T> void ReadVal(SerialNodeRead node, const char* name, T* rhs) { ReadVal(node.find_child(name), rhs); }
+    template<typename T> T ReadVal(SerialNodeRead node, const char* name) { T v; ReadVal(node, name, &v); return v; }
+    template<typename T> T ReadVal(SerialNodeRead node) { T v; ReadVal(node, &v); return v; }
+    template<typename T> void ReadKey(SerialNodeRead node, T* rhs) { ISerializer<T>::ReadKey(node, rhs); }
+    template<typename T> T ReadKey(SerialNodeRead node) { T v; ReadKey(node, &v); return v; }
+    template<typename T> void WriteVal(SerialNodeWrite parent, const char* name, const T* rhs) { WriteVal(parent[name], rhs); }
+    template<typename T> T Load(const char* filepath) { T v; Load(filepath, &v); return v; }
 }
 #endif

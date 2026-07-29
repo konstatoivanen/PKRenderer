@@ -1,7 +1,5 @@
 #pragma once
 #include "Templates.h"
-#include "ArrayList.h"
-#include <type_traits>
 
 namespace PK
 {

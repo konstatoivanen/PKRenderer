@@ -299,6 +299,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Rendering\IESProfile.h" />
     <ClInclude Include="Source\Core\Rendering\Window.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanLimits.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeArrayList.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeScalar.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
     <ClInclude Include="Source\Core\Timers\TimerFramerate.h" />
