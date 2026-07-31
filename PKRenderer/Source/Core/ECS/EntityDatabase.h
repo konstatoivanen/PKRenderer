@@ -150,7 +150,8 @@ namespace PK
 
                 if constexpr (TIsSpecialization<TField, EntityComponentRef>)
                 {
-                    (((TIsConvertible<TImplementers*, typename TField::Type*>) ? (value = implementers, true) : false) || ...);
+                    // cast to void to silence unused variable warning.
+                    (void)(((TIsConvertible<TImplementers*, typename TField::Type*>) ? (value = implementers, true) : false) || ...);
                 }
             });
 

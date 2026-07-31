@@ -1,5 +1,5 @@
 #pragma once
-#include "Templates.h"
+#include "Tuple.h"
 
 namespace PK
 {
@@ -14,7 +14,11 @@ namespace PK
     template<typename T, size_t n>
     static consteval bool TIsConstructible()
     {
-        return[]<size_t... is>(PK::TIndexSequence<is...>) { return requires { T{ TAny(is)... }; }; } (PK::TMakeIndexSequence<n>());
+        return[]<size_t... is>(PK::TIndexSequence<is...>) 
+        { 
+            return requires { T{ TAny(is)... }; }; 
+        }
+        (PK::TMakeIndexSequence<n>());
     }
 
     template<typename T, size_t N = 0>
@@ -33,45 +37,13 @@ namespace PK
 
     template <typename T> constexpr size_t pk_field_count = ReflectionCountFields<T>();
 
-    template<size_t N, typename T> struct TReflectField { T value; };
-    template<typename I, typename ... Args> struct TReflectionBase;
-    template<> struct TReflectionBase<PK::TIndexSequence<>> {};
-
-    template <size_t ... Index, typename ...Args>
-    struct TReflectionBase<PK::TIndexSequence<Index...>, Args ... > : TReflectField<Index, Args>...
-    {
-        constexpr TReflectionBase() = default;
-        constexpr TReflectionBase(TReflectionBase&&) = default;
-        constexpr TReflectionBase(const TReflectionBase&) = default;
-        constexpr TReflectionBase(Args ... v) noexcept : TReflectField<Index, Args>{ v }... {}
-    };
-
-    template <typename ... Values>
-    struct TReflection : TReflectionBase<PK::TIndexSequenceFor<Values...>, Values...>
-    {
-        using TReflectionBase<PK::TIndexSequenceFor<Values...>, Values...>::TReflectionBase;
-    };
-
-    template <size_t N, typename T> constexpr T& ReflectionDeriveField(TReflectField<N, T>& t) noexcept { return t.value; }
-    template <size_t N, typename T> constexpr const T& ReflectionDeriveField(const TReflectField<N, T>& t) noexcept { return t.value; }
-    template <size_t N, typename T> constexpr volatile T& ReflectionDeriveField(volatile TReflectField<N, T>& t) noexcept { return t.value; }
-    template <size_t N, typename T> constexpr const volatile T& ReflectionDeriveField(const volatile TReflectField<N, T>& t) noexcept { return t.value; }
-    template <size_t N, typename T> constexpr T&& ReflectionDeriveField(TReflectField<N, T>&& t) noexcept { return PK::Forward<T>(t.value); }
-
-    template <size_t N, typename ...T> constexpr decltype(auto) ReflectionGetField(TReflection<T...>& t) noexcept { return ReflectionDeriveField<N>(t); }
-    template <size_t N, typename ...T> constexpr decltype(auto) ReflectionGetField(const TReflection<T...>& t) noexcept { return ReflectionDeriveField<N>(t); }
-    template <size_t N, typename ...T> constexpr decltype(auto) ReflectionGetField(const volatile TReflection<T...>& t) noexcept { return ReflectionDeriveField<N>(t); }
-    template <size_t N, typename ...T> constexpr decltype(auto) ReflectionGetField(volatile TReflection<T...>& t) noexcept { return ReflectionDeriveField<N>(t); }
-    template <size_t N, typename ...T> constexpr decltype(auto) ReflectionGetField(TReflection<T...>&& t) noexcept { return ReflectionDeriveField<N>(PK::MoveTemp(t)); }
-    template <typename ... Args> constexpr auto ReflectionMakeSequence(Args& ... args) noexcept { return TReflection<Args&...>{ args ... }; }
-
     #define PK_BIND_FIELDS(N, ...) \
     template <typename T> constexpr auto ReflectionBind(T& val, TIndexConstant<N>) noexcept \
     { \
         using U = PK::TRemoveCV_T<T>; \
         auto& mutable_val = const_cast<U&>(val); \
         auto& [__VA_ARGS__] = mutable_val; \
-        return ReflectionMakeSequence(__VA_ARGS__); \
+        return TupleMake(__VA_ARGS__); \
     } \
     
     #pragma region Tuple_field_bindings
@@ -1457,7 +1429,7 @@ namespace PK
 
     #undef PK_BIND_FIELDS
 
-    template <typename T> constexpr auto ReflectionBind(T&, TIndexConstant<0>) noexcept { return TReflection<>{}; }
+    template <typename T> constexpr auto ReflectionBind(T&, TIndexConstant<0>) noexcept { return Tuple<>{}; }
     template <typename T> constexpr auto ReflectionBind(T& v) noexcept { return ReflectionBind(v, TIndexConstant<pk_field_count<T>>{}); }
 
     template<typename T> struct TReflectionFieldNameWrapper { const T value; };
@@ -1516,7 +1488,7 @@ namespace PK
     }
 
     template <typename T, size_t I> 
-    inline constexpr auto pk_field_name = ReflectionGetFieldName<T, __builtin_addressof(ReflectionGetField<I>(ReflectionBind(ReflectionFieldNameObject<T>())))>();
+    inline constexpr auto pk_field_name = ReflectionGetFieldName<T, __builtin_addressof(TupleGetElement<I>(ReflectionBind(ReflectionFieldNameObject<T>())))>();
     
     template <typename T>
     constexpr auto ReflectionNamesArray() noexcept
@@ -1541,11 +1513,11 @@ namespace PK
             {
                 if constexpr (TIsRValueRef<T&&>) 
                 {
-                    return ReflectionGetField<index>(PK::MoveTemp(bound));
+                    return TupleGetElement<index>(PK::MoveTemp(bound));
                 }
                 else 
                 {
-                    return ReflectionGetField<index>(bound);
+                    return TupleGetElement<index>(bound);
                 }
             }();
 

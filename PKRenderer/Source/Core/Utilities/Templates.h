@@ -70,21 +70,6 @@ namespace PK
 
     template <typename T> constexpr bool TIsFloat = TIsAnyOf<TRemoveCV_T<T>, float, double, long double>;
     template <typename T> constexpr bool TIsArithmetic = TIsIntegral<T> || TIsFloat<T>;
-
-    template<size_t N> struct TStringLiteral 
-    { 
-        constexpr static size_t length = N; 
-        char str[N + 1ull]; 
-        constexpr const char* operator()() const& noexcept { return str; }
-    };
-
-    template<size_t N> struct TStringLiteralArray 
-    { 
-        constexpr static const size_t size = N; 
-        const char* strings[N]; 
-        constexpr const char* const* operator()() const& noexcept { return strings; }
-    };
-
     template<typename T, T N> struct TIntegerConstant { using Type = T; static constexpr T Value = N; };
     template<size_t Index> using TIndexConstant = TIntegerConstant<size_t, Index>;
     
@@ -99,14 +84,19 @@ namespace PK
 
     struct TAny { TAny(size_t); template<typename T> constexpr operator T() const noexcept; };
 
-    template<typename ... Args>
-    struct TTypeList
-    {
-        template<typename TFunc>
-        static constexpr auto Apply(TFunc&& func)
-        {
-            return func.template operator()<Args...>();
-        }
+    // @TODO these dont really belong here
+    template<size_t N> struct TStringLiteral 
+    { 
+        constexpr static size_t length = N; 
+        char str[N + 1ull]; 
+        constexpr const char* operator()() const& noexcept { return str; }
+    };
+
+    template<size_t N> struct TStringLiteralArray 
+    { 
+        constexpr static const size_t size = N; 
+        const char* strings[N]; 
+        constexpr const char* const* operator()() const& noexcept { return strings; }
     };
 
     template<typename T> [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>& v) noexcept { return static_cast<T&&>(v); }
