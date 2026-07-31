@@ -37,13 +37,130 @@ namespace PK
 
     template <typename T> constexpr size_t pk_field_count = ReflectionCountFields<T>();
 
+    template <typename T> constexpr auto ReflectionBind(T&, TIndexConstant<0>) noexcept { return Tuple<>{}; }
+    template <typename T> constexpr auto ReflectionBind(T& v) noexcept { return ReflectionBind(v, TIndexConstant<pk_field_count<T>>{}); }
+
+    template<typename T> struct TReflectionFieldNameWrapper { const T value; };
+    template<typename T> extern const TReflectionFieldNameWrapper <T> ReflectionLocalTypeAssert;
+    template<typename T> constexpr const T& ReflectionFieldNameObject() noexcept { return ReflectionLocalTypeAssert<T>.value; }
+
+    // T needed as otherwise msvc breaks the deduction
+    template<typename T, auto ptr>
+    consteval auto ReflectionGetFieldName() noexcept 
+    {
+        #if defined(__FUNCSIG__)
+        constexpr const char* signature = __FUNCSIG__;
+        constexpr size_t signatureLength = sizeof(__FUNCSIG__);
+        #elif defined(__PRETTY_FUNCTION__) || defined(__clang__)
+        constexpr const char* signature = __PRETTY_FUNCTION__;
+        constexpr size_t signatureLength = sizeof(__PRETTY_FUNCTION__);
+        #else
+        #error "Unsupported compiler!"
+        #endif
+
+        constexpr auto scope = []() consteval
+        {
+            size_t start = 0;
+            size_t end = 0;
+
+            for (size_t i = 0; i < signatureLength; ++i)
+            {
+                if (signature[i] == '>')
+                {
+                    start = end;
+                    end = i;
+                }
+                if (signature[i] == '.')
+                {
+                    start = i;
+                }
+                if (signature[i] == ']')
+                {
+                    end = i;
+                }
+            }
+
+            return Pair<const char*, size_t>{ signature + start + 1ull, end - start - 1 };
+        }();
+
+        TStringLiteral<scope.second> res{};
+    
+        for (auto i = 0u; i < scope.second; ++i)
+        {
+            res.str[i] = scope.first[i];
+        }
+    
+        return res;
+    }
+
+    template <typename T, size_t I> 
+    inline constexpr auto pk_field_name = ReflectionGetFieldName<T, __builtin_addressof(Sequence::GetAt<I>(ReflectionBind(ReflectionFieldNameObject<T>())))>();
+    
+    template <typename T>
+    constexpr auto ReflectionNamesArray() noexcept
+    {
+        return []<size_t... I>(PK::TIndexSequence<I...>) noexcept 
+        { 
+            return TStringLiteralArray<sizeof...(I)>{ pk_field_name<T, I>()... };
+        }
+        (PK::TMakeIndexSequence<pk_field_count<T>>{});
+    }
+
+    
+    template <typename T, typename TFunc, typename TBound, size_t... I>
+    constexpr void ReflectFieldsDispatch(TBound&& bound, TFunc&& func, PK::TIndexSequence<I...>)
+    {
+        using TNoRef = PK::TRemoveRef_T<T>;
+
+        auto iterator = [&](auto indexConstant)
+        {
+            constexpr auto index = decltype(indexConstant)::Value;
+
+            auto&& field = [&]() -> decltype(auto) 
+            {
+                if constexpr (TIsRValueRef<T&&>) 
+                {
+                    return Sequence::GetAt<index>(PK::MoveTemp(bound));
+                }
+                else 
+                {
+                    return Sequence::GetAt<index>(bound);
+                }
+            }();
+
+            using TField = decltype(field);
+
+            constexpr auto name = pk_field_name<TNoRef, index>();
+
+            if constexpr (requires { PK::Forward<TFunc>(func)(name, PK::Forward<TField>(field)); })
+            {
+                PK::Forward<TFunc>(func)(name, PK::Forward<TField>(field));
+            }
+            else 
+            {
+                PK::Forward<TFunc>(func)(PK::Forward<TField>(field));
+            }
+        };
+
+        (iterator(TIndexConstant<I>{}), ...);
+    }
+
+    template <typename T, typename TFunc>
+    constexpr void ReflectFields(T&& value, TFunc&& func)
+    {
+        using TNoRef = PK::TRemoveRef_T<T>;
+        auto&& bound = ReflectionBind(value);
+        ReflectFieldsDispatch<T>(bound, PK::Forward<TFunc>(func), PK::TMakeIndexSequence<pk_field_count<TNoRef>>{});
+    }
+
+
     #define PK_BIND_FIELDS(N, ...) \
     template <typename T> constexpr auto ReflectionBind(T& val, TIndexConstant<N>) noexcept \
     { \
         using U = PK::TRemoveCV_T<T>; \
         auto& mutable_val = const_cast<U&>(val); \
         auto& [__VA_ARGS__] = mutable_val; \
-        return TupleMake(__VA_ARGS__); \
+        return Sequence::Make(__VA_ARGS__); \
     } \
     
     #pragma region Tuple_field_bindings
@@ -1428,123 +1545,6 @@ namespace PK
     #pragma endregion
 
     #undef PK_BIND_FIELDS
-
-    template <typename T> constexpr auto ReflectionBind(T&, TIndexConstant<0>) noexcept { return Tuple<>{}; }
-    template <typename T> constexpr auto ReflectionBind(T& v) noexcept { return ReflectionBind(v, TIndexConstant<pk_field_count<T>>{}); }
-
-    template<typename T> struct TReflectionFieldNameWrapper { const T value; };
-    template<typename T> extern const TReflectionFieldNameWrapper <T> ReflectionLocalTypeAssert;
-    template<typename T> constexpr const T& ReflectionFieldNameObject() noexcept { return ReflectionLocalTypeAssert<T>.value; }
-
-    template<bool TReturnOffsetOrCount>
-    consteval size_t ReflectionGetFieldNameScope(const char* str, const size_t length) noexcept
-    {
-        auto start = 0ull;
-        auto end = 0ull;
-    
-        for (auto i = 0ull; i < length; ++i)
-        {
-            if (str[i] == '>')
-            {
-                start = end;
-                end = i;
-            }
-            if (str[i] == '.')
-            {
-                start = i;
-            }
-            if (str[i] == ']')
-            {
-                end = i;
-            }
-        }
-    
-        return TReturnOffsetOrCount ? start + 1ull : end - start - 1ull;
-    }
-    
-    // T needed as otherwise msvc breaks the deduction
-    template<typename T, auto ptr>
-    consteval auto ReflectionGetFieldName() noexcept 
-    {
-        #if defined(__FUNCSIG__)
-        constexpr auto name_data = __FUNCSIG__ + ReflectionGetFieldNameScope<true>(__FUNCSIG__, sizeof(__FUNCSIG__));
-        constexpr auto name_length = ReflectionGetFieldNameScope<false>(__FUNCSIG__, sizeof(__FUNCSIG__));
-        #elif defined(__PRETTY_FUNCTION__) || defined(__clang__)
-        constexpr auto name_data = __PRETTY_FUNCTION__ + ReflectionGetFieldNameScope<true>(__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__));
-        constexpr auto name_length = ReflectionGetFieldNameScope<false>(__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__));
-        #else
-        constexpr const char* name_data = nullptr;
-        constexpr size_t name_length = 0ull;
-        #endif
-    
-        TStringLiteral<name_length> res{};
-    
-        for (auto i = 0u; i < name_length; ++i)
-        {
-            res.str[i] = name_data[i];
-        }
-    
-        return res;
-    }
-
-    template <typename T, size_t I> 
-    inline constexpr auto pk_field_name = ReflectionGetFieldName<T, __builtin_addressof(TupleGetElement<I>(ReflectionBind(ReflectionFieldNameObject<T>())))>();
-    
-    template <typename T>
-    constexpr auto ReflectionNamesArray() noexcept
-    {
-        return []<size_t... I>(PK::TIndexSequence<I...>) noexcept 
-        { 
-            return TStringLiteralArray<sizeof...(I)>{ pk_field_name<T, I>()... };
-        }
-        (PK::TMakeIndexSequence<pk_field_count<T>>{});
-    }
-
-    template <typename T, typename TFunc, typename TBound, size_t... I>
-    constexpr void ReflectFieldsDispatch(TBound&& bound, TFunc&& func, PK::TIndexSequence<I...>)
-    {
-        using TNoRef = PK::TRemoveRef_T<T>;
-
-        auto iterator = [&](auto indexConstant)
-        {
-            constexpr auto index = decltype(indexConstant)::Value;
-
-            auto&& field = [&]() -> decltype(auto) 
-            {
-                if constexpr (TIsRValueRef<T&&>) 
-                {
-                    return TupleGetElement<index>(PK::MoveTemp(bound));
-                }
-                else 
-                {
-                    return TupleGetElement<index>(bound);
-                }
-            }();
-
-            using TField = decltype(field);
-
-            constexpr auto name = pk_field_name<TNoRef, index>();
-
-            if constexpr (requires { PK::Forward<TFunc>(func)(name, PK::Forward<TField>(field)); })
-            {
-                PK::Forward<TFunc>(func)(name, PK::Forward<TField>(field));
-            }
-            else 
-            {
-                PK::Forward<TFunc>(func)(PK::Forward<TField>(field));
-            }
-        };
-
-        (iterator(TIndexConstant<I>{}), ...);
-    }
-
-    template <typename T, typename TFunc>
-    constexpr void ReflectFields(T&& value, TFunc&& func)
-    {
-        using TNoRef = PK::TRemoveRef_T<T>;
-        auto&& bound = ReflectionBind(value);
-        ReflectFieldsDispatch<T>(bound, PK::Forward<TFunc>(func), PK::TMakeIndexSequence<pk_field_count<TNoRef>>{});
-    }
 
     #ifdef __clang__
     #pragma clang diagnostic pop

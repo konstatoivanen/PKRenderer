@@ -85,14 +85,16 @@ namespace PK
     struct TAny { TAny(size_t); template<typename T> constexpr operator T() const noexcept; };
 
     // @TODO these dont really belong here
-    template<size_t N> struct TStringLiteral 
+    template<size_t N> 
+    struct TStringLiteral 
     { 
         constexpr static size_t length = N; 
         char str[N + 1ull]; 
         constexpr const char* operator()() const& noexcept { return str; }
     };
 
-    template<size_t N> struct TStringLiteralArray 
+    template<size_t N> 
+    struct TStringLiteralArray 
     { 
         constexpr static const size_t size = N; 
         const char* strings[N]; 

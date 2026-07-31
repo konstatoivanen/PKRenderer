@@ -624,9 +624,6 @@
     <ClInclude Include="Source\Core\Utilities\Templates.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\Pair.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Utilities\InitializerList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
