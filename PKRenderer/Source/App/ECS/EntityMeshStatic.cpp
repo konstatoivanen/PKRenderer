@@ -23,9 +23,9 @@ namespace PK
         }
 
         auto implementer = entityDb->NewImplementer<App::ImplementerMeshStatic>();
-        entityDb->NewView<App::EntityViewTransform>(implementer, egid);
-        entityDb->NewView<App::EntityViewScenePrimitive>(implementer, egid);
-        entityDb->NewView<App::EntityViewMeshStatic>(implementer, egid);
+        entityDb->NewView<App::EntityViewTransform>(egid, implementer);
+        entityDb->NewView<App::EntityViewScenePrimitive>(egid, implementer);
+        entityDb->NewView<App::EntityViewMeshStatic>(egid, implementer);
 
         implementer->position = desc.position;
         implementer->rotation = quaternion(desc.rotation);

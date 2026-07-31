@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/ECS/EGID.h"
+#include "Core/ECS/EntityDatabase.h"
 #include "Core/Serialization/Serialize.h"
 
 namespace PK

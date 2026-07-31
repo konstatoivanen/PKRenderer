@@ -32,11 +32,11 @@ namespace PK::App
         for (auto i = 0u; i < views.count; ++i)
         {
             const auto& view = views[i];
-            auto serializer = m_serializers.GetValuePtr(view.serial->typeUUID);
+            auto serializer = m_serializers.GetValuePtr(view.typeUUID);
 
             if (serializer)
             {
-                auto name = view.serial->name;
+                auto name = view.name;
 
                 // Default to typename + index if no user defined value was set.
                 if (!name.Length())

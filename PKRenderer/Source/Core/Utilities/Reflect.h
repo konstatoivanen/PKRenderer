@@ -11,6 +11,12 @@ namespace PK
     #pragma clang diagnostic ignored "-Wundefined-var-template"
     #endif
 
+    template<typename T, size_t n>
+    static consteval bool TIsConstructible()
+    {
+        return[]<size_t... is>(PK::TIndexSequence<is...>) { return requires { T{ TAny(is)... }; }; } (PK::TMakeIndexSequence<n>());
+    }
+
     template<typename T, size_t N = 0>
     static consteval size_t ReflectionCountFields()
     {

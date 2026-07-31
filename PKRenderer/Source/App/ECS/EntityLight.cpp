@@ -22,9 +22,9 @@ namespace PK
 
         auto implementer = entityDb->NewImplementer<App::ImplementerLight>();
 
-        entityDb->NewView<App::EntityViewTransform>(implementer, egid);
-        entityDb->NewView<App::EntityViewScenePrimitive>(implementer, egid);
-        entityDb->NewView<App::EntityViewLight>(implementer, egid);
+        entityDb->NewView<App::EntityViewTransform>(egid, implementer);
+        entityDb->NewView<App::EntityViewScenePrimitive>(egid, implementer);
+        entityDb->NewView<App::EntityViewLight>(egid, implementer);
         implementer->localAABB = math::centerExtentsToAABB(PK_FLOAT3_ZERO, PK_FLOAT3_ONE);
         implementer->position = desc.position;
         implementer->rotation = quaternion(desc.rotation);

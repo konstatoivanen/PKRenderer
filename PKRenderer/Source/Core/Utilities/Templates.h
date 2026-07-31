@@ -99,11 +99,15 @@ namespace PK
 
     struct TAny { TAny(size_t); template<typename T> constexpr operator T() const noexcept; };
 
-    template<typename T, size_t n>
-    static consteval bool TIsConstructible()
+    template<typename ... Args>
+    struct TTypeList
     {
-        return[]<size_t... is>(PK::TIndexSequence<is...>) { return requires { T{ TAny(is)... }; }; } (PK::TMakeIndexSequence<n>());
-    }
+        template<typename TFunc>
+        static constexpr auto Apply(TFunc&& func)
+        {
+            return func.template operator()<Args...>();
+        }
+    };
 
     template<typename T> [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>& v) noexcept { return static_cast<T&&>(v); }
     template<typename T> [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>&& v) noexcept { return static_cast<T&&>(v); }

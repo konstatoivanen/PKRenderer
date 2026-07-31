@@ -16,9 +16,9 @@ namespace PK
         }
         
         auto implementer = entityDb->NewImplementer<App::ImplementerFlyCamera>();
-        entityDb->NewView<App::EntityViewTransform>(implementer, egid);
-        entityDb->NewView<App::EntityViewRenderView>(implementer, egid);
-        entityDb->NewView<App::EntityViewFlyCamera>(implementer, egid);
+        entityDb->NewView<App::EntityViewTransform>(egid, implementer);
+        entityDb->NewView<App::EntityViewRenderView>(egid, implementer);
+        entityDb->NewView<App::EntityViewFlyCamera>(egid, implementer);
         implementer->localAABB = {};
         implementer->position = desc.position;
         implementer->rotation = quaternion(desc.rotation);

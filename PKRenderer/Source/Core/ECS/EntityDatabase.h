@@ -139,19 +139,18 @@ namespace PK
             return static_cast<TEntityView*>(view);
         }
 
-        template<typename TView, typename TImpl>
-        EntityView<TView>* NewView(TImpl* implementer, const EGID& egid)
+        template<typename TView, typename ... TImplementers>
+        EntityView<TView>* NewView(const EGID& egid, TImplementers*... implementers)
         {
             auto* view = NewView<TView>(egid);
 
-            PK::ReflectFields(*static_cast<TView*>(view), [implementer](auto& value)
+            PK::ReflectFields(*static_cast<TView*>(view), [=](auto& value)
             {
                 using TField = PK::TRemoveCVRef_T<decltype(value)>;
 
-                if constexpr (TIsSpecialization<TField, EntityComponentRef> && 
-                              TIsConvertible<TImpl*, typename TField::Type*>)
+                if constexpr (TIsSpecialization<TField, EntityComponentRef>)
                 {
-                    value = implementer;
+                    (((TIsConvertible<TImplementers*, typename TField::Type*>) ? (value = implementers, true) : false) || ...);
                 }
             });
 
