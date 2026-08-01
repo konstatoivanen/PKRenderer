@@ -9,12 +9,15 @@
 #include "App/ECS/EntityLight.h"
 #include "App/ECS/EntityLightSphere.h"
 
-namespace PK
+namespace PK::App
 {
-    template<>
-    EGID EntityFactory<App::EntityLightSphere>::Create(EntityDatabase* entityDb, EGID egid, const App::EntityLightSphere& desc)
+    void EntityLightSphere::OnCreate(
+        EntityDatabase* entityDb, 
+        const EGID& egid, 
+        const EntityLightSphere& desc, 
+        [[maybe_unused]] TImplementers& implementers)
     {
-        App::EntityLight descLight;
+        EntityLight descLight;
         descLight.IESProfile = desc.IESProfile;
         descLight.position = desc.position;
         descLight.rotation = desc.rotation;
@@ -25,45 +28,25 @@ namespace PK
         descLight.type = desc.type;
         descLight.useIESCandelas = desc.useIESCandelas;
         descLight.castShadow = desc.castShadow;
-        auto lightEgid = EntityFactory<App::EntityLight>::Create(entityDb, egid, descLight);
+        auto lightEgid = EntityFactory<EntityLight>::Create(entityDb, egid, descLight);
 
         auto mesh = desc.assetDatabase->Find<MeshStatic>("Primitive_Sphere");
         auto shader = desc.assetDatabase->Find<ShaderAsset>("MS_Mat_Unlit_Color");
         MaterialTarget material{ desc.assetDatabase->CreateVirtual<Material>(FixedString32("M_Point_Light_%u", lightEgid.entityID()).c_str(), shader.get(), nullptr), 0u };
-        material.material->Set<float4>(App::HashCache::Get()->_Color, desc.color);
-        material.material->Set<float4>(App::HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
+        material.material->Set<float4>(HashCache::Get()->_Color, desc.color);
+        material.material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
 
-        App::EntityMeshStatic meshDesc;
-        meshDesc.flags = App::ScenePrimitiveFlags::None;
+        EntityMeshStatic meshDesc;
+        meshDesc.flags = ScenePrimitiveFlags::None;
         meshDesc.mesh = mesh;
         meshDesc.materials = { &material, 1u };
         meshDesc.position = desc.position;
         meshDesc.rotation = PK_FLOAT3_ZERO;
         meshDesc.scale = PK_FLOAT3_ONE * desc.sourceRadius;
-        auto meshEgid = EntityFactory<App::EntityMeshStatic>::Create(entityDb, EGID(0u, egid.groupID()), meshDesc);
+        auto meshEgid = EntityFactory<EntityMeshStatic>::Create(entityDb, EGID(0u, egid.groupID()), meshDesc);
 
-        auto lightSphereView = entityDb->NewView<App::EntityViewLightSphereTransforms>(lightEgid);
-        lightSphereView->transformMesh = entityDb->Query<App::EntityViewTransform>(meshEgid)->transform;
-        lightSphereView->transformLight = entityDb->Query<App::EntityViewTransform>(lightEgid)->transform;
-
-        return lightEgid;
-    }
-
-    template<>
-    EGID EntityFactory<App::EntityLightSphere>::CreateDefault(EntityDatabase* entityDb, EGID egid)
-    {
-        return EGIDInvalid;
-    }
-
-    template<>
-    EGID EntityFactory<App::EntityLightSphere>::Deserialize(EntityDatabase* entityDb, SerialNodeRead parent, uint32_t group)
-    {
-        return EGIDInvalid;
-    }
-
-    template<>
-    void EntityFactory<App::EntityLightSphere>::Serialize(EntityDatabase* entityDb, SerialNodeWrite parent, const EGID& egid)
-    {
-
+        auto lightSphereView = entityDb->NewView<EntityViewLightSphereTransforms>(lightEgid);
+        lightSphereView->transformMesh = entityDb->Query<EntityViewTransform>(meshEgid)->transform;
+        lightSphereView->transformLight = entityDb->Query<EntityViewTransform>(lightEgid)->transform;
     }
 }

@@ -5,20 +5,15 @@
 #include "App/ECS/EntityViewFlyCamera.h"
 #include "App/ECS/EntityFlyCamera.h"
 
-namespace PK
+namespace PK::App
 {
-    template<>
-    EGID EntityFactory<App::EntityFlyCamera>::Create(EntityDatabase* entityDb, EGID egid, const App::EntityFlyCamera& desc)
+    void EntityFlyCamera::OnCreate(
+        [[maybe_unused]] EntityDatabase* entityDb, 
+        [[maybe_unused]] const EGID& egid, 
+        const EntityFlyCamera& desc, 
+        TImplementers& implementers)
     {
-        if (egid.entityID() == 0u)
-        {
-            egid = entityDb->ReserveEntityId(egid.groupID());
-        }
-        
-        auto implementer = entityDb->NewImplementer<App::ImplementerFlyCamera>();
-        entityDb->NewView<App::EntityViewTransform>(egid, implementer);
-        entityDb->NewView<App::EntityViewRenderView>(egid, implementer);
-        entityDb->NewView<App::EntityViewFlyCamera>(egid, implementer);
+        auto implementer = Sequence::GetAt<0>(implementers);
         implementer->localAABB = {};
         implementer->position = desc.position;
         implementer->rotation = quaternion(desc.rotation);
@@ -39,23 +34,5 @@ namespace PK
         implementer->rotationSmoothing = desc.rotationSmoothing;
         implementer->sensitivity = desc.sensitivity;
         implementer->settingsRef = desc.settings;
-        return egid;
-    }
-
-    template<>
-    EGID EntityFactory<App::EntityFlyCamera>::CreateDefault(EntityDatabase* entityDb, EGID egid)
-    {
-        return EGIDInvalid;
-    }
-
-    template<>
-    EGID EntityFactory<App::EntityFlyCamera>::Deserialize(EntityDatabase* entityDb, SerialNodeRead parent, uint32_t group)
-    {
-        return EGIDInvalid;
-    }
-
-    template<>
-    void EntityFactory<App::EntityFlyCamera>::Serialize(EntityDatabase* entityDb, SerialNodeWrite parent, const EGID& egid)
-    {
     }
 }

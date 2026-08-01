@@ -11,6 +11,7 @@ namespace PK
     #pragma clang diagnostic ignored "-Wundefined-var-template"
     #endif
 
+
     template<typename T, size_t n>
     static consteval bool TIsConstructible()
     {
@@ -35,7 +36,8 @@ namespace PK
         }
     }
 
-    template <typename T> constexpr size_t pk_field_count = ReflectionCountFields<T>();
+    template <typename T> inline constexpr auto pk_field_count = ReflectionCountFields<T>();
+    template <typename T> inline constexpr auto pk_base_list = []<typename... Args>(Args*...) { return Tuple<Args...>{}; }((T*)nullptr);
 
     template <typename T> constexpr auto ReflectionBind(T&, TIndexConstant<0>) noexcept { return Tuple<>{}; }
     template <typename T> constexpr auto ReflectionBind(T& v) noexcept { return ReflectionBind(v, TIndexConstant<pk_field_count<T>>{}); }

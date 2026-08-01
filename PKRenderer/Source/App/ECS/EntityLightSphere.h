@@ -6,8 +6,16 @@
 
 namespace PK::App
 {
-    struct EntityLightSphere : EntityFactory<EntityLightSphere>
+    struct EntityLightSphere
     {
+        using TImplementers = Tuple<>;
+        using TViews = Tuple<>;
+        constexpr static const bool IsSerializable = false;
+
+        //static void OnDeserialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeRead node, TImplementers& implementers) = delete;
+        //static void OnSerialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeWrite node) = delete;
+        static void OnCreate(EntityDatabase* entityDb, const EGID& egid, const EntityLightSphere& descriptor, TImplementers& implementers);
+
         AssetDatabase* assetDatabase;
         IESProfileRef IESProfile;
         float3 position;

@@ -33,6 +33,12 @@ namespace PK
         {
             return PK::Forward<TFunc>(func).template operator()<Args...>();
         }
+
+        template <typename TFunc>
+        static constexpr void For(TFunc&& func) noexcept
+        {
+            (func.template operator()<Args>(), ...);
+        }
     };
     
     namespace Sequence
@@ -49,17 +55,38 @@ namespace PK
         template <size_t N, typename ...T> constexpr decltype(auto) GetAt(volatile Tuple<T...>& t) noexcept { return DeriveAt<N>(t); }
         template <size_t N, typename ...T> constexpr decltype(auto) GetAt(Tuple<T...>&& t) noexcept { return DeriveAt<N>(PK::MoveTemp(t)); }
 
+        template <typename ... Args> constexpr auto Copy(Args ... args) noexcept { return Tuple<TDecay_T<Args>...>(static_cast<Args&&>(args)...); }
         template <typename ... Args> constexpr auto Make(Args& ... args) noexcept { return Tuple<Args&...>{ args ... }; }
         template <typename ... Args> constexpr auto Forward(Args&& ... args) noexcept { return Tuple<Args&...>{ static_cast<Args&&>(args)... }; }
 
         template <typename TFunc, typename... Args>
         constexpr decltype(auto) Dispatch(TFunc&& function, Tuple<Args...>& tuple) noexcept
         {
-            return[]<size_t... Is>(TFunc&& f, Tuple<Args...>& t) noexcept -> decltype(auto)
+            return []<size_t... I>(auto&& f, auto& t, PK::TIndexSequence<I...>) noexcept -> decltype(auto)
             {
-                return PK::Forward<TFunc>(f)(GetAt<Is>(t)...);
+                return PK::Forward<TFunc>(f)(GetAt<I>(t)...);
             }
-            (PK::Forward<TFunc>(function), tuple);
+            (PK::Forward<TFunc>(function), tuple, PK::TIndexSequenceFor<Args...>{});
+        }
+
+        template <typename TFunc, typename... Args>
+        constexpr void For(TFunc&& function, Tuple<Args...>& tuple) noexcept
+        {
+            []<size_t... I>(auto&& f, auto&t, PK::TIndexSequence<I...>) 
+            {
+                (f(GetAt<I>(t)), ...);
+            }
+            (PK::Forward<TFunc>(function), tuple, PK::TIndexSequenceFor<Args...>{});
+        }
+
+        template <typename TFunc, typename... Args>
+        constexpr void For(TFunc&& function, const Tuple<Args...>& tuple) noexcept
+        {
+            []<size_t... I>(auto&& f, const auto&t, PK::TIndexSequence<I...>)
+            {
+                (f(GetAt<I>(t)), ...);
+            }
+            (PK::Forward<TFunc>(function), tuple, PK::TIndexSequenceFor<Args...>{});
         }
     }
 }

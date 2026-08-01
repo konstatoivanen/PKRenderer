@@ -1,30 +1,20 @@
 #include "PrecompiledHeader.h"
-#include "Core/ECS/EntityDatabase.h"
 #include "App/ECS/EntityLight.h"
-#include "App/ECS/EntityViewTransform.h"
-#include "App/ECS/EntityViewScenePrimitive.h"
-#include "App/ECS/EntityViewLight.h"
 
-namespace PK
+namespace PK::App
 {
-    template<>
-    EGID EntityFactory<App::EntityLight>::Create(EntityDatabase* entityDb, EGID egid, const App::EntityLight& desc)
+    void EntityLight::OnCreate(
+        [[maybe_unused]] EntityDatabase* entityDb, 
+        [[maybe_unused]] const EGID& egid, 
+        const EntityLight& desc, 
+        TImplementers& implementers)
     {
         // Light radius based on phyiscal attenuation at minAtten cutoff.
         const auto minAtten = 0.2f;
         const auto intensity = math::cmax(desc.color);
         const auto radius = desc.radius < 0.0f ? (intensity * intensity) / (minAtten * minAtten) : desc.radius;
         
-        if (egid.entityID() == 0u)
-        {
-            egid = entityDb->ReserveEntityId(egid.groupID());
-        }
-
-        auto implementer = entityDb->NewImplementer<App::ImplementerLight>();
-
-        entityDb->NewView<App::EntityViewTransform>(egid, implementer);
-        entityDb->NewView<App::EntityViewScenePrimitive>(egid, implementer);
-        entityDb->NewView<App::EntityViewLight>(egid, implementer);
+        auto implementer = Sequence::GetAt<0>(implementers);
         implementer->localAABB = math::centerExtentsToAABB(PK_FLOAT3_ZERO, PK_FLOAT3_ONE);
         implementer->position = desc.position;
         implementer->rotation = quaternion(desc.rotation);
@@ -50,25 +40,5 @@ namespace PK
             auto halftan = radius * math::tan(desc.angle * 0.5f * PK_FLOAT_DEG2RAD);
             implementer->localAABB = math::centerExtentsToAABB(float3(0.0f, 0.0f, radius * 0.5f), float3(halftan, halftan, radius * 0.5f));
         }
-
-        return egid;
-    }
-
-    template<>
-    EGID EntityFactory<App::EntityLight>::CreateDefault(EntityDatabase* entityDb, EGID egid)
-    {
-        return EGIDInvalid;
-    }
-
-    template<>
-    EGID EntityFactory<App::EntityLight>::Deserialize(EntityDatabase* entityDb, SerialNodeRead parent, uint32_t group)
-    {
-        return EGIDInvalid;
-    }
-
-    template<>
-    void EntityFactory<App::EntityLight>::Serialize(EntityDatabase* entityDb, SerialNodeWrite parent, const EGID& egid)
-    {
-
     }
 }

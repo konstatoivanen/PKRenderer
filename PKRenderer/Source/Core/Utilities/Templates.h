@@ -26,25 +26,32 @@ namespace PK
     template<typename T> using TRemovePtr_T = typename TRemovePtr<T>::Type;
     template<typename T> using TRemoveCV_T = typename TRemoveCV<T>::Type;
     template<typename T> using TRemoveCVRef_T = typename TRemoveCV<typename TRemoveRef<T>::Type>::Type;
+ 
+    template<typename T> struct TDecay { using U = TRemoveRef_T<T>; using Type = U; };
+    template<typename T> using TDecay_T = typename TDecay<T>::Type;
 
     #if defined(__clang__)
     template<typename T0, typename T1> constexpr bool TIsSame = __is_same(T0, T1);
     #else
     template<typename, typename> constexpr bool TIsSame = false;
-    template<typename T> constexpr bool TIsSame<T, T> = true;
+    template<typename T>         constexpr bool TIsSame<T, T> = true;
     #endif 
 
     template<typename TBase, typename TDerived> inline constexpr bool TIsBaseOf = __is_base_of(TBase, TDerived);
-    template<typename TFrom, typename TTo> inline constexpr bool TIsConvertible = __is_convertible_to(TFrom, TTo);
+    template<typename TFrom, typename TTo>      inline constexpr bool TIsConvertible = __is_convertible_to(TFrom, TTo);
+    template<typename T, typename ... Args>     inline constexpr bool TIsAnyOf = (TIsSame<T, Args> || ...);
 
-    template<typename> inline constexpr bool TIsArray = false;
+    template<typename T, template<typename...> typename Template>       inline constexpr bool TIsSpecialization = false;
+    template<template<typename...> typename Template, typename... Args> inline constexpr bool TIsSpecialization<Template<Args...>, Template> = true;
+
+    template<typename>   constexpr bool TIsRValueRef = false; 
+    template<typename T> constexpr bool TIsRValueRef<T&&> = true;
+
+    template<typename>             inline constexpr bool TIsArray = false;
     template<typename T, size_t N> inline constexpr bool TIsArray<T[N]> = true;
-    template<typename T> inline constexpr bool TIsArray<T[]> = true;
+    template<typename T>           inline constexpr bool TIsArray<T[]> = true;
 
-    template <typename T, typename ... Args>
-    constexpr bool TIsAnyOf = (TIsSame<T, Args> || ...);
-
-    template<typename> inline constexpr bool TIsPointer = false; 
+    template<typename>   inline constexpr bool TIsPointer = false; 
     template<typename T> inline constexpr bool TIsPointer<T*> = true;
     template<typename T> inline constexpr bool TIsPointer<T* const> = true;
     template<typename T> inline constexpr bool TIsPointer<T* volatile> = true;
@@ -52,35 +59,38 @@ namespace PK
 
     template<typename T> inline constexpr bool TIsEnum = __is_enum(T);
 
-    template <typename> constexpr bool TIsRValueRef = false; 
-    template <typename T> constexpr bool TIsRValueRef<T&&> = true;
+    template<typename T> constexpr bool TIsIntegral = TIsAnyOf<TRemoveCV_T<T>, 
+        bool, 
+        char, 
+        signed char, 
+        unsigned char,
+        wchar_t, 
+        char8_t, 
+        char16_t, 
+        char32_t,
+        short, 
+        unsigned short, 
+        int, 
+        unsigned int,
+        long, 
+        unsigned long, 
+        long long, 
+        unsigned long long>;
 
-    template <class T, template <class...> class Template>
-    inline constexpr bool TIsSpecialization = false;
+    template<typename T> constexpr bool TIsFloat = TIsAnyOf<TRemoveCV_T<T>, float, double, long double>;
+    template<typename T> constexpr bool TIsArithmetic = TIsIntegral<T> || TIsFloat<T>;
 
-    template <template <class...> class Template, class... Args>
-    inline constexpr bool TIsSpecialization<Template<Args...>, Template> = true;
-
-    template <typename T>
-    constexpr bool TIsIntegral = TIsAnyOf<TRemoveCV_T<T>, bool, char, signed char, unsigned char, wchar_t,
-        #ifdef __cpp_char8_t
-        char8_t,
-        #endif
-        char16_t, char32_t, short, unsigned short, int, unsigned int, long, unsigned long, long long, unsigned long long>;
-
-    template <typename T> constexpr bool TIsFloat = TIsAnyOf<TRemoveCV_T<T>, float, double, long double>;
-    template <typename T> constexpr bool TIsArithmetic = TIsIntegral<T> || TIsFloat<T>;
     template<typename T, T N> struct TIntegerConstant { using Type = T; static constexpr T Value = N; };
-    template<size_t Index> using TIndexConstant = TIntegerConstant<size_t, Index>;
-    
+    template<size_t I> using TIndexConstant = TIntegerConstant<size_t, I>;
+
+    template<typename T, T... V> struct TIntegerSequence { using Type = T; static constexpr size_t size() noexcept { return sizeof...(V); } };
+    template<typename T, T N> using TMakeIntegerSequence = __make_integer_seq<TIntegerSequence, T, N>;
+    template<size_t... V> using TIndexSequence = TIntegerSequence<size_t, V...>;
+    template<size_t N> using TMakeIndexSequence = TMakeIntegerSequence<size_t, N>;
+    template<typename ... Args> using TIndexSequenceFor = TMakeIndexSequence<sizeof...(Args)>;
+
     using TTrue = TIntegerConstant<bool, true>;
     using TFalse = TIntegerConstant<bool, false>;
-
-    template<typename T, T... Values> struct TIntegerSequence { using Type = T; static constexpr size_t size() noexcept { return sizeof...(Values); } };
-    template<typename T, T N> using TMakeIntegerSequence = __make_integer_seq<TIntegerSequence, T, N>;
-    template<size_t... Values> using TIndexSequence = TIntegerSequence<size_t, Values...>;
-    template<size_t N> using TMakeIndexSequence = TMakeIntegerSequence<size_t, N>;
-    template<typename ... Types> using TIndexSequenceFor = TMakeIndexSequence<sizeof...(Types)>;
 
     struct TAny { TAny(size_t); template<typename T> constexpr operator T() const noexcept; };
 

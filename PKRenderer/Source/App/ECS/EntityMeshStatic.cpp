@@ -12,21 +12,15 @@
 #include "App/ECS/EntityViewMeshStatic.h"
 #include "App/ECS/EntityMeshStatic.h"
 
-namespace PK
+namespace PK::App
 {
-    template<> 
-    EGID EntityFactory<App::EntityMeshStatic>::Create(EntityDatabase* entityDb, EGID egid, const App::EntityMeshStatic& desc)
+    void EntityMeshStatic::OnCreate(
+        [[maybe_unused]] EntityDatabase* entityDb, 
+        [[maybe_unused]] const EGID& egid, 
+        const EntityMeshStatic& desc, 
+        TImplementers& implementers)
     {
-        if (egid.entityID() == 0u)
-        {
-            egid = entityDb->ReserveEntityId(egid.groupID());
-        }
-
-        auto implementer = entityDb->NewImplementer<App::ImplementerMeshStatic>();
-        entityDb->NewView<App::EntityViewTransform>(egid, implementer);
-        entityDb->NewView<App::EntityViewScenePrimitive>(egid, implementer);
-        entityDb->NewView<App::EntityViewMeshStatic>(egid, implementer);
-
+        auto implementer = Sequence::GetAt<0>(implementers);
         implementer->position = desc.position;
         implementer->rotation = quaternion(desc.rotation);
         implementer->scale = desc.scale;
@@ -39,16 +33,9 @@ namespace PK
         {
             implementer->localAABB |= desc.mesh->GetSubmesh(target.submesh).bounds;
         }
-
-        return egid;
     }
     
-    template<>
-    EGID EntityFactory<App::EntityMeshStatic>::CreateDefault(EntityDatabase* entityDb, EGID egid)
-    {
-        return EGIDInvalid;
-    }
-
+    /*
     template<>
     EGID EntityFactory<App::EntityMeshStatic>::Deserialize(EntityDatabase* entityDb, SerialNodeRead parent, uint32_t group)
     {
@@ -95,4 +82,5 @@ namespace PK
             Serialize::WriteVal<MaterialTarget>(node, nullptr, &viewMeshStatic->materials->materials[i]);
         }
     }
+    */
 }

@@ -22,8 +22,17 @@ namespace PK::App
     {
     };
 
-    struct EntityFlyCamera : EntityFactory<EntityFlyCamera>
+    struct EntityFlyCamera
     {
+        using TImplementers = Tuple<ImplementerFlyCamera*>;
+        using TViews = Tuple<EntityViewTransform, EntityViewRenderView, EntityViewFlyCamera>;
+        constexpr static const bool IsSerializable = false;
+
+        //static void OnDeserialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeRead node, TImplementers& implementers) = delete;
+        //static void OnSerialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeWrite node) = delete;
+        static void OnCreate(EntityDatabase* entityDb, const EGID& egid, const EntityFlyCamera& descriptor, TImplementers& implementers);
+
+
         FixedString16 name;
         uint4 desiredRect;
         bool isWindowTarget;
