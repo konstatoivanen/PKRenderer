@@ -58,7 +58,7 @@ namespace PK::Memory
         PK_SYSTEM_ALIGNED_FREE(block); 
     }
 
-    inline void* AllocateAligned(size_t size, size_t align = PK_SYSTEM_DEFAULT_ALIGN) noexcept 
+    PK_ALLOC_CALL inline void* AllocateAligned(size_t size, size_t align = PK_SYSTEM_DEFAULT_ALIGN) noexcept
     { 
         return PK_SYSTEM_ALIGNED_ALLOC(size, align); 
     }

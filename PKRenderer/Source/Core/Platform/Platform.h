@@ -11,6 +11,7 @@
     #define PK_DLLEXPORT __attribute__ ((__visibility__ ("default")))
     #define PK_DLLIMPORT
     #define PK_THREADLOCAL __thread
+    #define PK_ALLOC_CALL __declspec(allocator)
     #define PK_STDCALL __attribute__((stdcall))
     #define PK_CDECL __attribute__((cdecl))
     #define PK_RESTRICT __restrict__
@@ -28,6 +29,7 @@
     #define PK_DLLEXPORT __declspec(dllexport)
     #define PK_DLLIMPORT __declspec(dllimport)
     #define PK_THREADLOCAL __declspec(thread)
+    #define PK_ALLOC_CALL __declspec(allocator)
     #define PK_STDCALL __stdcall
     #define PK_CDECL __cdecl
     #define PK_RESTRICT __restrict
@@ -80,7 +82,7 @@ namespace PK
         static int Initialize() = delete;
         static int Terminate() = delete;
 
-        static void* AllocateAligned(size_t size, size_t alignment) = delete;
+        PK_ALLOC_CALL static void* AllocateAligned(size_t size, size_t alignment) = delete;
         static void FreeAligned(void* block) = delete;
         static struct PlatformMemoryInfo GetMemoryInfo() = delete;
 
@@ -139,14 +141,10 @@ namespace PK
 #endif
 }
 
-// Bypass platform alloc. 
-// Visual studio doesnt show object types in memory profiler if they're not immediately cast to the correct type.
-#if 1 
 #define PK_SYSTEM_DEFAULT_ALIGN 16
 #define PK_SYSTEM_ALIGNED_ALLOC(size, align) PK::Platform::AllocateAligned(size, align)
 #define PK_SYSTEM_ALIGNED_FREE(ptr) PK::Platform::FreeAligned(ptr)
 #define PK_SYSTEM_ERROR(message) PK::Platform::FatalExit(message)
-#endif
 
 #include "Windows/Win32Platform.h"
 #include "Linux/LinuxPlatform.h"

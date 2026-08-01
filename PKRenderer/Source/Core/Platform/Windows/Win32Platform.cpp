@@ -385,7 +385,7 @@ namespace PK
         return 0;
     }
 
-    void* Win32Platform::AllocateAligned(size_t size, size_t alignment)
+    PK_ALLOC_CALL void* Win32Platform::AllocateAligned(size_t size, size_t alignment) noexcept
     {
         auto ptr = _aligned_malloc(size, alignment);
     

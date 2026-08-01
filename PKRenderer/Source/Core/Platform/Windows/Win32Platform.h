@@ -121,7 +121,7 @@ namespace PK
         static int Initialize();
         static int Terminate();
 
-        static void* AllocateAligned(size_t size, size_t alignment);
+        PK_ALLOC_CALL static void* AllocateAligned(size_t size, size_t alignment) noexcept;
         static void FreeAligned(void* block);
         static PlatformMemoryInfo GetMemoryInfo();
 
