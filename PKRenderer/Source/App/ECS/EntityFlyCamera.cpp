@@ -1,8 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/ECS/EntityDatabase.h"
-#include "App/ECS/EntityViewTransform.h"
-#include "App/ECS/EntityViewRenderView.h"
-#include "App/ECS/EntityViewFlyCamera.h"
 #include "App/ECS/EntityFlyCamera.h"
 
 namespace PK::App

@@ -12,7 +12,5 @@ namespace PK::App
 
         // Id counter for control id systems. rebuilt every frame.
         uint32_t controlIdCounter = 0u;
-
-        virtual ~ComponentViewInput() = default;
     };
 }

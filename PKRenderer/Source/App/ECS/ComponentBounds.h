@@ -7,6 +7,5 @@ namespace PK::App
     {
         AABB<float3> localAABB;
         AABB<float3> worldAABB;
-        virtual ~ComponentBounds() = default;
     };
 }

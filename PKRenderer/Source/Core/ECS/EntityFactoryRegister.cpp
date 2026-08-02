@@ -70,8 +70,7 @@ namespace PK::App
         }
 
         auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
-        SerialNodeRead root = tree.rootref();
-
+        auto root = tree.rootref();
         auto entities = root.find_child("Entities");
 
         if (entities.readable())
@@ -85,12 +84,11 @@ namespace PK::App
                     auto uuidStr = Serialize::ReadVal<FixedString32>(type);
                     auto name = Serialize::ReadKey<FixedString32>(entity);
                     auto uuid = Memory::BitCast<FixedString32, UUID128>(&uuidStr);
-
                     auto serializer = m_serializers.GetValuePtr(uuid);
 
                     if (serializer)
                     {
-                        serializer->deserialize(m_entityDb, entity, group);
+                        serializer->deserialize(m_entityDb, entity, group, name);
                     }
 
                 }

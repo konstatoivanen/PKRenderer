@@ -17,6 +17,5 @@ namespace PK::App
         float angleFade = 0.01f;
         LightType type = LightType::Point;
         bool useIESCandelas = false;
-        virtual ~ComponentLight() = default;
     };
 }

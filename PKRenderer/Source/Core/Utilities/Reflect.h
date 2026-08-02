@@ -37,7 +37,6 @@ namespace PK
     }
 
     template <typename T> inline constexpr auto pk_field_count = ReflectionCountFields<T>();
-    template <typename T> inline constexpr auto pk_base_list = []<typename... Args>(Args*...) { return Tuple<Args...>{}; }((T*)nullptr);
 
     template <typename T> constexpr auto ReflectionBind(T&, TIndexConstant<0>) noexcept { return Tuple<>{}; }
     template <typename T> constexpr auto ReflectionBind(T& v) noexcept { return ReflectionBind(v, TIndexConstant<pk_field_count<T>>{}); }
@@ -162,7 +161,7 @@ namespace PK
         using U = PK::TRemoveCV_T<T>; \
         auto& mutable_val = const_cast<U&>(val); \
         auto& [__VA_ARGS__] = mutable_val; \
-        return Sequence::Make(__VA_ARGS__); \
+        return Sequence::Bind(__VA_ARGS__); \
     } \
     
     #pragma region Tuple_field_bindings

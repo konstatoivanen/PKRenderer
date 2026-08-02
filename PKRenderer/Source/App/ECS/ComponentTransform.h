@@ -16,7 +16,5 @@ namespace PK::App
 
         inline float3x4 GetLocalToWorld() const { return math::transformTRS3x4(position, rotation, scale); }
         inline float4x4 GetWorldToLocal() const { return math::transformTRSInverse(position, rotation, scale); }
-
-        virtual ~ComponentTransform() = default;
     };
 }

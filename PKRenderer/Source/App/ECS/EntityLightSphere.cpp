@@ -37,6 +37,7 @@ namespace PK::App
         material.material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
 
         EntityMeshStatic meshDesc;
+        meshDesc.entitySerialize = false;
         meshDesc.flags = ScenePrimitiveFlags::None;
         meshDesc.mesh = mesh;
         meshDesc.materials = { &material, 1u };

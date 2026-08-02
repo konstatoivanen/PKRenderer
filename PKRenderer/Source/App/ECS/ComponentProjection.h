@@ -21,7 +21,5 @@ namespace PK::App
         float zFar = 100.0f;
 
         float4x4 ResolveProjectionMatrix(float aspect);
-
-        virtual ~ComponentProjection() = default;
     };
 }

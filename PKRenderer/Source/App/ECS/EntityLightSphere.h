@@ -1,6 +1,4 @@
 #pragma once
-#include "Core/Math/Math.h"
-#include "Core/Assets/AssetDatabase.h"
 #include "Core/ECS/EntityFactory.h"
 #include "App/Renderer/EntityEnums.h"
 
@@ -10,7 +8,6 @@ namespace PK::App
     {
         using TImplementers = Tuple<>;
         using TViews = Tuple<>;
-        constexpr static const bool IsSerializable = false;
 
         //static void OnDeserialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeRead node, TImplementers& implementers) = delete;
         //static void OnSerialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeWrite node) = delete;

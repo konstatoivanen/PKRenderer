@@ -8,25 +8,24 @@ namespace PK::App
 {
     struct EntitySerializer
     {
-        typedef EGID (*FuncDeserialize)(EntityDatabase*, SerialNodeRead, uint32_t);
         typedef void (*FuncSerialize)(EntityDatabase*, SerialNodeWrite, const EGID&);
+        typedef EGID (*FuncDeserialize)(EntityDatabase*, SerialNodeRead, uint32_t, const char*);
 
         UUID128 uuid;
         const char* name;
         uint32_t typeIndex;
-        FuncDeserialize deserialize;
         FuncSerialize serialize;
+        FuncDeserialize deserialize;
 
         template<typename TEntity>
-        static EntitySerializer GetSerializer()
+        static EntitySerializer Get()
         {
-            constexpr auto name = pk_outer_type_name<TEntity>;
             EntitySerializer serializer;
-            serializer.name = name.str;
-            serializer.uuid = Hash::MurmurHash128(name.str, name.length);
+            serializer.name = EntityFactory<TEntity>::TypeName.str;
+            serializer.uuid = EntityFactory<TEntity>::UUID;
             serializer.typeIndex = pk_base_type_index<TEntity>();
-            serializer.deserialize = EntityFactory<TEntity>::Deserialize;
             serializer.serialize = EntityFactory<TEntity>::Serialize;
+            serializer.deserialize = EntityFactory<TEntity>::Deserialize;
             return serializer;
         }
 

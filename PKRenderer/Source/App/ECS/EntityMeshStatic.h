@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/ECS/IEntityImplementer.h"
 #include "Core/ECS/EntityFactory.h"
 #include "App/ECS/EntityViewTransform.h"
 #include "App/ECS/EntityViewScenePrimitive.h"
@@ -7,12 +6,12 @@
 
 namespace PK::App
 {
-    struct ImplementerMeshStatic : public IEntityImplementer,
-        public ComponentTransform,
-        public ComponentBounds,
-        public ComponentScenePrimitive,
-        public ComponentMeshStatic,
-        public ComponentMaterials
+    struct ImplementerMeshStatic : public TEntityImplementer<
+        ComponentTransform,
+        ComponentBounds,
+        ComponentScenePrimitive,
+        ComponentMeshStatic,
+        ComponentMaterials>
     {
     };
 
@@ -20,11 +19,13 @@ namespace PK::App
     {
         using TImplementers = Tuple<ImplementerMeshStatic*>;
         using TViews = Tuple<EntityViewTransform, EntityViewScenePrimitive, EntityViewMeshStatic>;
-        constexpr static const bool IsSerializable = false;
 
         //static void OnDeserialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeRead node, TImplementers& implementers) = delete;
         //static void OnSerialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeWrite node) = delete;
         static void OnCreate(EntityDatabase* entityDb, const EGID& egid, const EntityMeshStatic& descriptor, TImplementers& implementers);
+
+        FixedString32 entityName;
+        bool entitySerialize;
 
         ScenePrimitiveFlags flags;
         MeshStaticRef mesh;

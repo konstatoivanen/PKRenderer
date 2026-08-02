@@ -44,6 +44,27 @@ namespace PK::Serialize
     }
 
     template<typename T>
+    void ReadSingle(SerialNodeRead node, T* rhs)
+    {
+        if (node.readable())
+        {
+            if constexpr (TSerializeReadableVal<T>)
+            {
+                ISerializer<T>::ReadVal(node, rhs);
+            }
+        }
+    }
+
+    template<typename T>
+    void WriteSingle(SerialNodeWrite node, const T* rhs)
+    {
+        if constexpr (TSerializeWritableVal<T>)
+        {
+            ISerializer<T>::WriteVal(node, rhs);
+        }
+    }
+
+    template<typename T>
     bool Load(const char* filepath, T* rhs)
     {
         void* fileData = nullptr;

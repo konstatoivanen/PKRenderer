@@ -16,6 +16,5 @@ namespace PK::App
 
         struct RenderViewSettings* settingsRef = nullptr;
         struct RenderView* renderViewRef = nullptr;
-        virtual ~ComponentRenderView() = default;
     };
 }

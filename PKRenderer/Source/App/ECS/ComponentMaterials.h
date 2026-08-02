@@ -7,6 +7,5 @@ namespace PK::App
     struct ComponentMaterials
     {
         InlineList<MaterialTarget, 1ull> materials;
-        virtual ~ComponentMaterials() = default;
     };
 }

@@ -52,6 +52,8 @@ namespace PK::App
         {
             MaterialTarget material { materialSand, 0u };
             EntityMeshStatic desc;
+            desc.entityName = "Floor";
+            desc.entitySerialize = true;
             desc.flags = ScenePrimitiveFlags::DefaultMesh;
             desc.mesh = planeMesh;
             desc.materials = { &material, 1u };
@@ -65,6 +67,8 @@ namespace PK::App
         {
             MaterialTarget material = { materialAsphalt, 0u };
             EntityMeshStatic desc;
+            desc.entityName = "Columns";
+            desc.entitySerialize = true;
             desc.flags = ScenePrimitiveFlags::DefaultMesh;
             desc.mesh = columnMesh;
             desc.materials = { &material, 1u };
@@ -82,6 +86,8 @@ namespace PK::App
             {
                 MaterialTarget material { i < 128u ? materialMarble : materialPlaster, math::randomRange(0u, maxsubmesh) };
                 EntityMeshStatic desc;
+                desc.entityName = FixedString32("Rock_%u", i);
+                desc.entitySerialize = true;
                 desc.flags = ScenePrimitiveFlags::DefaultMesh;
                 desc.mesh = rocksMesh;
                 desc.materials = { &material, 1u };

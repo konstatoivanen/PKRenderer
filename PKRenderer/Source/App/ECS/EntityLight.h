@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/ECS/IEntityImplementer.h"
 #include "Core/ECS/EntityFactory.h"
 #include "App/ECS/EntityViewTransform.h"
 #include "App/ECS/EntityViewScenePrimitive.h"
@@ -7,11 +6,11 @@
 
 namespace PK::App
 {
-    struct ImplementerLight : public IEntityImplementer,
-        public ComponentTransform,
-        public ComponentBounds,
-        public ComponentScenePrimitive,
-        public ComponentLight
+    struct ImplementerLight : public TEntityImplementer<
+        ComponentTransform,
+        ComponentBounds,
+        ComponentScenePrimitive,
+        ComponentLight>
     {
     };
 
@@ -19,7 +18,6 @@ namespace PK::App
     {
         using TImplementers = Tuple<ImplementerLight*>;
         using TViews = Tuple<EntityViewTransform, EntityViewScenePrimitive, EntityViewLight>;
-        constexpr static const bool IsSerializable = false;
 
         //static void OnDeserialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeRead node, TImplementers& implementers) = delete;
         //static void OnSerialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeWrite node) = delete;

@@ -13,6 +13,5 @@ namespace PK::App
         float moveSmoothing;
         float rotationSmoothing;
         float sensitivity;
-        virtual ~ComponentFlyCamera() = default;
     };
 }
