@@ -5,15 +5,140 @@ namespace PK
 {
     #pragma warning(push)
     #pragma warning(disable : 4200)
+    #pragma warning(disable : 4189)
 
     #ifdef __clang__
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wundefined-var-template"
     #endif
 
+    // Cannot be inlined into TReflectEnum::IsFlags because MSVC doesn't conform to the standard.
+    template <typename E>
+    concept TIsFlagsEnum = requires(E a, E b) 
+    {
+        { a | b };
+        requires TIsSame<decltype(a | b), E>;
+        { a & b };
+        requires TIsSame<decltype(a & b), E>;
+    };
+
+    template <typename E, E V>
+    consteval auto ReflectionGetEnumName() noexcept
+    {
+        #if defined(__FUNCSIG__)
+        constexpr auto signature = __FUNCSIG__;
+        constexpr auto signatureLength = sizeof(__FUNCSIG__) - 17ull;
+        #elif defined(__PRETTY_FUNCTION__) || defined(__clang__)
+        constexpr auto signature = __PRETTY_FUNCTION__;
+        constexpr auto signatureLength = sizeof(__PRETTY_FUNCTION__) - 2ull;
+        #else
+        #error "Unsupported compiler!"
+        #endif
+
+        constexpr auto scope = []() consteval
+        {
+            auto start = 0ull;
+
+            for (auto i = static_cast<int32_t>(signatureLength); i > 0; --i)
+            {
+                if (!pk_char_is_alphanumeric(signature[i - 1]))
+                {
+                    start = i;
+                    break;
+                }
+            }
+
+            auto length = signature[start - 1ul] == ':' ? (signatureLength - start) : 0ull;
+            return Pair<const char*, size_t>{ signature + start, length };
+        }();
+
+        TStringLiteral<scope.second> res{};
+
+        for (auto i = 0u; i < scope.second; ++i)
+        {
+            res.str[i] = scope.first[i];
+        }
+
+        return res;
+    }
+
+    template <typename E, E V> inline constexpr auto pk_enum_name = ReflectionGetEnumName<E, V>();
+
+    template <typename E>
+    struct TReflectEnum
+    {
+        static_assert(TIsEnum<E>, "TReflectEnum requires an enum type!");
+
+        using TBase = __underlying_type(E);
+        constexpr static const bool IsFlags = TIsFlagsEnum<E>;
+        constexpr static const int32_t RangeMin = 0;
+        constexpr static const int32_t RangeMax = 255;
+        constexpr static const size_t MaskBitsMax = sizeof(TBase) * 8u;
+        constexpr static const size_t IterationCount = IsFlags ? (MaskBitsMax + 1u) : static_cast<size_t>(RangeMax - RangeMin + 1);
+
+        // Not inlined to functions to supress a shift warning.
+        template <size_t I>
+        consteval static TBase GetIterationValue() noexcept
+        {
+            if constexpr (IsFlags)
+            {
+                return I == 0 ? static_cast<TBase>(0) : static_cast<TBase>(1u << (I - 1u));
+            }
+            else
+            {
+                return static_cast<TBase>(RangeMin + static_cast<int32_t>(I));
+            }
+        }
+
+        constexpr static const size_t ValueCount = []<size_t... I>(TIndexSequence<I...>) noexcept
+        {
+            auto count = 0ull;
+
+            ([&]()
+            {
+                if constexpr (decltype(ReflectionGetEnumName<E, __builtin_bit_cast(E, GetIterationValue<I>())>())::length)
+                {
+                    count++;
+                }
+            }
+            (), ...);
+
+            return count;
+        }
+        (TMakeIndexSequence<IterationCount>{});
+
+        struct TMeta
+        { 
+            E values[ValueCount]{};
+            const char* names[ValueCount]{};
+        };
+
+        inline constexpr static auto Meta = []<size_t... I>(TIndexSequence<I...>) noexcept
+        {
+            TMeta meta{};
+            auto index = 0ull;
+
+            ([&]() 
+            {
+                constexpr auto value = __builtin_bit_cast(E, GetIterationValue<I>());
+
+                if constexpr (decltype(ReflectionGetEnumName<E, value>())::length)
+                {
+                    meta.values[index] = value;
+                    meta.names[index++] = pk_enum_name<E, value>();
+                }
+            }
+            (), ...);
+
+            return meta;
+        }
+        (TMakeIndexSequence<IterationCount>{});
+    };
+
+
 
     template<typename T, size_t n>
-    static consteval bool TIsConstructible()
+    consteval static bool TIsConstructible()
     {
         return[]<size_t... is>(PK::TIndexSequence<is...>) 
         { 
@@ -23,7 +148,7 @@ namespace PK
     }
 
     template<typename T, size_t N = 0>
-    static consteval size_t ReflectionCountFields()
+    consteval static size_t ReflectionCountFields()
     {
         static_assert(N <= static_cast<size_t>(sizeof(T)));
         if constexpr (PK::TIsConstructible<T, N>() && !PK::TIsConstructible<T, N + 1ull>())
@@ -50,11 +175,11 @@ namespace PK
     consteval auto ReflectionGetFieldName() noexcept 
     {
         #if defined(__FUNCSIG__)
-        constexpr const char* signature = __FUNCSIG__;
-        constexpr size_t signatureLength = sizeof(__FUNCSIG__);
+        constexpr auto signature = __FUNCSIG__;
+        constexpr auto signatureLength = sizeof(__FUNCSIG__);
         #elif defined(__PRETTY_FUNCTION__) || defined(__clang__)
-        constexpr const char* signature = __PRETTY_FUNCTION__;
-        constexpr size_t signatureLength = sizeof(__PRETTY_FUNCTION__);
+        constexpr auto signature = __PRETTY_FUNCTION__;
+        constexpr auto signatureLength = sizeof(__PRETTY_FUNCTION__);
         #else
         #error "Unsupported compiler!"
         #endif

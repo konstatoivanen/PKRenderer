@@ -13,16 +13,6 @@ namespace PK
     template<typename T>
     constexpr uint32_t pk_base_type_index() { return pk_type_index<TRemoveCVRef_T<T>>; }
 
-    #if defined(__clang__)
-        #define PK_FUNC_SIG __PRETTY_FUNCTION__
-        #define PK_FUNC_SIG_LEN (sizeof(__PRETTY_FUNCTION__) - 2)
-    #elif defined(_MSC_VER)
-        #define PK_FUNC_SIG __FUNCSIG__
-        #define PK_FUNC_SIG_LEN (sizeof(__FUNCSIG__) - 17)
-    #else
-        #error "Unsupported compiler!"
-    #endif
-
     consteval bool pk_char_is_alpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_'); }
     consteval bool pk_char_is_numeric(char c) { return c >= '0' && c <= '9'; }
     consteval bool pk_char_is_alphanumeric(char c) { return pk_char_is_alpha(c) || pk_char_is_numeric(c); }
@@ -162,9 +152,19 @@ namespace PK
     template<bool inner_outer, typename T>
     consteval auto pk_type_name_data() noexcept
     {
+        #if defined(__FUNCSIG__)
+        constexpr auto signature = __FUNCSIG__;
+        constexpr auto signatureLength = sizeof(__FUNCSIG__) - 17ull;
+        #elif defined(__PRETTY_FUNCTION__) || defined(__clang__)
+        constexpr auto signature = __PRETTY_FUNCTION__;
+        constexpr auto signatureLength = sizeof(__PRETTY_FUNCTION__) - 2ull;
+        #else
+        #error "Unsupported compiler!"
+        #endif
+
         constexpr auto view = inner_outer ? 
-            pk_inner_type_name_view(PK_FUNC_SIG, PK_FUNC_SIG_LEN) :
-            pk_outer_type_name_view(PK_FUNC_SIG, PK_FUNC_SIG_LEN);
+            pk_inner_type_name_view(signature, signatureLength) :
+            pk_outer_type_name_view(signature, signatureLength);
 
         TStringLiteral<view.count> string{};
 
@@ -178,7 +178,4 @@ namespace PK
 
     template <typename T> inline constexpr auto pk_inner_type_name = pk_type_name_data<true, T>();
     template <typename T> inline constexpr auto pk_outer_type_name = pk_type_name_data<false, T>();
-
-    #undef PK_FUNC_SIG
-    #undef PK_FUNC_SIG_LEN 
 }

@@ -58,11 +58,14 @@ namespace PK
                 implementers);
             });
 
-            if (TEntityIsSerializable<TEntity> && serializableName)
+            if constexpr (TEntityIsSerializable<TEntity>)
             {
-                auto view = entityDb->NewView<EntityViewSerializable>(egid);
-                view->name = serializableName;
-                view->typeUUID = UUID;
+                if (serializableName)
+                {
+                    auto view = entityDb->NewView<EntityViewSerializable>(egid);
+                    view->name = serializableName;
+                    view->typeUUID = UUID;
+                }
             }
 
             return implementers;
