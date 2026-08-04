@@ -1,5 +1,6 @@
 #pragma once
 #include "Tuple.h"
+#include "TypeIndex.h"
 
 namespace PK
 {
@@ -82,7 +83,7 @@ namespace PK
         {
             if constexpr (IsFlags)
             {
-                return I == 0 ? static_cast<TBase>(0) : static_cast<TBase>(1u << (I - 1u));
+                return static_cast<TBase>(I == 0ull ? 0ull : 1ull << (I - 1ull));
             }
             else
             {
@@ -133,6 +134,97 @@ namespace PK
             return meta;
         }
         (TMakeIndexSequence<IterationCount>{});
+
+        constexpr static const char* ToString(E value) noexcept
+        {
+            for (auto i = 0u; i < ValueCount; ++i)
+            {
+                if (Meta.values[i] == value)
+                {
+                    return Meta.names[i];
+                }
+            }
+
+            return nullptr;
+        }
+
+        constexpr static E FromString(const char* str) noexcept
+        {
+            for (auto i = 0u; i < ValueCount; ++i)
+            {
+                for (auto j = 0u; Meta.names[i][j] == str[j] && Meta.names[i][j] && str[j]; ++j)
+                {
+                    if (!Meta.names[i][j + 1u] && !str[j + 1u])
+                    {
+                        return Meta.values[i];
+                    }
+                }
+            }
+
+            return __builtin_bit_cast(E, static_cast<TBase>(0));
+        }
+
+        constexpr static size_t FlagsToString(E value, char* str, size_t capacity) noexcept
+        {
+            auto length = 0ull;
+
+            if constexpr (IsFlags)
+            {
+                for (auto i = 0u; i < ValueCount; ++i)
+                {
+                    if ((Meta.values[i] & value) == value)
+                    {
+                        if (length && length < capacity)
+                        {
+                            str[length++] = '|';
+                        }
+
+                        for (auto j = 0u; length < capacity && Meta.names[i][j]; ++j)
+                        {
+                            str[length++] = Meta.names[i][j];
+                        }
+                    }
+                }
+
+                str[length] = '\0';
+            }
+
+            return length;
+        }
+
+        constexpr static E FlagsFromString(const char* str) noexcept
+        {
+            auto value = __builtin_bit_cast(E, static_cast<TBase>(0));
+            auto s = str;
+            auto h = 0u;
+
+            if constexpr (IsFlags)
+            {
+                do
+                {
+                    if (!str[h] || str[h] == '|')
+                    {
+                        for (auto i = 0u; i < ValueCount; ++i)
+                        {
+                            for (auto j = 0u; Meta.names[i][j] == s[j] && Meta.names[i][j] && s[j] && s[j] != '|'; ++j)
+                            {
+                                if (!Meta.names[i][j + 1u] && (!s[j + 1u] || s[j + 1u] == '|'))
+                                {
+                                    value = Meta.values[i] | value;
+                                    i = ValueCount;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        s = str + h + 1u;
+                    }
+                }
+                while (str[h++]);
+            }
+
+            return value;
+        }
     };
 
 

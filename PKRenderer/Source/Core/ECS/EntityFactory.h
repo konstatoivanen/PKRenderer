@@ -31,8 +31,6 @@ namespace PK
         instance.entitySerialize;
     };
 
-    template <typename... T> struct DumpType;
-
     template<typename TEntity>
     struct EntityFactory
     {

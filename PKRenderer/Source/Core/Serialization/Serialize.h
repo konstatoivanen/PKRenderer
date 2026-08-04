@@ -3,6 +3,7 @@
 #include "ISerializer.h"
 #include "Common.h"
 #include "Serializers/SerializeScalar.h"
+#include "Serializers/SerializeEnum.h"
 #include "Serializers/SerializeFixedString.h"
 #include "Serializers/SerializeArrayList.h"
 #include "Serializers/SerializeMathVector.h"
@@ -10,5 +11,4 @@
 #include "Serializers/SerializeCVariablesYaml.h"
 #include "Serializers/SerializeInputKeyBindings.h"
 #include "Serializers/SerializeMaterialTarget.h"
-#include "Serializers/SerializeRHIEnums.h"
 #undef PK_SERIALIZE_HEADER

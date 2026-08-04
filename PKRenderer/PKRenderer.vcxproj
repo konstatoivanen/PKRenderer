@@ -300,6 +300,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Rendering\Window.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanLimits.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeArrayList.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeEnum.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeScalar.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
@@ -328,7 +329,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeInputKeyBindings.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMaterialTarget.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMathVector.h" />
-    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeRHIEnums.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />
     <ClInclude Include="ThirdParty\mikktspace\mikktspace.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAsset.h" />
@@ -678,7 +678,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Rendering\Font.cpp" />
     <ClCompile Include="Source\Core\Rendering\IESProfile.cpp" />
     <ClCompile Include="Source\Core\Rendering\Window.cpp" />
-    <ClCompile Include="Source\Core\RHI\Structs.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
@@ -687,7 +686,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Utilities\Ref.cpp" />
     <ClCompile Include="Source\Core\Serialization\Serializers\SerializeCVariablesYaml.cpp" />
     <ClCompile Include="Source\Core\Serialization\Serializers\SerializeMaterialTarget.cpp" />
-    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeRHIEnums.cpp" />
     <ClCompile Include="ThirdParty\mikktspace\mikktspace.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'">NotUsing</PrecompiledHeader>

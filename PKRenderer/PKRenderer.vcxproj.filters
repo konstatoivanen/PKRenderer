@@ -708,9 +708,6 @@
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMaterialTarget.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeRHIEnums.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeScalar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -718,6 +715,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\Tuple.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeEnum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1168,12 +1168,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Rendering\Window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Serialization\Serializers\SerializeRHIEnums.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Structs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp">

@@ -563,63 +563,6 @@ namespace PK
         constexpr auto Scalar = PKAssets::PKElementTypeToScalar;
         constexpr auto IsResourceHandle = PKAssets::PKElementTypeIsResourceHandle;
         constexpr auto StringToElementType = PKAssets::StringToPKElementType;
-        constexpr auto StringToShaderResourceType = PKAssets::StringToPKDescriptorType;
-        constexpr auto StringToTextureType = PKAssets::StringToPKTextureType;
-        constexpr auto StringToTextureFormat = PKAssets::StringToPKTextureFormat;
-        constexpr auto StringToFilterMode = PKAssets::StringToPKFilterMode;
-        constexpr auto StringToWrapMode = PKAssets::StringToPKWrapMode;
-        constexpr auto StringToBorderColor = PKAssets::StringToPKBorderColor;
-        constexpr auto StringToShaderStage = PKAssets::StringToPKShaderStage;
-        constexpr auto StringToComparison = PKAssets::StringToPKComparison;
-        constexpr auto StringToCullMode = PKAssets::StringToPKCullMode;
-        constexpr auto StringToBlendFactor = PKAssets::StringToPKBlendFactor;
-        constexpr auto StringToBlendOp = PKAssets::StringToPKBlendOp;
-        constexpr auto StringToColorMask = PKAssets::StringToPKColorMask;
-        constexpr auto StringToRasterMode = PKAssets::StringToPKRasterMode;
-
         constexpr auto ElementTypeToString = PKAssets::PKElementTypeToString;
-        constexpr auto ShaderResourceTypeToString = PKAssets::PKDescriptorTypeToString;
-        constexpr auto TextureTypeToString = PKAssets::PKTextureTypeToString;
-        constexpr auto TextureFormatToString = PKAssets::PKTextureFormatToString;
-        constexpr auto FilterModeToString = PKAssets::PKFilterModeToString;
-        constexpr auto WrapModeToString = PKAssets::PKWrapModeToString;
-        constexpr auto BorderColorToString = PKAssets::PKBorderColorToString;
-        constexpr auto ShaderStageToString = PKAssets::PKShaderStageToString;
-        constexpr auto ComparisonToString = PKAssets::PKComparisonToString;
-        constexpr auto CullModeToString = PKAssets::PKCullModeToString;
-        constexpr auto BlendFactorToString = PKAssets::PKBlendFactorToString;
-        constexpr auto BlendOpToString = PKAssets::PKBlendOpToString;
-        constexpr auto ColorMaskToString = PKAssets::PKColorMaskToString;
-        constexpr auto RasterModeToString = PKAssets::PKRasterModeToString;
-
-        RHIAPI StringToRHIAPI(const char* str);
-        QueueType StringToQueueType(const char* str);
-        TextureBindMode StringToTextureBindMode(const char* str);
-        PolygonMode StringToPolygonMode(const char* str);
-        Topology StringToTopology(const char* str);
-        LogicOp StringToLogicOp(const char* str);
-        FrontFace StringToFrontFace(const char* str);
-        LoadOp StringToLoadOp(const char* str);
-        StoreOp StringToStoreOp(const char* str);
-        InputRate StringToInputRate(const char* str);
-        TextureUsage StringToTextureUsage(const char* str);
-        ColorSpace StringToColorSpace(const char* str);
-        VSyncMode StringToVSyncMode(const char* str);
-        RayTracingShaderGroup StringToRayTracingShaderGroup(const char* str);
-
-        const char* RHIAPIToString(RHIAPI value);
-        const char* QueueTypeToString(QueueType value);
-        const char* TextureBindModeToString(TextureBindMode value);
-        const char* PolygonModeToString(PolygonMode value);
-        const char* TopologyToString(Topology value);
-        const char* LogicOpToString(LogicOp value);
-        const char* FrontFaceToString(FrontFace value);
-        const char* LoadOpToString(LoadOp value);
-        const char* StoreOpToString(StoreOp value);
-        const char* InputRateToString(InputRate value);
-        const char* TextureUsageToString(TextureUsage value);
-        const char* ColorSpaceToString(ColorSpace value);
-        const char* VSyncModeToString(VSyncMode value);
-        const char* RayTracingShaderGroupToString(RayTracingShaderGroup value);
     }
 }
