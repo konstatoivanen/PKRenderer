@@ -603,9 +603,6 @@
     <ClInclude Include="Source\Core\Utilities\TypeSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\TypeIndex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedArena.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -720,7 +717,7 @@
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeEnum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\StringLiteral.h">
+    <ClInclude Include="Source\Core\Utilities\TypeMeta.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

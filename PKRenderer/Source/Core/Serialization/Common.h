@@ -1,7 +1,7 @@
 #pragma once
 #ifdef PK_SERIALIZE_HEADER
 #include "ISerializer.h"
-#include "Core/Utilities/TypeIndex.h"
+#include "Core/Utilities/TypeMeta.h"
 #include "Core/Utilities/Reflect.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/FileIO.h"

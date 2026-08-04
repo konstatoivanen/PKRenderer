@@ -2,7 +2,7 @@
 #include "NoCopy.h"
 #include "Memory.h"
 #include "Hash.h"
-#include "TypeIndex.h"
+#include "TypeMeta.h"
 
 namespace PK
 {

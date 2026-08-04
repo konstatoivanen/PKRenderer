@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/TypeIndex.h"
+#include "Core/Utilities/TypeMeta.h"
 
 // Note clang complains about hidden virtuals. we dont care about that. lets ignore it.
 #ifdef __clang__

@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/BufferView.h"
 #include "Core/Utilities/HashMap.h"
-#include "Core/Utilities/TypeIndex.h"
+#include "Core/Utilities/TypeMeta.h"
 #include "Core/Utilities/Reflect.h"
 #include "Core/ECS/EGID.h"
 #include "Core/ECS/EntityComponentRef.h"

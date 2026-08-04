@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/HashMap.h"
-#include "Core/Utilities/TypeIndex.h"
+#include "Core/Utilities/TypeMeta.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/ECS/EntityFactory.h"
 

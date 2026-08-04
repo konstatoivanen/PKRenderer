@@ -1,7 +1,6 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/Ref.h"
-#include "Core/Utilities/FixedString.h"
+#include "Core/Utilities/TypeMeta.h"
 #include "Core/CLI/ILogger.h"
 #include "Core/CLI/LogScopeIndent.h"
 #include "Core/CLI/LogScopeTimer.h"
@@ -40,7 +39,6 @@ namespace PK
 #define PK_LOG_CONCAT_INNER(a, b) a##b
 #define PK_LOG_CONCAT(a, b) PK_LOG_CONCAT_INNER(a,b)
 #define PK_LOG_UNIQUE_NAME(base) PK_LOG_CONCAT(base, __COUNTER__)
-#define PK_LOG_SHORT_FUNCTION_NAME_PARAMS static_cast<int>(PK::String::ToFunctionNameLength(__PRETTY_FUNCTION__)), PK::String::ToFunctionNameBase(__PRETTY_FUNCTION__)
 
 #if defined(PK_NO_LOGS)
     #define PK_LOG_NEWLINE()
@@ -77,7 +75,7 @@ namespace PK
 #endif
 
 #define PK_LOG_TIMER(name) volatile PK::LogScopeTimer PK_LOG_UNIQUE_NAME(pk_log_scope_timer_)(name)
-#define PK_LOG_TIMER_FUNC() volatile PK::LogScopeTimer PK_LOG_UNIQUE_NAME(pk_log_scope_timer_)(PK_LOG_SHORT_FUNCTION_NAME_PARAMS)
+#define PK_LOG_TIMER_FUNC() volatile PK::LogScopeTimer PK_LOG_UNIQUE_NAME(pk_log_scope_timer_)(PK_SHORT_FUNCTION_NAME)
 
 #define PK_LOG_TIMER_AGR(name) \
 static volatile PK::LogScopeTimeAggregator::State PK_LOG_CONCAT(pk_log_scope_agr_state, __LINE__){}; \
@@ -85,7 +83,7 @@ volatile PK::LogScopeTimeAggregator PK_LOG_UNIQUE_NAME(pk_log_scope_agr_)(&PK_LO
 
 #define PK_LOG_TIMER_AGR_FUNC() \
 static volatile PK::LogScopeTimeAggregator::State PK_LOG_CONCAT(pk_log_scope_agr_state, __LINE__){}; \
-volatile PK::LogScopeTimeAggregator PK_LOG_UNIQUE_NAME(pk_log_scope_agr_)(&PK_LOG_CONCAT(pk_log_scope_agr_state, __LINE__), PK_LOG_SHORT_FUNCTION_NAME_PARAMS) \
+volatile PK::LogScopeTimeAggregator PK_LOG_UNIQUE_NAME(pk_log_scope_agr_)(&PK_LOG_CONCAT(pk_log_scope_agr_state, __LINE__), PK_SHORT_FUNCTION_NAME) \
 
 
 #define PK_LOG_HEADER_SCOPE(...) PK_LOG_HEADER(__VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
@@ -93,12 +91,12 @@ volatile PK::LogScopeTimeAggregator PK_LOG_UNIQUE_NAME(pk_log_scope_agr_)(&PK_LO
 #define PK_LOG_VERBOSE_SCOPE(...) PK_LOG_VERBOSE(__VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_VERBOSE)
 #define PK_LOG_RHI_SCOPE(...) PK_LOG_RHI(__VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_RHI)
 
-#define PK_LOG_HEADER_FUNC() PK_LOG_HEADER("%.*s:", PK_LOG_SHORT_FUNCTION_NAME_PARAMS); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
-#define PK_LOG_INFO_FUNC() PK_LOG_INFO("%.*s:", PK_LOG_SHORT_FUNCTION_NAME_PARAMS); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
-#define PK_LOG_VERBOSE_FUNC() PK_LOG_VERBOSE("%.*s:", PK_LOG_SHORT_FUNCTION_NAME_PARAMS); PK_LOG_INDENT(PK::PK_LOG_LVL_VERBOSE)
-#define PK_LOG_RHI_FUNC() PK_LOG_RHI("%.*s:", PK_LOG_SHORT_FUNCTION_NAME_PARAMS); PK_LOG_INDENT(PK::PK_LOG_LVL_RHI)
+#define PK_LOG_HEADER_FUNC() PK_LOG_HEADER("%s:", PK_SHORT_FUNCTION_NAME); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
+#define PK_LOG_INFO_FUNC() PK_LOG_INFO("%s:", PK_SHORT_FUNCTION_NAME); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
+#define PK_LOG_VERBOSE_FUNC() PK_LOG_VERBOSE("%s:", PK_SHORT_FUNCTION_NAME); PK_LOG_INDENT(PK::PK_LOG_LVL_VERBOSE)
+#define PK_LOG_RHI_FUNC() PK_LOG_RHI("%s:", PK_SHORT_FUNCTION_NAME); PK_LOG_INDENT(PK::PK_LOG_LVL_RHI)
 
-#define PK_LOG_HEADER_FUNC_FMT(format, ...) PK_LOG_HEADER("%.*s: " format, PK_LOG_SHORT_FUNCTION_NAME_PARAMS, __VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
-#define PK_LOG_INFO_FUNC_FMT(format, ...) PK_LOG_INFO("%.*s: " format, PK_LOG_SHORT_FUNCTION_NAME_PARAMS, __VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
-#define PK_LOG_VERBOSE_FUNC_FMT(format, ...) PK_LOG_VERBOSE("%.*s: " format, PK_LOG_SHORT_FUNCTION_NAME_PARAMS, __VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_VERBOSE)
-#define PK_LOG_RHI_FUNC_FMT(format, ...) PK_LOG_RHI("%.*s: " format, PK_LOG_SHORT_FUNCTION_NAME_PARAMS, __VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_RHI)
+#define PK_LOG_HEADER_FUNC_FMT(format, ...) PK_LOG_HEADER("%s: " format, PK_SHORT_FUNCTION_NAME, __VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
+#define PK_LOG_INFO_FUNC_FMT(format, ...) PK_LOG_INFO("%s: " format, PK_SHORT_FUNCTION_NAME, __VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
+#define PK_LOG_VERBOSE_FUNC_FMT(format, ...) PK_LOG_VERBOSE("%s: " format, PK_SHORT_FUNCTION_NAME, __VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_VERBOSE)
+#define PK_LOG_RHI_FUNC_FMT(format, ...) PK_LOG_RHI("%s: " format, PK_SHORT_FUNCTION_NAME, __VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_RHI)
