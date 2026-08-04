@@ -94,23 +94,6 @@ namespace PK
 
     struct TAny { TAny(size_t); template<typename T> constexpr operator T() const noexcept; };
 
-    // @TODO these dont really belong here
-    template<size_t N> 
-    struct TStringLiteral 
-    { 
-        constexpr static size_t length = N; 
-        char str[N + 1ull]; 
-        constexpr const char* operator()() const& noexcept { return str; }
-    };
-
-    template<size_t N> 
-    struct TStringLiteralArray 
-    { 
-        constexpr static const size_t size = N; 
-        const char* strings[N]; 
-        constexpr const char* const* operator()() const& noexcept { return strings; }
-    };
-
     template<typename T> [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>& v) noexcept { return static_cast<T&&>(v); }
     template<typename T> [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>&& v) noexcept { return static_cast<T&&>(v); }
     template<typename T> [[nodiscard]] constexpr TRemoveRef_T<T>&& MoveTemp(T&& v) noexcept { return static_cast<TRemoveRef_T<T>&&>(v); }

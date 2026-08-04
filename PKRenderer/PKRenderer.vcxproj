@@ -312,6 +312,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\LinkedList.h" />
     <ClInclude Include="Source\Core\Utilities\Reflect.h" />
     <ClInclude Include="Source\Core\Utilities\Sort.h" />
+    <ClInclude Include="Source\Core\Utilities\StringLiteral.h" />
     <ClInclude Include="Source\Core\Utilities\Tuple.h" />
     <ClInclude Include="Source\Core\Utilities\TypeSet.h" />
     <ClInclude Include="Source\Core\Utilities\Function.h" />

@@ -1,6 +1,6 @@
 #pragma once
 #include "Tuple.h"
-#include "TypeIndex.h"
+#include "StringLiteral.h"
 
 namespace PK
 {
@@ -53,7 +53,7 @@ namespace PK
             return Pair<const char*, size_t>{ signature + start, length };
         }();
 
-        TStringLiteral<scope.second> res{};
+        StringLiteral<scope.second> res{};
 
         for (auto i = 0u; i < scope.second; ++i)
         {
@@ -301,7 +301,7 @@ namespace PK
             return Pair<const char*, size_t>{ signature + start + 1ull, end - start - 1 };
         }();
 
-        TStringLiteral<scope.second> res{};
+        StringLiteral<scope.second> res{};
     
         for (auto i = 0u; i < scope.second; ++i)
         {
@@ -319,7 +319,7 @@ namespace PK
     {
         return []<size_t... I>(PK::TIndexSequence<I...>) noexcept 
         { 
-            return TStringLiteralArray<sizeof...(I)>{ pk_field_name<T, I>()... };
+            return StringLiteralArray<sizeof...(I)>{ pk_field_name<T, I>()... };
         }
         (PK::TMakeIndexSequence<pk_field_count<T>>{});
     }

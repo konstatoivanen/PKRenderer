@@ -1,5 +1,6 @@
 #pragma once
 #include "Templates.h"
+#include "StringLiteral.h"
 #include "BufferView.h"
 
 namespace PK
@@ -12,10 +13,6 @@ namespace PK
 
     template<typename T>
     constexpr uint32_t pk_base_type_index() { return pk_type_index<TRemoveCVRef_T<T>>; }
-
-    consteval bool pk_char_is_alpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_'); }
-    consteval bool pk_char_is_numeric(char c) { return c >= '0' && c <= '9'; }
-    consteval bool pk_char_is_alphanumeric(char c) { return pk_char_is_alpha(c) || pk_char_is_numeric(c); }
 
     consteval bool pk_type_name_validate(const char* name, size_t length) noexcept
     {
@@ -166,7 +163,7 @@ namespace PK
             pk_inner_type_name_view(signature, signatureLength) :
             pk_outer_type_name_view(signature, signatureLength);
 
-        TStringLiteral<view.count> string{};
+        StringLiteral<view.count> string{};
 
         for (auto i = 0u; i < view.count; ++i)
         {
