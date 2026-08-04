@@ -3,32 +3,32 @@ Material:
     ShaderShadow: Content/Shaders/MS_Mat_Shadow_Default.pkshader
     Properties:
         _AlbedoTexture:
-            Type: texture2D
+            Type: Texture2D
             Value: Content/Textures/Environment/T_Metal_Plates_D.pktexture
         _PBSTexture:
-            Type: texture2D
+            Type: Texture2D
             Value: Content/Textures/Environment/T_Metal_Plates_S.pktexture
         _NormalMap:
-            Type: texture2D
+            Type: Texture2D
             Value: Content/Textures/Environment/T_Metal_Plates_N.pktexture
         _HeightMap:
-            Type: texture2D
+            Type: Texture2D
             Value: Content/Textures/Environment/T_Metal_Plates_H.pktexture
         _Color:
-            Type: float4
+            Type: Float4
             Value: [1,1,1,1]
         _Metallic:
-            Type: float
+            Type: Float
             Value: 1
         _Roughness:
-            Type: float
+            Type: Float
             Value: 1
         _Occlusion:
-            Type: float
+            Type: Float
             Value: 1
         _HeightAmount:
-            Type: float
+            Type: Float
             Value: 0.005
         _NormalAmount:
-            Type: float
+            Type: Float
             Value: 0.4

@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
 #include "Core/Utilities/PropertyBlock.h"
+#include "Core/Utilities/Reflect.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Layout.h"
@@ -203,7 +204,7 @@ namespace PK
 
             for (const auto& prop : m_materialPropertyLayout)
             {
-                meta.AppendFormat("   %s,%s,%u,%u\n", prop.name.c_str(), RHIEnumConvert::ElementTypeToString(prop.format), prop.count, prop.offset);
+                meta.AppendFormat("   %s,%s,%u,%u\n", prop.name.c_str(), TReflectEnum<ElementType>::ToString(prop.format), prop.count, prop.offset);
             }
         }
 

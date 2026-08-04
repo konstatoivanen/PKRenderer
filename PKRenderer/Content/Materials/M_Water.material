@@ -3,8 +3,8 @@ Material:
     Keywords:
     Properties:
         _Color:
-            Type: float4
+            Type: Float4
             Value: [1,1,1,1]
         _EmissionColor:
-            Type: float4
+            Type: Float4
             Value: [25,1,1,1]

@@ -3,32 +3,32 @@ Material:
     ShaderShadow: Content/Shaders/MS_Mat_Shadow_Default.pkshader
     Properties:
         _AlbedoTexture:
-            Type: texture2D
+            Type: Texture2D
             Value: Content/Textures/Environment/T_Cloth_D.pktexture
         _PBSTexture:
-            Type: texture2D
+            Type: Texture2D
             Value: Content/Textures/Environment/T_Cloth_S.pktexture
         _HeightMap:
-            Type: texture2D
+            Type: Texture2D
             Value: Content/Textures/Environment/T_Cloth_H.pktexture
         _Color:
-            Type: float4
+            Type: Float4
             Value: [0,0.5,0.5,1]
         _SheenColor:
-            Type: float4
+            Type: Float4
             Value: [0.6, 0.7, 0.5, 1]
         _Metallic:
-            Type: float
+            Type: Float
             Value: 0.0
         _Roughness:
-            Type: float
+            Type: Float
             Value: 0.75
         _Occlusion:
-            Type: float
+            Type: Float
             Value: 1
         _HeightAmount:
-            Type: float
+            Type: Float
             Value: 0.05
         _NormalAmount:
-            Type: float
+            Type: Float
             Value: 1.0
