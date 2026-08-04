@@ -130,9 +130,9 @@ namespace PKAssets
         3u * 3u * 2u,  /*Half3x3*/
         4u * 4u * 2u,  /*Half4x4*/
         
-        4u, /*Texture2DHandle*/
-        4u, /*Texture3DHandle*/
-        4u, /*TextureCubeHandle*/
+        4u, /*Texture2D*/
+        4u, /*Texture3D*/
+        4u, /*TextureCube*/
         1u  /*Keyword*/
     };
 
@@ -185,9 +185,9 @@ namespace PKAssets
         PKElementType::Half,
         PKElementType::Half,
         PKElementType::Half,
-        PKElementType::Texture2DHandle,
-        PKElementType::Texture3DHandle,
-        PKElementType::TextureCubeHandle,
+        PKElementType::Texture2D,
+        PKElementType::Texture3D,
+        PKElementType::TextureCube,
         PKElementType::Keyword
     };
 
@@ -539,9 +539,9 @@ namespace PKAssets
     {
         switch (type)
         {
-            case PKElementType::Texture2DHandle:
-            case PKElementType::Texture3DHandle:
-            case PKElementType::TextureCubeHandle: return true;
+            case PKElementType::Texture2D:
+            case PKElementType::Texture3D:
+            case PKElementType::TextureCube: return true;
             default: return false;
         }
     }

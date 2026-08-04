@@ -145,9 +145,9 @@ namespace PKAssets
         Half3x3,
         Half4x4,
 
-        Texture2DHandle,
-        Texture3DHandle,
-        TextureCubeHandle,
+        Texture2D,
+        Texture3D,
+        TextureCube,
         Keyword
     };
 
