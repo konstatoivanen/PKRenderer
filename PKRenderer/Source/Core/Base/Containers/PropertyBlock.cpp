@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/Hash.h"
-#include "Core/Utilities/Memory.h"
+#include "Core/Base/Memory.h"
+#include "Core/Base/Hash.h"
 #include "PropertyBlock.h"
 
 namespace PK

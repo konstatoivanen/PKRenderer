@@ -1,6 +1,6 @@
 #pragma once
+#include "Core/Base/Containers/FixedString.h"
 #include "Core/Math/Math.h"
-#include "Core/Utilities/FixedString.h"
 #include "App/Renderer/EntityEnums.h"
 
 namespace PK::App

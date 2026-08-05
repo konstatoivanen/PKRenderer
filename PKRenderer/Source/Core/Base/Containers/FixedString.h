@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include "Hash.h"
-#include "Memory.h"
+#include "Core/Base/Memory.h"
+#include "Core/Base/Hash.h"
 #include "InitializerList.h"
 
 namespace PK

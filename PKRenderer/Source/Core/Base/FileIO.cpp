@@ -8,7 +8,7 @@
 #include <filesystem>
 #endif
 
-#include "Core/Utilities/FixedString.h"
+#include "Core/Base/Containers/FixedString.h"
 #include "FileIO.h"
 
 

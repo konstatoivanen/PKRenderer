@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Utilities/Ref.h"
-#include "Core/Utilities/Singleton.h"
-#include "Core/Utilities/HashMap.h"
-#include "Core/Utilities/FixedArena.h"
+#include "Core/Base/Containers/HashMap.h"
+#include "Core/Base/Containers/FixedArena.h"
+#include "Core/Base/Types/Ref.h"
+#include "Core/Base/Types/Singleton.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/CVariable.h"
 #include "Core/ControlFlow/IStep.h"

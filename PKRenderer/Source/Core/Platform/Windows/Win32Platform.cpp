@@ -2,8 +2,7 @@
 
 #if PK_PLATFORM_WINDOWS
 #include "Win32Internal.h"
-#include "Core/Utilities/FixedString.h"
-
+#include "Core/Base/Containers/FixedString.h"
 #include "Core/CLI/Log.h"
 
 PFN_DirectInput8Create pkfn_DirectInput8Create = nullptr;

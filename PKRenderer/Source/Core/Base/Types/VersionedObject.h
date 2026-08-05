@@ -1,6 +1,6 @@
 #pragma once
-#include "NoCopy.h"
-#include "Hash.h"
+#include "Core/Base/NoCopy.h"
+#include "Core/Base/Hash.h"
 
 namespace PK
 {

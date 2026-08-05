@@ -1,6 +1,6 @@
 #pragma once
+#include "Core/Base/Types/Ref.h"
 #include "Mask.h"
-#include "Ref.h"
 
 // MSVC adds an extra 16 bytes of padding to the members here for some reason.
 // Even though both members are size aligned to 16 bytes... ????

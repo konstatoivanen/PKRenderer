@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/Ref.h"
+#include "Core/Base/Types/Ref.h"
+#include "Core/Base/NoCopy.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanRenderState.h"

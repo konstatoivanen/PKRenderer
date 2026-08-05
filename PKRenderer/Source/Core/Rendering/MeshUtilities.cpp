@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <assert.h>
 #include <mikktspace/mikktspace.h>
-#include "Core/Utilities/Memory.h"
+#include "Core/Base/Memory.h"
 #include "Core/CLI/Log.h"
 #include "Core/Math/Extended.h"
 #include "Core/Rendering/Mesh.h"

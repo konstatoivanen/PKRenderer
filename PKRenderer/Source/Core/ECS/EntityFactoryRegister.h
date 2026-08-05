@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Utilities/HashMap.h"
-#include "Core/Utilities/TypeMeta.h"
-#include "Core/Utilities/FixedString.h"
+#include "Core/Base/Containers/HashMap.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/TypeMeta.h"
 #include "Core/ECS/EntityFactory.h"
 
 namespace PK::App

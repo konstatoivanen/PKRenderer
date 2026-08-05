@@ -1,8 +1,8 @@
 #pragma once
-#include "NoCopy.h"
+#include "Core/Base/Allocation.h"
+#include "Core/Base/NoCopy.h"
 #include "BufferView.h"
 #include "InitializerList.h"
-#include "Allocation.h"
 
 namespace PK
 {

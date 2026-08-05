@@ -1,6 +1,6 @@
 #pragma once
-#include "Ref.h"
-#include "TypeMeta.h"
+#include "Core/Base/Types/Ref.h"
+#include "Core/Base/TypeMeta.h"
 
 namespace PK
 {

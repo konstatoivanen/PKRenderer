@@ -1,7 +1,7 @@
 #pragma once
 #ifdef PK_SERIALIZE_HEADER
+#include "Core/Base/Containers/FixedString.h"
 #include "Core/Serialization/Serialize.h"
-#include "Core/Utilities/FixedString.h"
 
 namespace PK
 {

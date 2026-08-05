@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/FixedArena.h"
+#include "Core/Base/Containers/FixedArena.h"
 #include "Core/Math/Extended.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/RHI/Structs.h"

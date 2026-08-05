@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Utilities/ArrayList.h"
-#include "Core/Utilities/HashMap.h"
-#include "Core/Utilities/NameID.h"
+#include "Core/Base/Containers/ArrayList.h"
+#include "Core/Base/Containers/HashMap.h"
+#include "Core/Base/Types/NameID.h"
 #include "Core/RHI/Structs.h"
 
 namespace PK

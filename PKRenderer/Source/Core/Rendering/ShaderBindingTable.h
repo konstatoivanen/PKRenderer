@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
+#include "Core/Base/NoCopy.h"
 #include "Core/RHI/Layout.h"
 #include "Core/Rendering/RenderingFwd.h"
 

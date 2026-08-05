@@ -1,7 +1,7 @@
 #pragma once
 #include <PKAssets/PKAsset.h>
-#include "Core/Utilities/Singleton.h"
-#include "Core/Utilities/NameID.h"
+#include "Core/Base/Types/Singleton.h"
+#include "Core/Base/Types/NameID.h"
 
 namespace PK::App
 {

@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/RangeTable.h"
+#include "Core/Base/Containers/RangeTable.h"
 #include "Core/RHI/Structs.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"

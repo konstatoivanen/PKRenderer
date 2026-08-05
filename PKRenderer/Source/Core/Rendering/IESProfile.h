@@ -1,8 +1,8 @@
 #pragma once
+#include "Core/Base/Containers/Mask.h"
 #include "Core/Math/Forward.h"
-#include "Core/Assets/Asset.h"
-#include "Core/Utilities/Mask.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "Core/Assets/Asset.h"
 
 namespace PK
 {

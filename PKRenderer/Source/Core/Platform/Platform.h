@@ -148,7 +148,7 @@ namespace PK
 
 #include "Windows/Win32Platform.h"
 #include "Linux/LinuxPlatform.h"
-#include "Core/Utilities/Memory.h"
+#include "Core/Base/Memory.h"
 
 #ifndef PK_PLATFORM_X64
 #define PK_PLATFORM_X64 0

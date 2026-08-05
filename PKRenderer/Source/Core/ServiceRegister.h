@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/HashMap.h"
-#include "Core/Utilities/TypeMeta.h"
+#include "Core/Base/Containers/HashMap.h"
+#include "Core/Base/NoCopy.h"
+#include "Core/Base/TypeMeta.h"
 #include "Core/CLI/LogScopeIndent.h"
 
 namespace PK

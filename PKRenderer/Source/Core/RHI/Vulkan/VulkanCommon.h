@@ -5,9 +5,9 @@
 #define VMA_STATS_STRING_ENABLED 0
 #include "vulkan/vulkan.h"
 #include "VMA/vk_mem_alloc.h"
-#include "Core/Utilities/FixedString.h"
-#include "Core/Utilities/VersionedObject.h"
-#include "Core/Utilities/LinkedList.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/Containers/LinkedList.h"
+#include "Core/Base/Types/VersionedObject.h"
 #include "Core/ControlFlow/FenceRef.h"
 #include "Core/RHI/Structs.h"
 

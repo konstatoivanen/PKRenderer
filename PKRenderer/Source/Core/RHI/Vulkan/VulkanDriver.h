@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/Ref.h"
-#include "Core/Utilities/TypeSet.h"
+#include "Core/Base/Containers/TypeSet.h"
+#include "Core/Base/Types/Ref.h"
+#include "Core/Base/NoCopy.h"
 #include "Core/ControlFlow/Disposer.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"

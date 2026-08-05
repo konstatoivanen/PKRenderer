@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/Singleton.h"
-#include "Core/Utilities/FixedString.h"
-#include "Core/Utilities/Ref.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/Types/Singleton.h"
+#include "Core/Base/Types/Ref.h"
+#include "Core/Base/NoCopy.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/ILogger.h"
 #include "Core/ServiceRegister.h"

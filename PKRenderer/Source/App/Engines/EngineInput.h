@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/HashMap.h"
+#include "Core/Base/Containers/HashMap.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/Platform/PlatformInterfaces.h"
 #include "Core/Input/InputState.h"

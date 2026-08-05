@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Utilities/Tuple.h"
-#include "Core/Utilities/ArrayList.h"
-#include "Core/Utilities/HashMap.h"
+#include "Core/Base/Containers/ArrayList.h"
+#include "Core/Base/Containers/HashMap.h"
+#include "Core/Base/Types/Tuple.h"
 #include "Core/ControlFlow/IStep.h"
 
 namespace PK

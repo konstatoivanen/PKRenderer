@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/HashMap.h"
+#include "Core/Base/Containers/HashMap.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 

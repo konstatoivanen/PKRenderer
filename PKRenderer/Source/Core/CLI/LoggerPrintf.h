@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/FixedString.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/NoCopy.h"
 #include "Core/CLI/ILogger.h"
 
 namespace PK

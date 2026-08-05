@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Platform/PlatformInterfaces.h"
-#include "Core/Utilities/FixedString.h"
+#include "Core/Base/Containers/FixedString.h"
 #include "Core/Math/Color.h"
 #include "Core/Math/Extended.h"
 #include "Core/Assets/AssetDatabase.h"

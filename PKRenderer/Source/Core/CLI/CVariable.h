@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/NameID.h"
-#include "Core/Utilities/FixedString.h"
-#include "Core/Utilities/Function.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/Types/Function.h"
+#include "Core/Base/Types/NameID.h"
+#include "Core/Base/NoCopy.h"
 
 namespace PK
 {

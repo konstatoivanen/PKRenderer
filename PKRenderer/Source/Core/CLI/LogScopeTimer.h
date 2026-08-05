@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
+#include "Core/Base/NoCopy.h"
 
 namespace PK
 {

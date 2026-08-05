@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/PropertyBlock.h"
+#include "Core/Base/Containers/PropertyBlock.h"
 #include "Core/ControlFlow/Disposer.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "Core/RHI/Vulkan/Services/VulkanDescriptorCache.h"

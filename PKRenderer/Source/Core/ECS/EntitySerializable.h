@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/Utilities/UUID128.h"
-#include "Core/Utilities/FixedString.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/Types/UUID128.h"
 
 namespace PK
 {

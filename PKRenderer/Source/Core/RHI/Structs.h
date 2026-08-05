@@ -1,6 +1,6 @@
 #pragma once
 #include <PKAssets/PKAsset.h>
-#include "Core/Utilities/NameID.h"
+#include "Core/Base/Types/NameID.h"
 #include "Core/RHI/RHI.h"
 #include "Core/Math/Math.h"
 

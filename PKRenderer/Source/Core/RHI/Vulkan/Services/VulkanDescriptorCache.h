@@ -1,9 +1,9 @@
 #pragma once
-#include "Core/Utilities/Tuple.h"
-#include "Core/Utilities/Pool.h"
-#include "Core/Utilities/HashMap.h"
-#include "Core/Utilities/FixedArena.h"
-#include "Core/Utilities/Ref.h"
+#include "Core/Base/Containers/FixedArena.h"
+#include "Core/Base/Containers/HashMap.h"
+#include "Core/Base/Containers/Pool.h"
+#include "Core/Base/Types/Tuple.h"
+#include "Core/Base/Types/Ref.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 

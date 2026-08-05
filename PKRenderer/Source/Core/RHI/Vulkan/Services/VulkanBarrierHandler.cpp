@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/Memory.h"
+#include "Core/Base/Memory.h"
 #include "VulkanBarrierHandler.h"
 
 namespace PK

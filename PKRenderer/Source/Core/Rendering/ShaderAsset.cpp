@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
-#include "Core/Utilities/PropertyBlock.h"
-#include "Core/Utilities/Reflect.h"
+#include "Core/Base/Containers/PropertyBlock.h"
+#include "Core/Base/Reflect.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Layout.h"

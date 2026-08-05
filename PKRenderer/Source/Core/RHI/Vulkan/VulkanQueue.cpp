@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/Memory.h"
-#include "Core/Utilities/Reflect.h"
+#include "Core/Base/Reflect.h"
+#include "Core/Base/Memory.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "VulkanQueue.h"

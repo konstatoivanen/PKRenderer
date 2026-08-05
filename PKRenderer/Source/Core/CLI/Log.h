@@ -1,9 +1,9 @@
 #pragma once
-#include "Core/Utilities/Ref.h"
-#include "Core/Utilities/TypeMeta.h"
+#include "Core/Base/Types/Ref.h"
 #include "Core/CLI/ILogger.h"
 #include "Core/CLI/LogScopeIndent.h"
 #include "Core/CLI/LogScopeTimer.h"
+#include "Core/Base/TypeMeta.h"
 
 namespace PK
 {

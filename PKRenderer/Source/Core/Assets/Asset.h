@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Utilities/Ref.h"
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/NameID.h"
+#include "Core/Base/NoCopy.h"
+#include "Core/Base/Types/Ref.h"
+#include "Core/Base/Types/NameID.h"
 
 namespace PK
 {

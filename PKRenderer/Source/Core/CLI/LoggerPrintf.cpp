@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <conio.h>
-#include "Core/Utilities/FileIO.h"
-#include "Core/Utilities/Memory.h"
+#include "Core/Base/FileIO.h"
+#include "Core/Base/Memory.h"
 #include "LoggerPrintf.h"
 
 namespace PK

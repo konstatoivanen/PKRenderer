@@ -1,7 +1,7 @@
 #pragma once
 #ifdef PK_SERIALIZE_HEADER
+#include "Core/Base/Containers/ArrayList.h"
 #include "Core/Serialization/Serialize.h"
-#include "Core/Utilities/ArrayList.h"
 
 namespace PK
 {

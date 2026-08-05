@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Utilities/ArrayList.h"
-#include "Core/Assets/Asset.h"
+#include "Core/Base/Containers/ArrayList.h"
 #include "Core/Rendering/ShaderPropertyBlock.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "Core/Assets/Asset.h"
 
 namespace PK
 {

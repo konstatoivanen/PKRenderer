@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Utilities/BufferView.h"
-#include "Core/Utilities/HashMap.h"
-#include "Core/Utilities/TypeMeta.h"
-#include "Core/Utilities/Reflect.h"
+#include "Core/Base/Containers/BufferView.h"
+#include "Core/Base/Containers/HashMap.h"
+#include "Core/Base/TypeMeta.h"
+#include "Core/Base/Reflect.h"
 #include "Core/ECS/EGID.h"
 #include "Core/ECS/EntityComponentRef.h"
 #include "Core/ECS/IEntityImplementer.h"

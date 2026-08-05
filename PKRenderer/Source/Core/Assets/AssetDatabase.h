@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Utilities/Singleton.h"
-#include "Core/Utilities/TypeMeta.h"
-#include "Core/Utilities/HashMap.h"
-#include "Core/Utilities/FileIO.h"
+#include "Core/Base/Containers/HashMap.h"
+#include "Core/Base/Types/Singleton.h"
+#include "Core/Base/TypeMeta.h"
+#include "Core/Base/FileIO.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/ControlFlow/Sequencer.h"

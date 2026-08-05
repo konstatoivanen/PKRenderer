@@ -1,8 +1,8 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
-#include "Core/Utilities/FixedString.h"
-#include "Core/CLI/Log.h" 
+#include "Core/Base/Containers/FixedString.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
+#include "Core/CLI/Log.h" 
 #include "VulkanShader.h"
 
 namespace PK

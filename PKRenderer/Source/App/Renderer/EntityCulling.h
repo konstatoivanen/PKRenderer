@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/BufferView.h"
+#include "Core/Base/Containers/BufferView.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
 

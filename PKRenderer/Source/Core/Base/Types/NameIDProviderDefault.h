@@ -1,7 +1,7 @@
 #pragma once
-#include "HashMap.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/Containers/HashMap.h"
 #include "NameID.h"
-#include "FixedString.h"
 
 namespace PK
 {

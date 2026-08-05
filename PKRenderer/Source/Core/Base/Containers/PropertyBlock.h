@@ -1,8 +1,8 @@
 #pragma once
-#include "NoCopy.h"
-#include "Memory.h"
-#include "Hash.h"
-#include "TypeMeta.h"
+#include "Core/Base/TypeMeta.h"
+#include "Core/Base/Memory.h"
+#include "Core/Base/NoCopy.h"
+#include "Core/Base/Hash.h"
 
 namespace PK
 {

@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/BufferView.h"
-#include "Core/Utilities/FixedString.h"
+#include "Core/Base/Containers/BufferView.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/NoCopy.h"
 #include "Core/RHI/RHI.h"
 #include "Core/RHI/Structs.h"
 

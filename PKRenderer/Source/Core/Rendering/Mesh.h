@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/Utilities/Pool.h"
-#include "Core/Utilities/ArrayList.h"
+#include "Core/Base/Containers/Pool.h"
+#include "Core/Base/Containers/ArrayList.h"
 #include "Core/ControlFlow/FenceRef.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/Assets/Asset.h"

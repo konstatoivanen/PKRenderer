@@ -3,7 +3,7 @@
 #include "Win32Internal.h"
 #include "Win32Window.h"
 #include "Windowsx.h"
-#include "Core/Utilities/FixedString.h"
+#include "Core/Base/Containers/FixedString.h"
 
 namespace PK
 {

@@ -1,8 +1,8 @@
 #include "PrecompiledHeader.h"
 #define VMA_IMPLEMENTATION
 #include <vulkan/vk_enum_string_helper.h>
-#include "Core/Utilities/Memory.h"
-#include "Core/Utilities/FixedString.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/Memory.h"
 #include "Core/CLI/Log.h"
 #include "VulkanCommon.h"
 

@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Utilities/ArrayList.h"
-#include "Core/Utilities/FixedString.h"
-#include "Core/Utilities/TypeSet.h"
+#include "Core/Base/Containers/ArrayList.h"
+#include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/Containers/TypeSet.h"
 #include "Core/Timers/TimeFrameInfo.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/EntityEnums.h"

@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/NoCopy.h"
+#include "Core/Base/NoCopy.h"
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/Rendering/RenderingFwd.h"
 
