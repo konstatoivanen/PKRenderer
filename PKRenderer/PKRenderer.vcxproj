@@ -265,6 +265,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\ECS\ComponentTime.h" />
     <ClInclude Include="Source\App\ECS\ComponentViewInput.h" />
     <ClInclude Include="Source\App\ECS\EntityLightSphere.h" />
+    <ClInclude Include="Source\Core\Base\Types\NameIDProvider.h" />
     <ClInclude Include="Source\Core\ECS\EntitySerializable.h" />
     <ClInclude Include="Source\Core\ECS\EntityFactoryRegister.h" />
     <ClInclude Include="Source\App\Engines\EngineGUIRenderer.h" />
@@ -391,7 +392,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\ServiceRegister.h" />
     <ClInclude Include="Source\App\Engines\EngineTime.h" />
     <ClInclude Include="Source\Core\Timers\TimeFrameInfo.h" />
-    <ClInclude Include="Source\Core\Base\Types\NameIDProviderDefault.h" />
     <ClInclude Include="Source\Core\Serialization\Config.h" />
     <ClInclude Include="Source\App\ECS\ComponentBounds.h" />
     <ClInclude Include="Source\App\ECS\ComponentFlyCamera.h" />
@@ -725,7 +725,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Engines\EngineInput.cpp" />
     <ClCompile Include="Source\Core\ServiceRegister.cpp" />
     <ClCompile Include="Source\App\Engines\EngineTime.cpp" />
-    <ClCompile Include="Source\Core\Base\Types\NameIDProviderDefault.cpp" />
     <ClCompile Include="Source\Core\Serialization\Serializers\SerializeInputKeyBindings.cpp" />
     <ClCompile Include="Source\App\ECS\ComponentProjection.cpp" />
     <ClCompile Include="Source\App\Engines\EngineCommandInput.cpp" />

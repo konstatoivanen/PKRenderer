@@ -3,19 +3,14 @@
 
 namespace PK
 {
-    struct INameIDProvider
-    {
-        virtual ~INameIDProvider() = 0;
-        virtual uint32_t INameIDProvider_StringToID(const char* name) = 0;
-        virtual const char* INameIDProvider_IDToString(const uint32_t& name) = 0;
-    };
+    struct NameIDProvider;
 
     struct NameID
     {
         uint32_t identifier = 0u;
 
         constexpr NameID() = default;
-        inline NameID(const char* name) : identifier(s_Provider->INameIDProvider_StringToID(name)) {}
+        inline NameID(const char* name) : identifier(NameIDProvider_StringToID(name)) {}
         constexpr NameID(const NameID& name) : identifier(name.identifier) {}
         constexpr NameID(uint32_t identifier) : identifier(identifier) {}
         
@@ -23,11 +18,12 @@ namespace PK
         constexpr NameID& operator=(NameID&&) = default;
         constexpr operator const uint32_t() const { return identifier; }
 
-        inline const char* c_str() const { return s_Provider->INameIDProvider_IDToString(identifier); }
+        inline const char* c_str() const { return NameIDProvider_IDToString(identifier); }
 
-        static void SetProvider(INameIDProvider* provider) { s_Provider = provider; }
-
-        private: inline static INameIDProvider* s_Provider;
+        static uint32_t NameIDProvider_StringToID(const char* name);
+        static const char* NameIDProvider_IDToString(const uint32_t& name);
+        static void SetProvider(NameIDProvider* provider) { s_Provider = provider; }
+        private: inline static NameIDProvider* s_Provider;
     };
 
     constexpr static bool operator == (const NameID& a, const NameID& b) { return a.identifier == b.identifier; }

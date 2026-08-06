@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Base/Types/NameIDProviderDefault.h"
+#include "Core/Base/Types/NameIDProvider.h"
 #include "Core/Math/Random.h"
 #include "CLI/CVariableRegister.h"
 #include "CLI/Log.h"
@@ -28,7 +28,7 @@ namespace PK
             PK_LOG_NEWLINE();
         }
 
-        m_services.Create<NameIDProviderDefault>();
+        m_services.Create<NameIDProvider>();
         m_services.Create<CVariableRegister>();
 
         CVariableRegister::Create<CVariableFuncSimple>("Application.Close", [](){IApplication::Get()->Close();});
