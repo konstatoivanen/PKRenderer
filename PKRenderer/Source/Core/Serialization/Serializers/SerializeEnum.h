@@ -6,7 +6,7 @@ namespace PK
 {
     template<typename T>
     requires TIsEnum<T> && (!TIsFlagsEnum<T>)
-    struct ISerializer<T, true>
+    struct ISerializer<T, void>
     {
         static void ReadVal(SerialNodeRead node, T* rhs)
         {
@@ -23,7 +23,7 @@ namespace PK
 
     template<typename T> 
     requires TIsEnum<T> && TIsFlagsEnum<T>
-    struct ISerializer<T, true>
+    struct ISerializer<T, void>
     {
         static void ReadVal(SerialNodeRead node, T* rhs)
         {

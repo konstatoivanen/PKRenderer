@@ -82,15 +82,13 @@ namespace PK::App
         auto time = GetServices()->Create<EngineTime>(sequencer, config.TimeScale);
         Platform::SetInputHandler(input);
 
-        /*
         auto entityFactories = GetServices()->Create<EntityFactoryRegister>(
         entityDb,
-        {
+        initializer_list<EntitySerializer>{
             EntitySerializer::Get<EntityLight>(),
             EntitySerializer::Get<EntityLightSphere>(),
             EntitySerializer::Get<EntityMeshStatic>()
         });
-        */
 
         assetDatabase->LoadDirectory<ShaderAsset>("Content/Shaders/");
 

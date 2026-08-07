@@ -10,7 +10,7 @@ namespace PK
     typedef ryml::ConstNodeRef SerialNodeRead;
     typedef ryml::NodeRef SerialNodeWrite;
 
-    template<typename T, bool TRequirement = true>
+    template<typename T, typename = void>
     struct ISerializer
     {
         // Function interface example.

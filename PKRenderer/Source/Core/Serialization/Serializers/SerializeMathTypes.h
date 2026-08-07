@@ -59,5 +59,53 @@ namespace PK
             }
         }
     };
+
+    template<typename T>
+    struct ISerializer<math::quaternion<T>>
+    {
+        using Type = math::quaternion<T>;
+
+        static void ReadVal(SerialNodeRead node, Type* rhs)
+        {
+            if (node.is_flow_sl() && node.num_children() == 4u)
+            {
+                for (auto i = 0u; i < 4u; ++i)
+                {
+                    node[i] >> (*rhs)[i];
+                }
+            }
+        }
+
+        static void WriteVal(SerialNodeWrite node, Type const* rhs)
+        {
+            node |= ryml::SEQ | ryml::FLOW_SL;
+            for (auto i = 0u; i < 4u; ++i)
+            {
+                node.append_child() << (*rhs)[i];
+            }
+        }
+    };
+
+    template<typename T, int N>
+    struct ISerializer<math::AABB<T,N>>
+    {
+        using Type = math::AABB<T,N>;
+
+        static void ReadVal(SerialNodeRead node, Type* rhs)
+        {
+            if (node.is_flow_sl() && node.num_children() == (N * 2))
+            {
+                for (auto i = 0u; i < N; ++i) node[i + N * 0u] >> (*rhs).min[i];
+                for (auto i = 0u; i < N; ++i) node[i + N * 1u] >> (*rhs).max[i];
+            }
+        }
+
+        static void WriteVal(SerialNodeWrite node, Type const* rhs)
+        {
+            node |= ryml::SEQ | ryml::FLOW_SL;
+            for (auto i = 0u; i < N; ++i) node.append_child() << (*rhs).min[i];
+            for (auto i = 0u; i < N; ++i) node.append_child() << (*rhs).max[i];
+        }
+    };
 }
 #endif

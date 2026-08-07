@@ -3,6 +3,7 @@
 #include "Core/Base/FileIO.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/ECS/EntitySerializable.h"
+#include "Core/CLI/CVariableRegister.h"
 #include "Core/Serialization/Serialize.h"
 #include "EntityFactoryRegister.h"
 
@@ -16,18 +17,31 @@ namespace PK::App
         {
             m_serializers.AddValue(serializer.uuid, serializer);
         }
+
+        CVariableRegister::Create<CVariableFunc>("Entities.Save", [this](const char* const* args, [[maybe_unused]] uint32_t count)
+            {
+                SerializeEntities(args[0], (uint32_t)ENTITY_GROUPS::ACTIVE);
+            }, "Expected a filepath argument", 1u);
+
+        CVariableRegister::Create<CVariableFunc>("Entities.Load", [this](const char* const* args, [[maybe_unused]] uint32_t count)
+            {
+                DeserializeEntities(args[0], (uint32_t)ENTITY_GROUPS::ACTIVE);
+            }, "Expected a filepath argument", 1u);
     }
     
     void EntityFactoryRegister::SerializeEntities([[maybe_unused]] const char* path, uint32_t group)
     {
-        ryml::Tree tree;
+        auto views = m_entityDb->Query<EntityViewSerializable>(group);
+
+        ryml::Tree tree = ryml::Tree();
+        tree.reserve(views.count * 16u);
+        tree.reserve_arena(8192ull);
+
         ryml::NodeRef root = tree.rootref();
         root |= ryml::MAP; 
         
         auto entities = root["Entities"];
         entities |= ryml::MAP;
-
-        auto views = m_entityDb->Query<EntityViewSerializable>(group);
 
         for (auto i = 0u; i < views.count; ++i)
         {
@@ -47,9 +61,10 @@ namespace PK::App
                 // Copy byte data to string as yaml << operator doesn't support substr?
                 FixedString32 uuidstr(16u, serializer->uuid.bytes);
 
-                auto entity = entities[name.c_str()];
+                auto entity = entities.append_child();
                 entity |= ryml::MAP;
-                entity["Type"] << uuidstr.c_str() |= ryml::VAL_DQUO;
+                entity.set_key(name.c_str());
+                entity["Type"] << uuidstr.c_str() |= ryml::VAL_PLAIN;
 
                 serializer->serialize(m_entityDb, entity, view.GID);
             }
@@ -58,7 +73,7 @@ namespace PK::App
         ryml::emit_yaml(tree, tree.root_id(), stdout);
     }
     
-    void EntityFactoryRegister::DerializeEntities(const char* path, uint32_t group)
+    void EntityFactoryRegister::DeserializeEntities(const char* path, uint32_t group)
     {
         void* fileData = nullptr;
         size_t fileSize = 0ull;

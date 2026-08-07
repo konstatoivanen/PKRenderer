@@ -7,7 +7,7 @@ namespace PK
 {
     template<typename T> 
     requires TIsPointer<T> && TIsBaseOf<PK::Asset, TRemovePtr_T<T>>
-    struct ISerializer<T, true>
+    struct ISerializer<T, void>
     {
         static void ReadVal(SerialNodeRead node, T* rhs)
         {
@@ -24,7 +24,7 @@ namespace PK
 
     template<typename T>
     requires (!TIsPointer<T>) && TIsBaseOf<PK::Asset, T>
-    struct ISerializer<Ref<T>, true>
+    struct ISerializer<Ref<T>, void>
     {
         static void ReadVal(SerialNodeRead node, Ref<T>* rhs)
         {

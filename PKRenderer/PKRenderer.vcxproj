@@ -329,7 +329,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeFixedString.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeInputKeyBindings.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMaterialTarget.h" />
-    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMathVector.h" />
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMathTypes.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />
     <ClInclude Include="ThirdParty\mikktspace\mikktspace.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAsset.h" />

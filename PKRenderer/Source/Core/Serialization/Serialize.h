@@ -6,7 +6,7 @@
 #include "Serializers/SerializeEnum.h"
 #include "Serializers/SerializeFixedString.h"
 #include "Serializers/SerializeArrayList.h"
-#include "Serializers/SerializeMathVector.h"
+#include "Serializers/SerializeMathTypes.h"
 #include "Serializers/SerializeAsset.h"
 #include "Serializers/SerializeCVariablesYaml.h"
 #include "Serializers/SerializeInputKeyBindings.h"

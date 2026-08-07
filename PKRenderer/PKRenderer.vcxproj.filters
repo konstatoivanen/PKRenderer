@@ -609,7 +609,7 @@
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeFixedString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMathVector.h">
+    <ClInclude Include="Source\Core\Serialization\Serializers\SerializeMathTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeAsset.h">

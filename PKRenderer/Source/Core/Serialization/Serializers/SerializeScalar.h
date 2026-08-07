@@ -6,7 +6,7 @@ namespace PK
 {
     template<typename T>
     requires (!TIsPointer<T>) && TIsArithmetic<T>
-    struct ISerializer<T, true>
+    struct ISerializer<T, void>
     {
         static void ReadVal(SerialNodeRead node, T* rhs)
         {
