@@ -38,12 +38,12 @@ namespace PK::App
         tree.reserve_arena(8192ull);
 
         ryml::NodeRef root = tree.rootref();
-        root |= ryml::MAP; 
+        root.set_map();
         
         auto entities = root["Entities"];
-        entities |= ryml::MAP;
+        entities.set_map();
 
-        for (auto i = 0u; i < views.count; ++i)
+        for (auto i = 0u; i < views.count && i < 4u; ++i)
         {
             const auto& view = views[i];
             auto serializer = m_serializers.GetValuePtr(view.typeUUID);
@@ -58,13 +58,11 @@ namespace PK::App
                     name = FixedString64("%s%u", serializer->name, i);
                 }
 
-                // Copy byte data to string as yaml << operator doesn't support substr?
-                FixedString32 uuidstr(16u, serializer->uuid.bytes);
-
+                auto uuid64 = String::Base64Encode(serializer->uuid);
                 auto entity = entities.append_child();
-                entity |= ryml::MAP;
-                entity.set_key(name.c_str());
-                entity["Type"] << uuidstr.c_str() |= ryml::VAL_PLAIN;
+                entity.set_map();
+                entity.save_key(name.c_str());
+                entity["Type"].save(uuid64.c_str(), ryml::VAL_DQUO);
 
                 serializer->serialize(m_entityDb, entity, view.GID);
             }
@@ -98,7 +96,7 @@ namespace PK::App
                 {
                     auto uuidStr = Serialize::ReadVal<FixedString32>(type);
                     auto name = Serialize::ReadKey<FixedString32>(entity);
-                    auto uuid = Memory::BitCast<FixedString32, UUID128>(&uuidStr);
+                    auto uuid = String::Base64Decode<UUID128>(uuidStr.c_str());
                     auto serializer = m_serializers.GetValuePtr(uuid);
 
                     if (serializer)

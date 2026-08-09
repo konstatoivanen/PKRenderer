@@ -17,7 +17,7 @@ namespace PK
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node << TReflectEnum<T>::ToString(*rhs) |= ryml::VAL_DQUO;
+            node.save(TReflectEnum<T>::ToString(*rhs), ryml::VAL_PLAIN);
         }
     };
 
@@ -36,7 +36,7 @@ namespace PK
         {
             char value[256]{};
             TReflectEnum<T>::FlagsToString(*rhs, value, 256);
-            node << value |= ryml::VAL_DQUO;
+            node.save(value, ryml::VAL_PLAIN);
         }
     };
 }

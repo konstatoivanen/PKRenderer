@@ -335,8 +335,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="ThirdParty\PKAssets\PKAsset.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAssetEncoding.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAssetLoader.h" />
-    <ClInclude Include="ThirdParty\rapidyaml\rapidyaml-0.7.1.hpp" />
-    <ClInclude Include="ThirdParty\rapidyaml\ryaml.h" />
+    <ClInclude Include="ThirdParty\rapidyaml\rapidyaml.h" />
     <ClInclude Include="ThirdParty\VMA\vk_mem_alloc.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_enum_string_helper.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_icd.h" />
@@ -793,8 +792,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Base\Hash.cpp" />
     <ClCompile Include="Source\Core\Base\Containers\PropertyBlock.cpp" />
     <ClCompile Include="Source\Core\Base\Types\VersionedObject.cpp" />
-    <ClCompile Include="ThirdParty\rapidyaml\ryamlImpl.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+    <ClCompile Include="ThirdParty\rapidyaml\rapidyaml.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangRelease|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

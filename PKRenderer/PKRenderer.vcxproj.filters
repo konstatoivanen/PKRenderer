@@ -492,13 +492,7 @@
     <ClInclude Include="Source\App\Engines\EngineGUIRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ThirdParty\rapidyaml\rapidyaml-0.7.1.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Serialization\Serialize.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\rapidyaml\ryaml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h">
@@ -718,6 +712,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Base\Types\NameIDProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\rapidyaml\rapidyaml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1134,9 +1131,6 @@
     <ClCompile Include="Source\App\Engines\EngineGUIRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ThirdParty\rapidyaml\ryamlImpl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\App\Engines\EngineViewUpdate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1210,6 +1204,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Base\Types\VersionedObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\rapidyaml\rapidyaml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,9 +1,6 @@
 #pragma once
 #ifdef PK_SERIALIZE_HEADER
-#if !PK_DEBUG
-#define C4_USE_ASSERT 0
-#endif
-#include <rapidyaml/ryaml.h>
+#include <rapidyaml/rapidyaml.h>
 
 namespace PK
 {

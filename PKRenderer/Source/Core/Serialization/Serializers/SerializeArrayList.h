@@ -21,7 +21,7 @@ namespace PK
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node |= ryml::SEQ | ryml::BLOCK;
+            node.set_seq(ryml::BLOCK);
             for (auto i = 0u; i < capacity; ++i)
             {
                 ISerializer<T>::WriteVal(node.append_child(), &(*rhs)[i]);
@@ -47,7 +47,7 @@ namespace PK
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node |= ryml::SEQ | ryml::BLOCK;
+            node.set_seq(ryml::BLOCK);
             for (auto i = 0u; i < rhs->GetSize(); ++i)
             {
                 ISerializer<T>::WriteVal(node.append_child(), &(*rhs)[i]);
@@ -73,7 +73,7 @@ namespace PK
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node |= ryml::SEQ | ryml::BLOCK;
+            node.set_seq(ryml::BLOCK);
             for (auto i = 0u; i < rhs->GetSize(); ++i)
             {
                 ISerializer<T>::WriteVal(node.append_child(), &(*rhs)[i]);
@@ -100,7 +100,7 @@ namespace PK
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node |= ryml::SEQ | ryml::BLOCK;
+            node.set_seq(ryml::BLOCK);
             for (auto i = 0u; i < rhs->GetCount(); ++i)
             {
                 ISerializer<T>::WriteVal(node.append_child(), &(*rhs)[i]);
@@ -127,7 +127,7 @@ namespace PK
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node |= ryml::SEQ | ryml::BLOCK;
+            node.set_seq(ryml::BLOCK);
             for (auto i = 0u; i < rhs->GetCount(); ++i)
             {
                 ISerializer<T>::WriteVal(node.append_child(), &(*rhs)[i]);
@@ -154,7 +154,7 @@ namespace PK
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node |= ryml::SEQ | ryml::BLOCK;
+            node.set_seq(ryml::BLOCK);
             for (auto i = 0u; i < rhs->GetCount(); ++i)
             {
                 ISerializer<T>::WriteVal(node.append_child(), &(*rhs)[i]);

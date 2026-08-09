@@ -17,17 +17,17 @@ namespace PK
                 auto maxidx = (uint32_t)node.num_children() - 1u;
                 for (auto i = 0u; i < N; ++i)
                 {
-                    node[math::min(maxidx, i)] >> (*rhs)[i];
+                    node[math::min(maxidx, i)].load(&((*rhs)[i]), false);
                 }
             }
         }
 
         static void WriteVal(SerialNodeWrite node, const Type* rhs)
         {
-            node |= ryml::SEQ | ryml::FLOW_SL;
+            node.set_seq(ryml::FLOW_SL);
             for (auto i = 0u; i < N; ++i)
             {
-                node.append_child() << (*rhs)[i];
+                node.append_child().save((*rhs)[i], ryml::VAL_PLAIN);
             }
         }
     };
@@ -44,18 +44,18 @@ namespace PK
                 for (auto y = 0u; y < R; ++y)
                 for (auto x = 0u; x < C; ++x)
                 {
-                    node[x + y * C] >> (*rhs)[y][x];
+                    node[x + y * C].load(&((*rhs)[y][x]), false);
                 }
             }
         }
 
         static void WriteVal(SerialNodeWrite node, Type const* rhs)
         {
-            node |= ryml::SEQ | ryml::FLOW_SL;
+            node.set_seq(ryml::FLOW_SL);
             for (auto y = 0u; y < R; ++y)
             for (auto x = 0u; x < C; ++x)
             {
-                node.append_child() << (*rhs)[y][x];
+                node.append_child().save((*rhs)[y][x], ryml::VAL_PLAIN);
             }
         }
     };
@@ -71,17 +71,17 @@ namespace PK
             {
                 for (auto i = 0u; i < 4u; ++i)
                 {
-                    node[i] >> (*rhs)[i];
+                    node[i].load(&((*rhs)[i]), false);
                 }
             }
         }
 
         static void WriteVal(SerialNodeWrite node, Type const* rhs)
         {
-            node |= ryml::SEQ | ryml::FLOW_SL;
+            node.set_seq(ryml::FLOW_SL);
             for (auto i = 0u; i < 4u; ++i)
             {
-                node.append_child() << (*rhs)[i];
+                node.append_child().save((*rhs)[i], ryml::VAL_PLAIN);
             }
         }
     };
@@ -95,16 +95,16 @@ namespace PK
         {
             if (node.is_flow_sl() && node.num_children() == (N * 2))
             {
-                for (auto i = 0u; i < N; ++i) node[i + N * 0u] >> (*rhs).min[i];
-                for (auto i = 0u; i < N; ++i) node[i + N * 1u] >> (*rhs).max[i];
+                for (auto i = 0u; i < N; ++i) node[i + N * 0u].load(&(rhs->min[i]), false);
+                for (auto i = 0u; i < N; ++i) node[i + N * 1u].load(&(rhs->max[i]), false);
             }
         }
 
         static void WriteVal(SerialNodeWrite node, Type const* rhs)
         {
-            node |= ryml::SEQ | ryml::FLOW_SL;
-            for (auto i = 0u; i < N; ++i) node.append_child() << (*rhs).min[i];
-            for (auto i = 0u; i < N; ++i) node.append_child() << (*rhs).max[i];
+            node.set_seq(ryml::FLOW_SL);
+            for (auto i = 0u; i < N; ++i) node.append_child().save(rhs->min[i], ryml::VAL_PLAIN);
+            for (auto i = 0u; i < N; ++i) node.append_child().save(rhs->max[i], ryml::VAL_PLAIN);
         }
     };
 }

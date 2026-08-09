@@ -161,7 +161,6 @@ namespace PK
             m_length = 0;
         }
 
-    private:
         TChar m_string[capacity];
         size_t m_length;
     };
@@ -244,32 +243,26 @@ namespace PK
         template<typename T>
         void ToArray(const char* str, T* outArray, const uint32_t count)
         {
-            auto length = strlen(str);
-
-            if (length == 0)
+            if (str && str[0])
             {
-                return;
-            }
+                auto scope0 = strchr(str, '[');
+                auto scope1 = strchr(str, ']');
 
-            auto scope0 = strchr(str, '[');
-            auto scope1 = strchr(str, ']');
-
-            if (scope0 == nullptr || scope1 == nullptr || scope1 <= scope0)
-            {
-                return;
-            }
-
-            auto strBegin = scope0 + 1u;
-            auto strCount = 0ull;
-            auto index = 0u;
-
-            for (auto cur = scope0 + 1u; cur <= scope1 && index < count; ++cur, ++strCount)
-            {
-                if (*cur == ',' || cur == scope1)
+                if (scope0 && scope1 && scope1 >= scope0)
                 {
-                    outArray[index++] = String::To<T>(FixedString32(strCount, strBegin).c_str());
-                    strBegin = cur + 1u;
-                    strCount = 0u;
+                    auto strBegin = scope0 + 1u;
+                    auto strCount = 0ull;
+                    auto index = 0u;
+
+                    for (auto cur = scope0 + 1u; cur <= scope1 && index < count; ++cur, ++strCount)
+                    {
+                        if (*cur == ',' || cur == scope1)
+                        {
+                            outArray[index++] = String::To<T>(FixedString32(strCount, strBegin).c_str());
+                            strBegin = cur + 1u;
+                            strCount = 0u;
+                        }
+                    }
                 }
             }
         }
@@ -292,9 +285,112 @@ namespace PK
             return result;
         }
 
+
         // Some utilities that are not really relevant here but I'd rather not add another header
+        inline constexpr size_t Base64Encode(const uint8_t* src, char* dst, size_t length)
+        {
+            constexpr const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+            auto src_idx = 0ull;
+            auto dst_idx = 0ull;
+
+            while (src_idx + 3ull <= length)
+            {
+                auto t = ((uint32_t)src[src_idx] << 16u) | ((uint32_t)src[src_idx + 1u] << 8u) | (uint32_t)src[src_idx + 2u];
+                dst[dst_idx++] = chars[(t >> 18) & 0x3F];
+                dst[dst_idx++] = chars[(t >> 12) & 0x3F];
+                dst[dst_idx++] = chars[(t >> 6) & 0x3F];
+                dst[dst_idx++] = chars[t & 0x3F];
+                src_idx += 3ull;
+            }
+
+            const auto remainder = length - src_idx;
+
+            if (remainder == 1ull) 
+            {
+                auto v = src[src_idx];
+                dst[dst_idx++] = chars[(v >> 2u) & 0x3Fu];
+                dst[dst_idx++] = chars[(v << 4u) & 0x3Fu]; 
+            }
+            else if (remainder == 2ull) 
+            {
+                auto v = ((uint32_t)src[src_idx] << 8u) | src[src_idx + 1u];
+                dst[dst_idx++] = chars[(v >> 10u) & 0x3Fu];
+                dst[dst_idx++] = chars[(v >> 4u) & 0x3Fu];
+                dst[dst_idx++] = chars[(v << 2u) & 0x3Fu]; 
+            }
+
+            dst[dst_idx] = '\0';
+
+            return dst_idx;
+        }
+
+        inline constexpr size_t Base64Decode(const char *src, uint8_t *dst, size_t length)
+        {
+            #define DECODE(c) (uint32_t)(c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '-' ? 62 : 63)
+        
+            auto src_idx = 0ull;
+            auto dst_idx = 0ull;
+        
+            while (src_idx + 4ull <= length)
+            {
+                auto c0 = DECODE(src[src_idx + 0u]);
+                auto c1 = DECODE(src[src_idx + 1u]);
+                auto c2 = DECODE(src[src_idx + 2u]);
+                auto c3 = DECODE(src[src_idx + 3u]);
+                auto t = (c0 << 18u) | (c1 << 12u) | (c2 << 6u) | c3;
+                dst[dst_idx++] = (uint8_t)((t >> 16u) & 0xFFu);
+                dst[dst_idx++] = (uint8_t)((t >> 8u) & 0xFFu);
+                dst[dst_idx++] = (uint8_t)(t & 0xFFu);
+                src_idx += 4ull;
+            }
+        
+            const auto remainder = length - src_idx;
+            
+            if (remainder == 2ull) 
+            {
+                auto c0 = DECODE(src[src_idx + 0u]);
+                auto c1 = DECODE(src[src_idx + 1u]);
+                auto v = (c0 << 6u) | c1;
+                dst[dst_idx++] = (uint8_t)((v >> 4u) & 0xFFu);
+            } 
+            else if (remainder == 3ull)
+            {
+                auto c0 = DECODE(src[src_idx + 0u]);
+                auto c1 = DECODE(src[src_idx + 1u]);
+                auto c2 = DECODE(src[src_idx + 2u]);
+                auto v = (c0 << 12u) | (c1 << 6u) | c2;
+                dst[dst_idx++] = (uint8_t)((v >> 10u) & 0xFFu);
+                dst[dst_idx++] = (uint8_t)((v >> 2u) & 0xFFu);
+            }
+        
+            #undef DECODE
+            return dst_idx;
+        }
+
+        template<typename T>
+        inline constexpr auto Base64Encode(const T& value)
+        {
+            const auto size = sizeof(T);
+            const auto length = (size * 8ull + 5ull) / 6ull + 1ull;
+            FixedString<length> str;
+            str.m_length = Base64Encode(reinterpret_cast<const uint8_t*>(&value), str.c_str(), size);
+            return str;
+        }
+
+        template<typename T>
+        inline constexpr auto Base64Decode(const char* str)
+        {
+            const auto size = sizeof(T);
+            const auto length = (size * 6) / 8;
+            T value;
+            Base64Decode(str, reinterpret_cast<uint8_t*>(&value), length);
+            return value;
+        }
+
+
         template<size_t capacity>
-        FixedString<capacity> FromBytes(size_t bytes)
+        FixedString<capacity> FormatBytes(size_t bytes)
         {
             if (bytes == 0)
             {
@@ -325,6 +421,7 @@ namespace PK
 
             return str;
         }
+
 
         template<size_t capacity>
         inline constexpr FixedString<capacity> ToFilePathStem(const char* str)

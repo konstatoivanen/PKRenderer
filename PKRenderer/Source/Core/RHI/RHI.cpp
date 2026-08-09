@@ -40,14 +40,14 @@ namespace PK
                 PK_LOG_INFO("Block count: %i", info.blockCount);
                 PK_LOG_INFO("Allocation count: %i", info.allocationCount);
                 PK_LOG_INFO("Unused range count: %i", info.unusedRangeCount);
-                PK_LOG_INFO("Used: %s", String::FromBytes<16>(info.usedBytes).c_str());
-                PK_LOG_INFO("Unused: %s", String::FromBytes<16>(info.unusedBytes).c_str());
-                PK_LOG_INFO("Allocation size min: %s", String::FromBytes<16>(info.allocationSizeMin).c_str());
-                PK_LOG_INFO("Allocation size avg: %s", String::FromBytes<16>(info.allocationSizeAvg).c_str());
-                PK_LOG_INFO("Allocation size max: %s", String::FromBytes<16>(info.allocationSizeMax).c_str());
-                PK_LOG_INFO("Unused range size min: %s", String::FromBytes<16>(info.unusedRangeSizeMin).c_str());
-                PK_LOG_INFO("Unused range size avg: %s", String::FromBytes<16>(info.unusedRangeSizeAvg).c_str());
-                PK_LOG_INFO("Unused range size max: %s", String::FromBytes<16>(info.unusedRangeSizeMax).c_str());
+                PK_LOG_INFO("Used: %s", String::FormatBytes<16>(info.usedBytes).c_str());
+                PK_LOG_INFO("Unused: %s", String::FormatBytes<16>(info.unusedBytes).c_str());
+                PK_LOG_INFO("Allocation size min: %s", String::FormatBytes<16>(info.allocationSizeMin).c_str());
+                PK_LOG_INFO("Allocation size avg: %s", String::FormatBytes<16>(info.allocationSizeAvg).c_str());
+                PK_LOG_INFO("Allocation size max: %s", String::FormatBytes<16>(info.allocationSizeMax).c_str());
+                PK_LOG_INFO("Unused range size min: %s", String::FormatBytes<16>(info.unusedRangeSizeMin).c_str());
+                PK_LOG_INFO("Unused range size avg: %s", String::FormatBytes<16>(info.unusedRangeSizeAvg).c_str());
+                PK_LOG_INFO("Unused range size max: %s", String::FormatBytes<16>(info.unusedRangeSizeMax).c_str());
                 PK_LOG_NEWLINE();
             });
 

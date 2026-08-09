@@ -18,7 +18,7 @@ namespace PK
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
+            node.save((*rhs)->GetFileName(), ryml::VAL_DQUO);
         }
     };
 
@@ -35,7 +35,7 @@ namespace PK
 
         static void WriteVal(SerialNodeWrite node, Ref<T> const* rhs)
         {
-            node << (*rhs)->GetFileName() |= ryml::VAL_DQUO;
+            node.save((*rhs)->GetFileName(), ryml::VAL_DQUO);
         }
     };
 }

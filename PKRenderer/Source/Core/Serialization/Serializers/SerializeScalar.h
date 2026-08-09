@@ -10,12 +10,12 @@ namespace PK
     {
         static void ReadVal(SerialNodeRead node, T* rhs)
         {
-            node >> *rhs;
+            node.load(rhs, false);
         }
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node << *rhs |= ryml::VAL_PLAIN;
+            node.save(*rhs, ryml::VAL_PLAIN);
         }
     };
 }

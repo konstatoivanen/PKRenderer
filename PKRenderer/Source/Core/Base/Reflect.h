@@ -120,7 +120,8 @@ namespace PK
             {
                 for (auto i = 0u; i < ValueCount; ++i)
                 {
-                    if ((Meta.values[i] & value) == value)
+                    // Dont write redundant zero flags.
+                    if ((Meta.values[i] & value) == Meta.values[i] && Meta.values[i] != static_cast<TBase>(0))
                     {
                         if (length && length < capacity)
                         {
