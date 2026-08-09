@@ -19,7 +19,6 @@ namespace PK
         float2 cursorPositionNormalized = PK_FLOAT2_ZERO;
         float2 cursorScroll = PK_FLOAT2_ZERO;
 
-
         bool GetKeyDown(InputKey key) const;
         bool GetKeyUp(InputKey key) const;
         bool GetKey(InputKey key) const;

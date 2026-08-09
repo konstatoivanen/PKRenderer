@@ -29,6 +29,8 @@ namespace PK::App
         virtual void Step(AssetImportEvent<Config<InputKeyConfig>>* evt) final;
 
     private:
+        bool ProcessConsoleInput(FrameContext* ctx);
+
         Sequencer* m_sequencer = nullptr;
         InputKeyCommandBindings m_inputKeyCommands;
         InputKey m_keyToggleConsole = InputKey::GraveAccent;
@@ -38,7 +40,8 @@ namespace PK::App
         int32_t m_lineEdit = 0;
         int32_t m_lineHistory = 0;
         int32_t m_hintIndex = 0;
-        bool m_cursorBlink = false;
+        uint32_t m_caretTimer = 0u;
         bool m_waitingInput = false;
+        bool m_isElevated = false;
     };
 }

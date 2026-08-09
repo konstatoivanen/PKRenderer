@@ -87,12 +87,14 @@ namespace PK
         static struct PlatformMemoryInfo GetMemoryInfo() = delete;
 
         static void PollEvents(bool wait) = delete;
+
         static void* GetProcess() = delete;
         static void* GetHelperWindow() = delete;
+        static void* GetProcAddress(void* handle, const char* name) = delete;
+        static bool  GetProcIsElevated() = delete;
 
         static void* LoadLibrary(const char* path) = delete;
         static void FreeLibrary(void* handle) = delete;
-        static void* GetProcAddress(void* handle, const char* name) = delete;
 
         static void FindFiles(void* ctx, const char* directory, const char* pattern, bool recursive, void (*onFile)(void*, const char*)) = delete;
         static bool CreateDirectory(const char* path) = delete;

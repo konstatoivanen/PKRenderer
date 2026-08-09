@@ -416,7 +416,7 @@ namespace PK
 
         PROCESS_MEMORY_COUNTERS_EX countersEx;
         countersEx.cb = sizeof(countersEx);
-        ::GetProcessMemoryInfo(GetCurrentProcess(), (PPROCESS_MEMORY_COUNTERS)&countersEx, sizeof(countersEx));
+        ::GetProcessMemoryInfo(::GetCurrentProcess(), (PPROCESS_MEMORY_COUNTERS)&countersEx, sizeof(countersEx));
 
         PlatformMemoryInfo info{};
         info.physicalMemoryTotal = statusx.ullTotalPhys;
@@ -492,6 +492,36 @@ namespace PK
     void* Win32Platform::GetProcess() { return resources->instance; }
     void* Win32Platform::GetHelperWindow() { return resources->windowInstanceHelper; }
     void* Win32Platform::GetProcAddress(void* handle, const char* name) { return (void*)::GetProcAddress((HMODULE)handle, name); }
+
+    bool Win32Platform::GetProcIsElevated()
+    {
+        auto isElevated = false;
+        HANDLE handle = NULL;
+        TOKEN_ELEVATION_TYPE type;
+        TOKEN_ELEVATION elevation;
+        DWORD dwSize = 0;
+
+        if (::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &handle))
+        {
+            if (::GetTokenInformation(handle, TokenElevationType, &type, sizeof(type), &dwSize))
+            {
+                if (type == TokenElevationTypeFull)
+                {
+                    isElevated = true;
+                }
+                else if (type == TokenElevationTypeDefault)
+                {
+                    if (::GetTokenInformation(handle, TokenElevation, &elevation, sizeof(elevation), &dwSize))
+                    {
+                        isElevated = elevation.TokenIsElevated != 0;
+                    }
+                }
+            }
+            ::CloseHandle(handle);
+        }
+
+        return isElevated;
+    }
 
 
     void* Win32Platform::LoadLibrary(const char* path)

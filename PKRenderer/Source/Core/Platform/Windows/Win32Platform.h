@@ -130,6 +130,8 @@ namespace PK
         static void* GetProcess();
         static void* GetHelperWindow();
         static void* GetProcAddress(void* handle, const char* name);
+        static bool  GetProcIsElevated();
+
         static void* LoadLibrary(const char* path);
         static void FreeLibrary(void* handle);
 
