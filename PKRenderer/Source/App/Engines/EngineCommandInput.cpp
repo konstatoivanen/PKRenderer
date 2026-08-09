@@ -48,7 +48,7 @@ namespace PK::App
             // Draw wide box caret. Offsets hard coded as I can't be bothered to get the actual font data here. 
             if (m_caretTimer < 500u)
             {
-                gui->GUIDrawRect(COLOR_TEXT, short4(rectTextOut.x + rectTextOut.z + 2, rectText.y + 5, 6, rectText.w - 10));
+                gui->GUIDrawRect(COLOR_TEXT, short4(rectText.x + text.Length() * 8, rectText.y + 5, 6, rectText.w - 10));
             }
         }
     }

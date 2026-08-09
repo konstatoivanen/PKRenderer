@@ -18,6 +18,7 @@ namespace PK
     void ISerializer<MaterialTarget>::WriteVal(SerialNodeWrite node, const MaterialTarget* rhs)
     {
         node.set_seq(ryml::FLOW_SL);
+        node.clear_children();
         node.append_child().save(rhs->material->GetFileName(), ryml::VAL_DQUO);
         node.append_child().save(rhs->submesh, ryml::VAL_PLAIN);
     }
