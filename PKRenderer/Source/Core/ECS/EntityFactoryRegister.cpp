@@ -18,12 +18,12 @@ namespace PK::App
             m_serializers.AddValue(serializer.uuid, serializer);
         }
 
-        CVariableRegister::Create<CVariableFunc>("Entities.Save", [this](const char* const* args, [[maybe_unused]] uint32_t count)
+        CVariableRegister::Create<CVariableFunc>("Engine.Entities.Save", [this](const char* const* args, [[maybe_unused]] uint32_t count)
             {
                 SerializeEntities(args[0], (uint32_t)ENTITY_GROUPS::ACTIVE);
             }, "Expected a filepath argument", 1u);
 
-        CVariableRegister::Create<CVariableFunc>("Entities.Load", [this](const char* const* args, [[maybe_unused]] uint32_t count)
+        CVariableRegister::Create<CVariableFunc>("Engine.Entities.Load", [this](const char* const* args, [[maybe_unused]] uint32_t count)
             {
                 DeserializeEntities(args[0], (uint32_t)ENTITY_GROUPS::ACTIVE);
             }, "Expected a filepath argument", 1u);
@@ -33,17 +33,17 @@ namespace PK::App
     {
         auto views = m_entityDb->Query<EntityViewSerializable>(group);
 
-        ryml::Tree tree = ryml::Tree();
+        auto tree = ryml::Tree();
         tree.reserve(views.count * 16u);
         tree.reserve_arena(8192ull);
 
-        ryml::NodeRef root = tree.rootref();
+        auto root = tree.rootref();
         root.set_map();
         
         auto entities = root["Entities"];
         entities.set_map();
 
-        for (auto i = 0u; i < views.count && i < 4u; ++i)
+        for (auto i = 0u; i < views.count; ++i)
         {
             const auto& view = views[i];
             auto serializer = m_serializers.GetValuePtr(view.typeUUID);
@@ -55,14 +55,19 @@ namespace PK::App
                 // Default to typename + index if no user defined value was set.
                 if (!name.Length())
                 {
-                    name = FixedString64("%s%u", serializer->name, i);
+                    name = FixedString64("%s_%u", serializer->name, i);
+                }
+                
+                if (entities.has_child(name.c_str()))
+                {
+                    name = FixedString64("%s_%u", name.c_str(), i);
                 }
 
                 auto uuid64 = String::Base64Encode(serializer->uuid);
                 auto entity = entities.append_child();
                 entity.set_map();
                 entity.save_key(name.c_str());
-                entity["Type"].save(uuid64.c_str(), ryml::VAL_DQUO);
+                entity["Type"].save(uuid64.c_str(), ryml::VAL_PLAIN);
 
                 serializer->serialize(m_entityDb, entity, view.GID);
             }
@@ -103,7 +108,6 @@ namespace PK::App
                     {
                         serializer->deserialize(m_entityDb, entity, group, name);
                     }
-
                 }
             }
         }

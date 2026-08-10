@@ -1,18 +1,20 @@
 #pragma once
 #include "Core/Math/Math.h"
 #include "Core/Math/Transform.h"
+#include "Core/ECS/NotSerialized.h"
 
 namespace PK::App
 {
     struct ComponentTransform
     {
-        // vector alignment order here.
-        float3x4 localToWorld = PK_FLOAT3X4_IDENTITY;
-        float4x4 worldToLocal = PK_FLOAT4X4_IDENTITY;
         quaternion rotation = PK_QUATERNION_IDENTITY;
         float3 position = PK_FLOAT3_ZERO;
         float3 scale = PK_FLOAT3_ONE;
+
+        PK_ECS_PRIVATE_FIELDS
         float minUniformScale = 1.0f;
+        float3x4 localToWorld = PK_FLOAT3X4_IDENTITY;
+        float4x4 worldToLocal = PK_FLOAT4X4_IDENTITY;
 
         inline float3x4 GetLocalToWorld() const { return math::transformTRS3x4(position, rotation, scale); }
         inline float4x4 GetWorldToLocal() const { return math::transformTRSInverse(position, rotation, scale); }

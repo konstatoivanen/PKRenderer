@@ -717,6 +717,12 @@
     <ClInclude Include="ThirdParty\rapidyaml\rapidyaml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\ECS\SerialField.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\ECS\NotSerialized.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />

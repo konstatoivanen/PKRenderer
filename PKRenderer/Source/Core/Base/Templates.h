@@ -37,9 +37,12 @@ namespace PK
     template<typename T>         constexpr bool TIsSame<T, T> = true;
     #endif 
 
+
     template<typename TBase, typename TDerived> inline constexpr bool TIsBaseOf = __is_base_of(TBase, TDerived);
     template<typename TFrom, typename TTo>      inline constexpr bool TIsConvertible = __is_convertible_to(TFrom, TTo);
     template<typename T, typename ... Args>     inline constexpr bool TIsAnyOf = (TIsSame<T, Args> || ...);
+    template<typename TFrom, typename TTo>      inline constexpr bool TIsAssignable = __is_assignable(TTo, TFrom);
+    template<typename T>                        inline constexpr bool TIsClass = __is_class(T);
 
     template<typename T, template<typename...> typename Template>       inline constexpr bool TIsSpecialization = false;
     template<template<typename...> typename Template, typename... Args> inline constexpr bool TIsSpecialization<Template<Args...>, Template> = true;

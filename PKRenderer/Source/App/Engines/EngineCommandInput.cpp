@@ -24,8 +24,8 @@ namespace PK::App
         if (m_waitingInput)
         {
             const auto inputSymbol = m_isElevated ? '#' : '$';
-            FixedString256 text("%c%s", inputSymbol, m_lines[m_lineEdit].c_str());
-            FixedString256 hint("%c%s", inputSymbol, m_lineHint.c_str());
+            const FixedString256 text("%c%s", inputSymbol, m_lines[m_lineEdit].c_str());
+            const FixedString256 hint("%c%s", inputSymbol, m_lineHint.c_str());
             constexpr color32 COLOR_BG(0, 0, 0, 192);
             constexpr color32 COLOR_FG(255, 255, 255, 127);
             constexpr color32 COLOR_HINT(127, 127, 127, 255);
@@ -36,8 +36,8 @@ namespace PK::App
             gui->GUIDrawRect(COLOR_BG, rectWindow);
             gui->GUIDrawWireRect(COLOR_FG, rectWindow, 1);
             
-            auto rectTextOut = gui->GUIDrawText(COLOR_TEXT, rectText, text.c_str(), FontStyle().SetSize(16.0f).SetAlign({ 0.0f, 0.5f }).SetClip(true));
-            auto rectTextHint = short4(rectTextOut.x + rectTextOut.z + 1, rectText.y, rectText.z - rectTextOut.z - 1, rectText.w);
+            const auto rectTextOut = gui->GUIDrawText(COLOR_TEXT, rectText, text.c_str(), FontStyle().SetSize(16.0f).SetAlign({ 0.0f, 0.5f }).SetClip(true));
+            const auto rectTextHint = short4(rectTextOut.x + rectTextOut.z + 1, rectText.y, rectText.z - rectTextOut.z - 1, rectText.w);
 
             // Draw hint starting at the end of user input.
             if (hint.Length() > text.Length())

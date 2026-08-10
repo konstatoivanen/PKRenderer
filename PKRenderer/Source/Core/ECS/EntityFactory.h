@@ -2,6 +2,7 @@
 #include "Core/ECS/EGID.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/ECS/EntitySerializable.h"
+#include "Core/ECS/NotSerialized.h"
 #include "Core/Serialization/Serialize.h"
 
 namespace PK
@@ -86,9 +87,18 @@ namespace PK
 
                     if constexpr (TIsSpecialization<TComponentRef, EntityComponentRef>)
                     {
-                        PK::ReflectFields(*value.pointer, [&node](const char* name, const auto& field)
+                        auto isPrivate = false;
+
+                        PK::ReflectFields(*value.pointer, [&isPrivate, &node](const char* name, const auto& field)
                         {
-                            Serialize::WriteSingle(node[name], &field);
+                            if constexpr (TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>)
+                            {
+                                isPrivate = true;
+                            }
+                            else if (!isPrivate)
+                            {
+                                Serialize::WriteSingle(node[name], &field);
+                            }
                         });
                     }
                 });
@@ -115,7 +125,19 @@ namespace PK
                 using TImplementer = TRemovePtr_T<TRemoveCVRef_T<decltype(implementer)>>;
                 TImplementer::TComponents::For([node, &implementer]<typename TComponent>()
                 {
-                    Serialize::ReadVal(node, static_cast<TComponent*>(implementer));
+                    auto isPrivate = false;
+
+                    PK::ReflectFields(*static_cast<TComponent*>(implementer), [&isPrivate, &node](const char* name, auto& field)
+                    {
+                        if constexpr (TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>)
+                        {
+                            isPrivate = true;
+                        }
+                        else if (!isPrivate)
+                        {
+                            Serialize::ReadSingle(node[name], &field);
+                        }
+                    });
                 });
             }, 
             implementers);
@@ -139,7 +161,7 @@ namespace PK
 
             if constexpr (TEntityIsSerializable<TEntity>)
             {
-                name = descriptor.entitySerialize ? descriptor.entityName : nullptr;
+                name = descriptor.entitySerialize ? descriptor.entityName.c_str() : nullptr;
             }
 
             auto implementers = Instantiate(entityDb, egid, name);
