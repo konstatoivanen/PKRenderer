@@ -7,7 +7,7 @@ namespace PK
     // Entity view serialization tracker.
     struct EntityViewSerializable
     {
-        FixedString64 name;
         UUID128 typeUUID;
+        FixedString64 name;
     };
 }

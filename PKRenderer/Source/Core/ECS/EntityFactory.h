@@ -83,9 +83,7 @@ namespace PK
 
                 PK::ReflectFields(*static_cast<TView*>(view), [&node](auto& value)
                 {
-                    using TComponentRef = PK::TRemoveCVRef_T<decltype(value)>;
-
-                    if constexpr (TIsSpecialization<TComponentRef, EntityComponentRef>)
+                    if constexpr (TIsSpecialization<TRemoveCVRef_T<decltype(value)>, EntityComponentRef>)
                     {
                         auto isPrivate = false;
 
