@@ -26,6 +26,7 @@ namespace PK
     template<typename T> using TRemovePtr_T = typename TRemovePtr<T>::Type;
     template<typename T> using TRemoveCV_T = typename TRemoveCV<T>::Type;
     template<typename T> using TRemoveCVRef_T = typename TRemoveCV<typename TRemoveRef<T>::Type>::Type;
+    template<typename T> using TRemovePtrCVRef_T = typename TRemovePtr<typename TRemoveCV<typename TRemoveRef<T>::Type>::Type>::Type;
  
     template<typename T> struct TDecay { using U = TRemoveRef_T<T>; using Type = U; };
     template<typename T> using TDecay_T = typename TDecay<T>::Type;

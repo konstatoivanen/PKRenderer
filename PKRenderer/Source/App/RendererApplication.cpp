@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/ECS/EntityDatabase.h"
-#include "Core/ECS/EntityFactoryRegister.h"
+#include "Core/ECS/EntitySerializerRegister.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/CLI/Log.h"
@@ -82,13 +82,13 @@ namespace PK::App
         auto time = GetServices()->Create<EngineTime>(sequencer, config.TimeScale);
         Platform::SetInputHandler(input);
 
-        auto entityFactories = GetServices()->Create<EntityFactoryRegister>(
-        entityDb,
-        initializer_list<EntitySerializer>{
-            EntitySerializer::Get<EntityLight>(),
-            EntitySerializer::Get<EntityLightSphere>(),
-            EntitySerializer::Get<EntityMeshStatic>()
-        });
+        GetServices()->Create<EntitySerializerRegister>(entityDb,
+            initializer_list<EntitySerializer>
+            {
+                EntitySerializer::Get<EntityLight>(),
+                EntitySerializer::Get<EntityLightSphere>(),
+                EntitySerializer::Get<EntityMeshStatic>()
+            });
 
         assetDatabase->LoadDirectory<ShaderAsset>("Content/Shaders/");
 

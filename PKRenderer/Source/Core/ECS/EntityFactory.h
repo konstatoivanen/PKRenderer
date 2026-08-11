@@ -89,11 +89,7 @@ namespace PK
 
                         PK::ReflectFields(*value.pointer, [&isPrivate, &node](const char* name, const auto& field)
                         {
-                            if constexpr (TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>)
-                            {
-                                isPrivate = true;
-                            }
-                            else if (!isPrivate)
+                            if ((isPrivate |= TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>, !isPrivate))
                             {
                                 Serialize::WriteSingle(node[name], &field);
                             }
@@ -120,18 +116,14 @@ namespace PK
             
             Sequence::For([node](auto&& implementer)
             {
-                using TImplementer = TRemovePtr_T<TRemoveCVRef_T<decltype(implementer)>>;
+                using TImplementer = TRemovePtrCVRef_T<decltype(implementer)>;
                 TImplementer::TComponents::For([node, &implementer]<typename TComponent>()
                 {
                     auto isPrivate = false;
 
                     PK::ReflectFields(*static_cast<TComponent*>(implementer), [&isPrivate, &node](const char* name, auto& field)
                     {
-                        if constexpr (TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>)
-                        {
-                            isPrivate = true;
-                        }
-                        else if (!isPrivate)
+                        if ((isPrivate |= TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>, !isPrivate))
                         {
                             Serialize::ReadSingle(node[name], &field);
                         }

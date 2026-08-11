@@ -582,7 +582,7 @@
     <ClInclude Include="Source\Core\ECS\EntitySerializable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\ECS\EntityFactoryRegister.h">
+    <ClInclude Include="Source\Core\ECS\EntitySerializerRegister.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\ECS\EntityLightSphere.h">
@@ -1173,7 +1173,7 @@
     <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\ECS\EntityFactoryRegister.cpp">
+    <ClCompile Include="Source\Core\ECS\EntitySerializerRegister.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\ECS\EntityMeshStatic.cpp">

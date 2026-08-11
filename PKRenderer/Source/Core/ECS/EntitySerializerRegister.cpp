@@ -5,11 +5,11 @@
 #include "Core/ECS/EntitySerializable.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/Serialization/Serialize.h"
-#include "EntityFactoryRegister.h"
+#include "EntitySerializerRegister.h"
 
 namespace PK::App
 {
-    EntityFactoryRegister::EntityFactoryRegister(EntityDatabase* entityDb, const initializer_list<EntitySerializer>& serializers) :
+    EntitySerializerRegister::EntitySerializerRegister(EntityDatabase* entityDb, const initializer_list<EntitySerializer>& serializers) :
         m_entityDb(entityDb),
         m_serializers((uint32_t)serializers.size(), 3u)
     {
@@ -29,7 +29,7 @@ namespace PK::App
             }, "Expected a filepath argument", 1u);
     }
     
-    void EntityFactoryRegister::SerializeEntities([[maybe_unused]] const char* path, uint32_t group)
+    void EntitySerializerRegister::SerializeEntities([[maybe_unused]] const char* path, uint32_t group)
     {
         auto views = m_entityDb->Query<EntityViewSerializable>(group);
 
@@ -76,7 +76,7 @@ namespace PK::App
         ryml::emit_yaml(tree, tree.root_id(), stdout);
     }
     
-    void EntityFactoryRegister::DeserializeEntities(const char* path, uint32_t group)
+    void EntitySerializerRegister::DeserializeEntities(const char* path, uint32_t group)
     {
         void* fileData = nullptr;
         size_t fileSize = 0ull;
