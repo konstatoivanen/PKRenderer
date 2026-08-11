@@ -178,7 +178,7 @@ namespace PK::App
 
         CVariableRegister::Create<CVariableFunc>("Application.VSync", [](const char* const* args, [[maybe_unused]] uint32_t count)
             {
-                auto mode = TReflectEnum<VSyncMode>::FromString(args[0]);
+                auto mode = ReflectEnum<VSyncMode>::FromString(args[0]);
                 IApplication::Get()->GetPrimaryWindow()->SetVSync(mode);
             }, "See VSyncMode enum for value names", 1u);
 

@@ -204,7 +204,7 @@ namespace PK
 
             for (const auto& prop : m_materialPropertyLayout)
             {
-                meta.AppendFormat("   %s,%s,%u,%u\n", prop.name.c_str(), TReflectEnum<ElementType>::ToString(prop.format), prop.count, prop.offset);
+                meta.AppendFormat("   %s,%s,%u,%u\n", prop.name.c_str(), ReflectEnum<ElementType>::ToString(prop.format), prop.count, prop.offset);
             }
         }
 

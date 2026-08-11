@@ -30,6 +30,20 @@ namespace PK
     template<typename T> struct TDecay { using U = TRemoveRef_T<T>; using Type = U; };
     template<typename T> using TDecay_T = typename TDecay<T>::Type;
 
+    struct TAny { TAny(size_t); template<typename T> constexpr operator T() const noexcept; };
+
+    template<typename T, T N> struct TIntegerConstant { using Type = T; static constexpr T Value = N; };
+    template<size_t I> using TIndexConstant = TIntegerConstant<size_t, I>;
+
+    template<typename T, T... V> struct TIntegerSequence { using Type = T; static constexpr size_t size() noexcept { return sizeof...(V); } };
+    template<typename T, T N> using TMakeIntegerSequence = __make_integer_seq<TIntegerSequence, T, N>;
+    template<size_t... V> using TIndexSequence = TIntegerSequence<size_t, V...>;
+    template<size_t N> using TMakeIndexSequence = TMakeIntegerSequence<size_t, N>;
+    template<typename ... Args> using TIndexSequenceFor = TMakeIndexSequence<sizeof...(Args)>;
+
+    using TTrue = TIntegerConstant<bool, true>;
+    using TFalse = TIntegerConstant<bool, false>;
+
     #if defined(__clang__)
     template<typename T0, typename T1> constexpr bool TIsSame = __is_same(T0, T1);
     #else
@@ -37,12 +51,12 @@ namespace PK
     template<typename T>         constexpr bool TIsSame<T, T> = true;
     #endif 
 
-
     template<typename TBase, typename TDerived> inline constexpr bool TIsBaseOf = __is_base_of(TBase, TDerived);
     template<typename TFrom, typename TTo>      inline constexpr bool TIsConvertible = __is_convertible_to(TFrom, TTo);
     template<typename T, typename ... Args>     inline constexpr bool TIsAnyOf = (TIsSame<T, Args> || ...);
     template<typename TFrom, typename TTo>      inline constexpr bool TIsAssignable = __is_assignable(TTo, TFrom);
     template<typename T>                        inline constexpr bool TIsClass = __is_class(T);
+    template<typename T, size_t N>              inline constexpr bool TIsBraceConstructible = []<size_t...I>(TIndexSequence<I...>){return requires{T{TAny(I)...};};}(TMakeIndexSequence<N>());
 
     template<typename T, template<typename...> typename Template>       inline constexpr bool TIsSpecialization = false;
     template<template<typename...> typename Template, typename... Args> inline constexpr bool TIsSpecialization<Template<Args...>, Template> = true;
@@ -82,20 +96,6 @@ namespace PK
 
     template<typename T> constexpr bool TIsFloat = TIsAnyOf<TRemoveCV_T<T>, float, double, long double>;
     template<typename T> constexpr bool TIsArithmetic = TIsIntegral<T> || TIsFloat<T>;
-
-    template<typename T, T N> struct TIntegerConstant { using Type = T; static constexpr T Value = N; };
-    template<size_t I> using TIndexConstant = TIntegerConstant<size_t, I>;
-
-    template<typename T, T... V> struct TIntegerSequence { using Type = T; static constexpr size_t size() noexcept { return sizeof...(V); } };
-    template<typename T, T N> using TMakeIntegerSequence = __make_integer_seq<TIntegerSequence, T, N>;
-    template<size_t... V> using TIndexSequence = TIntegerSequence<size_t, V...>;
-    template<size_t N> using TMakeIndexSequence = TMakeIntegerSequence<size_t, N>;
-    template<typename ... Args> using TIndexSequenceFor = TMakeIndexSequence<sizeof...(Args)>;
-
-    using TTrue = TIntegerConstant<bool, true>;
-    using TFalse = TIntegerConstant<bool, false>;
-
-    struct TAny { TAny(size_t); template<typename T> constexpr operator T() const noexcept; };
 
     template<typename T> [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>& v) noexcept { return static_cast<T&&>(v); }
     template<typename T> [[nodiscard]] constexpr T&& Forward(TRemoveRef_T<T>&& v) noexcept { return static_cast<T&&>(v); }

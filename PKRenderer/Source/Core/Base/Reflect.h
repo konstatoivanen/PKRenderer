@@ -15,8 +15,8 @@ namespace PK
     #pragma clang diagnostic ignored "-Wundefined-var-template"
     #endif
 
-    // Cannot be inlined into TReflectEnum::IsFlags because MSVC doesn't conform to the standard.
-    template <typename E>
+    // Cannot be inlined into ReflectEnum::IsFlags because MSVC doesn't conform to the standard.
+    template<typename E>
     concept TIsFlagsEnum = requires(E a, E b) 
     {
         { a | b };
@@ -26,9 +26,9 @@ namespace PK
     };
 
     template <typename E>
-    struct TReflectEnum
+    struct ReflectEnum
     {
-        static_assert(TIsEnum<E>, "TReflectEnum requires an enum type!");
+        static_assert(TIsEnum<E>, "ReflectEnum requires an enum type!");
 
         using TBase = __underlying_type(E);
         constexpr static const bool IsFlags = TIsFlagsEnum<E>;
@@ -177,43 +177,32 @@ namespace PK
     };
 
 
-
-    template<typename T, size_t n>
-    consteval static bool TIsConstructible()
-    {
-        return[]<size_t... is>(PK::TIndexSequence<is...>) 
-        { 
-            return requires { T{ TAny(is)... }; }; 
-        }
-        (PK::TMakeIndexSequence<n>());
-    }
-
     template<typename T, size_t N = 0>
-    consteval static size_t ReflectionCountFields()
+    consteval static size_t ReflectFieldCount()
     {
         static_assert(N <= static_cast<size_t>(sizeof(T)));
-        if constexpr (PK::TIsConstructible<T, N>() && !PK::TIsConstructible<T, N + 1ull>())
+        if constexpr (TIsBraceConstructible<T, N> && !TIsBraceConstructible<T, N + 1ull>)
         {
             return N;
         }
         else
         {
-            return ReflectionCountFields<T, N + 1ull>();
+            return ReflectFieldCount<T, N + 1ull>();
         }
     }
 
-    template <typename T> inline constexpr auto pk_field_count = ReflectionCountFields<T>();
+    template<typename T> inline constexpr auto pk_field_count = ReflectFieldCount<T>();
 
-    template <typename T> constexpr auto ReflectionBind(T&, TIndexConstant<0>) noexcept { return Tuple<>{}; }
-    template <typename T> constexpr auto ReflectionBind(T& v) noexcept { return ReflectionBind(v, TIndexConstant<pk_field_count<T>>{}); }
+    template<typename T> constexpr auto ReflectBind(T&, TIndexConstant<0>) noexcept { return Tuple<>{}; }
+    template<typename T> constexpr auto ReflectBind(T& v) noexcept { return ReflectBind(v, TIndexConstant<pk_field_count<T>>{}); }
 
-    template<typename T> struct TReflectionFieldNameWrapper { const T value; };
-    template<typename T> extern const TReflectionFieldNameWrapper <T> ReflectionLocalTypeAssert;
-    template<typename T> constexpr const T& ReflectionFieldNameObject() noexcept { return ReflectionLocalTypeAssert<T>.value; }
+    template<typename T> struct TReflectFieldNameWrapper { const T value; };
+    template<typename T> extern const TReflectFieldNameWrapper<T> ReflectFieldType;
+    template<typename T> constexpr const T& ReflectFieldNameObject() noexcept { return ReflectFieldType<T>.value; }
 
     // T needed as otherwise msvc breaks the deduction
     template<typename T, auto ptr>
-    consteval auto ReflectionGetFieldName() noexcept 
+    consteval auto ReflectFieldName() noexcept 
     {
         constexpr auto signature = PK_FUNC_SIG;
         constexpr auto signatureLength = PK_FUNC_SIG_LEN;
@@ -246,11 +235,11 @@ namespace PK
         return StringLiteral<view.length>(view.str);
     }
 
-    template <typename T, size_t I> 
-    inline constexpr auto pk_field_name = ReflectionGetFieldName<T, __builtin_addressof(Sequence::GetAt<I>(ReflectionBind(ReflectionFieldNameObject<T>())))>();
+    template<typename T, size_t I> 
+    inline constexpr auto pk_field_name = ReflectFieldName<T, __builtin_addressof(Sequence::GetAt<I>(ReflectBind(ReflectFieldNameObject<T>())))>();
     
-    template <typename T>
-    constexpr auto ReflectionNamesArray() noexcept
+    template<typename T>
+    constexpr auto ReflectFieldNames() noexcept
     {
         return []<size_t... I>(PK::TIndexSequence<I...>) noexcept 
         { 
@@ -260,7 +249,7 @@ namespace PK
     }
 
     
-    template <typename T, typename TFunc, typename TBound, size_t... I>
+    template<typename T, typename TFunc, typename TBound, size_t... I>
     constexpr void ReflectFieldsDispatch(TBound&& bound, TFunc&& func, PK::TIndexSequence<I...>)
     {
         using TNoRef = PK::TRemoveRef_T<T>;
@@ -298,17 +287,17 @@ namespace PK
         (iterator(TIndexConstant<I>{}), ...);
     }
 
-    template <typename T, typename TFunc>
+    template<typename T, typename TFunc>
     constexpr void ReflectFields(T&& value, TFunc&& func)
     {
         using TNoRef = PK::TRemoveRef_T<T>;
-        auto&& bound = ReflectionBind(value);
+        auto&& bound = ReflectBind(value);
         ReflectFieldsDispatch<T>(bound, PK::Forward<TFunc>(func), PK::TMakeIndexSequence<pk_field_count<TNoRef>>{});
     }
 
 
     #define PK_BIND_FIELDS(N, ...) \
-    template <typename T> constexpr auto ReflectionBind(T& val, TIndexConstant<N>) noexcept \
+    template<typename T> constexpr auto ReflectBind(T& val, TIndexConstant<N>) noexcept \
     { \
         using U = PK::TRemoveCV_T<T>; \
         auto& mutable_val = const_cast<U&>(val); \
