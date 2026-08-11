@@ -7,13 +7,11 @@ namespace PK
     #if defined(__FUNCSIG__)
     #define PK_FUNC_SIG __FUNCSIG__
     #define PK_FUNC_SIG_LEN sizeof(__FUNCSIG__)
-    #define PK_FUNC_SIG_LEN_TRUNC (PK_FUNC_SIG_LEN - 17ull)
-    #define PK_FUNC_SIG_LEN_TRUNC2 (PK_FUNC_SIG_LEN - 23ull)
+    #define PK_FUNC_SIG_LEN_TRUNC (PK_FUNC_SIG_LEN - 23ull)
     #elif defined(__PRETTY_FUNCTION__) || defined(__clang__)
     #define PK_FUNC_SIG __PRETTY_FUNCTION__
     #define PK_FUNC_SIG_LEN sizeof(__PRETTY_FUNCTION__)
     #define PK_FUNC_SIG_LEN_TRUNC (PK_FUNC_SIG_LEN - 2ull)
-    #define PK_FUNC_SIG_LEN_TRUNC2 (PK_FUNC_SIG_LEN - 2ull)
     #else
     #error "Unsupported compiler!"
     #endif
@@ -129,7 +127,7 @@ namespace PK
             }
 
             return StringLiteralView{ nullptr, 0ull };
-        }.template operator()<StringLiteral<PK_FUNC_SIG_LEN_TRUNC2>(PK_FUNC_SIG)>();
+        }.template operator()<StringLiteral<PK_FUNC_SIG_LEN_TRUNC>(PK_FUNC_SIG)>();
 
         return StringLiteral<view.length>(view.str);
     }.template operator()<T>();
@@ -184,7 +182,7 @@ namespace PK
             }
 
             return StringLiteralView{ nullptr, 0ull };
-        }.template operator()<StringLiteral<PK_FUNC_SIG_LEN_TRUNC2>(PK_FUNC_SIG)>();
+        }.template operator()<StringLiteral<PK_FUNC_SIG_LEN_TRUNC>(PK_FUNC_SIG)>();
 
         return StringLiteral<view.length>(view.str);
     }.template operator()<T>();
@@ -209,7 +207,7 @@ namespace PK
 
             length = name[start - 1ul] == ':' ? (length - start) : 0ull;
             return StringLiteralView{ name + start, length };
-        }.template operator()<StringLiteral<PK_FUNC_SIG_LEN_TRUNC2>(PK_FUNC_SIG)>();
+        }.template operator()<StringLiteral<PK_FUNC_SIG_LEN_TRUNC>(PK_FUNC_SIG)>();
 
         return StringLiteral<view.length>(view.str);
     }.template operator()<E,V>();

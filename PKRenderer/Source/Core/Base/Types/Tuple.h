@@ -27,18 +27,8 @@ namespace PK
     struct Tuple : TupleBase<PK::TIndexSequenceFor<Args...>, Args...>
     {
         using TupleBase<PK::TIndexSequenceFor<Args...>, Args...>::TupleBase;
-
-        template<typename TFunc>
-        static constexpr auto Dispatch(TFunc&& func) noexcept
-        {
-            return PK::Forward<TFunc>(func).template operator()<Args...>();
-        }
-
-        template <typename TFunc>
-        static constexpr void For(TFunc&& func) noexcept
-        {
-            (func.template operator()<Args>(), ...);
-        }
+        template<typename TFunc> constexpr static auto Dispatch(TFunc&& func) noexcept { return PK::Forward<TFunc>(func).template operator()<Args...>(); }
+        template<typename TFunc> constexpr static void For(TFunc&& func) noexcept { (func.template operator()<Args>(), ...); }
     };
     
     namespace Sequence
