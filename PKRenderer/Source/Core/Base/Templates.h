@@ -6,6 +6,9 @@ namespace PK
     template<typename T> struct TEnableIf<true, T> { using Type = T; };
     template<typename T> struct TEnableIf<false, T> {};
 
+    template<bool predicate, typename TTrue, typename TFalse> struct TConditional { using Type = TTrue; };
+    template<typename TTrue, typename TFalse> struct TConditional<false, TTrue, TFalse> { using Type = TFalse; };
+
     template<typename T> struct TRemoveRef { using Type = T; };
     template<typename T> struct TRemoveRef<T&> { using Type = T; };
     template<typename T> struct TRemoveRef<T&&> { using Type = T; };
@@ -57,6 +60,8 @@ namespace PK
     template<typename T, typename ... Args>     inline constexpr bool TIsAnyOf = (TIsSame<T, Args> || ...);
     template<typename TFrom, typename TTo>      inline constexpr bool TIsAssignable = __is_assignable(TTo, TFrom);
     template<typename T>                        inline constexpr bool TIsClass = __is_class(T);
+    template<typename T>                        inline constexpr bool TIsAggregate = __is_aggregate(T);
+    template<typename T>                        inline constexpr bool TIsStandardLayout = __is_standard_layout(T);
     template<typename T, size_t N>              inline constexpr bool TIsBraceConstructible = []<size_t...I>(TIndexSequence<I...>){return requires{T{TAny(I)...};};}(TMakeIndexSequence<N>());
 
     template<typename T, template<typename...> typename Template>       inline constexpr bool TIsSpecialization = false;

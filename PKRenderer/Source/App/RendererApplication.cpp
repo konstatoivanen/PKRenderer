@@ -85,9 +85,9 @@ namespace PK::App
         GetServices()->Create<EntitySerializerRegister>(entityDb,
             initializer_list<EntitySerializer>
             {
-                EntitySerializer::Get<EntityLight>(),
-                EntitySerializer::Get<EntityLightSphere>(),
-                EntitySerializer::Get<EntityMeshStatic>()
+                EntityFactory<EntityLight>::GetSerializer(),
+                EntityFactory<EntityLightSphere>::GetSerializer(),
+                EntityFactory<EntityMeshStatic>::GetSerializer(),
             });
 
         assetDatabase->LoadDirectory<ShaderAsset>("Content/Shaders/");

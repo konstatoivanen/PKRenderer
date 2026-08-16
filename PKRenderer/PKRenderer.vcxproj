@@ -279,6 +279,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
     <ClInclude Include="Source\Core\ECS\EntityComponentRef.h" />
     <ClInclude Include="Source\Core\ECS\EntityFactory.h" />
+    <ClInclude Include="Source\Core\ECS\EntityDatabaseNew.h" />
     <ClInclude Include="Source\Core\ECS\IEntityImplementerBucket.h" />
     <ClInclude Include="Source\Core\ECS\NotSerialized.h" />
     <ClInclude Include="Source\Core\ECS\SerialField.h" />
@@ -670,6 +671,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp" />
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp" />
     <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp" />
+    <ClCompile Include="Source\Core\ECS\EntityDatabaseNew.cpp" />
     <ClCompile Include="Source\Core\ECS\EntitySerializerRegister.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
     <ClCompile Include="Source\Core\Math\Random.cpp" />

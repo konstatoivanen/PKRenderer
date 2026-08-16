@@ -200,6 +200,8 @@ namespace PK
     template<typename T> extern const TReflectFieldNameWrapper<T> ReflectFieldType;
     template<typename T> constexpr const T& ReflectFieldNameObject() noexcept { return ReflectFieldType<T>.value; }
 
+    template<typename T> using TReflectTypes = Sequence::RemoveCVRef<decltype(ReflectBind(ReflectFieldNameObject<T>()))>;
+
     // T needed as otherwise msvc breaks the deduction
     template<typename T, auto ptr>
     consteval auto ReflectFieldName() noexcept 

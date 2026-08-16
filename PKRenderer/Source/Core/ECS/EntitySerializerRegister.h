@@ -6,38 +6,6 @@
 
 namespace PK::App
 {
-    struct EntitySerializer
-    {
-        UUID128 uuid;
-        const char* name;
-        void (*serialize)(EntityDatabase*, SerialNodeWrite, const EGID&);
-        EGID (*deserialize)(EntityDatabase*, SerialNodeRead, uint32_t, const char*);
-
-        template<typename TEntity>
-        static EntitySerializer Get()
-        {
-            EntitySerializer serializer;
-            serializer.name = EntityFactory<TEntity>::TypeName.str;
-            serializer.uuid = EntityFactory<TEntity>::UUID;
-            serializer.serialize = EntityFactory<TEntity>::Serialize;
-            serializer.deserialize = EntityFactory<TEntity>::Deserialize;
-            return serializer;
-        }
-
-        constexpr bool operator == (const EntitySerializer& r) const noexcept
-        {
-            return uuid == r.uuid;
-        }
-
-        struct SerializerHash 
-        { 
-            constexpr size_t operator()(const UUID128& k) const noexcept
-            { 
-                return k.low;
-            } 
-        };
-    };
-
     struct EntitySerializerRegister
     {
         EntitySerializerRegister(EntityDatabase* entityDb, const initializer_list<EntitySerializer>& serializers);

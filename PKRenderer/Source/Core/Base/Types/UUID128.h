@@ -21,12 +21,12 @@ namespace PK
     };
 
     #if defined(__clang__)
-    constexpr bool operator==(const UUID128& a, const UUID128& b) { return a.value == b.value; }
-    constexpr bool operator!=(const UUID128& a, const UUID128& b) { return a.value != b.value; }
-    constexpr bool operator< (const UUID128& a, const UUID128& b) { return a.value < b.value; }
-    constexpr bool operator> (const UUID128& a, const UUID128& b) { return a.value > b.value; }
-    constexpr bool operator<=(const UUID128& a, const UUID128& b) { return a.value <= b.value; }
-    constexpr bool operator>=(const UUID128& a, const UUID128& b) { return a.value >= b.value; }
+    constexpr bool operator==(const UUID128& a, const UUID128& b) { if (__builtin_is_constant_evaluated()) { return a.high == b.high && a.low == b.low; } return a.value == b.value; }
+    constexpr bool operator!=(const UUID128& a, const UUID128& b) { if (__builtin_is_constant_evaluated()) { return a.high != b.high || a.low != b.low; } return a.value != b.value; }
+    constexpr bool operator< (const UUID128& a, const UUID128& b) { if (__builtin_is_constant_evaluated()) { return a.high != b.high ? a.high < b.high : a.low < b.low; } return a.value < b.value; }
+    constexpr bool operator> (const UUID128& a, const UUID128& b) { if (__builtin_is_constant_evaluated()) { return a.high != b.high ? a.high > b.high : a.low > b.low; } return a.value > b.value; }
+    constexpr bool operator<=(const UUID128& a, const UUID128& b) { if (__builtin_is_constant_evaluated()) { return a.high != b.high ? a.high <= b.high : a.low <= b.low; } return a.value <= b.value; }
+    constexpr bool operator>=(const UUID128& a, const UUID128& b) { if (__builtin_is_constant_evaluated()) { return a.high != b.high ? a.high >= b.high : a.low >= b.low; } return a.value >= b.value; }
     #else
     constexpr bool operator==(const UUID128& a, const UUID128& b) { return a.high == b.high && a.low == b.low; }
     constexpr bool operator!=(const UUID128& a, const UUID128& b) { return a.high != b.high || a.low != b.low; }
