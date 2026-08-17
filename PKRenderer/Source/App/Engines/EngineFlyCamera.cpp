@@ -20,16 +20,15 @@ namespace PK::App
 
     void EngineFlyCamera::OnStepFrameUpdate(FrameContext* ctx)
     {
-        auto views = m_entityDb->Query<EntityViewFlyCamera>((uint32_t)ENTITY_GROUPS::ACTIVE);
+        auto views = m_entityDb->Query<EntityViewFlyCamera>();
 
-        for (auto i = 0u; i < views.count; ++i)
+        for (auto& view : views)
         {
-            auto& view = views[i];
-            auto& input = view.input;
+            auto input = view.input;
             auto& time = view.time->info;
-            auto* camera = *view.flyCamera;
-            auto* projection = *view.projection;
-            auto* transform = *view.transform;
+            auto camera = view.flyCamera;
+            auto projection = view.projection;
+            auto transform = view.transform;
 
             auto sensitivity = camera->sensitivity / 1000.0f;
             auto deltaTime = math::clamp((float)time.deltaTime, 0.001f, 0.99f);
@@ -100,32 +99,28 @@ namespace PK::App
 
     void EngineFlyCamera::TransformsLog() const
     {
-        auto views = m_entityDb->Query<EntityViewFlyCamera>((uint32_t)ENTITY_GROUPS::ACTIVE);
+        auto views = m_entityDb->Query<EntityViewFlyCamera>();
 
-        for (auto i = 0u; i < views.count; ++i)
+        for (auto& view : views)
         {
-            auto& view = views[i];
-            auto transform = *view.transform;
-            auto position = transform->position;
-            auto rotation = math::euler(transform->rotation);
-            PK_LOG_INFO("EngineFlyCamera.Transforms.Log: EntityId:%i Pos:[%f, %f, %f], Rot:[%f,%f,%f]", view.GID.entityID(), position.x, position.y, position.z, rotation.x, rotation.y, rotation.z);
+            auto position = view.transform->position;
+            auto rotation = math::euler(view.transform->rotation);
+            PK_LOG_INFO("EngineFlyCamera.Transforms.Log: EntityId:%i Pos:[%f, %f, %f], Rot:[%f,%f,%f]", *view.entityId, position.x, position.y, position.z, rotation.x, rotation.y, rotation.z);
         }
     }
 
     void EngineFlyCamera::TransformsReset()
     {
-        auto views = m_entityDb->Query<EntityViewFlyCamera>((uint32_t)ENTITY_GROUPS::ACTIVE);
+        auto views = m_entityDb->Query<EntityViewFlyCamera>();
 
-        for (auto i = 0u; i < views.count; ++i)
+        for (auto& view : views)
         {
-            auto& view = views[i];
-            auto camera = *view.flyCamera;
-            auto transform = *view.transform;
-
+            auto camera = view.flyCamera;
+            auto transform = view.transform;
             camera->eulerAngles = camera->snapshotRotation;
             camera->targetPosition = transform->position = camera->snapshotPosition;
             transform->rotation = quaternion(camera->eulerAngles);
-            PK_LOG_INFO("EngineFlyCamera.Transforms.Reset: EntityId:%i", i);
+            PK_LOG_INFO("EngineFlyCamera.Transforms.Reset: EntityId:%i", *view.entityId);
         }
     }
 }

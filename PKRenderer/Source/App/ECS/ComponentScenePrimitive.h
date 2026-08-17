@@ -6,7 +6,7 @@ namespace PK::App
 {
     struct ComponentScenePrimitive
     {
-        ScenePrimitiveFlags flags = ScenePrimitiveFlags::Mesh;
+        ScenePrimitiveFlags flags = ScenePrimitiveFlags::None;
 
         // Runtime state flags
         PK_ECS_PRIVATE_FIELDS_FLAGS

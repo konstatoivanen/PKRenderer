@@ -17,15 +17,15 @@ namespace PK::App
     
     void EngineViewUpdate::OnStepFrameUpdate(FrameContext* ctx)
     {
-        auto views = m_entityDb->Query<EntityViewRenderView>((uint32_t)ENTITY_GROUPS::ACTIVE);
+        auto views = m_entityDb->Query<EntityViewRenderView>();
 
-        for (auto i = 0u; i < views.count; ++i)
+        for (auto& view : views)
         {
-            auto& time = views[i].time;
+            auto time = view.time;
+            auto input = view.input;
+            
             time->info = ctx->time;
-
             // @TODO select input state on some view preference.
-            auto& input = views[i].input;
             
             if (ctx->input.lastDeviceState.state)
             {

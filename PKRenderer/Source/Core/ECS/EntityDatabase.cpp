@@ -1,261 +1,243 @@
 #include "PrecompiledHeader.h"
+#include "Core/CLI/Log.h"
 #include "EntityDatabase.h"
 
 namespace PK
 {
-    constexpr static uint32_t VIEW_BUCKET_COUNT_FACTOR = 3u;
-
-    struct ViewNode
+    EntityDatabase::EntityDatabase(size_t compositionCapacity, size_t entityCapacity) :
+        m_identifiers(entityCapacity, 1u),
+        m_compositions(compositionCapacity, 1u)
     {
-        uint32_t id;
-        int32_t previous;
-        int32_t next;
-        ViewNode() : id(0u), previous(-1), next(-1) {}
-        ViewNode(uint32_t id) : id(id), previous(-1), next(-1) {}
-    };
-
-    // This could've been done in the header 
-    // but I decided to try a pimpl implementation for fun instead of adhering to common architectural principles.
-    // A copy of hashmap, but typeless.
-    // Not calling destructors for views when destroyed.
-    // We no longer care about reference tracking when this happens.
-    struct ViewHeader
-    {
-        uint32_t viewSize = 0ll;
-        uint32_t capacity = 0u;
-        uint32_t bucketCount = 0u;
-        uint32_t count = 0u;
-        EntityViewDeleter deleter = nullptr;
-        uint32_t* buckets = nullptr;
-        ViewNode* nodes = nullptr;
-        void* buffer = nullptr;
-    };
-
-    static ViewHeader* AllocateViewArray(EntityViewDeleter deleter, uint32_t viewSize, size_t capacity)
-    {
-        size_t size = sizeof(ViewHeader);
-        auto offsetBuckets = (size + 15) & ~15;
-        size = offsetBuckets + capacity * VIEW_BUCKET_COUNT_FACTOR * sizeof(uint32_t);
-        auto offsetNodes = (size + 15) & ~15;
-        size = offsetNodes + capacity * sizeof(ViewNode);
-        auto offsetValues = (size + 15) & ~15;
-        size = offsetValues + capacity * viewSize;
-    
-        auto memory = Memory::AllocateAligned(size);
-        memset(memory, 0, size);
-
-        auto header = reinterpret_cast<ViewHeader*>(memory);
-        header->viewSize = viewSize;
-        header->capacity = (uint32_t)capacity;
-        header->bucketCount = (uint32_t)capacity * VIEW_BUCKET_COUNT_FACTOR;
-        header->count = 0u;
-        header->deleter = deleter;
-        header->buckets = Memory::CastOffsetPtr<uint32_t>(memory, offsetBuckets);
-        header->nodes = Memory::CastOffsetPtr<ViewNode>(memory, offsetNodes);
-        header->buffer = Memory::CastOffsetPtr<void>(memory, offsetValues);
-        return header;
     }
 
-
-
-    void EntityDatabase::Delete(uint32_t typeIndex, uint32_t groupId, uint32_t entityId)
+    EntityDatabase::~EntityDatabase()
     {
-        for (auto i = 0u; i < m_typedGroups.GetCount(); ++i)
+        for (auto i = 0u; i < m_compositions.GetCount(); ++i)
         {
-            if ((typeIndex == 0u || m_typedGroups[i].key.typeIndex() == typeIndex - 1u) || 
-                (groupId == 0u || m_typedGroups[i].key.groupId() == groupId))
-            {
-                if (entityId == 0u)
-                {
-                    ClearViews(m_typedGroups[i].value);
-                }
-                else
-                {
-                    RemoveView(m_typedGroups[i].value, entityId);
-                }
-            }
+            Memory::Free(m_compositions[i].value.buffer);
         }
     }
 
-
-    void* EntityDatabase::GetViewArrayData(EntityViewArray* views) { return views && views->header ? views->header->buffer : nullptr; }
-
-    uint32_t EntityDatabase::GetViewArrayCount(const EntityViewArray* views) { return views && views->header ? views->header->count : 0u; }
-
-    uint32_t EntityDatabase::GetViewIndex(const EntityViewArray* views, uint32_t id)
+    EntityDatabase::Identifier EntityDatabase::NewEntity(uint32_t entityIndex)
     {
-        if (views && views->header && views->header->count)
+        auto* comp = &m_compositions[entityIndex].value;
+        auto arrayIndex = comp->count++;
+        auto entityId = ++m_idCounter;
+        auto identifier = Identifier(entityId, entityIndex, arrayIndex);
+
+        for (auto i = 0u; i < comp->componentCount; ++i)
         {
-            const auto bucketIndex = id % views->header->bucketCount;
-            auto valueIndex = (int32_t)(views->header->buckets[bucketIndex]) - 1;
-
-            while (valueIndex != -1)
-            {
-                if (views->header->nodes[valueIndex].id == id)
-                {
-                    return valueIndex;
-                }
-
-                valueIndex = views->header->nodes[valueIndex].previous;
-            }
+            comp->components[i].constructAt(comp->streams[i], arrayIndex);
         }
 
-        return ~0u;
+        GetEntityIdStream(entityIndex)[arrayIndex] = entityId;
+        m_identifiers.Add(identifier);
+        return identifier;
     }
 
-    void EntityDatabase::CreateViewArray(EntityViewArray& viewArray, EntityViewDeleter deleter, uint32_t viewSize)
+    void EntityDatabase::Delete(uint32_t entityId)
     {
-        Memory::Assert(viewArray.header == nullptr, "View array is already initialized!");
-        viewArray.header = AllocateViewArray(deleter, viewSize, 1u);
+        auto identifierIndex = m_identifiers.GetIndex(Identifier(entityId, 0u, 0u));
+
+        if (identifierIndex != -1)
+        {
+            const auto identifier = m_identifiers[identifierIndex];
+            const auto entityIndex = identifier.entityIndex();
+            const auto arrayIndex = identifier.arrayIndex();
+            m_identifiers.RemoveAt(identifierIndex);
+
+            auto* comp = &m_compositions[entityIndex].value;
+            comp->count--;
+
+            for (auto i = 0u; i < comp->componentCount; ++i)
+            {
+                comp->components[i].removeAt(comp->streams[i], identifier.arrayIndex(), comp->count);
+            }
+
+            // Remove at swaps entity positions in the component streams.
+            // Update array index in identifiers to match new array position.
+            const auto swapEntityId = GetEntityIdStream(entityIndex)[arrayIndex];
+            const auto swapIndex = m_identifiers.GetIndex(Identifier(swapEntityId, 0u, 0u));
+            m_identifiers[swapIndex] = Identifier(swapEntityId, entityIndex, arrayIndex);
+        }
     }
 
-    bool EntityDatabase::ReserveView(EntityViewArray& views, uint32_t id, void** outPtr)
+    void EntityDatabase::DeleteType(uint32_t typeIndex)
     {
-        const auto bucketIndex = id % views->bucketCount;
-        const auto valueIndex = (int32_t)views->buckets[bucketIndex] - 1;
-        auto movingValueIndex = valueIndex;
+        const auto typeKey = typeIndex & 0x7FFFFFFFu;
+        const auto entityIndex = m_compositions.GetIndex(typeKey);
 
-        while (movingValueIndex != -1)
+        if (entityIndex != -1)
         {
-            if (views->nodes[movingValueIndex].id == id)
+            auto* comp = &m_compositions[entityIndex].value;
+            auto entityIdStream = GetEntityIdStream(entityIndex);
+
+            // Better to do this in reverse order so that identifiers removal is more likely to hit a fast clear.
+            for (int32_t i = comp->count - 1; i >= 0; --i)
             {
-                *outPtr = reinterpret_cast<uint8_t*>(views->buffer) + views->viewSize * movingValueIndex;
-                return false;
+                m_identifiers.Remove(Identifier(entityIdStream[i], 0u, 0u));
+            }
+            
+            for (auto i = 0u; i < comp->componentCount; ++i)
+            {
+                comp->components[i].clear(comp->streams[i], comp->count);
             }
 
-            movingValueIndex = views->nodes[movingValueIndex].previous;
+            comp->count = 0u;
         }
-
-        const auto minCapacity = views->count + 1u;
-        const auto resized = views->capacity < minCapacity;
-
-        if (resized)
-        {
-            auto newViews = AllocateViewArray(views->deleter, views->viewSize, Hash::ExpandPrime(minCapacity));
-            newViews->count = views->count;
-            memcpy(newViews->buffer, views->buffer, views->viewSize * views->count);
-            memcpy(newViews->nodes, views->nodes, sizeof(ViewNode) * views->count);
-            Memory::Free(views.header);
-            views.header = newViews;
-        }
-
-        const auto index = views->count++;
-        views->nodes[index] = ViewNode(id);
-
-        if (!resized)
-        {
-            views->nodes[index].previous = valueIndex;
-
-            if (valueIndex != -1)
-            {
-                views->nodes[valueIndex].next = index;
-            }
-
-            views->buckets[bucketIndex] = index + 1u;
-        }
-        else
-        {
-            for (auto newValueIndex = 0u; newValueIndex < views->count; newValueIndex++)
-            {
-                const auto existingBucketIndex = views->nodes[newValueIndex].id % views->bucketCount;
-                const auto existingValueIndex = (int32_t)views->buckets[existingBucketIndex] - 1;
-                views->buckets[existingBucketIndex] = newValueIndex + 1u;
-
-                if (existingValueIndex != -1)
-                {
-                    views->nodes[newValueIndex].previous = existingValueIndex;
-                    views->nodes[newValueIndex].next = -1;
-                    views->nodes[existingValueIndex].next = newValueIndex;
-                }
-                else
-                {
-                    views->nodes[newValueIndex].next = -1;
-                    views->nodes[newValueIndex].previous = -1;
-                }
-            }
-        }
-
-        *outPtr = reinterpret_cast<uint8_t*>(views->buffer) + views->viewSize * index;
-        return true;
     }
-    
-    void EntityDatabase::RemoveView(EntityViewArray& views, uint32_t id)
+
+
+    uint32_t* EntityDatabase::GetEntityIdStream(uint32_t entityIndex)
     {
-        Memory::Assert(views.header, "Entity view array is not allocated!");
+        auto* comp = &m_compositions[entityIndex].value;
+        constexpr auto entityIdUUID = pk_ecs_type_uuid<uint32_t>;
 
-        const auto index = GetViewIndex(&views, id);
+        for (auto i = 0u; i < comp->componentCount; ++i)
+        {
+            if (comp->components[i].typeUUID == entityIdUUID)
+            {
+                return static_cast<uint32_t*>(comp->streams[i]);
+            }
+        }
 
-        if (index == ~0u)
+        return nullptr;
+    }
+
+    void EntityDatabase::ReserveEntitities(uint32_t entityIndex, size_t entryCount)
+    {
+        auto* comp = &m_compositions[entityIndex].value;
+        const auto isEntity = (m_compositions[entityIndex].key & 0x80000000u) == 0u;
+        const auto isNew = comp->buffer == nullptr;
+        const auto isPrimeExpand = !isNew && entryCount == 1ull;
+
+        PK_DEBUG_WARNING_ASSERT(isEntity, "Trying to reserve entities for a view composition!");
+
+        if (comp->capacity - comp->count >= entryCount)
         {
             return;
         }
 
-        const auto bucketIndex = views->nodes[index].id % views->bucketCount;
+        // Expand using primes if this is an allocate call for a single entity.
+        // Allow custom increments for preallocation calls.
+        auto newCapacity = 0u;
+        newCapacity += comp->count;
+        newCapacity += entryCount;
+        newCapacity = isPrimeExpand ? Hash::ExpandPrime(newCapacity) : newCapacity;
 
-        if (views->buckets[bucketIndex] == index + 1u)
+        // Allocate some padding so that we can align all buffers to 16 byte boundaries.
+        auto bufferSize = 0ull;
+        bufferSize += sizeof(void*) * comp->componentCount;
+        bufferSize += 16ull * (comp->componentCount + 1ull);
+        bufferSize += comp->componentStride * newCapacity;
+
+        auto offset = 0ull;
+        auto buffer = Memory::AllocateClear<uint8_t>(bufferSize);
+
+        auto streams = reinterpret_cast<void**>(buffer);
+        offset += sizeof(void*) * comp->componentCount;
+        offset = (offset + 15ull) & ~(15ull);
+
+        for (auto i = 0u; i < comp->componentCount; ++i)
         {
-            views->buckets[bucketIndex] = (uint32_t)(views->nodes[index].previous + 1);
+            streams[i] = buffer + offset;
+            offset += newCapacity * comp->components[i].stride;
+            offset = (offset + 15ull) & ~(15ull);
+            
+            if (!isNew)
+            {
+                comp->components[i].move(streams[i], comp->streams[i], comp->count);
+            }
         }
 
-        const auto updateNext = views->nodes[index].next;
-        const auto updatePrevious = views->nodes[index].previous;
+        Memory::Free(comp->buffer);
+        comp->buffer = buffer;
+        comp->streams = streams;
+        comp->capacity = newCapacity;
 
-        if (updateNext != -1)
+        // Very inefficient double loop to update view indices
+        // But this only happens once per entity so whatever.
+        for (auto i = 0u; i < m_compositions.GetCount() && isNew; ++i)
         {
-            views->nodes[updateNext].previous = updatePrevious;
-        }
-
-        if (updatePrevious != -1)
-        {
-            views->nodes[updatePrevious].next = updateNext;
-        }
-
-        views->count--;
-        views->deleter(reinterpret_cast<uint8_t*>(views->buffer) + views->viewSize * index);
-
-        if (index != views->count)
-        {
-            const auto movingBucketIndex = views->nodes[views->count].id % views->bucketCount;
-
-            if (views->buckets[movingBucketIndex] == views->count + 1u)
+            if (m_compositions[i].key & 0x80000000u)
             {
-                views->buckets[movingBucketIndex] = index + 1u;
+                UpdateViewIndices(i);
             }
-
-            const auto next = views->nodes[views->count].next;
-            const auto previous = views->nodes[views->count].previous;
-
-            if (next != -1)
-            {
-                views->nodes[next].previous = index;
-            }
-
-            if (previous != -1)
-            {
-                views->nodes[previous].next = index;
-            }
-
-            views->nodes[index] = views->nodes[views->count];
-            auto dst = reinterpret_cast<uint8_t*>(views->buffer) + views->viewSize * index;
-            auto src = reinterpret_cast<uint8_t*>(views->buffer) + views->viewSize * views->count;
-            memcpy(dst, src, views->viewSize);
-            memset(src, 0, views->viewSize);
         }
     }
-    
-    void EntityDatabase::ClearViews(EntityViewArray& views)
+
+    void EntityDatabase::UpdateViewIndices(uint32_t viewIndex)
     {
-        if (views.header && views->count)
+        auto* view = &m_compositions[viewIndex].value;
+        auto indices = static_cast<uint32_t*>(view->buffer);
+        auto newCount = 0u;
+        auto historyOffset = 0u;
+        auto historyCount = 0u;
+
+        for (auto i = 0u; i < m_compositions.GetCount(); ++i)
         {
-            for (auto i = 0u; i < views->count; ++i)
+            if (m_compositions[i].key & 0x80000000u)
             {
-                views->deleter(reinterpret_cast<uint8_t*>(views->buffer) + views->viewSize * i);
+                continue;
             }
 
-            memset(views->buffer, 0, views->viewSize * views->count);
-            Memory::ClearArray(views->nodes, views->count);
-            Memory::Memset(views->buckets, 0, views->bucketCount);
-            views->count = 0u;
+            auto* comp = &m_compositions[i].value;
+            auto remainingMatches = view->componentCount;
+
+            for (auto j = 0u; j < view->componentCount; ++j)
+            for (auto k = 0u; k < comp->componentCount; ++k)
+            {
+                remainingMatches -= view->components[j].typeUUID == comp->components[k].typeUUID;
+            }
+
+            if (!remainingMatches)
+            {
+                if (historyCount < view->capacity)
+                {
+                    indices[historyCount++] = i;
+                    historyOffset = i;
+                }
+    
+                newCount++;
+            }
         }
+
+        if (view->capacity < newCount)
+        {
+            auto newIndices = Memory::AllocateClear<uint32_t>(newCount);
+
+            if (historyCount)
+            {
+                Memory::CopyArray(newIndices, indices, historyCount);
+            }
+
+            for (auto i = historyOffset; i < m_compositions.GetCount(); ++i)
+            {
+                if (m_compositions[i].key & 0x80000000u)
+                {
+                    continue;
+                }
+
+                auto* comp = &m_compositions[i].value;
+                auto remainingMatches = view->componentCount;
+
+                for (auto j = 0u; j < view->componentCount; ++j)
+                for (auto k = 0u; k < comp->componentCount; ++k)
+                {
+                    remainingMatches -= view->components[j].typeUUID == comp->components[k].typeUUID;
+                }
+
+                if (!remainingMatches)
+                {
+                    newIndices[historyCount++] = i;
+                }
+            }
+
+            Memory::Free(view->buffer);
+            view->buffer = newIndices;
+            view->capacity = newCount;
+        }
+
+        view->count = newCount;
     }
 }

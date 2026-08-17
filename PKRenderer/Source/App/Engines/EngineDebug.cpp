@@ -48,10 +48,14 @@ namespace PK::App
         auto minpos = float3(-70, -6, -70);
         auto maxpos = float3(+70, -4, +70);
 
+        entityDb->Reserve<EntityMeshStatic>(300u);
+        entityDb->Reserve<EntityLightSphere>(32u);
+        entityDb->Reserve<EntityLight>(32u);
+
         // Floor mesh
         {
             MaterialTarget material { materialSand, 0u };
-            EntityMeshStatic desc;
+            EntityMeshStatic::Descriptor desc;
             desc.entityName = "Floor";
             desc.entitySerialize = true;
             desc.flags = ScenePrimitiveFlags::DefaultMesh;
@@ -60,13 +64,13 @@ namespace PK::App
             desc.position = { 0.0f, -5.0f, 0.0f };
             desc.rotation = { 90.0f * PK_FLOAT_DEG2RAD, 0.0f, 0.0f };
             desc.scale = 80.0f * PK_FLOAT3_ONE;
-            EntityFactory<EntityMeshStatic>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
+            EntityFactory<EntityMeshStatic>::Create(m_entityDb, desc);
         }
 
         // Columns mesh
         {
             MaterialTarget material = { materialAsphalt, 0u };
-            EntityMeshStatic desc;
+            EntityMeshStatic::Descriptor desc;
             desc.entityName = "Columns";
             desc.entitySerialize = true;
             desc.flags = ScenePrimitiveFlags::DefaultMesh;
@@ -75,7 +79,7 @@ namespace PK::App
             desc.position = { -20.0f, 5.0f, -20.0f };
             desc.rotation = PK_FLOAT3_ZERO;
             desc.scale = 3.0f * PK_FLOAT3_ONE;
-            EntityFactory<EntityMeshStatic>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
+            EntityFactory<EntityMeshStatic>::Create(m_entityDb, desc);
         }
 
         // Rock meshes
@@ -85,7 +89,7 @@ namespace PK::App
             for (auto i = 0u; i < 256u; ++i)
             {
                 MaterialTarget material { i < 128u ? materialMarble : materialPlaster, math::randomRange(0u, maxsubmesh) };
-                EntityMeshStatic desc;
+                EntityMeshStatic::Descriptor desc;
                 desc.entityName = FixedString32("Rock_%u", i);
                 desc.entitySerialize = true;
                 desc.flags = ScenePrimitiveFlags::DefaultMesh;
@@ -94,14 +98,14 @@ namespace PK::App
                 desc.position = math::halton(i, uint3(7, 11, 17)) * (maxpos - minpos) + minpos;
                 desc.rotation = math::randomRadianFloat3();
                 desc.scale = math::randomRange(1.0f, 3.0f) * PK_FLOAT3_ONE;
-                EntityFactory<EntityMeshStatic>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
+                EntityFactory<EntityMeshStatic>::Create(m_entityDb, desc);
             }
         }
         
         // Local lights
         for (auto i = 0u; i < config->LightCount; ++i)
         {
-            EntityLightSphere desc;
+            EntityLightSphere::Descriptor desc;
             desc.assetDatabase = m_assetDatabase;
             desc.type = i % 2 == 0 ? LightType::Spot : LightType::Point;
             desc.IESProfile = i % 2 == 0 ? profile : nullptr;
@@ -113,12 +117,12 @@ namespace PK::App
             desc.sourceRadius = 0.2f;
             desc.castShadow = true;
             desc.useIESCandelas = true;
-            EntityFactory<EntityLightSphere>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
+            EntityFactory<EntityLightSphere>::Create(m_entityDb, desc);
         }
 
         // Directional light
         {
-            EntityLight desc;
+            EntityLight::Descriptor desc;
             desc.type = LightType::Directional;
             desc.IESProfile = nullptr;
             desc.position = PK_FLOAT3_ZERO;
@@ -129,12 +133,12 @@ namespace PK::App
             desc.sourceRadius = 0.1f;
             desc.castShadow = true;
             desc.useIESCandelas = false;
-            EntityFactory<EntityLight>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
+            EntityFactory<EntityLight>::Create(m_entityDb, desc);
         }
 
         // Fly camera
         {
-            EntityFlyCamera desc;
+            EntityFlyCamera::Descriptor desc;
             desc.name = "Scene";
             desc.desiredRect = PK_UINT4_MAX;
             desc.isWindowTarget = true;
@@ -148,54 +152,43 @@ namespace PK::App
             desc.rotationSmoothing = config->CameraLookSmoothing;
             desc.sensitivity = config->CameraLookSensitivity;
             desc.settings = &config->ViewSettings;
-            m_cameraEgid = EntityFactory<EntityFlyCamera>::Create(m_entityDb, (uint32_t)ENTITY_GROUPS::ACTIVE, desc);
+            m_cameraEnityId = *EntityFactory<EntityFlyCamera>::Create(m_entityDb, desc).entityId;
         }
     }
 
     void EngineDebug::OnStepFrameUpdate([[maybe_unused]] FrameContext* ctx)
     {
         /*
-        auto lights = m_entityDb->Query<EntityViews::LightSphere>((int)ENTITY_GROUPS::ACTIVE);
+        auto lights = m_entityDb->Query<EntityViewLightSphere>();
         auto time = Application::GetService<Time>()->GetTime();
+        auto index = 0u;
 
-        for (auto i = 0; i < lights.count; ++i)
+        for (auto& view : lights)
         {
-            // auto ypos = math::sin(time * 2 + ((float)i * 4 / lights.count));
-            auto rotation = quaternion(float3(0, time + float(i), 0));
-            lights[i].transformLight->rotation = rotation;
-            lights[i].transformMesh->rotation = rotation;
-            //lights[i].transformLight->position.y = ypos;
-            //lights[i].transformMesh->position.y = ypos;
-        }
-
-        return;
-
-        auto meshes = m_entityDb->Query<EntityViewMeshStatic>((int)ENTITY_GROUPS::ACTIVE);
-
-        for (auto i = 0; i < meshes.count && i < 1; ++i)
-        {
-            meshes[i].transform->position.y = math::sin(ctx->time.time + (10 * (float)i / meshes.count)) * 10;
+            // auto ypos = math::sin(time * 2 + ((float)index * 4 / lights.count));
+            auto rotation = quaternion(float3(0, time + float(index), 0));
+            view.transform->rotation = rotation;
+            view.transform->rotation = rotation;
+            //view.transform->position.y = ypos;
+            //view.transform->position.y = ypos;
         }
         */
     }
 
     void EngineDebug::Step(IGizmosRenderer* gizmos)
     {
-        auto cullables = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ENTITY_GROUPS::ACTIVE);
+        auto cullables = m_entityDb->Query<EntityViewScenePrimitive>();
 
         gizmos->GizmosSetColor(PK_COLOR_GREEN);
 
-        for (auto i = 0u; i < cullables.count; ++i)
+        for (auto& view : cullables)
         {
-            auto cullable = &cullables[i];
-            auto flags = cullable->primitive->flags;
+            auto flags = view.primitive->flags;
 
-            if ((flags & ScenePrimitiveFlags::Mesh) == 0u)
+            if ((flags & ScenePrimitiveFlags::Mesh) != 0u)
             {
-                continue;
+                gizmos->GizmosDrawBounds(view.bounds->worldAABB);
             }
-
-            gizmos->GizmosDrawBounds(cullables[i].bounds->worldAABB);
         }
 
         auto offset = float3(-100, 50, 0);
@@ -233,16 +226,16 @@ namespace PK::App
 
     void EngineDebug::Step(AssetImportEvent<Config<EngineDebugConfig>>* token)
     {
-        auto entity = m_entityDb->Query<EntityViewFlyCamera>(m_cameraEgid);
+        auto entity = m_entityDb->Query<EntityViewFlyCamera>(m_cameraEnityId);
         auto config = token->asset;
-        entity->projection->fieldOfView = config->CameraFov;
-        entity->projection->zNear = config->CameraZNear;
-        entity->projection->zFar = config->CameraZFar;
-        entity->flyCamera->moveSpeed = config->CameraSpeed;
-        entity->flyCamera->moveSmoothing = config->CameraMoveSmoothing;
-        entity->flyCamera->rotationSmoothing = config->CameraLookSmoothing;
-        entity->flyCamera->sensitivity = config->CameraLookSensitivity;
-        entity->flyCamera->snapshotPosition = config->CameraStartPosition;
-        entity->flyCamera->snapshotRotation = config->CameraStartRotation;
+        entity.projection->fieldOfView = config->CameraFov;
+        entity.projection->zNear = config->CameraZNear;
+        entity.projection->zFar = config->CameraZFar;
+        entity.flyCamera->moveSpeed = config->CameraSpeed;
+        entity.flyCamera->moveSmoothing = config->CameraMoveSmoothing;
+        entity.flyCamera->rotationSmoothing = config->CameraLookSmoothing;
+        entity.flyCamera->sensitivity = config->CameraLookSensitivity;
+        entity.flyCamera->snapshotPosition = config->CameraStartPosition;
+        entity.flyCamera->snapshotRotation = config->CameraStartRotation;
     }
 }

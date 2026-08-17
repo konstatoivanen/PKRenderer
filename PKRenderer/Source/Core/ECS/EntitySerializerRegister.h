@@ -10,8 +10,8 @@ namespace PK::App
     {
         EntitySerializerRegister(EntityDatabase* entityDb, const initializer_list<EntitySerializer>& serializers);
 
-        void SerializeEntities(const char* path, uint32_t group);
-        void DeserializeEntities(const char* path, uint32_t group);
+        void SerializeEntities(const char* path);
+        void DeserializeEntities(const char* path);
 
         EntityDatabase* m_entityDb;
         HashMap<UUID128, EntitySerializer, EntitySerializer::SerializerHash> m_serializers;

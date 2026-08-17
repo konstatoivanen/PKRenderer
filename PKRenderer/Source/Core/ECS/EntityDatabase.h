@@ -1,197 +1,236 @@
 #pragma once
-#include "Core/Base/Containers/BufferView.h"
 #include "Core/Base/Containers/HashMap.h"
-#include "Core/Base/TypeMeta.h"
-#include "Core/Base/Reflect.h"
-#include "Core/ECS/EGID.h"
-#include "Core/ECS/EntityComponentRef.h"
-#include "Core/ECS/IEntityImplementer.h"
+#include "Core/ECS/EntityComposition.h"
+#include "Core/ECS/EntityComponentMeta.h"
 
 namespace PK
 {
-    enum class ENTITY_GROUPS
-    {
-        INACTIVE = 0,
-        ACTIVE = 1,
-        FREE = 2
-    };
-    
-    typedef void (*EntityViewDeleter)(void*);
-
-    template<typename TView>
-    struct EntityView : public TView
-    {
-        EGID GID;
-    };
-
-    struct ImplementerContainer
-    {
-        ImplementerBucket* bucketHead;
-        ~ImplementerContainer() { Memory::Delete(bucketHead); }
-    };
-
-    struct EntityViewArray
-    {
-        struct ViewHeader* header = nullptr;
-        constexpr EntityViewArray() = default;
-        EntityViewArray(EntityViewArray&& other) noexcept : header(PK::Exchange(other.header, nullptr)) {}
-        ~EntityViewArray() { Memory::Free(header); header = nullptr; }
-        EntityViewArray& operator=(EntityViewArray&& other) noexcept { header = PK::Exchange(other.header, nullptr); return *this; }
-        ViewHeader* operator->() const noexcept { return header; }
-    };
-
+    // @TODO replace with UUID once we have a working hash for templated types.
     struct EntityDatabase
     {
-        struct GroupKey
+        struct Composition
+        {
+            const uint32_t componentStride;
+            const uint32_t componentCount;
+            const EntityComponentMeta* components;
+            uint32_t count;
+            uint32_t capacity;
+            void* buffer;
+            void** streams;
+        };
+
+        struct Identifier
         {
             uint64_t identifier = 0ull;
-            GroupKey(uint32_t groupId, const uint32_t typeIndex) : identifier((uint64_t)typeIndex | ((uint64_t)groupId << 32ull)) {}
-            uint32_t typeIndex() const { return identifier & 0xFFFFFFFFull; }
-            uint32_t groupId() const { return (identifier >> 32ull) & 0xFFFFFFFFull; }
-            bool operator == (const GroupKey& other) { return identifier == other.identifier; }
-            bool operator != (const GroupKey& other) { return identifier != other.identifier; }
-        };
-
-        struct GroupHash
-        {
-            size_t operator()(const GroupKey& k) const noexcept
+            
+            Identifier(uint32_t entityId, uint32_t entityIndex, uint32_t arrayIndex) 
             {
-                return (size_t)k.identifier;
+                identifier |= (uint64_t)entityId & 0xFFFFFFull;
+                identifier |= ((uint64_t)entityIndex & 0xFFFFull) << 24ull;
+                identifier |= ((uint64_t)arrayIndex & 0xFFFFFFull) << 48ull;
             }
+
+            bool operator == (const Identifier& other) { return entityId() == other.entityId(); }
+            bool operator != (const Identifier& other) { return entityId() != other.entityId(); }
+            uint32_t entityId() const { return identifier & 0xFFFFFFull; }
+            uint32_t entityIndex() const { return (identifier >> 24ull) & 0xFFFFull; }
+            uint32_t arrayIndex() const { return (identifier >> 48ull) & 0xFFFFFFull; }
         };
 
-        EntityDatabase() : m_typedGroups(32u, 3u), m_implementers(32u, 3u) {}
+        struct IdentifierHash 
+        { 
+            size_t operator()(const Identifier& k) const noexcept { return (size_t)k.entityId();}
+        };
 
-        constexpr uint32_t ReserveEntityId() { return ++m_idCounter; }
-        inline EGID ReserveEntityId(uint32_t groupId) { return EGID(ReserveEntityId(), groupId); }
-
-        template<typename T>
-        T* NewImplementer()
+        template<typename TView>
+        struct ViewIterator
         {
-            static_assert(__is_base_of(IEntityImplementer, T), "Template argument type does not derive from IImplementer!");
+            struct Sentinel {};
+            EntityDatabase* entityDb;
+            Composition* viewdata;
+            TView view;
+            uint32_t groupIndex = 0u;
+            uint32_t arrayCount = 0u;
+            bool is_valid = false;
 
-            const auto elementsPerBucket = ImplementerBucket::SIZE / sizeof(T);
-            const auto containerIndex = m_implementers.AddKey(pk_base_type_index<T>());
-            auto& container = m_implementers[containerIndex].value;
-            auto bucket = container.bucketHead;
+            constexpr ViewIterator(EntityDatabase* db, Composition* data) noexcept : entityDb(db), viewdata(data), is_valid(Next()) {}
+            TView& operator*() { return view; }
+            TView* operator->() { return &view; }
+            const TView& operator*() const { return view; }
+            const TView* operator->() const { return &view; }
+            ViewIterator& operator++() { is_valid = Next(); return *this; }
+            void operator++(int) { ++(*this); }
+            friend bool operator!=(const ViewIterator& it, Sentinel) noexcept { return it.is_valid; }
 
-            // Find bucket with free slots.
-            for (; bucket && !bucket->freeCount; bucket = bucket->previous) {}
-
-            // Nothing available. create a new bucket.
-            if (!bucket || !bucket->freeCount)
+            bool Next()
             {
-                bucket = Memory::New<ImplementerBucket>();
-                bucket->previous = PK::Exchange(container.bucketHead, bucket);
-                bucket->capacity = elementsPerBucket;
-                bucket->freeCount = elementsPerBucket;
-                bucket->destroyAt = [](ImplementerBucket* bucket, uint32_t index)
+                if (arrayCount)
                 {
-                    auto element = static_cast<T*>((void*)bucket->data) + index;
-
-                    if (element->bucket)
+                    ReflectFields(view, [](auto& field)
                     {
-                        element->bucket = nullptr;
-                        Memory::Destruct(element);
+                        if constexpr (TIsPointer<TRemoveCVRef_T<decltype(field)>>)
+                        {
+                            field++;
+                        }
+                    });
+                    arrayCount--;
+                    return true;
+                }
+
+                while (groupIndex < viewdata->count)
+                {
+                    auto index = static_cast<const uint32_t*>(viewdata->buffer)[groupIndex++];
+                    auto comp = &entityDb->m_compositions[index].value;
+                    
+                    if (comp->count)
+                    {
+                        arrayCount = comp->count - 1ull;
+                        view = entityDb->BindView<TView>(index, 0);
+                        return true;
                     }
-                };
+                }
+
+                return false;
+            }
+        };
+
+        template<typename TView>
+        struct ViewRange
+        {
+            EntityDatabase* entityDb;
+            Composition* viewdata;
+
+            size_t count() const
+            {
+                size_t count = 0u;
+
+                for (auto i = 0u; i < viewdata->count; ++i)
+                {
+                    auto index = static_cast<const uint32_t*>(viewdata->buffer)[i];
+                    auto comp = &entityDb->m_compositions[index].value;
+                    count += comp->count;
+                }
+
+                return count;
             }
 
-            const auto beg = static_cast<T*>((void*)bucket->data);
-            const auto end = beg + elementsPerBucket;
-            auto ptr = beg;
+            auto begin() const { return ViewIterator<TView>(entityDb, viewdata); }
+            auto end() const { return typename ViewIterator<TView>::Sentinel{}; }
+        };
 
-            for (; ptr->bucket && ptr < end; ++ptr) {}
+        EntityDatabase(size_t compositionCapacity, size_t entityCapacity);
+        ~EntityDatabase();
 
-            bucket->freeCount--;
-            Memory::Construct(ptr);
-            ptr->referenceCount = 0u;
-            ptr->index = (uint32_t)(ptr - beg);
-            ptr->bucket = bucket;
-            return ptr;
+        template<typename TEntity>
+        void Reserve(size_t entryCount)
+        {
+            AllocateComposition<TEntity>(false, entryCount);
+        }
+
+        template<typename TEntityStruct> 
+        TEntityStruct New()
+        {
+            auto entityIndex = AllocateComposition<TEntityStruct>(false, 1ull);
+            auto identifier = NewEntity(entityIndex);
+            return BindView<TEntityStruct>(entityIndex, identifier.arrayIndex());
+        }
+
+        template<typename TView> 
+        ViewRange<TView> Query()
+        {
+            auto viewIndex = AllocateComposition<TView>(true, 0ull);
+            return { this, &m_compositions[viewIndex].value };
         }
 
         template<typename TView>
-        EntityView<TView>* NewView(const EGID& egid)
+        TView Query(uint32_t entityId)
         {
-            using TEntityView = EntityView<TView>;
-            
-            Memory::Assert(egid.IsValid(), "Invalid Egid!");
-
-            uint32_t groupIndex = 0u;
-            void* view = nullptr;
-            
-            if (m_typedGroups.AddKey(GroupKey(egid.groupID(), pk_base_type_index<TView>()), &groupIndex))
-            {
-                CreateViewArray(m_typedGroups[groupIndex].value, [](void* memory) 
-                { 
-                    Memory::Destruct(static_cast<TEntityView*>(memory));
-                }, 
-                sizeof(TEntityView));
-            }
-
-            if (ReserveView(m_typedGroups[groupIndex].value, egid.entityID(), &view))
-            {
-                Memory::Construct(static_cast<TEntityView*>(view));
-                static_cast<TEntityView*>(view)->GID = egid;
-            }
-
-            return static_cast<TEntityView*>(view);
+            auto* id = m_identifiers.GetValuePtr(Identifier(entityId, 0u, 0u));
+            return id ? BindView<TView>(id->entityIndex(), id->arrayIndex()) : TView{};
         }
 
-        template<typename TView, typename ... TImplementers>
-        EntityView<TView>* NewView(const EGID& egid, TImplementers*... implementers)
+        template<typename TEntityStruct>
+        requires TIsValidEntityStruct<TEntityStruct>
+        void DeleteType() 
         {
-            auto* view = NewView<TView>(egid);
+            using TComposition = TStructToEntityComposition<TEntityStruct>;
+            const auto typeIndex = pk_type_index<TComposition>;
+            DeleteType(typeIndex);
+        }
 
-            PK::ReflectFields(*static_cast<TView*>(view), [=](auto& value)
+        void Delete(uint32_t entityId);
+
+    private:
+        template<typename TStruct>
+        requires TIsValidEntityStruct<TStruct>
+        uint32_t AllocateComposition(bool is_view, size_t newEntryCount)
+        {
+            using TComposition = TStructToEntityComposition<TStruct>;
+            const auto typeIndex = pk_type_index<TComposition>;
+            const auto typeKey = (typeIndex & 0x7FFFFFFF) | (is_view << 31ull);
+            const auto index = m_compositions.AddKey(typeKey);
+            const auto isNew = m_compositions[index].value.componentCount == 0ull;
+
+            if (isNew)
             {
-                using TField = PK::TRemoveCVRef_T<decltype(value)>;
+                Memory::Construct(&m_compositions[index].value, 
+                    static_cast<uint32_t>(TComposition::Stride),
+                    static_cast<uint32_t>(TComposition::Size),
+                    entity_component_metas<TComposition>.data,
+                    0u, 0u, nullptr, nullptr);
+            }
+            
+            if (isNew && is_view)
+            {
+                UpdateViewIndices(index);
+            }
 
-                if constexpr (TIsSpecialization<TField, EntityComponentRef>)
+            if (!is_view)
+            {
+                ReserveEntitities(index, newEntryCount);
+            }
+
+            return index;
+        }
+
+        template<typename TView>
+        requires TIsValidEntityStruct<TView>
+        TView BindView(uint32_t compositionIndex, uint32_t arrayOffset)
+        {
+            auto* comp = &m_compositions[compositionIndex].value;
+            TView view{};
+
+            ReflectFields(view, [comp, arrayOffset](auto& field)
+            {
+                using TField = TRemoveCVRef_T<decltype(field)>;
+
+                if constexpr (TIsPointer<TField>)
                 {
-                    // cast to void to silence unused variable warning.
-                    (void)(((TIsConvertible<TImplementers*, typename TField::Type*>) ? (value = implementers, true) : false) || ...);
+                    constexpr const auto uuid = pk_ecs_type_uuid<TRemovePtr_T<TField>>;
+
+                    for (auto i = 0u; i < comp->componentCount; ++i)
+                    {
+                        if (comp->components[i].typeUUID == uuid)
+                        {
+                            field = static_cast<TField>(comp->streams[i]) + arrayOffset;
+                            break;
+                        }
+                    }
                 }
             });
 
             return view;
         }
 
-        template<typename TView>
-        const BufferView<EntityView<TView>> Query(const uint32_t groupId)
-        {
-            const auto views = m_typedGroups.GetValuePtr(GroupKey(groupId, pk_base_type_index<TView>()));
-            return { static_cast<EntityView<TView>*>(GetViewArrayData(views)), (size_t)GetViewArrayCount(views) };
-        }
+        Identifier NewEntity(uint32_t entityIndex);
+        void DeleteType(uint32_t typeKey);
 
-        template<typename TView>
-        EntityView<TView>* Query(const EGID& egid)
-        {
-            const auto views = m_typedGroups.GetValuePtr(GroupKey(egid.groupID(), pk_base_type_index<TView>()));
-            const auto index = GetViewIndex(views, egid.entityID());
-            return index != ~0u ? static_cast<EntityView<TView>*>(GetViewArrayData(views)) + index : nullptr;
-        }
+        uint32_t* GetEntityIdStream(uint32_t entityIndex);
+        void ReserveEntitities(uint32_t entityIndex, size_t entryCount);
+        void UpdateViewIndices(uint32_t viewIndex);
 
-        template<typename TView> void DeleteAllOfType() { Delete(pk_base_type_index<TView>() + 1u, 0u, 0u); }
-        template<typename TView> void DeleteGroupOfType(uint32_t groupId) { Delete(pk_base_type_index<TView>() + 1u, groupId, 0u); }
-        template<typename TView> void DeleteOfType(const EGID& egid) { Delete(pk_base_type_index<TView>() + 1u, egid.groupID(), egid.entityID()); }
-        inline void DeleteGroup(uint32_t groupId) { Delete(0u, groupId, 0u);  }
-        inline void Delete(const EGID& egid) { Delete(0u, egid.groupID(), egid.entityID()); }
-
-    private:
-        void Delete(uint32_t typeIndex, uint32_t groupId, uint32_t entityId);
-
-        static void* GetViewArrayData(EntityViewArray* views);
-        static uint32_t GetViewArrayCount(const EntityViewArray* views);
-        static uint32_t GetViewIndex(const EntityViewArray* views, uint32_t id);
-        static void CreateViewArray(EntityViewArray& views, EntityViewDeleter deleter, uint32_t viewSize);
-        static bool ReserveView(EntityViewArray& views, uint32_t id, void** outPtr);
-        static void RemoveView(EntityViewArray& views, uint32_t id);
-        static void ClearViews(EntityViewArray& views);
-
-        HashMap<GroupKey, EntityViewArray, GroupHash> m_typedGroups;
-        HashMap<uint32_t, ImplementerContainer> m_implementers;
+        HashSet<Identifier, IdentifierHash> m_identifiers;
+        HashMap<uint32_t, Composition> m_compositions;
         uint32_t m_idCounter = 0u;
     };
 }

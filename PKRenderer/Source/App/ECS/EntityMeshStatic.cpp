@@ -14,24 +14,19 @@
 
 namespace PK::App
 {
-    void EntityMeshStatic::OnCreate(
-        [[maybe_unused]] EntityDatabase* entityDb, 
-        [[maybe_unused]] const EGID& egid, 
-        const EntityMeshStatic& desc, 
-        TImplementers& implementers)
+    void EntityMeshStatic::OnCreate(EntityDatabase* entityDb, EntityMeshStatic& entity, const Descriptor& desc)
     {
-        auto implementer = Sequence::GetAt<0>(implementers);
-        implementer->position = desc.position;
-        implementer->rotation = quaternion(desc.rotation);
-        implementer->scale = desc.scale;
-        implementer->flags = desc.flags | App::ScenePrimitiveFlags::Mesh;
-        implementer->materials.Copy(desc.materials.data, desc.materials.count);
-        implementer->sharedMesh = desc.mesh;
-        implementer->localAABB = PK_FLOAT3_MIN_AABB;
+        entity.transform->position = desc.position;
+        entity.transform->rotation = quaternion(desc.rotation);
+        entity.transform->scale = desc.scale;
+        entity.primitive->flags = desc.flags | ScenePrimitiveFlags::Mesh;
+        entity.materials->materials.Copy(desc.materials.data, desc.materials.count);
+        entity.mesh->sharedMesh = desc.mesh;
+        entity.bounds->localAABB = PK_FLOAT3_MIN_AABB;
 
-        for (auto& target : implementer->materials)
+        for (auto& target : entity.materials->materials)
         {
-            implementer->localAABB |= desc.mesh->GetSubmesh(target.submesh).bounds;
+            entity.bounds->localAABB |= desc.mesh->GetSubmesh(target.submesh).bounds;
         }
     }
 }

@@ -1,6 +1,5 @@
 #pragma once
 #include "Core/Math/Math.h"
-#include "Core/ECS/EGID.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/Serialization/Config.h"
 #include "App/FrameStep.h"
@@ -41,7 +40,7 @@ namespace PK::App
         virtual void Step(AssetImportEvent<Config<EngineDebugConfig>>* token) final;
 
     private:
-        EGID m_cameraEgid{};
+        uint32_t m_cameraEnityId{};
         EntityDatabase* m_entityDb;
         AssetDatabase* m_assetDatabase;
     };

@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/ECS/EntityComponentRef.h"
 #include "App/ECS/ComponentTransform.h"
 #include "App/ECS/ComponentBounds.h"
 
@@ -7,7 +6,8 @@ namespace PK::App
 {
     struct EntityViewTransform
     {
-        EntityComponentRef<ComponentTransform> transform;
-        EntityComponentRef<ComponentBounds> bounds;
+        uint32_t* entityId;
+        ComponentTransform* transform;
+        ComponentBounds* bounds;
     };
 }

@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/ECS/EGID.h"
 #include "Core/ControlFlow/IStep.h"
 
 namespace PK { struct EntityDatabase; }

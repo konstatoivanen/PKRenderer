@@ -8,14 +8,13 @@ namespace PK::App
         None = 0u,
         Mesh = 1 << 0,
         Light = 1 << 1,
-        Static = 1 << 2,
-        CastShadows = 1 << 3,
-        NeverCull = 1 << 4,
-        RayTraceable = 1 << 5,
+        CastShadows = 1 << 2,
+        NeverCull = 1 << 3,
+        RayTraceable = 1 << 4,
 
         // Presets
-        DefaultMesh = Mesh | Static | CastShadows | RayTraceable,
-        DefaultMeshNoShadows = Mesh | Static,
+        DefaultMesh = Mesh | CastShadows | RayTraceable,
+        DefaultLight = Light | CastShadows
     };
 
     enum class LightType : uint8_t

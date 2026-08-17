@@ -20,21 +20,22 @@ namespace PK::App
 
         CVariableRegister::Create<CVariableFunc>("Engine.Entities.Save", [this](const char* const* args, [[maybe_unused]] uint32_t count)
             {
-                SerializeEntities(args[0], (uint32_t)ENTITY_GROUPS::ACTIVE);
+                SerializeEntities(args[0]);
             }, "Expected a filepath argument", 1u);
 
         CVariableRegister::Create<CVariableFunc>("Engine.Entities.Load", [this](const char* const* args, [[maybe_unused]] uint32_t count)
             {
-                DeserializeEntities(args[0], (uint32_t)ENTITY_GROUPS::ACTIVE);
+                DeserializeEntities(args[0]);
             }, "Expected a filepath argument", 1u);
     }
     
-    void EntitySerializerRegister::SerializeEntities([[maybe_unused]] const char* path, uint32_t group)
+    void EntitySerializerRegister::SerializeEntities([[maybe_unused]] const char* path)
     {
-        auto views = m_entityDb->Query<EntityViewSerializable>(group);
+        auto views = m_entityDb->Query<EntityViewSerializable>();
+        auto viewCount = views.count();
 
         auto tree = ryml::Tree();
-        tree.reserve(views.count * 16u);
+        tree.reserve(viewCount * 16u);
         tree.reserve_arena(8192ull);
 
         auto root = tree.rootref();
@@ -43,24 +44,23 @@ namespace PK::App
         auto entities = root["Entities"];
         entities.set_map();
 
-        for (auto i = 0u; i < views.count; ++i)
+        for (auto& view : views)
         {
-            const auto& view = views[i];
-            auto serializer = m_serializers.GetValuePtr(view.typeUUID);
+            auto serializer = m_serializers.GetValuePtr(view.serializable->typeUUID);
 
             if (serializer)
             {
-                auto name = view.name;
+                auto name = view.serializable->name;
 
                 // Default to typename + index if no user defined value was set.
                 if (!name.Length())
                 {
-                    name = FixedString64("%s_%u", serializer->name, i);
+                    name = FixedString64("%s_%u", serializer->name, *view.entityId);
                 }
                 
                 if (entities.has_child(name.c_str()))
                 {
-                    name = FixedString64("%s_%u", name.c_str(), i);
+                    name = FixedString64("%s_%u", name.c_str(), *view.entityId);
                 }
 
                 auto uuid64 = String::Base64Encode(serializer->uuid);
@@ -69,14 +69,14 @@ namespace PK::App
                 entity.save_key(name.c_str());
                 entity["Type"].save(uuid64.c_str(), ryml::VAL_PLAIN);
 
-                serializer->serialize(m_entityDb, entity, view.GID);
+                serializer->serialize(m_entityDb, entity, *view.entityId);
             }
         }
 
         ryml::emit_yaml(tree, tree.root_id(), stdout);
     }
     
-    void EntitySerializerRegister::DeserializeEntities(const char* path, uint32_t group)
+    void EntitySerializerRegister::DeserializeEntities(const char* path)
     {
         void* fileData = nullptr;
         size_t fileSize = 0ull;
@@ -106,7 +106,7 @@ namespace PK::App
 
                     if (serializer)
                     {
-                        serializer->deserialize(m_entityDb, entity, group, name);
+                        serializer->deserialize(m_entityDb, entity, name);
                     }
                 }
             }

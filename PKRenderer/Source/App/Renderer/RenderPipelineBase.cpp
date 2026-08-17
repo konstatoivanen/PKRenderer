@@ -126,20 +126,18 @@ namespace PK::App
     void RenderPipelineBase::OnStepFrameRender(FrameContext* ctx)
     {
         auto window = ctx->window;
-        auto entityViews = m_entityDb->Query<EntityViewRenderView>((uint32_t)ENTITY_GROUPS::ACTIVE);
+        auto entityViews = m_entityDb->Query<EntityViewRenderView>();
 
-        PK_WARNING_ASSERT(entityViews.count < MAX_RENDER_VIEWS, "Active scene view count exceeds predefined maximum (%i)", MAX_RENDER_VIEWS);
+        PK_WARNING_ASSERT(entityViews.count() < MAX_RENDER_VIEWS, "Active scene view count exceeds predefined maximum (%i)", MAX_RENDER_VIEWS);
 
         m_renderViewCount = 0u;
         RenderView* views[MAX_RENDER_VIEWS]{};
 
-        for (auto i = 0u; i < entityViews.count; ++i)
+        for (auto& entityView : entityViews)
         {
-            auto& entity = entityViews[i];
+            uint4 viewrect = entityView.renderView->desiredRect;
 
-            uint4 viewrect = entity.renderView->desiredRect;
-
-            if (entity.renderView->isWindowTarget)
+            if (entityView.renderView->isWindowTarget)
             {
                 viewrect.z = math::max(0, (int)math::min(viewrect.x + viewrect.z, window->GetResolution().x) - (int)viewrect.x);
                 viewrect.w = math::max(0, (int)math::min(viewrect.y + viewrect.w, window->GetResolution().y) - (int)viewrect.y);
@@ -150,38 +148,38 @@ namespace PK::App
                 views[m_renderViewCount] = &m_renderViews[m_renderViewCount];
                 auto resources = GetViewResourceSet(m_renderViewCount);
                 auto renderView = &m_renderViews[m_renderViewCount++];
-                auto hasViewChanged = renderView->viewEntityId != entity.GID.entityID();
+                auto hasViewChanged = renderView->viewEntityId != *entityView.entityId;
                 auto viewresolution = viewrect.zw - viewrect.xy;
                 auto bufferResolution = GBuffers::AlignResolution(viewresolution);
                 auto bufferAspectRatio = (float)bufferResolution.x / (float)bufferResolution.y;
                 auto isOutOfDate = math::any(bufferResolution != renderView->bufferResolution);
 
-                entity.renderView->renderViewRef = renderView;
+                entityView.renderView->renderViewRef = renderView;
                 renderView->resources = resources;
-                renderView->viewEntityId = entity.GID.entityID();
-                renderView->name = entity.renderView->name;
+                renderView->viewEntityId = *entityView.entityId;
+                renderView->name = entityView.renderView->name;
                 renderView->primaryPassGroup = 0u;
-                renderView->isWindowTarget = entity.renderView->isWindowTarget;
-                renderView->settings = *entity.renderView->settingsRef;
+                renderView->isWindowTarget = entityView.renderView->isWindowTarget;
+                renderView->settings = *entityView.renderView->settingsRef;
                 renderView->renderAreaRect = viewrect;
                 renderView->renderAreaRect.x += (bufferResolution.x - viewresolution.x) / 2;
                 renderView->renderAreaRect.y += (bufferResolution.y - viewresolution.y) / 2;
                 renderView->bufferResolution = bufferResolution;
                 renderView->finalViewRect = viewrect;
-                renderView->timeRender = entity.time->info;
+                renderView->timeRender = entityView.time->info;
                 renderView->worldToViewPrev = renderView->worldToView;
                 renderView->viewToClipPrev = renderView->viewToClip;
-                renderView->viewToClip = entity.projection->ResolveProjectionMatrix(bufferAspectRatio);
-                renderView->fieldOfView = entity.projection->fieldOfView * PK_FLOAT_DEG2RAD;
-                renderView->worldToView = entity.transform->worldToLocal;
+                renderView->viewToClip = entityView.projection->ResolveProjectionMatrix(bufferAspectRatio);
+                renderView->fieldOfView = entityView.projection->fieldOfView * PK_FLOAT_DEG2RAD;
+                renderView->worldToView = entityView.transform->worldToLocal;
                 renderView->worldToClip = renderView->viewToClip * renderView->worldToView;
-                renderView->forwardPlane = math::mulplanar(entity.transform->localToWorld, float4(0, 0, 1, 0));
-                renderView->position = entity.transform->position;
+                renderView->forwardPlane = math::mulplanar(entityView.transform->localToWorld, float4(0, 0, 1, 0));
+                renderView->position = entityView.transform->position;
                 renderView->znear = math::nearClip(renderView->viewToClip);
                 renderView->zfar = math::farClip(renderView->viewToClip);
 
-                renderView->cursorPosition = entity.input->state.cursorPosition;
-                renderView->cursorPositionDelta = entity.input->state.cursorPositionDelta;
+                renderView->cursorPosition = entityView.input->state.cursorPosition;
+                renderView->cursorPositionDelta = entityView.input->state.cursorPositionDelta;
 
                 if (hasViewChanged)
                 {
@@ -191,7 +189,7 @@ namespace PK::App
 
                 if (isOutOfDate || hasViewChanged)
                 {
-                    renderView->timeResize = entity.time->info;
+                    renderView->timeResize = entityView.time->info;
                 }
             }
         }

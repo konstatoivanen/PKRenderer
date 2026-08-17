@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/ECS/EGID.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/ECS/EntitySerializable.h"
 #include "Core/ECS/NotSerialized.h"
@@ -8,26 +7,34 @@
 namespace PK
 {
     template <typename TEntity>
-    concept TEntityHasOnSerialize = requires(EntityDatabase* db, const EGID& egid, SerialNodeWrite node) 
+    concept TEntityHasDescriptor = requires 
     {
-        TEntity::OnSerialize(db, egid, node);
-    };
-
-    template <typename TEntity, typename TImplementers>
-    concept TEntityHasOnDeserialize = requires(EntityDatabase* db, const EGID& egid, SerialNodeRead node, TImplementers& impls) 
-    {
-        TEntity::OnDeserialize(db, egid, node, impls);
-    };
-
-    template <typename TEntity, typename TImplementers>
-    concept TEntityHasOnCreate = requires(EntityDatabase* db, const EGID& egid, const TEntity& desc, TImplementers& impls) 
-    {
-        TEntity::OnCreate(db, egid, desc, impls);
+        typename TEntity::Descriptor;
     };
 
     template <typename TEntity>
-    concept TEntityIsSerializable = requires(TEntity instance)  
+    concept TEntityHasOnSerialize = requires(EntityDatabase* db, uint32_t entityId, SerialNodeWrite node)
     {
+        TEntity::OnSerialize(db, entityId, node);
+    };
+
+    template <typename TEntity>
+    concept TEntityHasOnDeserialize = requires(EntityDatabase* db, SerialNodeRead node, TEntity& entity)
+    {
+        TEntity::OnDeserialize(db, node, entity);
+    };
+
+    template <typename TEntity>
+    concept TEntityHasOnCreate = TEntityHasDescriptor<TEntity> && 
+    requires(EntityDatabase* db, TEntity& entity, const typename TEntity::Descriptor& desc)
+    {
+        TEntity::OnCreate(db, entity, desc);
+    };
+
+    template <typename TEntity>
+    concept TEntityIsSerializable = TEntityHasDescriptor<TEntity> && requires(typename TEntity::Descriptor instance)
+    {
+        TEntity::serializable;
         instance.entityName;
         instance.entitySerialize;
     };
@@ -35,120 +42,97 @@ namespace PK
     template<typename TEntity>
     struct EntityFactory
     {
-        using TImplementers = typename TEntity::TImplementers;
-        using TViews = typename TEntity::TViews;
-        
         constexpr static const auto TypeName = pk_outer_type_name<TEntity>;
         constexpr static const UUID128 UUID = Hash::MurmurHash128(TypeName.str, TypeName.length);
 
         constexpr static EntitySerializer GetSerializer() { return { UUID, TypeName.str, Serialize, Deserialize };}
 
-        static TImplementers Instantiate(EntityDatabase* entityDb, const EGID& egid, const char* serializableName)
+        static TEntity Instantiate(EntityDatabase* entityDb, const char* serializableName)
         {
-            auto implementers = TImplementers::Dispatch([&]<typename... Args>()
-            {
-                return Sequence::Make(entityDb->NewImplementer<TRemovePtr_T<Args>>()...);
-            });
-
-            TViews::Dispatch([&]<typename... Args>()
-            {
-                Sequence::Dispatch([&](auto&... implementer)
-                {
-                    (entityDb->NewView<Args>(egid, implementer...), ...);
-                },
-                implementers);
-            });
+            auto entity = entityDb->New<TEntity>();
 
             if constexpr (TEntityIsSerializable<TEntity>)
             {
                 if (serializableName)
                 {
-                    auto view = entityDb->NewView<EntityViewSerializable>(egid);
-                    view->name = serializableName;
-                    view->typeUUID = UUID;
+                    entity.serializable->name = serializableName;
+                    entity.serializable->typeUUID = UUID;
                 }
             }
 
-            return implementers;
+            return entity;
         }
 
-        static void Serialize(EntityDatabase* entityDb, SerialNodeWrite node, const EGID& egid)
+        static void Serialize(EntityDatabase* entityDb, SerialNodeWrite node, const uint32_t entityId)
         {
             if constexpr (!TEntityIsSerializable<TEntity>)
             {
                 return;
             }
 
-            TViews::For([entityDb, &node, egid]<typename TView>()
+            auto entity = entityDb->Query<TEntity>(entityId);
+
+            PK::ReflectFields(entity, [&node](auto& component)
             {
-                auto view = entityDb->Query<TView>(egid);
+                using TComponent = TRemovePtrCVRef_T<decltype(component)>;
 
-                PK::ReflectFields(*static_cast<TView*>(view), [&node](auto& value)
+                if constexpr (TIsClass<TComponent>)
                 {
-                    if constexpr (TIsSpecialization<TRemoveCVRef_T<decltype(value)>, EntityComponentRef>)
-                    {
-                        auto isPrivate = false;
+                    auto isPrivate = false;
 
-                        PK::ReflectFields(*value.pointer, [&isPrivate, &node](const char* name, const auto& field)
+                    PK::ReflectFields(*component, [&isPrivate, &node](const char* name, const auto& field)
+                    {
+                        if ((isPrivate |= TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>, !isPrivate))
                         {
-                            if ((isPrivate |= TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>, !isPrivate))
-                            {
-                                Serialize::WriteSingle(node[name], &field);
-                            }
-                        });
-                    }
-                });
+                            Serialize::WriteSingle(node[name], &field);
+                        }
+                    });
+                }
             });
 
             if constexpr (TEntityHasOnSerialize<TEntity>)
             {
-                TEntity::OnSerialize(entityDb, egid, node);
+                TEntity::OnSerialize(entityDb, entityId, node);
             }
         }
         
-        static EGID Deserialize(EntityDatabase* entityDb, SerialNodeRead node, uint32_t group, const char* name)
+        static uint32_t Deserialize(EntityDatabase* entityDb, SerialNodeRead node, const char* name)
         {
             if constexpr (!TEntityIsSerializable<TEntity>)
             {
-                return EGIDInvalid;
+                return 0u;
             }
 
-            auto egid = entityDb->ReserveEntityId(group);
-            auto implementers = Instantiate(entityDb, egid, name);
+            auto entity = Instantiate(entityDb, name);
             
-            Sequence::For([node](auto&& implementer)
+            PK::ReflectFields(entity, [&node](auto& component)
             {
-                using TImplementer = TRemovePtrCVRef_T<decltype(implementer)>;
-                TImplementer::TComponents::For([node, &implementer]<typename TComponent>()
+                using TComponent = TRemovePtrCVRef_T<decltype(component)>;
+
+                if constexpr (TIsClass<TComponent>)
                 {
                     auto isPrivate = false;
 
-                    PK::ReflectFields(*static_cast<TComponent*>(implementer), [&isPrivate, &node](const char* name, auto& field)
+                    PK::ReflectFields(*component, [&isPrivate, &node](const char* name, auto& field)
                     {
                         if ((isPrivate |= TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>, !isPrivate))
                         {
                             Serialize::ReadSingle(node[name], &field);
                         }
                     });
-                });
-            }, 
-            implementers);
+                }
+            });
 
-            if constexpr (TEntityHasOnDeserialize<TEntity, TImplementers>)
+            if constexpr (TEntityHasOnDeserialize<TEntity>)
             {
-                TEntity::OnDeserialize(entityDb, egid, node, implementers);
+                TEntity::OnDeserialize(entityDb, node, entity);
             }
             
-            return egid;
+            return *entity.entityId;
         }
 
-        static EGID Create(EntityDatabase* entityDb, EGID egid, const TEntity& descriptor)
+        static TEntity Create(EntityDatabase* entityDb, const TEntity::Descriptor& descriptor) requires TEntityHasDescriptor<TEntity>
         {
-            if (egid.entityID() == 0u)
-            {
-                egid = entityDb->ReserveEntityId(egid.groupID());
-            }
-
             const char* name = nullptr;
 
             if constexpr (TEntityIsSerializable<TEntity>)
@@ -156,19 +140,14 @@ namespace PK
                 name = descriptor.entitySerialize ? descriptor.entityName.c_str() : nullptr;
             }
 
-            auto implementers = Instantiate(entityDb, egid, name);
+            auto entity = Instantiate(entityDb, name);
 
-            if constexpr (TEntityHasOnCreate<TEntity, TImplementers>)
+            if constexpr (TEntityHasOnCreate<TEntity>)
             {
-                TEntity::OnCreate(entityDb, egid, descriptor, implementers);
+                TEntity::OnCreate(entityDb, entity, descriptor);
             }
 
-            return egid;
-        }
-
-        inline static EGID Create(EntityDatabase* entityDb, uint32_t groupId, const TEntity& descriptor)
-        {
-            return Create(entityDb, EGID(0u, groupId), descriptor);
+            return entity;
         }
     };
 }

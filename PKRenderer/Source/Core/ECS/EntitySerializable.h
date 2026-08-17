@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/Base/Containers/FixedString.h"
 #include "Core/Base/Types/UUID128.h"
-#include "EGID.h"
 
 // @TODO forward declare these somewhere
 namespace c4::yml
@@ -23,18 +22,24 @@ namespace PK
     struct EntityDatabase;
 
     // Entity view serialization tracker.
-    struct EntityViewSerializable
+    struct ComponentSerializable
     {
         UUID128 typeUUID;
         FixedString64 name;
+    };
+
+    struct EntityViewSerializable
+    {
+        uint32_t* entityId;
+        ComponentSerializable* serializable;
     };
 
     struct EntitySerializer
     {
         UUID128 uuid;
         const char* name;
-        void (*serialize)(EntityDatabase*, SerialNodeWrite, const EGID&);
-        EGID(*deserialize)(EntityDatabase*, SerialNodeRead, uint32_t, const char*);
+        void (*serialize)(EntityDatabase*, SerialNodeWrite, const uint32_t);
+        uint32_t(*deserialize)(EntityDatabase*, SerialNodeRead, const char*);
 
         constexpr bool operator == (const EntitySerializer& r) const noexcept
         {

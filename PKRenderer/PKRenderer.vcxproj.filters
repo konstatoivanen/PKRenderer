@@ -213,9 +213,6 @@
     <ClInclude Include="Source\App\ECS\EntityViewLight.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\ECS\EntityViewLightSphereTransforms.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\App\ECS\EntityViewRenderView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -453,15 +450,6 @@
     <ClInclude Include="Source\Core\RHI\RHI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\ECS\EGID.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\ECS\EntityDatabase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\ECS\IEntityImplementer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\IApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -573,9 +561,6 @@
     <ClInclude Include="Source\Core\Math\Simd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\ECS\EntityComponentRef.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\ECS\EntityFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -589,9 +574,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Rendering\IESProfile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\ECS\IEntityImplementerBucket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Serialization\ISerializer.h">
@@ -723,7 +705,13 @@
     <ClInclude Include="Source\Core\ECS\NotSerialized.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\ECS\EntityDatabaseNew.h">
+    <ClInclude Include="Source\Core\ECS\EntityDatabase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\ECS\EntityComposition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\ECS\EntityComponentMeta.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1173,9 +1161,6 @@
     <ClCompile Include="Source\Core\Math\Random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\ECS\EntitySerializerRegister.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1218,7 +1203,7 @@
     <ClCompile Include="ThirdParty\rapidyaml\rapidyaml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\ECS\EntityDatabaseNew.cpp">
+    <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

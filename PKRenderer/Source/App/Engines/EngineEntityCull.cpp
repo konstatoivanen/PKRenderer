@@ -18,23 +18,22 @@ namespace PK::App
         auto cullingMinDepth = cullingRange;
         auto cullingMaxDepth = 0.0f;
 
-        auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ENTITY_GROUPS::ACTIVE);
+        auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>();
         auto entityInfos = frameArena->GetHead<CulledEntityInfo>();
 
-        for (auto i = 0u; i < entityViews.count; ++i)
+        for (auto& entityView : entityViews)
         {
-            auto entityView = &entityViews[i];
-            auto viewFlags = entityView->primitive->flags;
+            auto viewFlags = entityView.primitive->flags;
 
             if ((viewFlags & cullingMask) == cullingMask)
             {
-                if ((viewFlags & ScenePrimitiveFlags::NeverCull) != 0 || math::intersectsConvex(entityView->bounds->worldAABB, cullingPlanes.array_ptr(), 6))
+                if ((viewFlags & ScenePrimitiveFlags::NeverCull) != 0 || math::intersectsConvex(entityView.bounds->worldAABB, cullingPlanes.array_ptr(), 6))
                 {
-                    auto depth = math::distanceToPlaneMax(entityView->bounds->worldAABB, cullingPlanes.near());
+                    auto depth = math::distanceToPlaneMax(entityView.bounds->worldAABB, cullingPlanes.near());
                     auto fixedDepth = math::min(0xFFFFu, (uint32_t)math::max(0.0f, depth * cullingInvRange));
                     cullingMinDepth = math::min(cullingMinDepth, depth);
                     cullingMaxDepth = math::max(cullingMaxDepth, depth);
-                    frameArena->Emplace<CulledEntityInfo>({ entityView->GID.entityID(), (uint16_t)fixedDepth, 0u });
+                    frameArena->Emplace<CulledEntityInfo>({ *entityView.entityId, (uint16_t)fixedDepth, 0u });
                 }
             }
         }
@@ -59,18 +58,17 @@ namespace PK::App
         auto cullingMinDepth = cullingRange;
         auto cullingMaxDepth = 0.0f;
 
-        auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ENTITY_GROUPS::ACTIVE);
+        auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>();
         auto entityInfos = frameArena->GetHead<CulledEntityInfo>();
 
-        for (auto i = 0u; i < entityViews.count; ++i)
+        for (auto& entityView : entityViews)
         {
-            auto entityView = &entityViews[i];
-            auto viewFlags = entityView->primitive->flags;
+            auto viewFlags = entityView.primitive->flags;
             auto ignoreCulling = (viewFlags & ScenePrimitiveFlags::NeverCull) != 0;
 
             if ((viewFlags & cullingMask) == cullingMask)
             {
-                auto entityBounds = entityView->bounds->worldAABB;
+                auto entityBounds = entityView.bounds->worldAABB;
 
                 if (ignoreCulling || math::intersects(cullingBounds, entityBounds))
                 {
@@ -100,7 +98,7 @@ namespace PK::App
                     {
                         auto depth = math::distanceToExtents(entityOffset, entityExtents);
                         auto fixedDepth = math::min(0xFFFFu, (uint32_t)math::max(0.0f, depth * cullingInvRange));
-                        auto entityId = entityView->GID.entityID();
+                        auto entityId = *entityView.entityId;
 
                         for (auto j = 0u; j < 6u; ++j)
                         {
@@ -153,18 +151,17 @@ namespace PK::App
 
         auto cullingMinDepth = cullingMaxDepth;
 
-        auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ENTITY_GROUPS::ACTIVE);
+        auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>();
         auto entityInfos = frameArena->GetHead<CulledEntityInfo>();
 
-        for (auto i = 0u; i < entityViews.count; ++i)
+        for (auto& entityView : entityViews)
         {
-            auto entityView = &entityViews[i];
-            auto viewFlags = entityView->primitive->flags;
+            auto viewFlags = entityView.primitive->flags;
 
             if ((viewFlags & cullingMask) == cullingMask)
             {
                 auto ignoreCulling = (viewFlags & ScenePrimitiveFlags::NeverCull) != 0;
-                auto entityBounds = entityView->bounds->worldAABB;
+                auto entityBounds = entityView.bounds->worldAABB;
                 auto isVisible = 0u;
 
                 for (auto j = 0u; j < cullingCascadeCount; ++j)
@@ -178,7 +175,7 @@ namespace PK::App
 
                 if (isVisible != 0u)
                 {
-                    auto entityId = entityView->GID.entityID();
+                    auto entityId = *entityView.entityId;
 
                     for (auto j = 0u; j < cullingCascadeCount; ++j)
                     {

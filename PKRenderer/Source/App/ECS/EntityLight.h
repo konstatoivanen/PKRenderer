@@ -6,32 +6,28 @@
 
 namespace PK::App
 {
-    struct ImplementerLight : public TEntityImplementer<
-        ComponentTransform,
-        ComponentBounds,
-        ComponentScenePrimitive,
-        ComponentLight>
-    {
-    };
-
     struct EntityLight
     {
-        using TImplementers = Tuple<ImplementerLight*>;
-        using TViews = Tuple<EntityViewTransform, EntityViewScenePrimitive, EntityViewLight>;
+        struct Descriptor
+        {
+            IESProfileRef IESProfile;
+            float3 position;
+            float3 rotation;
+            color color;
+            float angle;
+            float radius;
+            float sourceRadius;
+            LightType type;
+            bool useIESCandelas;
+            bool castShadow;
+        };
 
-        //static void OnDeserialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeRead node, TImplementers& implementers) = delete;
-        //static void OnSerialize(EntityDatabase* entityDb, const EGID& egid, SerialNodeWrite node) = delete;
-        static void OnCreate(EntityDatabase* entityDb, const EGID& egid, const EntityLight& descriptor, TImplementers& implementers);
+        uint32_t* entityId;
+        ComponentTransform* transform;
+        ComponentBounds* bounds;
+        ComponentScenePrimitive* primitive;
+        ComponentLight* light;
 
-        IESProfileRef IESProfile;
-        float3 position;
-        float3 rotation;
-        color color;
-        float angle;
-        float radius;
-        float sourceRadius;
-        LightType type;
-        bool useIESCandelas;
-        bool castShadow;
+        static void OnCreate(EntityDatabase* entityDb, EntityLight& entity, const Descriptor& descriptor);
     };
 }

@@ -42,18 +42,15 @@ namespace PK::App
                     for (auto i = 0u; i < cullRequest.GetCount(); ++i)
                     {
                         auto& info = cullRequest[i];
-                        auto entity = m_entityDb->Query<EntityViewMeshStatic>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
+                        const auto entity = m_entityDb->Query<EntityViewMeshStatic>(info.entityId);
 
-                        for (const auto& kv : entity->materials->materials)
+                        for (const auto& kv : entity.materials->materials)
                         {
-                            auto transform = *entity->transform;
-                            auto shader = kv.material->GetShader();
-
                             renderEvent->context->batcher->SubmitMeshStaticDraw(
-                                transform, 
-                                shader, 
+                                entity.transform,
+                                kv.material->GetShader(),
                                 kv.material.get(), 
-                                entity->staticMesh->sharedMesh.get(), 
+                                entity.staticMesh->sharedMesh.get(), 
                                 (uint16_t)kv.submesh, 
                                 0u, 
                                 info.depth);

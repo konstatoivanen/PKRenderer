@@ -13,15 +13,14 @@ namespace PK::App
 
     void EngineUpdateTransforms::OnStepFrameUpdate([[maybe_unused]] FrameContext* ctx)
     {
-        auto views = m_entityDb->Query<EntityViewTransform>((int)ENTITY_GROUPS::ACTIVE);
+        auto views = m_entityDb->Query<EntityViewTransform>();
 
-        for (auto i = 0u; i < views.count; ++i)
+        for (auto& view : views)
         {
-            auto view = &views[i];
-            view->transform->localToWorld = view->transform->GetLocalToWorld();
-            view->transform->worldToLocal = math::affineInverseTranspose(view->transform->localToWorld);
-            view->transform->minUniformScale = math::cmin(math::abs(view->transform->scale));
-            view->bounds->worldAABB = math::mul(view->transform->localToWorld, view->bounds->localAABB);
+            view.transform->localToWorld = view.transform->GetLocalToWorld();
+            view.transform->worldToLocal = math::affineInverseTranspose(view.transform->localToWorld);
+            view.transform->minUniformScale = math::cmin(math::abs(view.transform->scale));
+            view.bounds->worldAABB = math::mul(view.transform->localToWorld, view.bounds->localAABB);
         }
     }
 }

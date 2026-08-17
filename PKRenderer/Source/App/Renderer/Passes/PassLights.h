@@ -39,9 +39,16 @@ namespace PK::App
                 LightType type = LightType::TypeCount;
             };
 
+            struct LightSortKey
+            {
+                uint32_t entityId = 0u;
+                LightType type = LightType::TypeCount;
+                ScenePrimitiveFlags flags = ScenePrimitiveFlags::None;
+            };
+
             struct ViewResources : public IRenderViewResource
             {
-                BufferView<EntityViewLight*> lightViews;
+                BufferView<LightSortKey> lightKeys;
                 BufferView<ShadowbatchInfo> shadowBatches;
                 RHIBufferRef  lightsLists;
                 RHITextureRef lightTiles;
