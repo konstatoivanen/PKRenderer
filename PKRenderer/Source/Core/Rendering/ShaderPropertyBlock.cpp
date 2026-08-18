@@ -187,7 +187,7 @@ namespace PK
         BeginWrite(&m_layout, m_properties.GetData());
     }
 
-    ShaderPropertyBlock::ShaderPropertyBlock(ShaderProperty* elements, size_t count) :
+    ShaderPropertyBlock::ShaderPropertyBlock(ShaderProperty* elements, uint32_t count) :
         m_layout(elements, count),
         m_properties(m_layout.GetStridePadded())
     {

@@ -52,6 +52,7 @@ namespace PK
         const RHITexture* GetRHI() const;
 
         static uint32_t CalculateMaxRectCount(const char* text, const Font* font);
+        static uint32_t CalculateLineCount(const char* text, const Font* font, const short4& area_rect, const FontStyle& style);
         static uint32_t CalculateRects(const char* text, const Font* font, const short4& area_rect, const short4& clip_rect, const FontStyle& style, FontRect* out_rects, uint32_t max_rects);
 
     private:

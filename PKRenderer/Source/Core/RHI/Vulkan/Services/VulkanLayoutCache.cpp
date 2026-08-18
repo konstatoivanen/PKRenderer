@@ -97,7 +97,7 @@ namespace PK
 
     void VulkanLayoutCache::Prune()
     {
-        for (int32_t i = m_pipelineLayoutMap.GetCount() - 1; i >= 0; --i)
+        for (auto i = (int32_t)m_pipelineLayoutMap.GetCount() - 1; i >= 0; --i)
         {
             auto layout = m_pipelineLayoutPool[m_pipelineLayoutMap[i].value];
 
@@ -108,7 +108,7 @@ namespace PK
             }
         }
 
-        for (int32_t i = m_setLayoutMap.GetCount() - 1; i >= 0; --i)
+        for (auto i = (int32_t)m_setLayoutMap.GetCount() - 1; i >= 0; --i)
         {
             auto layout = m_setLayoutPool[m_setLayoutMap[i].value];
 

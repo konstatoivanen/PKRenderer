@@ -21,7 +21,7 @@ namespace PK
                 uint64_t range = 0u;
                 TextureViewRange imageRange;
 
-                struct Range
+                struct
                 {
                     uint32_t offset;
                     uint32_t size;

@@ -155,7 +155,7 @@ namespace PK
         m_currentPruneTick++;
         const auto count = (int32_t)m_sets.GetCount();
 
-        for (int32_t i = count - 1; i >= 0; --i)
+        for (auto i = count - 1; i >= 0; --i)
         {
             auto& value = m_sets[i].value;
 

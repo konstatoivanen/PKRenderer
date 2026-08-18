@@ -328,7 +328,7 @@ namespace PK
     {
         m_currentPruneTick++;
 
-        for (int32_t i = m_vertexPipelines.GetCount() - 1; i >= 0; --i)
+        for (auto i = (int32_t)m_vertexPipelines.GetCount() - 1; i >= 0; --i)
         {
             auto value = &m_vertexPipelines[i].value;
 
@@ -340,7 +340,7 @@ namespace PK
             }
         }
 
-        for (int32_t i = m_meshPipelines.GetCount() - 1; i >= 0; --i)
+        for (auto i = (int32_t)m_meshPipelines.GetCount() - 1; i >= 0; --i)
         {
             auto value = &m_meshPipelines[i].value;
 
@@ -352,7 +352,7 @@ namespace PK
             }
         }
 
-        for (int32_t i = m_otherPipelines.GetCount() - 1; i >= 0; --i)
+        for (auto i = (int32_t)m_otherPipelines.GetCount() - 1; i >= 0; --i)
         {
             auto value = &m_otherPipelines[i].value;
 

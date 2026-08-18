@@ -46,7 +46,7 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC_FMT("%s", assetId.c_str());
 
-        auto index = m_assets.GetHashIndex((size_t)assetId);
+        auto index = m_assets.GetHashIndex(assetId);
 
         if (index != -1)
         {
@@ -104,7 +104,7 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC();
 
-        for (int32_t i = m_assets.GetCount() - 1; i >= 0; --i)
+        for (auto i = (int32_t)m_assets.GetCount() - 1; i >= 0; --i)
         {
             LoadAsset(m_assets[i], true);
         }
@@ -115,7 +115,7 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC_FMT("%s", assetId.c_str());
 
-        auto index = m_assets.GetHashIndex((size_t)assetId);
+        auto index = m_assets.GetHashIndex(assetId);
 
         if (index != -1)
         {

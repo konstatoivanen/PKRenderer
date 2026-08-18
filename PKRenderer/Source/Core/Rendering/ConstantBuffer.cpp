@@ -10,7 +10,7 @@ namespace PK
     {
     }
 
-    ConstantBuffer::ConstantBuffer(ShaderProperty* elements, size_t count, const char* name) :
+    ConstantBuffer::ConstantBuffer(ShaderProperty* elements, uint32_t count, const char* name) :
         ShaderPropertyBlock(elements, count),
         m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::DefaultConstant, name))
     {

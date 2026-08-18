@@ -7,7 +7,7 @@ namespace PK
     struct ConstantBuffer : public ShaderPropertyBlock
     {
         ConstantBuffer(const ShaderPropertyLayout& layout, const char* name);
-        ConstantBuffer(ShaderProperty* elements, size_t count, const char* name);
+        ConstantBuffer(ShaderProperty* elements, uint32_t count, const char* name);
         ConstantBuffer(initializer_list<ShaderProperty> elements, const char* name);
 
         void FlushBuffer(RHICommandBuffer* cmd);

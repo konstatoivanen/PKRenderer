@@ -269,7 +269,7 @@ namespace PK
     {
         union
         {
-            struct Image
+            struct
             {
                 VkImage image = VK_NULL_HANDLE;
                 VkImage alias = VK_NULL_HANDLE;
@@ -283,7 +283,7 @@ namespace PK
             } 
             image;
 
-            struct Buffer
+            struct
             {
                 VkBuffer buffer;
                 VkDeviceSize offset;
@@ -291,7 +291,7 @@ namespace PK
             } 
             buffer;
 
-            struct Acceleration
+            struct
             {
                 VkAccelerationStructureKHR structure;
             } 

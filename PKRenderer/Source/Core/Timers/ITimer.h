@@ -5,7 +5,11 @@ namespace PK
 {
     struct ITimer
     {
+        constexpr ITimer() = default;
         virtual ~ITimer() = 0;
+
+        constexpr ITimer(const ITimer&) = default;
+        ITimer& operator=(const ITimer&) = default;
 
         void BeginTimerScope();
         void CaptureUnscoped();

@@ -143,10 +143,10 @@ namespace PK::App
             // Cascades should be further optimized however, as now most of the texel density is wasted by the axis aligned rect fitting
             // @TODO A potential optimization would be to find the rotations for minimum bound cascade frustums.
             auto cascadeDirection = float3(cullingCascadePlanes[i].near().xyz);
-            auto offsetSign = math::dot(cascadeDirection, float3(request->viewForwardPlane.xyz)) < 0.0f ? 0 : 1;
+            auto offsetSign = math::dot(cascadeDirection, float3(request->viewForwardPlane.xyz)) < 0.0f ? 0u : 1u;
             cullingViewPlanes[i] = request->viewForwardPlane;
             cullingViewPlanes[i].w -= request->viewZOffsets[i + offsetSign];
-            cullingViewPlanes[i] *= offsetSign == 0 ? 1.0f : -1.0f;
+            cullingViewPlanes[i] *= offsetSign == 0u ? 1.0f : -1.0f;
         }
 
         auto cullingMinDepth = cullingMaxDepth;

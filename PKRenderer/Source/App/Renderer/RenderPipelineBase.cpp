@@ -139,8 +139,8 @@ namespace PK::App
 
             if (entityView.renderView->isWindowTarget)
             {
-                viewrect.z = math::max(0, (int)math::min(viewrect.x + viewrect.z, window->GetResolution().x) - (int)viewrect.x);
-                viewrect.w = math::max(0, (int)math::min(viewrect.y + viewrect.w, window->GetResolution().y) - (int)viewrect.y);
+                viewrect.z = math::max(0, (int32_t)math::min(viewrect.x + viewrect.z, window->GetResolution().x) - (int32_t)viewrect.x);
+                viewrect.w = math::max(0, (int32_t)math::min(viewrect.y + viewrect.w, window->GetResolution().y) - (int32_t)viewrect.y);
             }
 
             if (viewrect.z > 0 && viewrect.w > 0 && m_renderViewCount < MAX_RENDER_VIEWS)

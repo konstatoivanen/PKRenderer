@@ -199,7 +199,7 @@ namespace PK
                 continue;
             }
 
-            auto options = PK_RHI_ACCESS_OPT_TRANSFER | (isNew ? PK_RHI_ACCESS_OPT_DEFAULT : 0u);
+            uint8_t options = PK_RHI_ACCESS_OPT_TRANSFER | (isNew ? PK_RHI_ACCESS_OPT_DEFAULT : 0u);
 
             while (current && *current)
             {

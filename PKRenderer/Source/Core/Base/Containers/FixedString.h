@@ -309,8 +309,8 @@ namespace PK
             if (remainder == 1ull) 
             {
                 auto v = src[src_idx];
-                dst[dst_idx++] = chars[(v >> 2u) & 0x3Fu];
-                dst[dst_idx++] = chars[(v << 4u) & 0x3Fu]; 
+                dst[dst_idx++] = chars[((uint32_t)v >> 2u) & 0x3Fu];
+                dst[dst_idx++] = chars[((uint32_t)v << 4u) & 0x3Fu]; 
             }
             else if (remainder == 2ull) 
             {

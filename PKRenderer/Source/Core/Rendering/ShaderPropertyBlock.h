@@ -95,7 +95,7 @@ namespace PK
     struct ShaderPropertyBlock : public NoCopy, public ShaderPropertyWriter
     {
         ShaderPropertyBlock(const ShaderPropertyLayout& layout);
-        ShaderPropertyBlock(ShaderProperty* elements, size_t count);
+        ShaderPropertyBlock(ShaderProperty* elements, uint32_t count);
         ShaderPropertyBlock(initializer_list<ShaderProperty> elements);
         constexpr const ShaderPropertyLayout& GetLayout() const { return m_layout; }
         inline const void* GetData() const { return m_properties.GetData(); }

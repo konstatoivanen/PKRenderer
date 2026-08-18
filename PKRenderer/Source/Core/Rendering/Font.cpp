@@ -93,15 +93,8 @@ namespace PK
     uint32_t Font::CalculateMaxRectCount(const char* text, const Font* font)
     {
         const auto length = strlen(text);
-
-        if (length == 0)
-        {
-            return 0;
-        }
-
         auto rect_count = 0u;
 
-        // Count lines 
         for (auto i = 0u; i < length; ++i)
         {
             if (!font->GetGlyph(text[i]).isWhiteSpace)
@@ -113,103 +106,101 @@ namespace PK
         return rect_count;
     }
 
+    uint32_t Font::CalculateLineCount(const char* text, const Font* font, const short4& area_rect, const FontStyle& style)
+    {
+        const auto length = strlen(text);
+        const auto char_w = style.spacing.x * style.size;
+        auto line_count = 1u;
+
+        for (auto i = 0u, line_x = 0u; i < length; ++i)
+        {
+            const auto& glyph = font->GetGlyph(text[i]);
+            const auto advance = (uint32_t)math::round(glyph.advance * char_w);
+
+            if (text[i] == '\n' || (style.wrap && (int16_t)(line_x + advance) > area_rect.z))
+            {
+                line_count++;
+                line_x = 0u;
+            }
+
+            line_x += advance;
+        }
+
+        return line_count;
+    }
+
     uint32_t Font::CalculateRects(const char* text, const Font* font, const short4& area_rect, const short4& clip_rect, const FontStyle& style, FontRect* out_rects, uint32_t max_rects)
     {
         const auto length = strlen(text);
 
-        if (length == 0)
+        if (length == 0ull)
         {
             return 0u;
         }
 
-        const auto char_h = (int32_t)math::round(font->GetLineHeight() * style.spacing.y * style.size);
+        const auto line_count = CalculateLineCount(text, font, area_rect, style);
+        const auto char_h = (int16_t)math::round(font->GetLineHeight() * style.spacing.y * style.size);
         const auto char_w = style.spacing.x * style.size;
-        auto line_x = 0;
-        auto line_y = 0;
+        auto offsets_x = PK_STACK_ALLOC(int16_t, line_count);
 
-        // Count lines 
-        for (auto i = 0u; i <= length; ++i)
+        // Build line alignment offsets
+        for (auto i = 0u, line_y = 0u, line_x = 0u; i <= length; ++i)
         {
             if (i == length)
             {
-                line_y++;
+                offsets_x[line_y] = (int16_t)((area_rect.z - line_x) * style.align.x);
                 break;
             }
 
-            auto x = (int32_t)math::round(font->GetGlyph(text[i]).advance * char_w);
+            const auto& glyph = font->GetGlyph(text[i]);
+            const auto advance = (uint16_t)math::round(glyph.advance * char_w);
 
-            if (text[i] == '\n' || (style.wrap && line_x + x > area_rect.z))
-            {
-                line_y++;
-                line_x = 0;
-            }
-
-            line_x += x;
-        }
-
-        auto offsets_x = PK_STACK_ALLOC(int16_t, line_y);
-        line_y = 0;
-        line_x = 0;
-
-        // Build line widths
-        for (auto i = 0u; i <= length; ++i)
-        {
-            if (i == length)
+            if (text[i] == '\n' || (style.wrap && (int16_t)(line_x + advance) > area_rect.z))
             {
                 offsets_x[line_y++] = int16_t((area_rect.z - line_x) * style.align.x);
-                break;
+                line_x = 0u;
             }
 
-            auto x = (int32_t)math::round(font->GetGlyph(text[i]).advance * char_w);
-
-            if (text[i] == '\n' || (style.wrap && line_x + x > area_rect.z))
-            {
-                offsets_x[line_y++] = int16_t((area_rect.z - line_x) * style.align.x);
-                line_x = 0;
-            }
-
-            line_x += x;
+            line_x += advance;
         }
 
-        auto clip_min = math::min(clip_rect.xy(), short2(clip_rect.xy + clip_rect.zw));
-        auto clip_max = math::max(clip_rect.xy(), short2(clip_rect.xy + clip_rect.zw));
+        auto clip_min = math::min(clip_rect.xy(), clip_rect.xy + clip_rect.zw);
+        auto clip_max = math::max(clip_rect.xy(), clip_rect.xy + clip_rect.zw);
 
         // Top/Bottom alignment needs to take into account min/max rect boundaries as we otherwise add padding.
         auto line_align = math::lerp(font->GetAlignTop(), font->GetAlignBottom(), style.align.y) * style.size;
-        auto offset_y = (int16_t)math::round((area_rect.w - line_y * char_h) * style.align.y + line_align);
+        auto offset_y = (int16_t)math::round((area_rect.w - line_count * char_h) * style.align.y + line_align);
         auto rect_count = 0u;
-        line_x = 0;
-        line_y = 0;
 
         // Output characters.
-        for (auto i = 0u; i < length; ++i)
+        for (auto i = 0u, line_y = 0u, line_x = 0u; i < length; ++i)
         {
-            auto& c = font->GetGlyph(text[i]);
-            auto x = (uint32_t)math::round(c.advance * char_w);
+            const auto& glyph = font->GetGlyph(text[i]);
+            const auto advance = (uint16_t)math::round(glyph.advance * char_w);
 
-            if (text[i] == '\n' || (style.wrap && line_x + x > (uint32_t)area_rect.z))
+            if (text[i] == '\n' || (style.wrap && (int16_t)(line_x + advance) > area_rect.z))
             {
                 line_y++;
-                line_x = 0;
+                line_x = 0u;
             }
 
-            if (!c.isWhiteSpace && rect_count < max_rects)
+            if (!glyph.isWhiteSpace && rect_count < max_rects)
             {
                 FontRect rect{};
                 rect.character = text[i];
-                rect.lineIndex = line_y;
-                rect.rect.x = line_x + offsets_x[line_y] + area_rect.x + (int16_t)math::round(c.rect.x * style.size);
-                rect.rect.y = line_y * char_h + offset_y + area_rect.y + (int16_t)math::round(c.rect.y * style.size);
-                rect.rect.z = (int16_t)math::round(c.rect.z * style.size);
-                rect.rect.w = (int16_t)math::round(c.rect.w * style.size);
-                rect.texrect = c.texrect;
+                rect.lineIndex = (uint16_t)line_y;
+                rect.rect.x = (int16_t)line_x + offsets_x[line_y] + area_rect.x + (int16_t)math::round(glyph.rect.x * style.size);
+                rect.rect.y = (int16_t)line_y * char_h + offset_y + area_rect.y + (int16_t)math::round(glyph.rect.y * style.size);
+                rect.rect.z = (int16_t)math::round(glyph.rect.z * style.size);
+                rect.rect.w = (int16_t)math::round(glyph.rect.w * style.size);
+                rect.texrect = glyph.texrect;
 
                 auto is_visible = true;
 
                 if (style.clip)
                 {
-                    auto rmin = math::min(rect.rect.xy(), short2(rect.rect.xy + rect.rect.zw));
-                    auto rmax = math::max(rect.rect.xy(), short2(rect.rect.xy + rect.rect.zw));
+                    auto rmin = math::min(rect.rect.xy(), rect.rect.xy + rect.rect.zw);
+                    auto rmax = math::max(rect.rect.xy(), rect.rect.xy + rect.rect.zw);
                     is_visible &= rmin.x < clip_max.x && rmax.y < clip_max.y && rmax.x > clip_min.x && rmax.y > clip_min.y;
                 }
 
@@ -219,7 +210,7 @@ namespace PK
                 }
             }
 
-            line_x += x;
+            line_x += advance;
         }
 
         return rect_count;
