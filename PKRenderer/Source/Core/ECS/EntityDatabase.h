@@ -25,7 +25,7 @@ namespace PK
             
             Identifier(uint32_t entityId, uint32_t entityIndex, uint32_t arrayIndex) 
             {
-                identifier |= (uint64_t)entityId & 0xFFFFFFull;
+                identifier |= ((uint64_t)entityId & 0xFFFFFFull) << 0ull;
                 identifier |= ((uint64_t)entityIndex & 0xFFFFull) << 24ull;
                 identifier |= ((uint64_t)arrayIndex & 0xFFFFFFull) << 48ull;
             }
@@ -39,7 +39,7 @@ namespace PK
 
         struct IdentifierHash 
         { 
-            size_t operator()(const Identifier& k) const noexcept { return (size_t)k.entityId();}
+            size_t operator()(const Identifier& k) const noexcept { return k.entityId();}
         };
 
         template<typename TView>
@@ -49,18 +49,19 @@ namespace PK
             EntityDatabase* entityDb;
             Composition* viewdata;
             TView view;
+
             uint32_t groupIndex = 0u;
             uint32_t arrayCount = 0u;
-            bool is_valid = false;
+            bool isValid = false;
 
-            constexpr ViewIterator(EntityDatabase* db, Composition* data) noexcept : entityDb(db), viewdata(data), is_valid(Next()) {}
+            constexpr ViewIterator(EntityDatabase* db, Composition* data) noexcept : entityDb(db), viewdata(data), isValid(Next()) {}
             TView& operator*() { return view; }
             TView* operator->() { return &view; }
             const TView& operator*() const { return view; }
             const TView* operator->() const { return &view; }
-            ViewIterator& operator++() { is_valid = Next(); return *this; }
+            ViewIterator& operator++() { isValid = Next(); return *this; }
             void operator++(int) { ++(*this); }
-            friend bool operator!=(const ViewIterator& it, Sentinel) noexcept { return it.is_valid; }
+            friend bool operator!=(const ViewIterator& it, Sentinel) noexcept { return it.isValid; }
 
             bool Next()
             {
@@ -118,7 +119,7 @@ namespace PK
             auto end() const { return typename ViewIterator<TView>::Sentinel{}; }
         };
 
-        EntityDatabase(size_t compositionCapacity, size_t entityCapacity);
+        EntityDatabase(uint32_t compositionCapacity, uint32_t entityCapacity);
         ~EntityDatabase();
 
         template<typename TEntity>
@@ -150,9 +151,9 @@ namespace PK
         }
 
         template<typename TEntityStruct>
-        requires TIsValidEntityStruct<TEntityStruct>
         void DeleteType() 
         {
+            static_assert(TIsValidEntityStruct<TEntityStruct>, "Struct type is not a valid entity composition!");
             using TComposition = TStructToEntityComposition<TEntityStruct>;
             const auto typeIndex = pk_type_index<TComposition>;
             DeleteType(typeIndex);
@@ -162,9 +163,10 @@ namespace PK
 
     private:
         template<typename TStruct>
-        requires TIsValidEntityStruct<TStruct>
         uint32_t AllocateComposition(bool is_view, size_t newEntryCount)
         {
+            static_assert(TIsValidEntityStruct<TStruct>, "Struct type is not a valid entity composition!");
+
             using TComposition = TStructToEntityComposition<TStruct>;
             const auto typeIndex = pk_type_index<TComposition>;
             const auto typeKey = (typeIndex & 0x7FFFFFFF) | (is_view << 31ull);
@@ -194,9 +196,10 @@ namespace PK
         }
 
         template<typename TView>
-        requires TIsValidEntityStruct<TView>
         TView BindView(uint32_t compositionIndex, uint32_t arrayOffset)
         {
+            static_assert(TIsValidEntityStruct<TView>, "Struct type is not a valid entity composition!");
+
             auto* comp = &m_compositions[compositionIndex].value;
             TView view{};
 

@@ -198,8 +198,8 @@ namespace PK::FileIO
         fseek(file, BITS_PER_PIXEL_OFFSET, SEEK_SET);
         fread(&bitsPerPixel, 2, 1, file);
 
-        auto bytesPerPixel = ((int32_t)bitsPerPixel) / 8;
-        auto paddedRowSize = (int)(4 * ceil((float)width / 4.0f)) * bytesPerPixel;
+        auto bytesPerPixel = (int32_t)bitsPerPixel / 8;
+        auto paddedRowSize = (int32_t)(4 * ceil(width / 4.0f)) * bytesPerPixel;
         auto unpaddedRowSize = width * bytesPerPixel;
         auto totalSize = unpaddedRowSize * height;
 
@@ -362,7 +362,7 @@ namespace PK::FileIO
         const char* BM = "BM";
         fwrite(&BM[0], 1, 1, outputFile);
         fwrite(&BM[1], 1, 1, outputFile);
-        int32_t paddedRowSize = (int32_t)(4 * ceil((float)image.width / 4.0f)) * BYTES_PER_PIXEL;
+        int32_t paddedRowSize = (int32_t)(4 * ceil(image.width / 4.0f)) * BYTES_PER_PIXEL;
         uint32_t fileSize = paddedRowSize * image.height + HEADER_SIZE + INFO_HEADER_SIZE;
         fwrite(&fileSize, 4, 1, outputFile);
         uint32_t reserved = 0x0000;

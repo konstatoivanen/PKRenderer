@@ -14,7 +14,7 @@ namespace PK::App
         auto cullingPlanes = FrustumPlanes(math::frustumConvex<true>(request->matrix));
 
         auto cullingRange = cullingPlanes.near().w + cullingPlanes.far().w;
-        auto cullingInvRange = (float)(0xFFFF) / cullingRange;
+        auto cullingInvRange = (float)0xFFFF / cullingRange;
         auto cullingMinDepth = cullingRange;
         auto cullingMaxDepth = 0.0f;
 
@@ -53,8 +53,8 @@ namespace PK::App
         auto cullingBounds = request->aabb;
         auto cullingMask = request->mask;
 
-        auto cullingRange = (float)math::length(request->aabb.extents());
-        auto cullingInvRange = (float)(0xFFFF) / cullingRange;
+        auto cullingRange = math::length(request->aabb.extents());
+        auto cullingInvRange = (float)0xFFFF / cullingRange;
         auto cullingMinDepth = cullingRange;
         auto cullingMaxDepth = 0.0f;
 
@@ -77,7 +77,7 @@ namespace PK::App
                     bool rp[6], rn[6];
 
                     // Source: https://newq.net/dl/pub/s2015_shadows.pdf
-                    for (uint32_t j = 0u; j < 6; ++j)
+                    for (auto j = 0u; j < 6u; ++j)
                     {
                         auto dist = math::dot(entityOffset, cubePlaneNormals[j]);
                         auto radius = math::dot(entityExtents, cubePlaneNormalsAbs[j]);
@@ -193,7 +193,7 @@ namespace PK::App
         // In case of 0 results this will also output 0 which should be taken into account by users.
         const auto culledCount = frameArena->GetHeadDelta(entityInfos);
         const auto cullingRange = cullingMaxDepth - cullingMinDepth;
-        const auto cullingInvRange = (float)(0xFFFF) / cullingRange;
+        const auto cullingInvRange = (float)0xFFFF / cullingRange;
 
         for (auto i = 0u; i < culledCount; ++i)
         {

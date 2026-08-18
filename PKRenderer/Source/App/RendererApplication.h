@@ -13,8 +13,8 @@ namespace PK::App
 
         RHIDriver* GetRHIDriver() final { return m_RHIDriver.get(); }
         Window* GetPrimaryWindow() final { return m_window.get(); }
-        const RHIDriver* GetRHIDriver() const { return m_RHIDriver.get(); }
-        const Window* GetPrimaryWindow() const { return m_window.get(); }
+        const RHIDriver* GetRHIDriver() const final { return m_RHIDriver.get(); }
+        const Window* GetPrimaryWindow() const final { return m_window.get(); }
 
     protected:
         void Execute() final;

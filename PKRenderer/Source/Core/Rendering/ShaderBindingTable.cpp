@@ -15,15 +15,13 @@ namespace PK
 
         auto newHash = shader->GetAssetHash();
 
-        if (pipelineHash == newHash && currentVariantIndex == (uint32_t)variantIndex)
+        if (pipelineHash != newHash || currentVariantIndex != (uint32_t)variantIndex)
         {
-            return;
+            pipelineHash = newHash;
+            currentVariantIndex = (uint32_t)variantIndex;
+            tableInfo = shader->GetRHI(currentVariantIndex)->GetShaderBindingTableInfo();
+            RHI::ValidateBuffer(buffer, tableInfo.totalTableSize, BufferUsage::DefaultShaderBindingTable, "ShaderBindingTable");
+            cmd.UploadBufferData(buffer.get(), tableInfo.handleData);
         }
-
-        pipelineHash = newHash;
-        currentVariantIndex = (uint32_t)variantIndex;
-        tableInfo = shader->GetRHI(currentVariantIndex)->GetShaderBindingTableInfo();
-        RHI::ValidateBuffer(buffer, tableInfo.totalTableSize, BufferUsage::DefaultShaderBindingTable, "ShaderBindingTable");
-        cmd.UploadBufferData(buffer.get(), tableInfo.handleData);
     }
 }

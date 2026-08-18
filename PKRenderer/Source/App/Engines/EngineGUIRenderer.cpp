@@ -458,10 +458,10 @@ namespace PK::App
                 planes[1] = planes[2];
                 planes[2] = temp;
 
-                for (auto i = 0; i < 4; ++i)
+                for (auto i = 0u; i < 4u; ++i)
                 {
-                    nearCorners[i] = math::triplanarIntersection(planes.near(), planes[i], planes[(i + 1) % 4]);
-                    farCorners[i] = math::triplanarIntersection(planes.far(), planes[i], planes[(i + 1) % 4]);
+                    nearCorners[i] = math::triplanarIntersection(planes.near(), planes[i], planes[(i + 1u) % 4u]);
+                    farCorners[i] = math::triplanarIntersection(planes.far(), planes[i], planes[(i + 1u) % 4u]);
                 }
 
                 for (auto i = 0; i < 4; ++i)

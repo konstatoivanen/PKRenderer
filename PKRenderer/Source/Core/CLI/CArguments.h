@@ -6,7 +6,7 @@ namespace PK
     struct CArguments
     {
         char** args;
-        int count;
+        uint32_t count;
     };
 
     struct CArgument
@@ -17,7 +17,7 @@ namespace PK
     struct CArgumentsConst
     {
         const char* const* args;
-        int count;
+        uint32_t count;
     };
 
     struct CArgumentConst

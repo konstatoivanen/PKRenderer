@@ -46,7 +46,7 @@ namespace PK
             }
         }
 
-        inline virtual void Step(CArgumentsConst arguments) final { ExecuteInstance(arguments.args, (uint32_t)arguments.count); }
+        inline virtual void Step(CArgumentsConst arguments) final { ExecuteInstance(arguments.args, arguments.count); }
         inline virtual void Step(CArgumentConst argument) final { ExecuteParseInstance(argument.arg); }
 
     private:

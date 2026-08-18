@@ -345,7 +345,7 @@ namespace PK
 
         if (resources->windowInstanceHelper)
         {
-            ::DestroyWindow((HWND)resources->windowInstanceHelper);
+            ::DestroyWindow(resources->windowInstanceHelper);
         }
 
         if (resources->windowClassHelper)

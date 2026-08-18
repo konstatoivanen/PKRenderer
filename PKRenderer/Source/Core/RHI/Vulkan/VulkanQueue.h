@@ -25,7 +25,7 @@ namespace PK
 
     struct VulkanQueue : public NoCopy
     {
-        constexpr static const uint32_t MAX_DEPENDENCIES = ((uint32_t)QueueType::MaxCount + 1u);
+        constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::MaxCount + 1u;
 
         VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, VulkanServiceContext& services, uint32_t queueIndex, const char* name);
         ~VulkanQueue();

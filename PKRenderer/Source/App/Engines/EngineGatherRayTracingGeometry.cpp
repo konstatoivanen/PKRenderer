@@ -18,7 +18,7 @@ namespace PK::App
     {
         PK_DEBUG_FATAL_ASSERT(request != nullptr && request->structure, "Invalid token supplied!");
 
-        size_t instanceCount = 0u;
+        auto instanceCount = 0u;
 
         // Testing all view types using the common primitive alias
         auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>();
@@ -37,7 +37,7 @@ namespace PK::App
             }
         }
 
-        structure->BeginWrite(request->queue, (uint32_t)instanceCount);
+        structure->BeginWrite(request->queue, instanceCount);
 
         RayTracingGeometryInfo geometry{};
         geometry.customIndex = 0u;

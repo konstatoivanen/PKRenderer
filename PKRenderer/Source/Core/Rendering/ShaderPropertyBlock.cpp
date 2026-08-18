@@ -5,7 +5,7 @@
 
 namespace PK
 {
-    ShaderPropertyLayout::ShaderPropertyLayout(ShaderProperty* elements, size_t count) : TBase((uint32_t)count, 1u)
+    ShaderPropertyLayout::ShaderPropertyLayout(ShaderProperty* elements, uint32_t count) : TBase(count, 1u)
     {
         for (auto i = 0ull; i < count; ++i)
         {
@@ -27,7 +27,7 @@ namespace PK
 
     const ShaderProperty* ShaderPropertyLayout::TryGetElement(NameID name) const
     {
-        auto valueIndex = GetHashIndex((size_t)name.identifier);
+        auto valueIndex = GetHashIndex(name.identifier);
 
         if (valueIndex != -1)
         {

@@ -30,7 +30,7 @@ namespace PK
         ShaderStageFlags m_stageFlags = ShaderStageFlags::None;
         uint3 m_groupSize{};
 
-        VkShaderModule m_modules[(size_t)ShaderStage::MaxCount];
+        VkShaderModule m_modules[(uint32_t)ShaderStage::MaxCount];
         const VulkanDescriptorSetLayout* m_descriptorSetLayout;
         const VulkanPipelineLayout* m_pipelineLayout;
         const FixedString128 m_name;

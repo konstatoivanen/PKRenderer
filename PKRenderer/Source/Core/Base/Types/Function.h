@@ -5,6 +5,7 @@ namespace PK
 {
     struct ILambda
     {
+        virtual ~ILambda() = default;
         virtual ILambda* Copy(void* dest) = 0;
         virtual void Destroy() = 0;
     };

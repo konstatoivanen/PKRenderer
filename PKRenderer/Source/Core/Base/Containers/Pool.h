@@ -14,6 +14,8 @@ namespace PK
     {
         using Type = T;
 
+        virtual ~IPool() = default;
+
         T* operator [](uint32_t index) { return GetData() + index; }
         const T* operator [](uint32_t index) const { return GetData() + index; }
 
@@ -163,7 +165,11 @@ namespace PK
     protected:
         T* Allocate(size_t count, int64_t index) final
         {
-            index = index != -1ll ? index : m_mask.FindFirstZeroRange((uint32_t)count);
+            if (index == -1ll)
+            {
+                index = m_mask.FindFirstZeroRange((uint32_t)count);
+            }
+
             Memory::Assert(index >= 0ll && index + count - 1ll < GetCapacity(), "Pool capacity exceeded!");
             auto ptr = GetData() + index;
             m_mask.FlipRange(index, index + count);

@@ -97,20 +97,20 @@ namespace PK
 
             if (pk_is_valid_func_sig(name, length))
             {
-                for (auto i = static_cast<int32_t>(length); i > 0; --i)
+                for (auto i = length; i > 0ull; --i)
                 {
-                    if (pk_char_is_alpha(name[i - 1]))
+                    if (pk_char_is_alpha(name[i - 1ull]))
                     {
                         length = i;
                         break;
                     }
                 }
 
-                auto s = 0;
+                auto s = 0ull;
 
-                for (auto i = static_cast<int32_t>(length); i > 0; --i)
+                for (auto i = length; i > 0ull; --i)
                 {
-                    if (!pk_char_is_alphanumeric(name[i - 1]))
+                    if (!pk_char_is_alphanumeric(name[i - 1ull]))
                     {
                         s = i;
                         break;
@@ -146,27 +146,27 @@ namespace PK
                 return StringLiteralView{ nullptr, 0ull };
             }
 
-            for (auto i = static_cast<int32_t>(length), h = 0, s = 0; i > 0; --i)
+            for (auto i = length, h = 0ull, s = 0ull; i > 0ull; --i)
             {
-                if (name[i - 1] == ')') { ++h;++s; continue; }
-                if (name[i - 1] == '(') { --h;++s; continue; }
-                if (h == 0) { length -= s; break; }
+                if (name[i - 1ull] == ')') { ++h;++s; continue; }
+                if (name[i - 1ull] == '(') { --h;++s; continue; }
+                if (h == 0ull) { length -= s; break; }
                 ++s;
             }
 
-            auto s = 0;
+            auto s = 0ull;
 
-            for (auto i = static_cast<int32_t>(length), h = 0; i > 0; --i)
+            for (auto i = length, h = 0ull; i > 0ull; --i)
             {
-                if (name[i - 1] == '>') { ++h;++s; continue; }
-                if (name[i - 1] == '<') { --h;++s; continue; }
-                if (h == 0) { break; }
+                if (name[i - 1ull] == '>') { ++h;++s; continue; }
+                if (name[i - 1ull] == '<') { --h;++s; continue; }
+                if (h == 0ull) { break; }
                 ++s;
             }
 
-            for (int32_t i = static_cast<int32_t>(length) - s; i > 0; --i)
+            for (auto i = length - s; i > 0ull; --i)
             {
-                if (!pk_char_is_alphanumeric(name[i - 1]))
+                if (!pk_char_is_alphanumeric(name[i - 1ull]))
                 {
                     name = name + i;
                     length -= i;
@@ -196,16 +196,16 @@ namespace PK
             auto length = Name.length;
             auto start = 0ull;
 
-            for (auto i = static_cast<int32_t>(length); i > 0; --i)
+            for (auto i = length; i > 0ull; --i)
             {
-                if (!pk_char_is_alphanumeric(name[i - 1]))
+                if (!pk_char_is_alphanumeric(name[i - 1ull]))
                 {
                     start = i;
                     break;
                 }
             }
 
-            length = name[start - 1ul] == ':' ? (length - start) : 0ull;
+            length = name[start - 1ull] == ':' ? (length - start) : 0ull;
             return StringLiteralView{ name + start, length };
         }.template operator()<StringLiteral<PK_FUNC_SIG_LEN_TRUNC>(PK_FUNC_SIG)>();
 

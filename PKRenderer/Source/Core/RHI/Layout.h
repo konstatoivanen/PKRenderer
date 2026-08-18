@@ -80,7 +80,7 @@ namespace PK
     {
         size_t operator()(const ShaderVertexInputElement& k) const noexcept
         {
-            return (size_t)k.name.identifier;
+            return k.name.identifier;
         }
     };
 

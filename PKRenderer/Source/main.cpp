@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 
     if (platformStatus == 0)
     {
-        auto application = PK::CreateProjectApplication({ argv, argc });
+        auto application = PK::CreateProjectApplication({ argv, (uint32_t)argc });
 
         application->Execute();
         

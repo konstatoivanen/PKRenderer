@@ -17,7 +17,7 @@ namespace PK
         BufferUsage GetUsage() const final { return BufferUsage::DefaultStaging; }
         const char* GetDebugName() const final { return nullptr; }
         void* GetNativeHandle() const final { return buffer; }
-        uint64_t GetDeviceAddress() const { return deviceAddress; }
+        uint64_t GetDeviceAddress() const final { return deviceAddress; }
 
         void* BeginMap(size_t offset, size_t writeSize) const final { return VulkanRawBuffer::BeginMap(offset, writeSize); }
         void EndMap(size_t offset, size_t writeSize) const final { VulkanRawBuffer::EndMap(offset, writeSize); }

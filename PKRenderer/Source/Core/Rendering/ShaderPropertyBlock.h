@@ -34,7 +34,7 @@ namespace PK
     {
         size_t operator()(const ShaderProperty& k) const noexcept
         {
-            return (size_t)k.name.identifier;
+            return k.name.identifier;
         }
     };
 
@@ -43,7 +43,7 @@ namespace PK
         using TBase = HashSet16<ShaderProperty, ShaderPropertyHash>;
 
         ShaderPropertyLayout() {}
-        ShaderPropertyLayout(ShaderProperty* elements, size_t count);
+        ShaderPropertyLayout(ShaderProperty* elements, uint32_t count);
         ShaderPropertyLayout(initializer_list<ShaderProperty> elements);
 
         constexpr inline uint32_t GetStride() const { return m_stride; }

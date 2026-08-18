@@ -105,7 +105,7 @@ namespace PK::App
         if (input->GetKeyDown(InputKey::Enter))
         {
             m_sequencer->NextRoot<CArgumentConst>({ m_lines[m_lineEdit].c_str() });
-            m_lineEdit = (m_lineEdit + 1) % LINE_COUNT;
+            m_lineEdit = (m_lineEdit + 1u) % LINE_COUNT;
             m_lineHistory = m_lineEdit;
             m_lines[m_lineEdit].Clear();
             m_lineHint.Clear();
@@ -150,7 +150,7 @@ namespace PK::App
 
             do
             {
-                history = (history - 1) % LINE_COUNT;
+                history = (history - 1u) % LINE_COUNT;
             }
             while (history != m_lineEdit && !m_lines[history][0]);
 
@@ -167,7 +167,7 @@ namespace PK::App
         {
             do
             {
-                m_lineHistory = (m_lineHistory + 1) % LINE_COUNT;
+                m_lineHistory = (m_lineHistory + 1u) % LINE_COUNT;
             } 
             while (m_lineHistory != m_lineEdit && !m_lines[m_lineHistory][0]);
 

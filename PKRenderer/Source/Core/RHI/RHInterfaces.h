@@ -139,6 +139,7 @@ namespace PK
 
     struct RHICommandBuffer : public NoCopy
     {
+        virtual ~RHICommandBuffer() = 0;
         virtual FenceRef GetFenceRef() const = 0;
         virtual void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) = 0;
 

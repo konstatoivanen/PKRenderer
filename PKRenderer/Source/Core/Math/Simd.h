@@ -36,7 +36,7 @@ namespace PK::math
     inline uint64_t simd_hash(const T* v)
     {
         const auto fnv_prime = _mm_set1_epi32(16777619);
-        auto hash = _mm_set1_epi32(2166136261);
+        auto hash = _mm_set1_epi32(-2128831035);
 
         for (auto i = 0u; i < N; ++i)
         {
@@ -57,7 +57,7 @@ namespace PK::math
     {
         const auto inv = _mm_set1_ps(1.0f / precision);
         const auto fnv_prime = _mm_set1_epi32(16777619u);
-        auto hash = _mm_set1_epi32(2166136261u);
+        auto hash = _mm_set1_epi32(-2128831035);
 
         for (auto i = 0u; i < N; ++i)
         {

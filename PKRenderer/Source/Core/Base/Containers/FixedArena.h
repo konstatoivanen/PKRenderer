@@ -6,6 +6,8 @@ namespace PK
 {
     struct IArena : public NoCopy
     {
+        virtual ~IArena() = default;
+
         template<typename T>
         T* GetHead() 
         {

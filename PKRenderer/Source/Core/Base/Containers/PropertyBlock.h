@@ -125,7 +125,7 @@ namespace PK
             inline uint16_t* GetBuckets() { return m_buffer ? m_buckets : &m_bucketsInline; }
             inline uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % m_bucketCount); }
             inline void SetValueIndexInBuckets(uint32_t i, int32_t value) { GetBuckets()[i] = (uint16_t)(value + 1); }
-            inline int32_t GetValueIndexFromBuckets(uint32_t i) const { return (int32_t)(GetBuckets()[i]) - 1; }
+            inline int32_t GetValueIndexFromBuckets(uint32_t i) const { return (int32_t)GetBuckets()[i] - 1; }
 
             void* m_buffer = nullptr;
             Property* m_properties = nullptr;

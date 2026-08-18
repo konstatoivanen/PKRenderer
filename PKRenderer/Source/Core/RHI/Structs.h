@@ -224,7 +224,7 @@ namespace PK
         MaxCount
     };
 
-    constexpr const static ShaderStageFlags PK_RHI_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)RayTracingShaderGroup::MaxCount + 1] =
+    constexpr const static ShaderStageFlags PK_RHI_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)RayTracingShaderGroup::MaxCount + 1u] =
     {
         ShaderStageFlags::RayTraceGroupGeneration,
         ShaderStageFlags::RayTraceGroupMiss,
@@ -252,12 +252,12 @@ namespace PK
 
 
     #define PK_DECLARE_ENUM_OPERATORS(Type) \
-    static constexpr Type operator | (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \
-    static constexpr Type operator |= (const Type& a, const Type& b) { return a | b; } \
-    static constexpr Type operator & (const Type& a, const Type& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
-    static constexpr Type operator & (const Type& a, const uint32_t& b) { return (Type)((uint32_t)a & b); } \
-    static constexpr bool operator == (const Type& a, const uint32_t& b) { return (uint32_t)a == b; } \
-    static constexpr bool operator != (const Type& a, const uint32_t& b) { return (uint32_t)a != b; } \
+    inline constexpr Type operator | (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \
+    inline constexpr Type operator |= (const Type& a, const Type& b) { return a | b; } \
+    inline constexpr Type operator & (const Type& a, const Type& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
+    inline constexpr Type operator & (const Type& a, const uint32_t& b) { return (Type)((uint32_t)a & b); } \
+    inline constexpr bool operator == (const Type& a, const uint32_t& b) { return (uint32_t)a == b; } \
+    inline constexpr bool operator != (const Type& a, const uint32_t& b) { return (uint32_t)a != b; } \
 
     PK_DECLARE_ENUM_OPERATORS(ColorMask)
     PK_DECLARE_ENUM_OPERATORS(BufferUsage)

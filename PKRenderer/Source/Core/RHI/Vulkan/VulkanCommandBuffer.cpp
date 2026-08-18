@@ -234,9 +234,9 @@ namespace PK
         ValidatePipeline();
 
         const auto groupSize = m_renderState->GetComputeGroupSize();
-        const auto groupCountX = (uint32_t)ceilf(dimensions.x / (float)groupSize.x);
-        const auto groupCountY = (uint32_t)ceilf(dimensions.y / (float)groupSize.y);
-        const auto groupCountZ = (uint32_t)ceilf(dimensions.z / (float)groupSize.z);
+        const auto groupCountX = (dimensions.x + groupSize.x - 1u) / groupSize.x;
+        const auto groupCountY = (dimensions.y + groupSize.y - 1u) / groupSize.y;
+        const auto groupCountZ = (dimensions.z + groupSize.z - 1u) / groupSize.z;
         vkCmdDispatch(m_commandBuffer, groupCountX, groupCountY, groupCountZ);
     }
 
@@ -561,7 +561,7 @@ namespace PK
     {
         if (srcLayout != dstLayout)
         {
-            VkImageMemoryBarrier imageBarrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+            VkImageMemoryBarrier imageBarrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
             imageBarrier.oldLayout = srcLayout;
             imageBarrier.newLayout = dstLayout;
             imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;

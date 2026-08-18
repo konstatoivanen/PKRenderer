@@ -115,7 +115,7 @@ namespace PK
         {
             if (m_capacity < capacity)
             {
-                m_capacity = m_capacity == 0 ? capacity : (uint32_t)Hash::ExpandPrime(capacity);
+                m_capacity = m_capacity == 0 ? capacity : Hash::ExpandPrime(capacity);
                 // Use offset 1 for bucket count & stride to have valid zeroed memory state without construction.
                 m_bucketCount = (m_bucketStride + 1u) * m_capacity - 1u;
                 

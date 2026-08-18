@@ -76,9 +76,9 @@ namespace PK
 
     void LoggerPrintf::ErrorV(LogSeverity severity, LogColor color, const char* format, va_list args)
     {
-        if (m_crashLogPath.Length() > 0)
+        if (m_crashLogPath.Length() > 0ull)
         {
-            auto length = vprintf(format, args);
+            auto length = static_cast<size_t>(vprintf(format, args));
             auto output = PK_STACK_ALLOC(char, length);
             _vsnprintf(output, length, format, args);
             FileIO::WriteBinary(m_crashLogPath.c_str(), true, output, length);

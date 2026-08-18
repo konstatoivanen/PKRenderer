@@ -164,7 +164,7 @@ namespace PK
         inline uint32_t GetSubmeshCount() const final { return m_allocation->submeshCount; }
         inline const SubMesh& GetSubmesh(int32_t localIndex) const final { return m_allocation->allocator->GetSubmesh(GetGlobalSubmeshIndex((unsigned)localIndex)); }
         inline bool HasPendingUpload() const final { return m_allocation->allocator->HasPendingUpload(); }
-        bool GatherRayTracingGeometry(uint32_t localIndex, RayTracingGeometryInfo* outInfo) const;
+        bool GatherRayTracingGeometry(uint32_t localIndex, RayTracingGeometryInfo* outInfo) const final;
         
         private: 
             MeshStaticAllocator::Allocation* m_allocation = nullptr;

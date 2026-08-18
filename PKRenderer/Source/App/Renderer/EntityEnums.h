@@ -25,10 +25,10 @@ namespace PK::App
         TypeCount
     };
 
-    static constexpr ScenePrimitiveFlags operator | (const ScenePrimitiveFlags& a, const ScenePrimitiveFlags& b) { return (ScenePrimitiveFlags)((uint32_t)a | (uint32_t)b); }
-    static constexpr ScenePrimitiveFlags operator |= (const ScenePrimitiveFlags& a, const ScenePrimitiveFlags& b) { return a | b; }
-    static constexpr ScenePrimitiveFlags operator & (const ScenePrimitiveFlags& a, const ScenePrimitiveFlags& b) { return (ScenePrimitiveFlags)((uint32_t)a & (uint32_t)b); }
-    static constexpr ScenePrimitiveFlags operator & (const ScenePrimitiveFlags& a, const int& b) { return (ScenePrimitiveFlags)((uint32_t)a & (uint32_t)b); }
-    static constexpr bool operator == (const ScenePrimitiveFlags& a, const uint32_t& b) { return (uint32_t)a == b; }
-    static constexpr bool operator != (const ScenePrimitiveFlags& a, const uint32_t& b) { return (uint32_t)a != b; }
+    inline constexpr ScenePrimitiveFlags operator|(ScenePrimitiveFlags a, ScenePrimitiveFlags b) noexcept { return (ScenePrimitiveFlags)((uint32_t)a | (uint32_t)b); }
+    inline constexpr ScenePrimitiveFlags operator&(ScenePrimitiveFlags a, ScenePrimitiveFlags b) noexcept { return (ScenePrimitiveFlags)((uint32_t)a & (uint32_t)b); }
+    inline constexpr ScenePrimitiveFlags& operator|=(ScenePrimitiveFlags& a, ScenePrimitiveFlags b) noexcept { return a = a | b; }
+    inline constexpr ScenePrimitiveFlags operator&(ScenePrimitiveFlags a, uint32_t b) noexcept { return (ScenePrimitiveFlags)((uint32_t)a & b); }
+    inline constexpr bool operator == (const ScenePrimitiveFlags& a, const uint32_t& b) noexcept { return (uint32_t)a == b; }
+    inline constexpr bool operator != (const ScenePrimitiveFlags& a, const uint32_t& b) noexcept { return (uint32_t)a != b; }
 }

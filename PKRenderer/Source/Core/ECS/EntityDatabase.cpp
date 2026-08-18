@@ -4,7 +4,7 @@
 
 namespace PK
 {
-    EntityDatabase::EntityDatabase(size_t compositionCapacity, size_t entityCapacity) :
+    EntityDatabase::EntityDatabase(uint32_t compositionCapacity, uint32_t entityCapacity) :
         m_identifiers(entityCapacity, 1u),
         m_compositions(compositionCapacity, 1u)
     {
@@ -37,7 +37,7 @@ namespace PK
 
     void EntityDatabase::Delete(uint32_t entityId)
     {
-        auto identifierIndex = m_identifiers.GetIndex(Identifier(entityId, 0u, 0u));
+        auto identifierIndex = m_identifiers.GetHashIndex(entityId);
 
         if (identifierIndex != -1)
         {
@@ -57,7 +57,7 @@ namespace PK
             // Remove at swaps entity positions in the component streams.
             // Update array index in identifiers to match new array position.
             const auto swapEntityId = GetEntityIdStream(entityIndex)[arrayIndex];
-            const auto swapIndex = m_identifiers.GetIndex(Identifier(swapEntityId, 0u, 0u));
+            const auto swapIndex = m_identifiers.GetHashIndex(swapEntityId);
             m_identifiers[swapIndex] = Identifier(swapEntityId, entityIndex, arrayIndex);
         }
     }

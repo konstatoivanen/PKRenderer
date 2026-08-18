@@ -22,9 +22,9 @@ namespace PK
         virtual const char* GetMetaInfo() const { return "Metadata info is not implemented for this asset type."; }
         constexpr AssetID GetAssetID() const { return m_sharedObject ? m_sharedObject->assetId : AssetID(0u); }
         constexpr uint32_t GetAssetVersion() const { return m_sharedObject ? m_sharedObject->version : 0u; }
-        constexpr uint64_t GetAssetHash() const { return ((uint64_t)GetAssetVersion() << 32) | ((uint64_t)GetAssetID() & 0xFFFFFFFF); }
+        constexpr uint64_t GetAssetHash() const { return ((uint64_t)GetAssetVersion() << 32ull) | (uint64_t)GetAssetID(); }
         inline const char* GetFileName() const { return GetAssetID().c_str(); }
-        bool operator==(const Asset& other) const { return GetAssetID() == ((Asset&)other).GetAssetID(); }
+        bool operator==(const Asset& other) const { return GetAssetID() == other.GetAssetID(); }
 
         template<typename T>
         Ref<T> CreateAliasRef(T* object) { return Ref<T>(m_sharedObject, object); }

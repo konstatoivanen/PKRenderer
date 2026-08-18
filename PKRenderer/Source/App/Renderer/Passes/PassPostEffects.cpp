@@ -67,7 +67,7 @@ namespace PK::App
         view->constants.Set<float4>(hash->pk_CC_Lift, lift);
         view->constants.Set<float4>(hash->pk_CC_Gamma, gamma);
         view->constants.Set<float4>(hash->pk_CC_Gain, gain);
-        view->constants.Set<float4>(hash->pk_CC_HSV, float4((float)colorGrading.Hue, (float)colorGrading.Saturation, (float)colorGrading.Value, 1.0f));
+        view->constants.Set<float4>(hash->pk_CC_HSV, float4(colorGrading.Hue, colorGrading.Saturation, colorGrading.Value, 1.0f));
         view->constants.Set<float4>(hash->pk_CC_MixRed, math::hexToRgb<float>(colorGrading.ChannelMixerRed));
         view->constants.Set<float4>(hash->pk_CC_MixGreen, math::hexToRgb<float>(colorGrading.ChannelMixerGreen));
         view->constants.Set<float4>(hash->pk_CC_MixBlue, math::hexToRgb<float>(colorGrading.ChannelMixerBlue));
@@ -81,21 +81,21 @@ namespace PK::App
         view->constants.Set<float>(hash->pk_Vignette_Power, vignette.Power);
 
         uint featureMask = 0u;
-        featureMask |= (uint)(features.Vignette) << 0;
-        featureMask |= (uint)(features.Bloom) << 1;
-        featureMask |= (uint)(features.Tonemap) << 2;
-        featureMask |= (uint)(features.Filmgrain) << 3;
-        featureMask |= (uint)(features.Colorgrading) << 4;
-        featureMask |= (uint)(features.LUTColorGrading && m_colorgradingLut != nullptr) << 5;
+        featureMask |= (uint)(features.Vignette) << 0u;
+        featureMask |= (uint)(features.Bloom) << 1u;
+        featureMask |= (uint)(features.Tonemap) << 2u;
+        featureMask |= (uint)(features.Filmgrain) << 3u;
+        featureMask |= (uint)(features.Colorgrading) << 4u;
+        featureMask |= (uint)(features.LUTColorGrading && m_colorgradingLut != nullptr) << 5u;
 
-        featureMask |= (uint)(debug.GIDiff) << 6;
-        featureMask |= (uint)(debug.GISpec) << 7;
-        featureMask |= (uint)(debug.GIVX) << 8;
-        featureMask |= (uint)(debug.Normal) << 9;
-        featureMask |= (uint)(debug.Roughness) << 10;
-        featureMask |= (uint)(debug.LightTiles) << 11;
-        featureMask |= (uint)(debug.HalfScreen) << 12;
-        featureMask |= (uint)(debug.Zoom) << 13;
+        featureMask |= (uint)(debug.GIDiff) << 6u;
+        featureMask |= (uint)(debug.GISpec) << 7u;
+        featureMask |= (uint)(debug.GIVX) << 8u;
+        featureMask |= (uint)(debug.Normal) << 9u;
+        featureMask |= (uint)(debug.Roughness) << 10u;
+        featureMask |= (uint)(debug.LightTiles) << 11u;
+        featureMask |= (uint)(debug.HalfScreen) << 12u;
+        featureMask |= (uint)(debug.Zoom) << 13u;
 
         view->constants.Set<uint>(hash->pk_PostEffectsFeatureMask, featureMask);
 

@@ -102,7 +102,7 @@ namespace PK
         int64_t FindFirstZero() const { return BinaryUtilities::FindFirstZero(GetData(), GetCapacity()); }
         int64_t FindFirstZeroRange(uint32_t count) const { return BinaryUtilities::FindFirstZeroRange(GetData(), GetCapacity(), count); }
         constexpr bool GetAt(size_t index) const { return (GetData()[index >> 6ull] & (1ull << (index & 63ull))) != 0u; }
-        void SetAt(size_t index, bool value) { GetData()[index >> 6ull] = (GetData()[index >> 6ull] & ~(1ull << (index & 63ull))) | ((uint64_t)value << (index & 63u)); }
+        void SetAt(size_t index, bool value) { GetData()[index >> 6ull] = (GetData()[index >> 6ull] & ~(1ull << (index & 63ull))) | ((uint64_t)value << (index & 63ull)); }
         void FlipAt(size_t index) { GetData()[index >> 6ull] ^= 1ull << (index & 63ull); }
         void FlipRange(size_t start, size_t end) { BinaryUtilities::FlipRange(GetData(), start, end); }
         void SetAll(bool value) { Memory::Memset(GetData(), value ? -1 : 0, GetBlockCount()); }

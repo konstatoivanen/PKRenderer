@@ -107,7 +107,7 @@ namespace PK::App
         auto engineGatherRayTracingGeometry = GetServices()->Create<EngineGatherRayTracingGeometry>(entityDb);
         auto engineScreenshot = GetServices()->Create<EngineScreenshot>();
         auto engineGUIRenderer = GetServices()->Create<EngineGUIRenderer>(assetDatabase, sequencer);
-        auto engineProfiler = GetServices()->Create<EngineProfiler>(assetDatabase);
+        auto engineProfiler = GetServices()->Create<EngineProfiler>();
 
         auto engineFlyCamera = GetServices()->Create<EngineFlyCamera>(entityDb, inputConfig);
         auto engineDebug = GetServices()->Create<EngineDebug>(assetDatabase, entityDb, batcherMeshStatic->GetMeshStaticAllocator());

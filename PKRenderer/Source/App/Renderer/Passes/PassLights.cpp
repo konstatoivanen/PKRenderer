@@ -73,7 +73,7 @@ namespace PK::App
 
         PackedLight packed{};
         const auto radiusfp16 = (uint32_t)math::f32tof16(light.radius);
-        const auto typeAndIESIndex = (uint32_t)light.light_type | (uint32_t)(light.index_ies << 4u);
+        const auto typeAndIESIndex = light.light_type | (light.index_ies << 4u);
         const auto rotation_inv = math::inverse(light.rotation);
         packed.packed0.xyz = math::asuint(light.position);
         packed.packed0.w = (radiusfp16 & 0xFFFFu) | (typeAndIESIndex << 16u);
@@ -98,12 +98,13 @@ namespace PK::App
 
         assetDatabase->RegisterFactory<IESProfile>(&m_iesAtlas);
 
-        auto shadowCubeFaceSize = (uint)math::sqrt((m_shadowmapSize * m_shadowmapSize) / 6.0f);
+        const auto shadowCubeFaceSize = (uint32_t)math::sqrt((m_shadowmapSize * m_shadowmapSize) / 6.0f);
+
         TextureDescriptor depthDesc;
         depthDesc.type = TextureType::CubemapArray;
         depthDesc.resolution = { shadowCubeFaceSize , shadowCubeFaceSize , 1u };
         depthDesc.format = TextureFormat::Depth16;
-        depthDesc.layers = 6 * ShadowCascadeCount;
+        depthDesc.layers = 6u * ShadowCascadeCount;
         depthDesc.sampler.wrap[0] = WrapMode::Mirror;
         depthDesc.sampler.wrap[1] = WrapMode::Mirror;
         depthDesc.sampler.wrap[2] = WrapMode::Mirror;
@@ -127,7 +128,7 @@ namespace PK::App
         atlasDesc.type = TextureType::Texture2DArray;
         atlasDesc.format = TextureFormat::R32_Float;
         atlasDesc.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
-        atlasDesc.layers = ShadowCascadeCount * 2; // initial size assume 1 active directional light.
+        atlasDesc.layers = ShadowCascadeCount * 2u; // initial size assume 1 active directional light.
         atlasDesc.resolution = { m_shadowmapSize.Value, m_shadowmapSize.Value, 1u };
         atlasDesc.sampler.wrap[0] = WrapMode::Clamp;
         atlasDesc.sampler.wrap[1] = WrapMode::Clamp;
@@ -418,7 +419,7 @@ namespace PK::App
             screenSpaceDesc.type = TextureType::Texture2D;
             screenSpaceDesc.format = TextureFormat::R8_Unorm;
             screenSpaceDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
-            screenSpaceDesc.layers = 1;
+            screenSpaceDesc.layers = 1u;
             screenSpaceDesc.resolution = resolution;
             screenSpaceDesc.sampler.wrap[0] = WrapMode::Clamp;
             screenSpaceDesc.sampler.wrap[1] = WrapMode::Clamp;
@@ -448,8 +449,8 @@ namespace PK::App
         auto lightDirection = math::mul(lightView.transform->rotation, PK_FLOAT3_FORWARD);
         auto lightProjection = renderView->worldToClip * float4(-lightDirection, 0.0f);
 
-        int viewMin[2] = { 0, 0 };
-        int viewMax[2] = { (int)resolution.x, (int)resolution.y };
+        int32_t viewMin[2] = { 0, 0 };
+        int32_t viewMax[2] = { (int)resolution.x, (int)resolution.y };
 
         float projection[4] = { lightProjection.x, -lightProjection.y, lightProjection.z, lightProjection.w };
         auto dispatchList = Bend::BuildDispatchList(projection, viewMax, viewMin, viewMax, false, 64);

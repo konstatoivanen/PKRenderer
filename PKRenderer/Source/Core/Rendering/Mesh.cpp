@@ -16,10 +16,10 @@ namespace PK
     MeshStaticAllocator::MeshStaticAllocator()
     {
         // @TODO refactor these into a descriptor
-        const uint32_t maxSubmeshes = 65535u;
-        const uint32_t maxMeshlets = 65535u * 4u;
-        const uint32_t maxVertices = 65535u * 32u;
-        const uint32_t maxTriangles = 65535u * 16u * 3u;
+        const auto maxSubmeshes = 65535u;
+        const auto maxMeshlets = 65535u * 4u;
+        const auto maxVertices = 65535u * 32u;
+        const auto maxTriangles = 65535u * 16u * 3u;
         const auto flags = BufferUsage::GPUOnly | BufferUsage::TransferDst | BufferUsage::Storage | BufferUsage::Sparse;
 
         static_assert((maxTriangles * 3ull) % 4ull == 0ull, "Input triangle count x3 must be divisible by 4");
@@ -69,29 +69,29 @@ namespace PK
         m_vertexCount += desc.regular.vertexCount;
         m_indexCount += desc.regular.indexCount;
 
-        auto submeshStride = sizeof(PKAssets::PKMeshletSubmesh);
-        auto meshletStride = sizeof(PKAssets::PKMeshlet);
-        auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
-        auto positionsStride = m_streamLayout.GetStride(1u);
-        auto attributesStride = m_streamLayout.GetStride(0u);
+        const auto submeshStride = sizeof(PKAssets::PKMeshletSubmesh);
+        const auto meshletStride = sizeof(PKAssets::PKMeshlet);
+        const auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
+        const auto positionsStride = m_streamLayout.GetStride(1u);
+        const auto attributesStride = m_streamLayout.GetStride(0u);
 
-        auto submeshesSize = desc.meshlets.submeshCount * submeshStride;
-        auto meshletsSize = desc.meshlets.meshletCount * meshletStride;
-        auto meshletVerticesSize = desc.meshlets.vertexCount * meshletVertexStride;
-        auto meshletIndicesSize = ((size_t)desc.meshlets.triangleCount * 3ull);
-        auto positionsSize = desc.regular.vertexCount * positionsStride;
-        auto attributesSize = desc.regular.vertexCount * attributesStride;
-        auto indicesSize = desc.regular.indexCount * m_indexSize;
+        const auto submeshesSize = desc.meshlets.submeshCount * submeshStride;
+        const auto meshletsSize = desc.meshlets.meshletCount * meshletStride;
+        const auto meshletVerticesSize = desc.meshlets.vertexCount * meshletVertexStride;
+        const auto meshletIndicesSize = (size_t)desc.meshlets.triangleCount * 3ull;
+        const auto positionsSize = desc.regular.vertexCount * positionsStride;
+        const auto attributesSize = desc.regular.vertexCount * attributesStride;
+        const auto indicesSize = desc.regular.indexCount * m_indexSize;
 
         PK_FATAL_ASSERT((meshletIndicesSize % 4ull) == 0ull, "Index counts must be aligned to 4!");
 
-        auto submeshOffset = m_submeshBuffer->SparseAllocate(submeshesSize, QueueType::Transfer);
-        auto meshletOffset = m_meshletBuffer->SparseAllocate(meshletsSize, QueueType::Transfer);
-        auto meshletVertexOffset = m_meshletVertexBuffer->SparseAllocate(meshletVerticesSize, QueueType::Transfer);
-        auto meshletIndexOffset = m_meshletIndexBuffer->SparseAllocate(meshletIndicesSize, QueueType::Transfer);
-        auto attributesOffset = m_vertexBuffers[0]->SparseAllocate(attributesSize, QueueType::Transfer);
-        auto positionsOffset = m_vertexBuffers[1]->SparseAllocate(positionsSize, QueueType::Transfer);
-        auto indexOffset = m_indexBuffer->SparseAllocate(indicesSize, QueueType::Transfer);
+        const auto submeshOffset = m_submeshBuffer->SparseAllocate(submeshesSize, QueueType::Transfer);
+        const auto meshletOffset = m_meshletBuffer->SparseAllocate(meshletsSize, QueueType::Transfer);
+        const auto meshletVertexOffset = m_meshletVertexBuffer->SparseAllocate(meshletVerticesSize, QueueType::Transfer);
+        const auto meshletIndexOffset = m_meshletIndexBuffer->SparseAllocate(meshletIndicesSize, QueueType::Transfer);
+        const auto attributesOffset = m_vertexBuffers[0]->SparseAllocate(attributesSize, QueueType::Transfer);
+        const auto positionsOffset = m_vertexBuffers[1]->SparseAllocate(positionsSize, QueueType::Transfer);
+        const auto indexOffset = m_indexBuffer->SparseAllocate(indicesSize, QueueType::Transfer);
 
         PK_FATAL_ASSERT((meshletIndexOffset % 12ull) == 0ull, "Meshlet Index offsets must be aligned to 12!");
 
@@ -478,7 +478,7 @@ namespace PK
     {
         if (submesh >= 0 && m_submeshes.GetCount())
         {
-            return m_submeshes[math::min(submesh, (int)m_submeshes.GetCount())];
+            return m_submeshes[math::min(submesh, (int32_t)m_submeshes.GetCount())];
         }
 
         return m_fullrange;

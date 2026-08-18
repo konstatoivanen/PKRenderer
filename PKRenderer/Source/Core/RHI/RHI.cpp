@@ -15,6 +15,7 @@ namespace PK
     RHISwapchain::~RHISwapchain() = default;
     RHITexture::~RHITexture() = default;
     RHIShader::~RHIShader() = default;
+    RHICommandBuffer::~RHICommandBuffer() = default;
     RHIDriver::~RHIDriver() = default;
 
     RHIDriver* RHI::GetDriver() { return RHIDriver::Get(); }

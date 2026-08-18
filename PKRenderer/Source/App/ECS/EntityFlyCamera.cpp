@@ -3,7 +3,7 @@
 
 namespace PK::App
 {
-    void EntityFlyCamera::OnCreate(EntityDatabase* entityDb, EntityFlyCamera& entity, const Descriptor& desc)
+    void EntityFlyCamera::OnCreate([[maybe_unused]] EntityDatabase* entityDb, EntityFlyCamera& entity, const Descriptor& desc)
     {
         entity.bounds->localAABB = {};
         entity.transform->position = desc.position;

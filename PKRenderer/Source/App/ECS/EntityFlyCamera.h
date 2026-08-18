@@ -22,7 +22,7 @@ namespace PK::App
             float moveSmoothing;
             float rotationSmoothing;
             float sensitivity;
-            RenderViewSettings* settings;
+            struct RenderViewSettings* settings;
         };
 
         uint32_t* entityId;

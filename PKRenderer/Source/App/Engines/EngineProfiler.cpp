@@ -12,8 +12,7 @@
 
 namespace PK::App
 {
-    EngineProfiler::EngineProfiler(AssetDatabase* assetDatabase) :
-        m_assetDatabase(assetDatabase)
+    EngineProfiler::EngineProfiler()
     {
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Profiler.Toggle", [this]() { m_enabled ^= true; });
     }
@@ -87,7 +86,7 @@ namespace PK::App
             const auto s_offset = (i + sampleCountMax - sampleCountMin) * sampleWidth;
             const auto s_sample = m_timeHistory[(m_timeHistoryHead + i + 1ull) % sampleCountMin];
             const auto s_normalized = (float)((s_sample - minHistoryTime) / (maxHistoryTime - minHistoryTime));
-            const auto s_height = (int)math::round(sampleHeight * s_normalized);
+            const auto s_height = (int32_t)math::round(sampleHeight * s_normalized);
             const auto s_color = math::hueToRgb32((1.0f - s_normalized) / 3.0f);
             gui->GUIDrawRect(color32(s_color.r, s_color.g, s_color.b, 127), rectSample + short4(s_offset, 0, 0, -s_height));
         }

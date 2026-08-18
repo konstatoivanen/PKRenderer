@@ -268,7 +268,7 @@ namespace PK
 
     void VulkanBarrierHandler::Prune()
     {
-        for (auto i = (int32_t)(m_resources.GetCount() - 1); i >= 0; --i)
+        for (auto i = (int32_t)m_resources.GetCount() - 1; i >= 0; --i)
         {
             if (m_accessTimestamps[i] <= m_pruneTimeStamp)
             {
@@ -313,8 +313,8 @@ namespace PK
         }
         else
         {
-            auto offset = (uint32_t)(*barrier)->offset;
-            auto size = (uint32_t)(*barrier)->size;
+            const auto offset = (uint32_t)(*barrier)->offset;
+            const auto size = (uint32_t)(*barrier)->size;
             rangeo.xmin = rangeo.xmin < offset ? rangeo.xmin : offset;
             rangeo.xmax = rangeo.xmax > (offset + size) ? rangeo.xmax : (offset + size);
         }

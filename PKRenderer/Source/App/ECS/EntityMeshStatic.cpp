@@ -14,7 +14,7 @@
 
 namespace PK::App
 {
-    void EntityMeshStatic::OnCreate(EntityDatabase* entityDb, EntityMeshStatic& entity, const Descriptor& desc)
+    void EntityMeshStatic::OnCreate([[maybe_unused]] EntityDatabase* entityDb, EntityMeshStatic& entity, const Descriptor& desc)
     {
         entity.transform->position = desc.position;
         entity.transform->rotation = quaternion(desc.rotation);

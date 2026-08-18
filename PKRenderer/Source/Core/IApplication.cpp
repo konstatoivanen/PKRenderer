@@ -20,7 +20,7 @@ namespace PK
         {
             PK_LOG_VERBOSE_SCOPE("Creating '%s' application with '%u' arguments:", name, arguments.count);
 
-            for (auto i = 0; i < arguments.count; ++i)
+            for (auto i = 0u; i < arguments.count; ++i)
             {
                 PK_LOG_VERBOSE("%s", arguments.args[i]);
             }

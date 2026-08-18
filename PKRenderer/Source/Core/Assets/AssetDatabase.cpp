@@ -18,7 +18,7 @@ namespace PK
 
     AssetDatabase::~AssetDatabase()
     {
-        for (int32_t i = m_assets.GetCount() - 1; i >= 0; --i)
+        for (auto i = (int32_t)m_assets.GetCount() - 1; i >= 0; --i)
         {
             m_assets[i]->DestructAsset();
             m_assets[i]->Delete();
@@ -334,7 +334,7 @@ namespace PK
         object->assetId = assetId;
         object->version = 0u;
         object->indexNext = typeInfo->headIndex;
-        object->cacheMode = (uint16_t)cacheMode;
+        object->cacheMode = cacheMode;
         object->isLoaded = false;
         object->isVirtual = false;
         typeInfo->headIndex = m_assets.Add(object);

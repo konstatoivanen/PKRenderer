@@ -33,7 +33,9 @@ namespace PK::App
             return;
         }
 
-        auto elementCount = m_captureResolution.x * m_captureResolution.y * 4;
+        const auto elementCount = m_captureResolution.x * m_captureResolution.y * 4;
+        const auto width = (int32_t)m_captureResolution.x;
+        const auto height = (int32_t)m_captureResolution.y;
 
         auto cmd = RHI::GetCommandBuffer(QueueType::Graphics);
 
@@ -52,7 +54,7 @@ namespace PK::App
         m_captureCounter--;
         m_copyFence.Invalidate();
 
-        if (m_captureCounter > 0)
+        if (m_captureCounter > 0u)
         {
             cmd->Blit(window->GetSwapchain(), m_copyBuffer.get());
             m_copyFence = cmd->GetFenceRef();
@@ -63,25 +65,18 @@ namespace PK::App
 
         for (auto i = 0u; i < elementCount; ++i)
         {
-            auto value = m_accumulatedPixels[i] / m_captureFrameCount;
-
-            if (value > 255)
-            {
-                value = 255;
-            }
-
-            pixels[i] = (uint8_t)value;
+            pixels[i] = (uint8_t)math::min(255u, m_accumulatedPixels[i] / m_captureFrameCount);
         }
 
+        auto index = 0u;
         FixedString32 filename("Screenshot0.bmp");
-        auto index = 0;
 
         while (FileIO::FileExists(filename.c_str()))
         {
             filename = FixedString32("Screenshot%i.bmp", ++index);
         }
 
-        FileIO::WriteBMP(filename.c_str(), { pixels, (int32_t)m_captureResolution.x, (int32_t)m_captureResolution.y, 4 });
+        FileIO::WriteBMP(filename.c_str(),{ pixels, width, height, 4});
         Memory::Free(pixels);
 
         PK_LOG_INFO("Screenshot captured: %s", filename.c_str());
@@ -89,20 +84,17 @@ namespace PK::App
 
     void EngineScreenshot::QueueCapture()
     {
-        if (m_captureCounter > 0 || m_currentResolution.x == 0 || m_currentResolution.y == 0)
+        if (m_captureCounter == 0u && m_currentResolution.x > 0u && m_currentResolution.y > 0u)
         {
-            return;
+            auto usage = BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc;
+            RHI::ValidateBuffer<uint32_t>(m_copyBuffer, m_currentResolution.x * m_currentResolution.y, usage, "Screenshot.CopyBuffer");
+
+            m_copyFence.Invalidate();
+            m_accumulatedPixels.Reserve(m_currentResolution.x * m_currentResolution.y * 4, false);
+            m_accumulatedPixels.Clear();
+            m_captureResolution = m_currentResolution;
+            m_captureCounter = 9u;
+            m_captureFrameCount = 8u;
         }
-
-        m_captureResolution = m_currentResolution;
-
-        auto usage = BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc;
-        RHI::ValidateBuffer<uint32_t>(m_copyBuffer, m_currentResolution.x * m_currentResolution.y, usage, "Screenshot.CopyBuffer");
-
-        m_copyFence.Invalidate();
-        m_accumulatedPixels.Reserve(m_currentResolution.x * m_currentResolution.y * 4, false);
-        m_accumulatedPixels.Clear();
-        m_captureCounter = 9;
-        m_captureFrameCount = 8;
     }
 }

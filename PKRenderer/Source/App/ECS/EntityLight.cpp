@@ -3,7 +3,7 @@
 
 namespace PK::App
 {
-    void EntityLight::OnCreate(EntityDatabase* entityDb, EntityLight& entity, const Descriptor& desc)
+    void EntityLight::OnCreate([[maybe_unused]] EntityDatabase* entityDb, EntityLight& entity, const Descriptor& desc)
     {
         // Light radius based on phyiscal attenuation at minAtten cutoff.
         const auto minAtten = 0.2f;

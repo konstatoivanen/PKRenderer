@@ -397,7 +397,7 @@ namespace PK
                 return FixedString<capacity>("0B");
             }
 
-            auto mag = (int)(log((double)bytes) / log(1024.0));
+            auto mag = (int32_t)(log((double)bytes) / log(1024.0));
             mag = mag < 2 ? 2 : mag;
 
             auto adjustedSize = (double)bytes / (1L << (mag * 10));

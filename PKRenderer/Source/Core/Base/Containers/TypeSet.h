@@ -60,6 +60,7 @@ namespace PK
     template<typename TBase>
     struct IDerivedTypeSet
     {
+        virtual ~IDerivedTypeSet() = default;
         virtual TBase* GetInstance(uint32_t typeIndex) = 0;
 
         template<typename T>

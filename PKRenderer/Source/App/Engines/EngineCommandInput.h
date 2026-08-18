@@ -37,8 +37,8 @@ namespace PK::App
         
         FixedString<LINE_LENGTH> m_lineHint;
         FixedString<LINE_LENGTH> m_lines[LINE_COUNT];
-        int32_t m_lineEdit = 0;
-        int32_t m_lineHistory = 0;
+        uint32_t m_lineEdit = 0;
+        uint32_t m_lineHistory = 0;
         int32_t m_hintIndex = 0;
         uint32_t m_caretTimer = 0u;
         bool m_waitingInput = false;

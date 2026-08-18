@@ -21,7 +21,7 @@ namespace PK
 
     protected:
         virtual ~IStep() = default;
-        static uint64_t GetStepTypeId() { return (uint64_t)pk_base_type_index<IStep<Args...>>(); }
+        static uint64_t GetStepTypeId() { return pk_base_type_index<IStep<Args...>>(); }
     public:
         virtual void Step(Args ... args) = 0;
     };

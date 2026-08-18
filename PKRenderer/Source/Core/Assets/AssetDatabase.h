@@ -10,7 +10,7 @@
 
 namespace PK
 {
-    enum class CacheMode
+    enum class CacheMode : uint16_t
     {
         Shared,     // Asset is released when reference count is zero
         GC,         // Asset is released when reference count is zero and AssetDatabase:GC is called.
@@ -42,13 +42,13 @@ namespace PK
         {
             TypeInfo* typeInfo;
             uint32_t indexNext;
-            uint16_t cacheMode;
+            CacheMode cacheMode;
             bool isVirtual;
             bool isLoaded;
 
-            constexpr bool IsSharedReleasable() const { return isLoaded && !GetStrongRefCount() && cacheMode == (uint16_t)CacheMode::Shared; }
-            constexpr bool IsGCReleasable() const { return isLoaded && !GetStrongRefCount() && cacheMode == (uint16_t)CacheMode::GC; }
-            constexpr bool IsPersistent() const { return isLoaded && cacheMode == (uint16_t)CacheMode::Persistent; }
+            constexpr bool IsSharedReleasable() const { return isLoaded && !GetStrongRefCount() && cacheMode == CacheMode::Shared; }
+            constexpr bool IsGCReleasable() const { return isLoaded && !GetStrongRefCount() && cacheMode == CacheMode::GC; }
+            constexpr bool IsPersistent() const { return isLoaded && cacheMode == CacheMode::Persistent; }
             Ref<Asset> GetBaseReference() { return Ref<Asset>(this, isLoaded ? GetAsset() : nullptr); }
             
             virtual void ConstructAsset(AssetDatabase* caller, const char* filepath) noexcept = 0;
@@ -125,8 +125,8 @@ namespace PK
             union { U unionDefault; T value; };
         };
 
-        struct TypeInfoHash { size_t operator()(const TypeInfo& k) const noexcept { return (size_t)(k.typeIndex);}};
-        struct AssetObjectHash { size_t operator()(const AssetObjectBase* k) const noexcept { return (size_t)(k->assetId);}};
+        struct TypeInfoHash { size_t operator()(const TypeInfo& k) const noexcept { return k.typeIndex; }};
+        struct AssetObjectHash { size_t operator()(const AssetObjectBase* k) const noexcept { return k->assetId; }};
 
     public:
         AssetDatabase(Sequencer* sequencer);
@@ -236,7 +236,7 @@ namespace PK
         {
             static_assert(__is_base_of(Asset, T), "Template argument type does not derive from Asset!");
 
-            auto assetIndex = m_assets.GetHashIndex((size_t)assetId);
+            auto assetIndex = m_assets.GetHashIndex(assetId);
 
             if (assetIndex == -1)
             {

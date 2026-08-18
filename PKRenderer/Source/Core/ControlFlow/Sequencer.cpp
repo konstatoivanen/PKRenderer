@@ -14,7 +14,7 @@ namespace PK
 
         // Allocate for worst case where all are unique.
         m_steps.Reserve(count, false);
-        m_map.Reserve(count, 2ull); 
+        m_map.Reserve(count, 2u); 
         auto head = m_steps.GetData();
 
         for (auto& pair : initializer)

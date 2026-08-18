@@ -164,7 +164,7 @@ namespace PK
         HWND windowInstanceHelper = NULL;
 
         InputKey native_to_keycode[512]{};
-        int16_t keycode_to_native[(int32_t)InputKey::Count]{};
+        int16_t keycode_to_native[(uint32_t)InputKey::Count]{};
 
         HDEVNOTIFY deviceNotificationHandle = NULL;
         float2 restoreCursorPos = PK_FLOAT2_ZERO;

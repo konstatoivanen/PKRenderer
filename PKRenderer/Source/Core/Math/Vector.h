@@ -97,8 +97,8 @@ namespace PK::math
         {
             // copy data in case l/r are the same vector.
             T t[N];
-            for (int i = 0; i < N; ++i) t[i] = that[i];
-            for (int i = 0; i < N; ++i) op((*this)[i], t[i]);
+            for (auto i = 0u; i < N; ++i) t[i] = that[i];
+            for (auto i = 0u; i < N; ++i) op((*this)[i], t[i]);
         }
     };
 

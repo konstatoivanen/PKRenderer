@@ -102,51 +102,51 @@ namespace PK::Hash
 
     uint64_t MurmurHash(const void* key, size_t len, uint64_t seed)
     {
-        const uint32_t m = 0x5bd1e995;
-        const int r = 24;
+        const auto m = 0x5bd1e995u;
+        const auto r = 24u;
 
-        uint32_t h1 = ((uint32_t)seed) ^ (uint32_t)len;
-        uint32_t h2 = ((uint32_t)(seed >> 32));
+        auto h1 = (uint32_t)seed ^ (uint32_t)len;
+        auto h2 = (uint32_t)(seed >> 32u);
 
-        const uint32_t* data = (const uint32_t*)key;
+        const uint32_t* data = static_cast<const uint32_t*>(key);
 
-        while (len >= 8)
+        while (len >= 8ull)
         {
-            uint32_t k1 = *data++;
+            auto k1 = *data++;
             k1 *= m; k1 ^= k1 >> r; k1 *= m;
             h1 *= m; h1 ^= k1;
             len -= 4;
 
-            uint32_t k2 = *data++;
+            auto k2 = *data++;
             k2 *= m; k2 ^= k2 >> r; k2 *= m;
             h2 *= m; h2 ^= k2;
             len -= 4;
         }
 
-        if (len >= 4)
+        if (len >= 4ull)
         {
-            uint32_t k1 = *data++;
+            auto k1 = *data++;
             k1 *= m; k1 ^= k1 >> r; k1 *= m;
             h1 *= m; h1 ^= k1;
-            len -= 4;
+            len -= 4ull;
         }
 
         switch (len)
         {
-            case 3: h2 ^= ((uint8_t*)data)[2] << 16;
-            case 2: h2 ^= ((uint8_t*)data)[1] << 8;
-            case 1: h2 ^= ((uint8_t*)data)[0];
+            case 3: h2 ^= reinterpret_cast<const uint8_t*>(data)[2] << 16u;
+            case 2: h2 ^= reinterpret_cast<const uint8_t*>(data)[1] << 8u;
+            case 1: h2 ^= reinterpret_cast<const uint8_t*>(data)[0] << 0u;
                 h2 *= m;
         };
 
-        h1 ^= h2 >> 18; h1 *= m;
-        h2 ^= h1 >> 22; h2 *= m;
-        h1 ^= h2 >> 17; h1 *= m;
-        h2 ^= h1 >> 19; h2 *= m;
+        h1 ^= h2 >> 18u; h1 *= m;
+        h2 ^= h1 >> 22u; h2 *= m;
+        h1 ^= h2 >> 17u; h1 *= m;
+        h2 ^= h1 >> 19u; h2 *= m;
 
         uint64_t h = h1;
 
-        h = (h << 32) | h2;
+        h = (h << 32u) | h2;
 
         return h;
     }
@@ -158,7 +158,7 @@ namespace PK::Hash
 
         for (size_t i = 0; i < count; ++i)
         {
-            value ^= static_cast<size_t>(chardata[i]);
+            value ^= (size_t)chardata[i];
             value *= 1099511628211ULL;
         }
 

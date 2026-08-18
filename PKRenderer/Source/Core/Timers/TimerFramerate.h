@@ -7,7 +7,7 @@ namespace PK
     {
         uint64_t frameCount = 0;
         uint64_t framerate = 0;
-        uint64_t framerateMin = (uint64_t)-1;
+        uint64_t framerateMin = ~0ull;
         uint64_t framerateMax = 0;
         uint64_t framerateAvg = 0;
         double elapsed = 0.0;

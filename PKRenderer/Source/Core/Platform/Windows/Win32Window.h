@@ -17,12 +17,12 @@ namespace PK
         int4 GetRect() const final;
         int2 GetMonitorResolution() const final;
         float2 GetCursorPosition() const final;
-        inline bool IsMinimized() const { return m_isMinimized; }
-        inline bool IsMaximized() const { return m_isMaximized; }
+        inline bool IsMinimized() const final { return m_isMinimized; }
+        inline bool IsMaximized() const final { return m_isMaximized; }
         inline bool IsClosing() const final { return m_isClosing; }
         inline bool IsFocused() const final { return m_isFocused; }
-        inline void* GetNativeWindowHandle() const { return m_handle; }
-        inline void* GetNativeMonitorHandle() const { return ::MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST); }
+        inline void* GetNativeWindowHandle() const final { return m_handle; }
+        inline void* GetNativeMonitorHandle() const final { return ::MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST); }
 
         float2 GetInputCursorPosition() final { return m_cursorposVirtual; }
         const InputKeyState& GetInputKeyState() final { return m_keyState; }

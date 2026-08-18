@@ -14,13 +14,12 @@ namespace PK::App
         public IStep<TimeFramerateInfo*>
     {
     public:
-        EngineProfiler(AssetDatabase* assetDatabase);
+        EngineProfiler();
 
         virtual void Step(IGUIRenderer* gui) final;
         virtual void Step(TimeFramerateInfo* framerate) final { m_framerate = *framerate; }
 
     private:
-        AssetDatabase* m_assetDatabase = nullptr;
         TimeFramerateInfo m_framerate{};
         HeapArray<double> m_timeHistory;
         uint64_t m_timeHistoryHead = 0ull;

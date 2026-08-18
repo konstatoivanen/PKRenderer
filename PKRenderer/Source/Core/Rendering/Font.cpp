@@ -171,8 +171,8 @@ namespace PK
             line_x += x;
         }
 
-        auto clip_min = math::min(short2(clip_rect.xy), short2(clip_rect.xy + clip_rect.zw));
-        auto clip_max = math::max(short2(clip_rect.xy), short2(clip_rect.xy + clip_rect.zw));
+        auto clip_min = math::min(clip_rect.xy(), short2(clip_rect.xy + clip_rect.zw));
+        auto clip_max = math::max(clip_rect.xy(), short2(clip_rect.xy + clip_rect.zw));
 
         // Top/Bottom alignment needs to take into account min/max rect boundaries as we otherwise add padding.
         auto line_align = math::lerp(font->GetAlignTop(), font->GetAlignBottom(), style.align.y) * style.size;
@@ -208,9 +208,9 @@ namespace PK
 
                 if (style.clip)
                 {
-                    auto rmin = math::min(short2(rect.rect.xy), short2(rect.rect.xy + rect.rect.zw));
-                    auto rmax = math::max(short2(rect.rect.xy), short2(rect.rect.xy + rect.rect.zw));
-                    is_visible &= rmin.x < clip_max.x&& rmax.y < clip_max.y&& rmax.x > clip_min.x&& rmax.y > clip_min.y;
+                    auto rmin = math::min(rect.rect.xy(), short2(rect.rect.xy + rect.rect.zw));
+                    auto rmax = math::max(rect.rect.xy(), short2(rect.rect.xy + rect.rect.zw));
+                    is_visible &= rmin.x < clip_max.x && rmax.y < clip_max.y && rmax.x > clip_min.x && rmax.y > clip_min.y;
                 }
 
                 if (is_visible)

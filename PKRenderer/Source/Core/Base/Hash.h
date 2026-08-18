@@ -131,7 +131,7 @@ namespace PK::Hash
         } 
         else if constexpr (TIsEnum<T>)
         {
-            return (size_t)((__underlying_type(T))k);
+            return (__underlying_type(T))k;
         }
         else
         {
@@ -139,22 +139,22 @@ namespace PK::Hash
         }
     }
 
-    template<> inline size_t GetHash(const uint8_t& k) { return (size_t)k; }
-    template<> inline size_t GetHash(const uint16_t& k) { return (size_t)k; }
-    template<> inline size_t GetHash(const uint32_t& k) { return (size_t)k; }
-    template<> inline size_t GetHash(const uint64_t& k) { return (size_t)k; }
+    template<> inline size_t GetHash(const uint8_t& k) { return k; }
+    template<> inline size_t GetHash(const uint16_t& k) { return k; }
+    template<> inline size_t GetHash(const uint32_t& k) { return k; }
+    template<> inline size_t GetHash(const uint64_t& k) { return k; }
     
-    template<> inline size_t GetHash(const int8_t& k) { return (size_t)k; }
-    template<> inline size_t GetHash(const int16_t& k) { return (size_t)k; }
-    template<> inline size_t GetHash(const int32_t& k) { return (size_t)k; }
-    template<> inline size_t GetHash(const int64_t& k) { return (size_t)k; }
+    template<> inline size_t GetHash(const int8_t& k) { return static_cast<unsigned>(k); }
+    template<> inline size_t GetHash(const int16_t& k) { return static_cast<unsigned>(k); }
+    template<> inline size_t GetHash(const int32_t& k) { return static_cast<unsigned>(k); }
+    template<> inline size_t GetHash(const int64_t& k) { return static_cast<unsigned>(k); }
 
-    template<> inline size_t GetHash(const float& k) { return (size_t)(*reinterpret_cast<const uint32_t*>(&k)); }
-    template<> inline size_t GetHash(const double& k) { return (size_t)(*reinterpret_cast<const uint64_t*>(&k)); }
+    template<> inline size_t GetHash(const float& k) { return *reinterpret_cast<const uint32_t*>(&k); }
+    template<> inline size_t GetHash(const double& k) { return *reinterpret_cast<const uint64_t*>(&k); }
 
     template<typename T> struct TMurmurHash { size_t operator()(const T& k) const noexcept { return Hash::MurmurHash(&k, sizeof(T), 18446744073709551557ull); } };
     template<typename T> struct TFNV1AHash  { size_t operator()(const T& k) const noexcept { return Hash::FNV1AHash(&k, sizeof(T)); } };
-    template<typename T> struct TCastHash { size_t operator()(const T& k) const noexcept { return (size_t)(k); } };
+    template<typename T> struct TCastHash { size_t operator()(const T& k) const noexcept { return static_cast<size_t>(k); } };
     template<typename T> struct TPointerHash { size_t operator()(const T* k) const noexcept { return reinterpret_cast<size_t>(k) / sizeof(T); } };
     template<typename T> struct THash { size_t operator()(const T& k) const noexcept { return GetHash<T>(k); } };
 }

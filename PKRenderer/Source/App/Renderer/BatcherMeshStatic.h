@@ -106,7 +106,7 @@ namespace PK::App
 
         void EndCollectDrawCalls(CommandBufferExt cmd) final;
 
-        uint32_t BeginNewGroup() { return m_groupIndex++; }
+        uint32_t BeginNewGroup() final { return m_groupIndex++; }
 
         void SubmitMeshStaticDraw(ComponentTransform* transform,
             ShaderAsset* shader,
@@ -114,12 +114,12 @@ namespace PK::App
             MeshStatic* mesh,
             uint16_t submesh,
             uint32_t userdata,
-            uint16_t sortDepth);
+            uint16_t sortDepth) final;
 
         bool RenderGroup(CommandBufferExt cmd,
             uint32_t group,
             FixedFunctionShaderAttributes* overrideAttributes = nullptr,
-            uint32_t requireKeyword = 0u);
+            uint32_t requireKeyword = 0u) final;
 
     private:
         void UploadTransforms(CommandBufferExt cmd);
