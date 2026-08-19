@@ -17,7 +17,7 @@ namespace PK
         {
             return
             {
-                pk_ecs_type_uuid<T>,
+                pk_type_uuid128<T>,
                 sizeof(T),
                 [](void* data, uint32_t index) { Memory::Construct(static_cast<T*>(data) + index);},
                 [](void* data, uint32_t index, uint32_t last) { static_cast<T*>(data)[index] = PK::MoveTemp(static_cast<T*>(data)[last]); },

@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Base/Types/UUID128.h"
 #include "Templates.h"
 
 namespace PK
@@ -90,40 +91,39 @@ namespace PK
     template <typename T> 
     inline constexpr auto pk_inner_type_name = []<typename U>() constexpr noexcept
     {
-        constexpr auto view = []<StringLiteral Name>() consteval
+        constexpr auto view = []<StringLiteral Signature>() consteval
         {
-            auto name = Name.str;
-            auto length = Name.length;
+            static_assert(pk_is_valid_func_sig(Signature.str, Signature.length), "Invalid function signature");
 
-            if (pk_is_valid_func_sig(name, length))
+            auto name = Signature.str;
+            auto length = Signature.length;
+
+            for (auto i = length; i > 0ull; --i)
             {
-                for (auto i = length; i > 0ull; --i)
+                if (pk_char_is_alpha(name[i - 1ull]))
                 {
-                    if (pk_char_is_alpha(name[i - 1ull]))
-                    {
-                        length = i;
-                        break;
-                    }
+                    length = i;
+                    break;
                 }
+            }
 
-                auto s = 0ull;
+            auto s = 0ull;
 
-                for (auto i = length; i > 0ull; --i)
+            for (auto i = length; i > 0ull; --i)
+            {
+                if (!pk_char_is_alphanumeric(name[i - 1ull]))
                 {
-                    if (!pk_char_is_alphanumeric(name[i - 1ull]))
-                    {
-                        s = i;
-                        break;
-                    }
+                    s = i;
+                    break;
                 }
+            }
 
-                name = name + s;
-                length -= s;
+            name = name + s;
+            length -= s;
 
-                if (length > 0ull && pk_char_is_alpha(name[0]))
-                {
-                    return StringLiteralView{ name, length };
-                }
+            if (length > 0ull && pk_char_is_alpha(name[0]))
+            {
+                return StringLiteralView{ name, length };
             }
 
             return StringLiteralView{ nullptr, 0ull };
@@ -136,15 +136,12 @@ namespace PK
     template <typename T> 
     inline constexpr auto pk_outer_type_name =  []<typename U>() constexpr noexcept
     {
-        constexpr auto view = []<StringLiteral Name>() consteval
+        constexpr auto view = []<StringLiteral Signature>() consteval
         {
-            auto name = Name.str;
-            auto length = Name.length;
+            static_assert(pk_is_valid_func_sig(Signature.str, Signature.length), "Invalid function signature");
 
-            if (!pk_is_valid_func_sig(name, length))
-            {
-                return StringLiteralView{ nullptr, 0ull };
-            }
+            auto name = Signature.str;
+            auto length = Signature.length;
 
             for (auto i = length, h = 0ull, s = 0ull; i > 0ull; --i)
             {
@@ -187,13 +184,90 @@ namespace PK
         return StringLiteral<view.length>(view.str);
     }.template operator()<T>();
 
+    // Returns full typename. ie T<N> -> T<N>
+    template <typename T>
+    inline constexpr auto pk_full_type_name = []<typename U>() constexpr noexcept
+    {
+        constexpr auto name = []<StringLiteral Signature>() consteval
+        {
+            static_assert(pk_is_valid_func_sig(Signature.str, Signature.length), "Invalid function signature");
+
+            constexpr const char* keywords[3]{ "struct", "class", "enum" };
+            constexpr const size_t keyword_lengths[3]{ 6u, 5u, 4u };
+
+            StringLiteral<Signature.length> name(Signature.str);
+            auto source = Signature.str;
+            auto length = Signature.length;
+            auto size = 0ull;
+
+            // Find beginning
+            for (auto i = length; i > 2ull; --i)
+            {
+                if ((source[i - 1ull] == '=') ||
+                    (source[i - 1ull] == '<' && source[i - 2ull] == ')'))
+                {
+                    source += i;
+                    length -= i;
+                    break;
+                }
+            }
+
+            // Filter keywords, namespaces and spaces.
+            for (auto i = 0ull; i < length; ++i)
+            {
+                for (auto j = 0ull; j < 3ull; ++j)
+                {
+                    auto k = 0ull;
+                    while (k < keyword_lengths[j] && source[i + k] == keywords[j][k]) { ++k; }
+
+                    if (k == keyword_lengths[j])
+                    {
+                        i += k;
+                        break;
+                    }
+                }
+
+                if (pk_char_is_alphanumeric(source[i]))
+                {
+                    auto j = i + 1ull;
+                    while (j < length && pk_char_is_alphanumeric(source[j])) { ++j; }
+
+                    if (j < length && source[j] == ':')
+                    {
+                        i = j;
+                    }
+                }
+
+                if (pk_char_is_alphanumeric(source[i]) || source[i] == '<' || source[i] == '>' || source[i] == ',')
+                {
+                    name.str[size++] = source[i];
+                }
+            }
+
+            name.str[size] = '\0';
+            return name;
+        }.template operator() < StringLiteral<PK_FUNC_SIG_LEN_TRUNC>(PK_FUNC_SIG) > ();
+
+        constexpr auto length = [](auto name) consteval
+        {
+            auto length = 0ull;
+            while (length < name.length && name.str[length] != '\0') { ++length; }
+            return length;
+        }
+        (name);
+
+        return StringLiteral<length>(name.str);
+    }.template operator()<T>();
+
     template <typename E, E V> 
     inline constexpr auto pk_enum_name = []<typename Enum, Enum Value>() constexpr noexcept
     {
-        constexpr auto view = []<StringLiteral Name>() consteval
+        constexpr auto view = []<StringLiteral Signature>() consteval
         {
-            auto name = Name.str;
-            auto length = Name.length;
+            static_assert(pk_is_valid_func_sig(Signature.str, Signature.length), "Invalid function signature");
+
+            auto name = Signature.str;
+            auto length = Signature.length;
             auto start = 0ull;
 
             for (auto i = length; i > 0ull; --i)
@@ -212,6 +286,45 @@ namespace PK
         return StringLiteral<view.length>(view.str);
     }.template operator()<E,V>();
 
+    template <typename T>
+    inline constexpr auto pk_type_uuid64 = []() constexpr noexcept
+    {
+        constexpr auto name = pk_full_type_name<T>;
+        uint64_t value = 14695981039346656037ull;
+
+        for (auto i = name.length; i > 0ull; --i)
+        {
+            value ^= static_cast<uint64_t>(name.str[i - 1ull]);
+            value *= 1099511628211ull;
+        }
+
+        return value;
+    }();
+
+    template <typename T>
+    inline constexpr auto pk_type_uuid128 = []() constexpr noexcept
+    {
+        constexpr auto name = pk_full_type_name<T>;
+
+        UUID128 value;
+        value.low = 0x62b821756295c58dull;
+        value.high = 0x6c62272e07bb0142ull;
+
+        // Reverse order as it is more likely to be unique in the end
+        for (auto i = name.length; i > 0ull; --i)
+        {
+            value.low ^= static_cast<uint64_t>(name.str[i - 1ull]);
+            auto low_low = (value.low & 0xFFFFFFFFull) * 0x13bull;
+            auto low_high = (value.low >> 32ull) * 0x13bull;
+            auto low_total = low_low + (low_high << 32ull);
+            auto carry = ((low_low >> 32ull) + low_high) >> 32ull;
+            value.high = (value.high * 0x13bull) + (value.low * 0x1000000ull) + carry;
+            value.low = low_total;
+        }
+
+        return value;
+    }();
+
     // Note do not use inside a dynamic library. 
     inline uint32_t pk_type_index_counter = 0u;
 
@@ -220,4 +333,47 @@ namespace PK
 
     template<typename T>
     constexpr uint32_t pk_base_type_index() { return pk_type_index<TRemoveCVRef_T<T>>; }
+
+    #if PK_DEBUG
+    template <typename... Types>
+    struct ValidateTypeUUIDs 
+    {
+        consteval static bool ValidateHashes64()
+        {
+            constexpr uint64_t hashes[] = { pk_type_uuid64<Types>... };
+            constexpr size_t N = sizeof...(Types);
+
+            for (auto i = 0ull; i < N; ++i) 
+            for (auto j = i + 1ull; j < N; ++j)
+            {
+                if (hashes[i] == hashes[j]) 
+                {
+                    return false; 
+                }
+            }
+
+            return true;
+        }
+
+        consteval static bool ValidateHashes128()
+        {
+            constexpr UUID128 hashes[] = { pk_type_uuid128<Types>... };
+            constexpr size_t N = sizeof...(Types);
+
+            for (auto i = 0ull; i < N; ++i)
+            for (auto j = i + 1ull; j < N; ++j)
+            {
+                if (hashes[i] == hashes[j])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static_assert(ValidateHashes64(), "UUID64 hash collision!");
+        static_assert(ValidateHashes128(), "UUID128 hash collision!");
+    };
+    #endif
 }

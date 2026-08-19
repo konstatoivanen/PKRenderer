@@ -42,7 +42,7 @@ namespace PK
     template<typename TEntity>
     struct EntityFactory
     {
-        constexpr static const auto TypeName = pk_outer_type_name<TEntity>;
+        constexpr static const auto TypeName = pk_full_type_name<TEntity>;
         constexpr static const UUID128 UUID = Hash::MurmurHash128(TypeName.str, TypeName.length);
 
         constexpr static EntitySerializer GetSerializer() { return { UUID, TypeName.str, Serialize, Deserialize };}

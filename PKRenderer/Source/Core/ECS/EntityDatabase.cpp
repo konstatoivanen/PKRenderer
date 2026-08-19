@@ -91,7 +91,7 @@ namespace PK
     uint32_t* EntityDatabase::GetEntityIdStream(uint32_t entityIndex)
     {
         auto* comp = &m_compositions[entityIndex].value;
-        constexpr auto entityIdUUID = pk_ecs_type_uuid<uint32_t>;
+        constexpr auto entityIdUUID = pk_type_uuid128<uint32_t>;
 
         for (auto i = 0u; i < comp->componentCount; ++i)
         {

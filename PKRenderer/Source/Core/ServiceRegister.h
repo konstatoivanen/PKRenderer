@@ -39,7 +39,7 @@ namespace PK
         {
             const auto typeIndex = pk_base_type_index<T>();
             auto index = 0u;
-            AssertTypeExists(m_services.AddKey(typeIndex, &index), pk_outer_type_name<T>());
+            AssertTypeExists(m_services.AddKey(typeIndex, &index), pk_full_type_name<T>());
             LogScopeIndent logIndent(2);
             auto service = Memory::New<ServiceContainer<T>>(PK::Forward<Args>(args)...);
             m_services[index].value = service;

@@ -1,19 +1,10 @@
 #pragma once
-#include "Core/Base/Types/UUID128.h"
 #include "Core/Base/Types/Tuple.h"
 #include "Core/Base/TypeMeta.h"
 #include "Core/Base/Reflect.h"
-#include "Core/Base/Hash.h"
 
 namespace PK
 {
-    template<typename T>
-    inline constexpr auto pk_ecs_type_uuid = []() constexpr noexcept
-    {
-        constexpr const auto typeName = pk_outer_type_name<T>;
-        return Hash::MurmurHash128(typeName.str, typeName.length);
-    }();
-
     template <typename TEntityStruct>
     concept TIsValidEntityStruct = requires
     {
@@ -40,7 +31,7 @@ namespace PK
         static constexpr auto Filtered = []() 
         {
             size_t idx = 0;
-            HashData result {{ Pair<UUID128, size_t>{pk_ecs_type_uuid<Args>, idx++}... },1u};
+            HashData result {{ Pair<UUID128, size_t>{pk_type_uuid128<Args>, idx++}... },1u};
 
             for (auto i = 0ull; i < N - 1ull; ++i) 
             for (auto j = 0ull; j < N - i - 1ull; ++j) 

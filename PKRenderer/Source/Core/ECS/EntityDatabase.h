@@ -209,7 +209,7 @@ namespace PK
 
                 if constexpr (TIsPointer<TField>)
                 {
-                    constexpr const auto uuid = pk_ecs_type_uuid<TRemovePtr_T<TField>>;
+                    constexpr const auto uuid = pk_type_uuid128<TRemovePtr_T<TField>>;
 
                     for (auto i = 0u; i < comp->componentCount; ++i)
                     {
