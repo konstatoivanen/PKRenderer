@@ -2,44 +2,36 @@
 #include "Core/Base/Containers/HashMap.h"
 #include "Core/ECS/EntityComposition.h"
 #include "Core/ECS/EntityComponentMeta.h"
+#include "Core/ECS/EntityVisitor.h"
+#include "Core/ECS/EntityID.h"
 
 namespace PK
 {
-    // @TODO replace with UUID once we have a working hash for templated types.
+    struct EntityDatabase;
+
+    template <typename TEntity, typename TDescriptor>
+    concept TEntityHasOnCreate = requires(EntityDatabase* db, TEntity & entity, const TDescriptor & desc)
+    {
+        TEntity::OnCreate(db, entity, desc);
+    };
+
     struct EntityDatabase
     {
+        constexpr const static uint64_t VIEW_MASK = 0x8000000000000000ull;
+        constexpr const static uint64_t COMP_MASK = 0x7FFFFFFFFFFFFFFFull;
+
         struct Composition
         {
-            const uint32_t componentStride;
-            const uint32_t componentCount;
             const EntityComponentMeta* components;
-            uint32_t count;
+            const EntityVisitor* visitors;
+            const uint32_t componentStride;
+            const uint16_t componentCount;
+            const uint16_t visitorCount;
             uint32_t capacity;
+            uint32_t count;
             void* buffer;
-            void** streams;
-        };
 
-        struct Identifier
-        {
-            uint64_t identifier = 0ull;
-            
-            Identifier(uint32_t entityId, uint32_t entityIndex, uint32_t arrayIndex) 
-            {
-                identifier |= ((uint64_t)entityId & 0xFFFFFFull) << 0ull;
-                identifier |= ((uint64_t)entityIndex & 0xFFFFull) << 24ull;
-                identifier |= ((uint64_t)arrayIndex & 0xFFFFFFull) << 48ull;
-            }
-
-            bool operator == (const Identifier& other) { return entityId() == other.entityId(); }
-            bool operator != (const Identifier& other) { return entityId() != other.entityId(); }
-            uint32_t entityId() const { return identifier & 0xFFFFFFull; }
-            uint32_t entityIndex() const { return (identifier >> 24ull) & 0xFFFFull; }
-            uint32_t arrayIndex() const { return (identifier >> 48ull) & 0xFFFFFFull; }
-        };
-
-        struct IdentifierHash 
-        { 
-            size_t operator()(const Identifier& k) const noexcept { return k.entityId();}
+            void** GetStreams() { return static_cast<void**>(buffer); }
         };
 
         template<typename TView>
@@ -122,32 +114,55 @@ namespace PK
         EntityDatabase(uint32_t compositionCapacity, uint32_t entityCapacity);
         ~EntityDatabase();
 
-        template<typename TEntity>
+        template<typename TEntityStruct>
         void Reserve(size_t entryCount)
         {
-            AllocateComposition<TEntity>(false, entryCount);
+            AllocateComposition<TEntityStruct>(false, entryCount);
         }
 
         template<typename TEntityStruct> 
         TEntityStruct New()
         {
-            auto entityIndex = AllocateComposition<TEntityStruct>(false, 1ull);
-            auto identifier = NewEntity(entityIndex);
-            return BindView<TEntityStruct>(entityIndex, identifier.arrayIndex());
+            auto compositionIndex = AllocateComposition<TEntityStruct>(false, 1ull);
+            auto identifier = NewEntity(compositionIndex);
+            return BindView<TEntityStruct>(compositionIndex, identifier.arrayIndex());
         }
 
-        template<typename TView> 
-        ViewRange<TView> Query()
+        template<typename TEntityStruct, typename TDescriptor>
+        requires TEntityHasOnCreate<TEntityStruct, TDescriptor>
+        TEntityStruct New(const TDescriptor& descriptor)
         {
-            auto viewIndex = AllocateComposition<TView>(true, 0ull);
+            auto entity = New<TEntityStruct>();
+            TEntityStruct::OnCreate(this, entity, descriptor);
+            return entity;
+        }
+
+        template<typename TViewStruct>
+        ViewRange<TViewStruct> Query()
+        {
+            auto viewIndex = AllocateComposition<TViewStruct>(true, 0ull);
             return { this, &m_compositions[viewIndex].value };
         }
 
-        template<typename TView>
-        TView Query(uint32_t entityId)
+        template<typename TViewStruct>
+        TViewStruct Query(uint32_t entityId)
         {
-            auto* id = m_identifiers.GetValuePtr(Identifier(entityId, 0u, 0u));
-            return id ? BindView<TView>(id->entityIndex(), id->arrayIndex()) : TView{};
+            auto* id = m_identifiers.GetValuePtr(EntityID(entityId, 0u, 0u));
+            return id ? BindView<TViewStruct>(id->compositionIndex(), id->arrayIndex()) : TViewStruct{};
+        }
+
+        template<typename TVisitorData>
+        void Visit(uint32_t entityId, TVisitorData* userdata)
+        {
+            VisitEntity(entityId, pk_type_uuid64<TVisitorData>, userdata);
+        }
+
+        template<typename TVisitorData>
+        uint32_t VisitType(uint64_t compositionUUID, TVisitorData* userdata)
+        {
+            uint32_t entityId = 0u;
+            VisitComposition(compositionUUID, pk_type_uuid64<TVisitorData>, userdata, entityId);
+            return entityId;
         }
 
         template<typename TEntityStruct>
@@ -155,8 +170,8 @@ namespace PK
         {
             static_assert(TIsValidEntityStruct<TEntityStruct>, "Struct type is not a valid entity composition!");
             using TComposition = TStructToEntityComposition<TEntityStruct>;
-            const auto typeIndex = pk_type_index<TComposition>;
-            DeleteType(typeIndex);
+            const auto compositionUUID = pk_type_uuid64<TComposition>;
+            DeleteType(compositionUUID);
         }
 
         void Delete(uint32_t entityId);
@@ -168,18 +183,22 @@ namespace PK
             static_assert(TIsValidEntityStruct<TStruct>, "Struct type is not a valid entity composition!");
 
             using TComposition = TStructToEntityComposition<TStruct>;
-            const auto typeIndex = pk_type_index<TComposition>;
-            const auto typeKey = (typeIndex & 0x7FFFFFFF) | (is_view << 31ull);
+            const auto compositionUUID = pk_type_uuid64<TComposition>;
+            const auto typeKey = (compositionUUID & COMP_MASK) | (uint64_t(is_view) << 63ull);
             const auto index = m_compositions.AddKey(typeKey);
             const auto isNew = m_compositions[index].value.componentCount == 0ull;
 
             if (isNew)
             {
+                const auto visitors = GetEntityVisitors<TStruct>();
+
                 Memory::Construct(&m_compositions[index].value, 
-                    static_cast<uint32_t>(TComposition::Stride),
-                    static_cast<uint32_t>(TComposition::Size),
                     entity_component_metas<TComposition>.data,
-                    0u, 0u, nullptr, nullptr);
+                    visitors.visitors,
+                    static_cast<uint32_t>(TComposition::Stride),
+                    static_cast<uint16_t>(TComposition::Size),
+                    static_cast<uint16_t>(visitors.count),
+                    0u, 0u, nullptr);
             }
             
             if (isNew && is_view)
@@ -209,13 +228,13 @@ namespace PK
 
                 if constexpr (TIsPointer<TField>)
                 {
-                    constexpr const auto uuid = pk_type_uuid128<TRemovePtr_T<TField>>;
+                    constexpr const auto uuid = pk_type_uuid64<TRemovePtr_T<TField>>;
 
                     for (auto i = 0u; i < comp->componentCount; ++i)
                     {
                         if (comp->components[i].typeUUID == uuid)
                         {
-                            field = static_cast<TField>(comp->streams[i]) + arrayOffset;
+                            field = static_cast<TField>(comp->GetStreams()[i]) + arrayOffset;
                             break;
                         }
                     }
@@ -225,15 +244,17 @@ namespace PK
             return view;
         }
 
-        Identifier NewEntity(uint32_t entityIndex);
-        void DeleteType(uint32_t typeKey);
+        EntityID NewEntity(uint32_t compositionIndex);
+        void DeleteType(uint64_t compsotionUUID);
 
-        uint32_t* GetEntityIdStream(uint32_t entityIndex);
-        void ReserveEntitities(uint32_t entityIndex, size_t entryCount);
+        uint32_t* GetEntityIdStream(uint32_t compositionIndex);
+        void VisitEntity(uint32_t entityId, uint64_t visitorUUID, void* userdata);
+        void VisitComposition(uint64_t compositionUUID, uint64_t visitorUUID, void* userdata, uint32_t* entityId);
+        void ReserveEntitities(uint32_t compositionIndex, size_t entryCount);
         void UpdateViewIndices(uint32_t viewIndex);
 
-        HashSet<Identifier, IdentifierHash> m_identifiers;
-        HashMap<uint32_t, Composition> m_compositions;
+        HashSet<EntityID, EntityIDHash> m_identifiers;
+        HashMap<uint64_t, Composition> m_compositions;
         uint32_t m_idCounter = 0u;
     };
 }

@@ -25,7 +25,7 @@ namespace PK
     };
 
     template <typename TEntity>
-    concept TEntityHasOnCreate = TEntityHasDescriptor<TEntity> && 
+    concept TEntityHasOnCreate2 = TEntityHasDescriptor<TEntity> && 
     requires(EntityDatabase* db, TEntity& entity, const typename TEntity::Descriptor& desc)
     {
         TEntity::OnCreate(db, entity, desc);
@@ -43,7 +43,7 @@ namespace PK
     struct EntityFactory
     {
         constexpr static const auto TypeName = pk_full_type_name<TEntity>;
-        constexpr static const UUID128 UUID = Hash::MurmurHash128(TypeName.str, TypeName.length);
+        constexpr static const UUID128 UUID = pk_type_uuid128<TEntity>;
 
         constexpr static EntitySerializer GetSerializer() { return { UUID, TypeName.str, Serialize, Deserialize };}
 
@@ -142,7 +142,7 @@ namespace PK
 
             auto entity = Instantiate(entityDb, name);
 
-            if constexpr (TEntityHasOnCreate<TEntity>)
+            if constexpr (TEntityHasOnCreate2<TEntity>)
             {
                 TEntity::OnCreate(entityDb, entity, descriptor);
             }

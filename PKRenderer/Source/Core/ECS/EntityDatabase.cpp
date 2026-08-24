@@ -18,19 +18,19 @@ namespace PK
         }
     }
 
-    EntityDatabase::Identifier EntityDatabase::NewEntity(uint32_t entityIndex)
+    EntityID EntityDatabase::NewEntity(uint32_t compositionIndex)
     {
-        auto* comp = &m_compositions[entityIndex].value;
+        auto* comp = &m_compositions[compositionIndex].value;
         auto arrayIndex = comp->count++;
         auto entityId = ++m_idCounter;
-        auto identifier = Identifier(entityId, entityIndex, arrayIndex);
+        auto identifier = EntityID(entityId, compositionIndex, arrayIndex);
 
         for (auto i = 0u; i < comp->componentCount; ++i)
         {
-            comp->components[i].constructAt(comp->streams[i], arrayIndex);
+            comp->components[i].constructAt(comp->GetStreams()[i], arrayIndex);
         }
 
-        GetEntityIdStream(entityIndex)[arrayIndex] = entityId;
+        GetEntityIdStream(compositionIndex)[arrayIndex] = entityId;
         m_identifiers.Add(identifier);
         return identifier;
     }
@@ -42,45 +42,45 @@ namespace PK
         if (identifierIndex != -1)
         {
             const auto identifier = m_identifiers[identifierIndex];
-            const auto entityIndex = identifier.entityIndex();
+            const auto compositionIndex = identifier.compositionIndex();
             const auto arrayIndex = identifier.arrayIndex();
             m_identifiers.RemoveAt(identifierIndex);
 
-            auto* comp = &m_compositions[entityIndex].value;
+            auto* comp = &m_compositions[compositionIndex].value;
             comp->count--;
 
             for (auto i = 0u; i < comp->componentCount; ++i)
             {
-                comp->components[i].removeAt(comp->streams[i], identifier.arrayIndex(), comp->count);
+                comp->components[i].removeAt(comp->GetStreams()[i], identifier.arrayIndex(), comp->count);
             }
 
             // Remove at swaps entity positions in the component streams.
             // Update array index in identifiers to match new array position.
-            const auto swapEntityId = GetEntityIdStream(entityIndex)[arrayIndex];
+            const auto swapEntityId = GetEntityIdStream(compositionIndex)[arrayIndex];
             const auto swapIndex = m_identifiers.GetHashIndex(swapEntityId);
-            m_identifiers[swapIndex] = Identifier(swapEntityId, entityIndex, arrayIndex);
+            m_identifiers[swapIndex] = EntityID(swapEntityId, compositionIndex, arrayIndex);
         }
     }
 
-    void EntityDatabase::DeleteType(uint32_t typeIndex)
+    void EntityDatabase::DeleteType(uint64_t compositionUUID)
     {
-        const auto typeKey = typeIndex & 0x7FFFFFFFu;
-        const auto entityIndex = m_compositions.GetIndex(typeKey);
+        const auto typeKey = compositionUUID & COMP_MASK;
+        const auto compositionIndex = m_compositions.GetIndex(typeKey);
 
-        if (entityIndex != -1)
+        if (compositionIndex != -1)
         {
-            auto* comp = &m_compositions[entityIndex].value;
-            auto entityIdStream = GetEntityIdStream(entityIndex);
+            auto* comp = &m_compositions[compositionIndex].value;
+            auto entityIdStream = GetEntityIdStream(compositionIndex);
 
             // Better to do this in reverse order so that identifiers removal is more likely to hit a fast clear.
             for (int32_t i = comp->count - 1; i >= 0; --i)
             {
-                m_identifiers.Remove(Identifier(entityIdStream[i], 0u, 0u));
+                m_identifiers.Remove(EntityID(entityIdStream[i], 0u, 0u));
             }
             
             for (auto i = 0u; i < comp->componentCount; ++i)
             {
-                comp->components[i].clear(comp->streams[i], comp->count);
+                comp->components[i].clear(comp->GetStreams()[i], comp->count);
             }
 
             comp->count = 0u;
@@ -88,26 +88,68 @@ namespace PK
     }
 
 
-    uint32_t* EntityDatabase::GetEntityIdStream(uint32_t entityIndex)
+    uint32_t* EntityDatabase::GetEntityIdStream(uint32_t compositionIndex)
     {
-        auto* comp = &m_compositions[entityIndex].value;
-        constexpr auto entityIdUUID = pk_type_uuid128<uint32_t>;
+        auto* comp = &m_compositions[compositionIndex].value;
+        constexpr auto entityIdUUID = pk_type_uuid64<uint32_t>;
 
         for (auto i = 0u; i < comp->componentCount; ++i)
         {
             if (comp->components[i].typeUUID == entityIdUUID)
             {
-                return static_cast<uint32_t*>(comp->streams[i]);
+                return static_cast<uint32_t*>(comp->GetStreams()[i]);
             }
         }
 
         return nullptr;
     }
 
-    void EntityDatabase::ReserveEntitities(uint32_t entityIndex, size_t entryCount)
+    void EntityDatabase::VisitEntity(uint32_t entityId, uint64_t visitorUUID, void* userdata)
     {
-        auto* comp = &m_compositions[entityIndex].value;
-        const auto isEntity = (m_compositions[entityIndex].key & 0x80000000u) == 0u;
+        auto identifierIndex = m_identifiers.GetHashIndex(entityId);
+
+        if (identifierIndex != -1)
+        {
+            const auto identifier = m_identifiers[identifierIndex];
+            const auto compositionIndex = identifier.compositionIndex();
+            const auto compositionUUID = m_compositions[compositionIndex].key & COMP_MASK;
+            auto* comp = &m_compositions[compositionIndex].value;
+            
+            for (auto i = 0u; i < comp->visitorCount; ++i)
+            {
+                if (comp->visitors[i].uuid == visitorUUID)
+                {
+                    comp->visitors[i].visit(this, compositionUUID, &entityId, userdata);
+                    break;
+                }
+            }
+        }
+    }
+
+    void EntityDatabase::VisitComposition(uint64_t compositionUUID, uint64_t visitorUUID, void* userdata, uint32_t* entityId)
+    {
+        const auto typeKey = compositionUUID & COMP_MASK;
+        const auto compositionIndex = m_compositions.GetIndex(typeKey);
+
+        if (compositionIndex != -1)
+        {
+            auto* comp = &m_compositions[compositionIndex].value;
+
+            for (auto i = 0u; i < comp->visitorCount; ++i)
+            {
+                if (comp->visitors[i].uuid == visitorUUID)
+                {
+                    comp->visitors[i].visit(this, compositionUUID, entityId, userdata);
+                    break;
+                }
+            }
+        }
+    }
+
+    void EntityDatabase::ReserveEntitities(uint32_t compositionIndex, size_t entryCount)
+    {
+        auto* comp = &m_compositions[compositionIndex].value;
+        const auto isEntity = (m_compositions[compositionIndex].key & VIEW_MASK) == 0u;
         const auto isNew = comp->buffer == nullptr;
         const auto isPrimeExpand = !isNew && entryCount == 1ull;
 
@@ -146,20 +188,19 @@ namespace PK
             
             if (!isNew)
             {
-                comp->components[i].move(streams[i], comp->streams[i], comp->count);
+                comp->components[i].move(streams[i], comp->GetStreams()[i], comp->count);
             }
         }
 
         Memory::Free(comp->buffer);
         comp->buffer = buffer;
-        comp->streams = streams;
         comp->capacity = newCapacity;
 
         // Very inefficient double loop to update view indices
         // But this only happens once per entity so whatever.
         for (auto i = 0u; i < m_compositions.GetCount() && isNew; ++i)
         {
-            if (m_compositions[i].key & 0x80000000u)
+            if (m_compositions[i].key & VIEW_MASK)
             {
                 UpdateViewIndices(i);
             }
@@ -176,29 +217,27 @@ namespace PK
 
         for (auto i = 0u; i < m_compositions.GetCount(); ++i)
         {
-            if (m_compositions[i].key & 0x80000000u)
+            if ((m_compositions[i].key & VIEW_MASK) == 0ull)
             {
-                continue;
-            }
+                auto* comp = &m_compositions[i].value;
+                auto remainingMatches = view->componentCount;
 
-            auto* comp = &m_compositions[i].value;
-            auto remainingMatches = view->componentCount;
-
-            for (auto j = 0u; j < view->componentCount; ++j)
-            for (auto k = 0u; k < comp->componentCount; ++k)
-            {
-                remainingMatches -= view->components[j].typeUUID == comp->components[k].typeUUID;
-            }
-
-            if (!remainingMatches)
-            {
-                if (historyCount < view->capacity)
+                for (auto j = 0u; j < view->componentCount; ++j)
+                for (auto k = 0u; k < comp->componentCount; ++k)
                 {
-                    indices[historyCount++] = i;
-                    historyOffset = i;
+                    remainingMatches -= view->components[j].typeUUID == comp->components[k].typeUUID;
                 }
+
+                if (!remainingMatches)
+                {
+                    if (historyCount < view->capacity)
+                    {
+                        indices[historyCount++] = i;
+                        historyOffset = i;
+                    }
     
-                newCount++;
+                    newCount++;
+                }
             }
         }
 
@@ -213,23 +252,21 @@ namespace PK
 
             for (auto i = historyOffset; i < m_compositions.GetCount(); ++i)
             {
-                if (m_compositions[i].key & 0x80000000u)
+                if ((m_compositions[i].key & VIEW_MASK) == 0ull)
                 {
-                    continue;
-                }
+                    auto* comp = &m_compositions[i].value;
+                    auto remainingMatches = view->componentCount;
 
-                auto* comp = &m_compositions[i].value;
-                auto remainingMatches = view->componentCount;
+                    for (auto j = 0u; j < view->componentCount; ++j)
+                    for (auto k = 0u; k < comp->componentCount; ++k)
+                    {
+                        remainingMatches -= view->components[j].typeUUID == comp->components[k].typeUUID;
+                    }
 
-                for (auto j = 0u; j < view->componentCount; ++j)
-                for (auto k = 0u; k < comp->componentCount; ++k)
-                {
-                    remainingMatches -= view->components[j].typeUUID == comp->components[k].typeUUID;
-                }
-
-                if (!remainingMatches)
-                {
-                    newIndices[historyCount++] = i;
+                    if (!remainingMatches)
+                    {
+                        newIndices[historyCount++] = i;
+                    }
                 }
             }
 

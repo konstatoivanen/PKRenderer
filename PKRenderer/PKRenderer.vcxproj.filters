@@ -714,6 +714,12 @@
     <ClInclude Include="Source\Core\ECS\EntityComponentMeta.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\ECS\EntityVisitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\ECS\EntityID.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />

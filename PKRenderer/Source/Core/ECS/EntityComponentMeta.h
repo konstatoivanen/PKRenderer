@@ -5,7 +5,7 @@ namespace PK
 {
     struct EntityComponentMeta
     {
-        const UUID128 typeUUID;
+        const uint64_t typeUUID;
         const uint64_t stride;
         void (*const constructAt)(void* data, uint32_t index);
         void (*const removeAt)(void* data, uint32_t index, uint32_t last);
@@ -17,7 +17,7 @@ namespace PK
         {
             return
             {
-                pk_type_uuid128<T>,
+                pk_type_uuid64<T>,
                 sizeof(T),
                 [](void* data, uint32_t index) { Memory::Construct(static_cast<T*>(data) + index);},
                 [](void* data, uint32_t index, uint32_t last) { static_cast<T*>(data)[index] = PK::MoveTemp(static_cast<T*>(data)[last]); },

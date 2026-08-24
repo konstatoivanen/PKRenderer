@@ -268,6 +268,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Base\Types\NameIDProvider.h" />
     <ClInclude Include="Source\Core\ECS\EntityComponentMeta.h" />
     <ClInclude Include="Source\Core\ECS\EntityComposition.h" />
+    <ClInclude Include="Source\Core\ECS\EntityID.h" />
     <ClInclude Include="Source\Core\ECS\EntitySerializable.h" />
     <ClInclude Include="Source\Core\ECS\EntitySerializerRegister.h" />
     <ClInclude Include="Source\App\Engines\EngineGUIRenderer.h" />
@@ -281,6 +282,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
     <ClInclude Include="Source\Core\ECS\EntityFactory.h" />
     <ClInclude Include="Source\Core\ECS\EntityDatabase.h" />
+    <ClInclude Include="Source\Core\ECS\EntityVisitor.h" />
     <ClInclude Include="Source\Core\ECS\NotSerialized.h" />
     <ClInclude Include="Source\Core\ECS\SerialField.h" />
     <ClInclude Include="Source\Core\Input\InputStateCollection.h" />
