@@ -1,6 +1,12 @@
 #pragma once
-#include "Core/ECS/EntityFactory.h"
+#include "Core/ECS/EntityComponentSerializable.h"
 #include "App/Renderer/EntityEnums.h"
+
+namespace PK
+{
+    struct EntityDatabase;
+    struct EntityVisitorsView;
+}
 
 namespace PK::App
 {
@@ -14,6 +20,8 @@ namespace PK::App
     {
         struct Descriptor
         {
+            FixedString64 name;
+            EntitySerialFlags serialFlags;
             AssetDatabase* assetDatabase;
             IESProfileRef IESProfile;
             float3 position;
@@ -29,7 +37,9 @@ namespace PK::App
 
         uint32_t* entityId;
         ComponentLightSphere* lightSphere;
+      //  ComponentSerializable* serializable;
 
+     //   static EntityVisitorsView GetVisitors();
         static void OnCreate(EntityDatabase* entityDb, EntityLightSphere& entity, const Descriptor& descriptor);
     };
 }

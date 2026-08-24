@@ -561,13 +561,7 @@
     <ClInclude Include="Source\Core\Math\Simd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\ECS\EntityFactory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\ECS\EntitySerializable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\ECS\EntitySerializerRegister.h">
+    <ClInclude Include="Source\Core\ECS\EntitySerializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\ECS\EntityLightSphere.h">
@@ -718,6 +712,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\ECS\EntityID.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\ECS\EntityComponentSerializable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1167,7 +1164,7 @@
     <ClCompile Include="Source\Core\Math\Random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\ECS\EntitySerializerRegister.cpp">
+    <ClCompile Include="Source\Core\ECS\EntitySerializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\ECS\EntityMeshStatic.cpp">

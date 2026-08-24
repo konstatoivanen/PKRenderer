@@ -1,8 +1,17 @@
 #include "PrecompiledHeader.h"
+#include "Core/Rendering/IESProfile.h"
+#include "Core/ECS/EntitySerializer.h"
 #include "App/ECS/EntityLight.h"
 
 namespace PK::App
 {
+    EntityVisitorsView EntityLight::GetVisitors()
+    {
+        return MakeEntityVisitorsView<
+            EntitySerializer<EntityLight>::Serialize,
+            EntitySerializer<EntityLight>::Deserialize>();
+    }
+
     void EntityLight::OnCreate([[maybe_unused]] EntityDatabase* entityDb, EntityLight& entity, const Descriptor& desc)
     {
         // Light radius based on phyiscal attenuation at minAtten cutoff.
@@ -10,6 +19,8 @@ namespace PK::App
         const auto intensity = math::cmax(desc.color);
         const auto radius = desc.radius < 0.0f ? (intensity * intensity) / (minAtten * minAtten) : desc.radius;
         
+        entity.serializable->name = desc.entityName;
+        entity.serializable->flags = desc.serialFlags;
         entity.bounds->localAABB = math::centerExtentsToAABB(PK_FLOAT3_ZERO, PK_FLOAT3_ONE);
         entity.transform->position = desc.position;
         entity.transform->rotation = quaternion(desc.rotation);

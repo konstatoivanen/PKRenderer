@@ -1,8 +1,14 @@
 #pragma once
-#include "Core/ECS/EntityFactory.h"
+#include "Core/ECS/EntityComponentSerializable.h"
 #include "App/ECS/EntityViewTransform.h"
 #include "App/ECS/EntityViewScenePrimitive.h"
 #include "App/ECS/EntityViewMeshStatic.h"
+
+namespace PK
+{
+    struct EntityDatabase;
+    struct EntityVisitorsView;
+}
 
 namespace PK::App
 {
@@ -10,8 +16,8 @@ namespace PK::App
     {
         struct Descriptor
         {
-            FixedString32 entityName;
-            bool entitySerialize;
+            FixedString64 entityName;
+            EntitySerialFlags serialFlags;
 
             ScenePrimitiveFlags flags;
             MeshStaticRef mesh;
@@ -27,7 +33,9 @@ namespace PK::App
         ComponentScenePrimitive* primitive;
         ComponentMeshStatic* mesh;
         ComponentMaterials* materials;
+        ComponentSerializable* serializable;
 
+        static EntityVisitorsView GetVisitors();
         static void OnCreate(EntityDatabase* entityDb, EntityMeshStatic& entity, const Descriptor& descriptor);
     };
 }

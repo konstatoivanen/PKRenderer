@@ -1,8 +1,12 @@
 #pragma once
-#include "Core/ECS/EntityFactory.h"
 #include "App/ECS/EntityViewTransform.h"
 #include "App/ECS/EntityViewRenderView.h"
 #include "App/ECS/EntityViewFlyCamera.h"
+
+namespace PK
+{
+    struct EntityDatabase;
+}
 
 namespace PK::App
 {
@@ -35,6 +39,5 @@ namespace PK::App
         ComponentFlyCamera* flyCamera;
 
         static void OnCreate(EntityDatabase* entityDb, EntityFlyCamera& entity, const Descriptor& descriptor);
-
     };
 }

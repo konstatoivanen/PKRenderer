@@ -267,10 +267,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\ECS\EntityLightSphere.h" />
     <ClInclude Include="Source\Core\Base\Types\NameIDProvider.h" />
     <ClInclude Include="Source\Core\ECS\EntityComponentMeta.h" />
+    <ClInclude Include="Source\Core\ECS\EntityComponentSerializable.h" />
     <ClInclude Include="Source\Core\ECS\EntityComposition.h" />
     <ClInclude Include="Source\Core\ECS\EntityID.h" />
-    <ClInclude Include="Source\Core\ECS\EntitySerializable.h" />
-    <ClInclude Include="Source\Core\ECS\EntitySerializerRegister.h" />
+    <ClInclude Include="Source\Core\ECS\EntitySerializer.h" />
     <ClInclude Include="Source\App\Engines\EngineGUIRenderer.h" />
     <ClInclude Include="Source\App\Engines\EngineProfiler.h" />
     <ClInclude Include="Source\App\Engines\EngineViewUpdate.h" />
@@ -280,7 +280,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\Passes\PassDistort.h" />
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h" />
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
-    <ClInclude Include="Source\Core\ECS\EntityFactory.h" />
     <ClInclude Include="Source\Core\ECS\EntityDatabase.h" />
     <ClInclude Include="Source\Core\ECS\EntityVisitor.h" />
     <ClInclude Include="Source\Core\ECS\NotSerialized.h" />
@@ -669,7 +668,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp" />
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp" />
     <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp" />
-    <ClCompile Include="Source\Core\ECS\EntitySerializerRegister.cpp" />
+    <ClCompile Include="Source\Core\ECS\EntitySerializer.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
     <ClCompile Include="Source\Core\Math\Random.cpp" />
     <ClCompile Include="Source\Core\Platform\Platform.cpp" />

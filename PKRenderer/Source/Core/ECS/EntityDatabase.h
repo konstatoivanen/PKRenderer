@@ -10,7 +10,7 @@ namespace PK
     struct EntityDatabase;
 
     template <typename TEntity, typename TDescriptor>
-    concept TEntityHasOnCreate = requires(EntityDatabase* db, TEntity & entity, const TDescriptor & desc)
+    concept TEntityHasOnCreate = requires(EntityDatabase* db, TEntity& entity, const TDescriptor& desc)
     {
         TEntity::OnCreate(db, entity, desc);
     };
@@ -161,7 +161,7 @@ namespace PK
         uint32_t VisitType(uint64_t compositionUUID, TVisitorData* userdata)
         {
             uint32_t entityId = 0u;
-            VisitComposition(compositionUUID, pk_type_uuid64<TVisitorData>, userdata, entityId);
+            VisitComposition(compositionUUID, pk_type_uuid64<TVisitorData>, userdata, &entityId);
             return entityId;
         }
 

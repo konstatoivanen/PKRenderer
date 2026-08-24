@@ -57,14 +57,14 @@ namespace PK::App
             MaterialTarget material { materialSand, 0u };
             EntityMeshStatic::Descriptor desc;
             desc.entityName = "Floor";
-            desc.entitySerialize = true;
+            desc.serialFlags = EntitySerialFlags::Serialize;
             desc.flags = ScenePrimitiveFlags::DefaultMesh;
             desc.mesh = planeMesh;
             desc.materials = { &material, 1u };
             desc.position = { 0.0f, -5.0f, 0.0f };
             desc.rotation = { 90.0f * PK_FLOAT_DEG2RAD, 0.0f, 0.0f };
             desc.scale = 80.0f * PK_FLOAT3_ONE;
-            EntityFactory<EntityMeshStatic>::Create(m_entityDb, desc);
+            m_entityDb->New<EntityMeshStatic>(desc);
         }
 
         // Columns mesh
@@ -72,14 +72,14 @@ namespace PK::App
             MaterialTarget material = { materialAsphalt, 0u };
             EntityMeshStatic::Descriptor desc;
             desc.entityName = "Columns";
-            desc.entitySerialize = true;
+            desc.serialFlags = EntitySerialFlags::Serialize;
             desc.flags = ScenePrimitiveFlags::DefaultMesh;
             desc.mesh = columnMesh;
             desc.materials = { &material, 1u };
             desc.position = { -20.0f, 5.0f, -20.0f };
             desc.rotation = PK_FLOAT3_ZERO;
             desc.scale = 3.0f * PK_FLOAT3_ONE;
-            EntityFactory<EntityMeshStatic>::Create(m_entityDb, desc);
+            m_entityDb->New<EntityMeshStatic>(desc);
         }
 
         // Rock meshes
@@ -90,15 +90,15 @@ namespace PK::App
             {
                 MaterialTarget material { i < 128u ? materialMarble : materialPlaster, math::randomRange(0u, maxsubmesh) };
                 EntityMeshStatic::Descriptor desc;
-                desc.entityName = FixedString32("Rock_%u", i);
-                desc.entitySerialize = true;
+                desc.entityName = FixedString64("Rock_%u", i);
+                desc.serialFlags = EntitySerialFlags::Serialize;
                 desc.flags = ScenePrimitiveFlags::DefaultMesh;
                 desc.mesh = rocksMesh;
                 desc.materials = { &material, 1u };
                 desc.position = math::halton(i, uint3(7, 11, 17)) * (maxpos - minpos) + minpos;
                 desc.rotation = math::randomRadianFloat3();
                 desc.scale = math::randomRange(1.0f, 3.0f) * PK_FLOAT3_ONE;
-                EntityFactory<EntityMeshStatic>::Create(m_entityDb, desc);
+                m_entityDb->New<EntityMeshStatic>(desc);
             }
         }
         
@@ -117,7 +117,7 @@ namespace PK::App
             desc.sourceRadius = 0.2f;
             desc.castShadow = true;
             desc.useIESCandelas = true;
-            EntityFactory<EntityLightSphere>::Create(m_entityDb, desc);
+            m_entityDb->New<EntityLightSphere>(desc);
         }
 
         // Directional light
@@ -133,7 +133,7 @@ namespace PK::App
             desc.sourceRadius = 0.1f;
             desc.castShadow = true;
             desc.useIESCandelas = false;
-            EntityFactory<EntityLight>::Create(m_entityDb, desc);
+            m_entityDb->New<EntityLight>(desc);
         }
 
         // Fly camera
@@ -152,7 +152,7 @@ namespace PK::App
             desc.rotationSmoothing = config->CameraLookSmoothing;
             desc.sensitivity = config->CameraLookSensitivity;
             desc.settings = &config->ViewSettings;
-            m_cameraEnityId = *EntityFactory<EntityFlyCamera>::Create(m_entityDb, desc).entityId;
+            m_cameraEnityId = *m_entityDb->New<EntityFlyCamera>(desc).entityId;
         }
     }
 

@@ -68,14 +68,14 @@ namespace PK
 
     template<typename TEntity>
     requires TEntityHasVisitors<TEntity>
-    inline consteval EntityVisitorsView GetEntityVisitors() noexcept
+    inline constexpr EntityVisitorsView GetEntityVisitors() noexcept
     {
         return TEntity::GetVisitors();
     }
 
     template<typename TEntity>
     requires (!TEntityHasVisitors<TEntity>)
-    inline consteval EntityVisitorsView GetEntityVisitors() noexcept
+    inline constexpr EntityVisitorsView GetEntityVisitors() noexcept
     {
         return EntityVisitorsView{ nullptr, 0ull };
     }
