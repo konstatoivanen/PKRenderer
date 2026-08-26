@@ -7,14 +7,6 @@
 
 namespace PK
 {
-    struct EntityDatabase;
-
-    template <typename TEntity, typename TDescriptor>
-    concept TEntityHasOnCreate = requires(EntityDatabase* db, TEntity& entity, const TDescriptor& desc)
-    {
-        TEntity::OnCreate(db, entity, desc);
-    };
-
     struct EntityDatabase
     {
         constexpr const static uint64_t VIEW_MASK = 0x8000000000000000ull;

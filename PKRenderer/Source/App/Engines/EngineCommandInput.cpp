@@ -17,6 +17,62 @@ namespace PK::App
         m_inputKeyCommands.memory.Copy(keyConfig->InputKeyCommands.memory);
         m_inputKeyCommands.count = keyConfig->InputKeyCommands.count;
         keyConfig->CommandInputKeys.TryGetKey("Console.Toggle", &m_keyToggleConsole);
+    
+        void* historyData = nullptr;
+        auto historyLength = 0ull;
+
+        if (FileIO::ReadBinary("ConsoleHistory.ini", true, &historyData, &historyLength) == 0)
+        {
+            const auto text = static_cast<char*>(historyData);
+            auto lineIndex = 0ull;
+
+            for (auto i = 0ull; i < historyLength && text[i]; ++i)
+            {
+                if (text[i] == '\n')
+                {
+                    lineIndex++;
+                }
+                else if (lineIndex < LINE_COUNT)
+                {
+                    m_lines[(lineIndex + 1ull) % LINE_COUNT].Append(text[i]);
+                }
+            }
+
+            Memory::Free(historyData);
+        }
+    }
+
+    EngineCommandInput::~EngineCommandInput()
+    {
+        auto historySize = 0ull;
+
+        for (auto i = 0u; i < LINE_COUNT; ++i)
+        {
+            if (i != m_lineEdit)
+            {
+                historySize += m_lines[i].Length();
+                historySize += m_lines[i].Length() ? 1ull : 0ull; 
+            }
+        }
+
+        if (historySize)
+        {
+            auto historyData = Memory::Allocate<char>(historySize);
+            auto historyHead = 0ull;
+
+            for (auto i = 0u; i < LINE_COUNT; ++i)
+            {
+                if (i != m_lineEdit && m_lines[i].Length())
+                {
+                    Memory::Memcpy(historyData + historyHead, m_lines[i].c_str(), m_lines[i].Length());
+                    historyHead += m_lines[i].Length() + 1ull;
+                    historyData[historyHead - 1ull] = historyHead == historySize ? '\0' : '\n';
+                }
+            }
+
+            FileIO::WriteBinary("ConsoleHistory.ini", true, historyData, historySize);
+            Memory::Free(historyData);
+        }
     }
 
     void EngineCommandInput::Step(IGUIRenderer* gui)

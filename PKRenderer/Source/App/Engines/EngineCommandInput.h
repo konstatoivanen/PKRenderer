@@ -23,6 +23,7 @@ namespace PK::App
         constexpr const static uint32_t LINE_LENGTH = 128u;
 
         EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig);
+        ~EngineCommandInput();
 
         virtual void Step(IGUIRenderer* gui) final;
         virtual void OnStepFrameUpdate(FrameContext* ctx) final;

@@ -11,6 +11,12 @@ namespace PK
         requires TIsClass<TEntityStruct>&& TIsAggregate<TEntityStruct>&& TIsStandardLayout<TEntityStruct>;
     };
 
+    template <typename TEntity, typename TDescriptor>
+    concept TEntityHasOnCreate = requires(struct EntityDatabase* db, TEntity& entity, const TDescriptor& desc)
+    {
+        TEntity::OnCreate(db, entity, desc);
+    };
+
     template<typename TTuple>
     struct TMakeEntityComposition;
 
