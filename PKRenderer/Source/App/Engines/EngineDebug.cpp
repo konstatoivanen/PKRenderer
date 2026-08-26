@@ -106,6 +106,8 @@ namespace PK::App
         for (auto i = 0u; i < config->LightCount; ++i)
         {
             EntityLightSphere::Descriptor desc;
+            desc.entityName = "LightSphere";
+            desc.serialFlags = EntitySerialFlags::Serialize;
             desc.assetDatabase = m_assetDatabase;
             desc.type = i % 2 == 0 ? LightType::Spot : LightType::Point;
             desc.IESProfile = i % 2 == 0 ? profile : nullptr;
@@ -123,6 +125,8 @@ namespace PK::App
         // Directional light
         {
             EntityLight::Descriptor desc;
+            desc.entityName = "Directional_Light";
+            desc.serialFlags = EntitySerialFlags::Serialize;
             desc.type = LightType::Directional;
             desc.IESProfile = nullptr;
             desc.position = PK_FLOAT3_ZERO;

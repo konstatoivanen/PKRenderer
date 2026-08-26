@@ -13,12 +13,16 @@ namespace PK
         {
             auto pathsubstr = node.val();
             FixedString128 path(pathsubstr.len, pathsubstr.data());
-            *rhs = AssetDatabase::Get()->Load<TRemovePtr_T<T>>(path).get();
+
+            if (path.Length())
+            {
+                *rhs = AssetDatabase::Get()->Load<TRemovePtr_T<T>>(path).get();
+            }
         }
 
         static void WriteVal(SerialNodeWrite node, T const* rhs)
         {
-            node.save((*rhs)->GetFileName(), ryml::VAL_DQUO);
+            node.save(*rhs != nullptr ? (*rhs)->GetFileName() : nullptr, ryml::VAL_DQUO);
         }
     };
 
@@ -30,12 +34,16 @@ namespace PK
         {
             auto pathsubstr = node.val();
             FixedString128 path(pathsubstr.len, pathsubstr.data());
-            *rhs = AssetDatabase::Get()->Load<T>(path);
+
+            if (path.Length())
+            {
+                *rhs = AssetDatabase::Get()->Load<T>(path);
+            }
         }
 
         static void WriteVal(SerialNodeWrite node, Ref<T> const* rhs)
         {
-            node.save((*rhs)->GetFileName(), ryml::VAL_DQUO);
+            node.save(*rhs != nullptr ? (*rhs)->GetFileName() : nullptr, ryml::VAL_DQUO);
         }
     };
 }

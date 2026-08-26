@@ -64,7 +64,7 @@ namespace PK
         {
             for (auto entity : entities.children())
             {
-                const auto type = entity.find_child("TypeUUID");
+                const auto type = entity.find_child("CompositionUUID");
 
                 if (type.readable())
                 {

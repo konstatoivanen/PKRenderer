@@ -13,10 +13,45 @@ namespace PK
         requires TIsSame<decltype(TEntity::serializable), ComponentSerializable*>;
     };
 
+    template <typename TEntity>
+    concept TEntityHasOnSerialize = requires(EntityDatabase * db, TEntity & entity, SerialNodeWrite & node)
+    {
+        TEntity::OnSerialize(db, entity, node);
+    };
+
+    template <typename TEntity>
+    concept TEntityHasOnDeserialize = requires(EntityDatabase * db, TEntity & entity, SerialNodeRead & node)
+    {
+        TEntity::OnDeserialize(db, entity, node);
+    };
+
     template<typename TEntity>
     requires TEntityIsSerializable<TEntity>
     struct EntitySerializer
     {
+        template<typename TFunc>
+        static void Reflect(TEntity& entity, TFunc&& func)
+        {
+            PK::ReflectFields(entity, [&func](const char* componentName, auto& component)
+            {
+                using TComponent = TRemovePtrCVRef_T<decltype(component)>;
+
+                if constexpr (TIsClass<TComponent> && !TIsSame<TComponent, ComponentSerializable>)
+                {
+                    auto isPrivate = false;
+
+                    PK::ReflectFields(*component, [&isPrivate, &componentName, &func](const char* name, auto& field)
+                    {
+                        if ((isPrivate |= TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>, !isPrivate))
+                        {
+                            FixedString256 namepath("%s.%s", componentName, name);
+                            func(namepath.c_str(), field);
+                        }
+                    });
+                }
+            });
+        }
+
         static void Serialize(EntityDatabase* entityDb, uint64_t compositionUUID, uint32_t* entityId, SerialNodeWrite* parentref)
         {
             auto entity = entityDb->Query<TEntity>(*entityId);
@@ -42,31 +77,23 @@ namespace PK
             }
 
             auto uuid64 = String::Base64Encode(compositionUUID);
-            auto node = parent.append_child();
-            node.set_map();
-            node.save_key(name.c_str());
-            node["TypeUUID"].save(uuid64.c_str(), ryml::VAL_PLAIN);
-            Serialize::WriteSingle(node["SerializationFlags"], &entity.serializable->flags);
+            auto entityNode = parent.append_child();
+            entityNode.set_map();
+            entityNode.save_key(name.c_str());
+            entityNode["CompositionUUID"].save(uuid64.c_str(), ryml::VAL_PLAIN);
+            Serialize::WriteSingle(entityNode["SerializationFlags"], &entity.serializable->flags);
 
-            PK::ReflectFields(entity, [&node](const char* componentName, auto& component)
+            if constexpr (TEntityHasOnSerialize<TEntity>)
             {
-                using TComponent = TRemovePtrCVRef_T<decltype(component)>;
+                TEntity::OnSerialize(entityDb, entity, entityNode);
+                return;
+            }
 
-                if constexpr (TIsClass<TComponent> && !TIsSame<TComponent, ComponentSerializable>)
-                {
-                    auto isPrivate = false;
-
-                    PK::ReflectFields(*component, [&isPrivate, &componentName, &node](const char* name, const auto& field)
-                    {
-                        if ((isPrivate |= TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>, !isPrivate))
-                        {
-                            FixedString256 namepath("%s.%s", componentName, name);
-                            auto fieldNode = node.append_child();
-                            fieldNode.save_key(namepath.c_str());
-                            Serialize::WriteSingle(fieldNode, &field);
-                        }
-                    });
-                }
+            Reflect(entity, [&entityNode](const char* path, auto& field)
+            {
+                auto fieldNode = entityNode.append_child();
+                fieldNode.save_key(path);
+                Serialize::WriteSingle(fieldNode, &field);
             });
         }
 
@@ -80,27 +107,18 @@ namespace PK
 
             if ((entity.serializable->flags & EntitySerialFlags::Serialize) == 0)
             {
-                // WHAT?!?
                 return;
             }
 
-            PK::ReflectFields(entity, [&entityNode](const char* componentName, auto& component)
+            if constexpr (TEntityHasOnDeserialize<TEntity>)
             {
-                using TComponent = TRemovePtrCVRef_T<decltype(component)>;
+                TEntity::OnDeserialize(entityDb, entity, entityNode);
+                return;
+            }
 
-                if constexpr (TIsClass<TComponent> && !TIsSame<TComponent, ComponentSerializable>)
-                {
-                    auto isPrivate = false;
-
-                    PK::ReflectFields(*component, [&isPrivate, &componentName, &entityNode](const char* name, auto& field)
-                    {
-                        if ((isPrivate |= TIsSame<TRemoveCVRef_T<decltype(field)>, NotSerialized>, !isPrivate))
-                        {
-                            FixedString256 namepath("%s.%s", componentName, name);
-                            Serialize::ReadSingle(entityNode[namepath.c_str()], &field);
-                        }
-                    });
-                }
+            Reflect(entity, [&entityNode](const char* path, auto& field)
+            {
+                Serialize::ReadSingle(entityNode[path], &field);
             });
         }
     };
