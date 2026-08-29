@@ -382,7 +382,7 @@ namespace PK
         inline constexpr auto Base64Decode(const char* str)
         {
             const auto size = sizeof(T);
-            const auto length = (size * 6) / 8;
+            const auto length = (size * 8ull + 5ull) / 6ull;
             T value;
             Base64Decode(str, reinterpret_cast<uint8_t*>(&value), length);
             return value;

@@ -21,6 +21,7 @@ namespace PK::App
     {
         constexpr const static uint32_t LINE_COUNT = 32u;
         constexpr const static uint32_t LINE_LENGTH = 128u;
+        constexpr const static char* HISTORY_FILENAME = "Saved/ConsoleHistory.ini";
 
         EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig);
         ~EngineCommandInput();

@@ -161,9 +161,7 @@ namespace PK
         void DeleteType() 
         {
             static_assert(TIsValidEntityStruct<TEntityStruct>, "Struct type is not a valid entity composition!");
-            using TComposition = TStructToEntityComposition<TEntityStruct>;
-            const auto compositionUUID = pk_type_uuid64<TComposition>;
-            DeleteType(compositionUUID);
+            DeleteType(pk_entity_composition_uuid<TEntityStruct>());
         }
 
         void Delete(uint32_t entityId);
@@ -175,7 +173,7 @@ namespace PK
             static_assert(TIsValidEntityStruct<TStruct>, "Struct type is not a valid entity composition!");
 
             using TComposition = TStructToEntityComposition<TStruct>;
-            const auto compositionUUID = pk_type_uuid64<TComposition>;
+            const auto compositionUUID = pk_entity_composition_uuid<TStruct>();
             const auto typeKey = (compositionUUID & COMP_MASK) | (uint64_t(is_view) << 63ull);
             const auto index = m_compositions.AddKey(typeKey);
             const auto isNew = m_compositions[index].value.componentCount == 0ull;

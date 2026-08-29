@@ -36,7 +36,7 @@ namespace PK
         {
             char value[256]{};
             ReflectEnum<T>::FlagsToString(*rhs, value, 256);
-            node.save(value, ryml::VAL_PLAIN);
+            node.save(&value[0], ryml::VAL_PLAIN);
         }
     };
 }

@@ -68,9 +68,21 @@ namespace PK
             virtual ~AssetObject() noexcept override {}
 
             template <typename ... Args>
-            void ConstructVirtual(Args&&... args) 
+            void ConstructVirtual(const char* filepath, Args&&... args)
             { 
-                Memory::Construct(&value, PK::Forward<Args>(args)...);
+                if constexpr (__is_constructible(T, const char*, Args...))
+                {
+                    Memory::Construct(&value, filepath, PK::Forward<Args>(args)...);
+                }
+                else if constexpr (__is_constructible(T, Args...))
+                {
+                    Memory::Construct(&value, PK::Forward<Args>(args)...);
+                }
+                else
+                {
+                    static_assert(false, "Could not find a valid virtual asset constructor!");
+                }
+
                 value.m_sharedObject = this;
                 isLoaded = true; 
                 isVirtual = true;
@@ -139,9 +151,10 @@ namespace PK
         Ref<T> CreateVirtual(AssetID assetId, Args&& ... args)
         {
             auto object = CreateAssetObject<T>(assetId, CacheMode::Persistent);
-            PK_FATAL_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
-            PK_LOG_VERBOSE_FUNC_FMT("%s, %s", pk_inner_type_name<T>(), assetId.c_str());
-            object->ConstructVirtual(PK::Forward<Args>(args)...);
+            auto path = assetId.c_str();
+            PK_FATAL_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", path);
+            PK_LOG_VERBOSE_FUNC_FMT("%s, %s", pk_inner_type_name<T>(), path);
+            object->ConstructVirtual(path, PK::Forward<Args>(args)...);
             return object->GetReference();
         }
 
@@ -162,7 +175,6 @@ namespace PK
         template<typename T>
         Ref<T> Load(const char* filepath, CacheMode cachingMode = CacheMode::Persistent, bool forceReload = false)
         { 
-            PK_FATAL_ASSERT(FileIO::FileExists(filepath), "Asset not found at path: %s", filepath);
             return Load<T>(AssetID(filepath), cachingMode, forceReload); 
         }
 

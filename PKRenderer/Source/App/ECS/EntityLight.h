@@ -17,7 +17,7 @@ namespace PK::App
         struct Descriptor
         {
             FixedString64 entityName;
-            EntitySerialFlags serialFlags;
+            AssetID sceneId;
 
             IESProfileRef IESProfile;
             float3 position;

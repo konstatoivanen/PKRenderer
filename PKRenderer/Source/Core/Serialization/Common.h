@@ -70,7 +70,7 @@ namespace PK::Serialize
         void* fileData = nullptr;
         size_t fileSize = 0ull;
 
-        if (FileIO::ReadBinary(filepath, false, &fileData, &fileSize) == 0)
+        if (FileIO::Read(filepath, false, &fileData, &fileSize) == 0)
         {
             auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
             auto root = tree.rootref();

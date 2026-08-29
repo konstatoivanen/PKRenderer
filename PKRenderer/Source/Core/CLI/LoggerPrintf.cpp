@@ -81,7 +81,7 @@ namespace PK
             auto length = static_cast<size_t>(vprintf(format, args));
             auto output = PK_STACK_ALLOC(char, length);
             _vsnprintf(output, length, format, args);
-            FileIO::WriteBinary(m_crashLogPath.c_str(), true, output, length);
+            FileIO::Write(m_crashLogPath.c_str(), true, output, length);
         }
 
         if ((severity & m_severityMask) != 0)

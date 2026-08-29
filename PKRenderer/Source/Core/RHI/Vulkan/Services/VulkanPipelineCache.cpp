@@ -21,7 +21,7 @@ namespace PK
         {
             void* cacheData = nullptr;
             size_t cacheSize = 0ull;
-            FileIO::ReadBinary(FixedString256({ workingDirectory, PIPELINE_CACHE_FILENAME }), false, &cacheData, &cacheSize);
+            FileIO::Read(FixedString256({ workingDirectory, PIPELINE_CACHE_FILENAME }), false, &cacheData, &cacheSize);
             VkPipelineCacheCreateInfo cacheCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
             cacheCreateInfo.initialDataSize = cacheSize;
             cacheCreateInfo.pInitialData = cacheData;
@@ -38,7 +38,7 @@ namespace PK
             vkGetPipelineCacheData(m_device, m_pipelineCache, &size, nullptr);
             void* cacheData = Memory::AllocateAligned(size);
             vkGetPipelineCacheData(m_device, m_pipelineCache, &size, cacheData);
-            FileIO::WriteBinary(FixedString256({ m_workingDirectory, PIPELINE_CACHE_FILENAME }), false, cacheData, size);
+            FileIO::Write(FixedString256({ m_workingDirectory, PIPELINE_CACHE_FILENAME }), false, cacheData, size);
             vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
             Memory::Free(cacheData);
         }

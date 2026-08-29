@@ -263,6 +263,7 @@ namespace PK
         if (!object->isVirtual && (!object->isLoaded || isReload))
         {
             FixedString128 filepath = object->assetId.c_str();
+            PK_FATAL_ASSERT(FileIO::FileExists(filepath), "Asset not found at path: %s", filepath);
             PK_LOG_VERBOSE_FUNC_FMT(": %s, %s", object->typeInfo->name, filepath.c_str());
             object->DestructAsset();
             object->ConstructAsset(this, filepath);

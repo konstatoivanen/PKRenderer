@@ -21,7 +21,7 @@ namespace PK::App
         struct Descriptor
         {
             FixedString64 entityName;
-            EntitySerialFlags serialFlags;
+            AssetID sceneId;
 
             AssetDatabase* assetDatabase;
             IESProfileRef IESProfile;
@@ -42,7 +42,7 @@ namespace PK::App
 
         static EntityVisitorsView GetVisitors();
         static void OnCreate(EntityDatabase* entityDb, EntityLightSphere& entity, const Descriptor& descriptor);
-        static void OnSerialize(EntityDatabase* entityDb, EntityLightSphere& entity, SerialNodeWrite& node);
-        static void OnDeserialize(EntityDatabase* entityDb, EntityLightSphere& entity, SerialNodeRead& node);
+        static void OnSerialize(EntityDatabase* entityDb, EntityLightSphere& entity, EntityArchiveWrite* archive);
+        static void OnDeserialize(EntityDatabase* entityDb, EntityLightSphere& entity, EntityArchiveRead* archive);
     };
 }

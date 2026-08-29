@@ -2,7 +2,7 @@
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/IESProfile.h"
 #include "App/Renderer/HashCache.h"
-#include "Core/ECS/EntitySerializer.h"
+#include "Core/ECS/EntityArchive.h"
 #include "App/ECS/EntityViewTransform.h"
 #include "App/ECS/EntityMeshStatic.h"
 #include "App/ECS/EntityLight.h"
@@ -13,14 +13,14 @@ namespace PK::App
     EntityVisitorsView EntityLightSphere::GetVisitors()
     {
         return MakeEntityVisitorsView<
-            EntitySerializer<EntityLightSphere>::Serialize,
-            EntitySerializer<EntityLightSphere>::Deserialize>();
+            EntityArchive::Serialize<EntityLightSphere>,
+            EntityArchive::Deserialize<EntityLightSphere>>();
     }
 
     void EntityLightSphere::OnCreate(EntityDatabase* entityDb, EntityLightSphere& entity, const Descriptor& desc)
     {
         EntityLight::Descriptor descLight;
-        descLight.serialFlags = EntitySerialFlags::None;
+        descLight.sceneId = 0u;
         descLight.IESProfile = desc.IESProfile;
         descLight.position = desc.position;
         descLight.rotation = desc.rotation;
@@ -40,7 +40,7 @@ namespace PK::App
         material.material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
 
         EntityMeshStatic::Descriptor meshDesc;
-        meshDesc.serialFlags = EntitySerialFlags::None;
+        meshDesc.sceneId = 0u;
         meshDesc.flags = ScenePrimitiveFlags::None;
         meshDesc.mesh = mesh;
         meshDesc.materials = { &material, 1u };
@@ -50,13 +50,14 @@ namespace PK::App
         auto meshEntity = entityDb->New<EntityMeshStatic>(meshDesc);
 
         entity.serializable->name = desc.entityName;
-        entity.serializable->flags = desc.serialFlags;
+        entity.serializable->sceneId = desc.sceneId;
         entity.lightSphere->lightEntityId = *lightEntity.entityId;
         entity.lightSphere->meshEntityId = *meshEntity.entityId;
     }
     
-    void EntityLightSphere::OnSerialize(EntityDatabase* entityDb, EntityLightSphere& entity, SerialNodeWrite& node)
+    void EntityLightSphere::OnSerialize(EntityDatabase* entityDb, EntityLightSphere& entity, EntityArchiveWrite* archive)
     {
+        auto& node = *archive->node;
         auto light = entityDb->Query<EntityLight>(entity.lightSphere->lightEntityId);
         auto euler = math::euler(light.transform->rotation);
         auto castShadows = (light.primitive->flags & ScenePrimitiveFlags::CastShadows) != 0u;
@@ -72,11 +73,13 @@ namespace PK::App
         Serialize::WriteSingle<bool>(node["castShadow"], &castShadows);
     }
 
-    void EntityLightSphere::OnDeserialize(EntityDatabase* entityDb, EntityLightSphere& entity, SerialNodeRead& node)
+    void EntityLightSphere::OnDeserialize(EntityDatabase* entityDb, EntityLightSphere& entity, EntityArchiveRead* archive)
     {
         Descriptor descriptor;
+        auto& node = *archive->node;
+        descriptor.assetDatabase = AssetDatabase::Get();
         descriptor.entityName = entity.serializable->name;
-        descriptor.serialFlags = entity.serializable->flags;
+        descriptor.sceneId = entity.serializable->sceneId;
         Serialize::ReadSingle<IESProfileRef>(node["IESProfile"], &descriptor.IESProfile);
         Serialize::ReadSingle<float3>(node["position"], &descriptor.position);
         Serialize::ReadSingle<float3>(node["rotation"], &descriptor.rotation);

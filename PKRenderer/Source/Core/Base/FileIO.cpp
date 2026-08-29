@@ -61,19 +61,30 @@ namespace PK::FileIO
         #endif
     }
 
-    FILE* OpenFile(const char* filepath, const char* openMode, size_t* outSize = nullptr)
+
+    int CloseFile(void* file)
+    {
+        return fclose(static_cast<FILE*>(file));
+    }
+
+    void* OpenWrite(const char* filepath, bool isText)
+    {
+        if (filepath && filepath[0] && CreateDirectory(filepath))
+        {
+            return fopen(filepath, isText ? "w" : "wb");
+        }
+
+        return nullptr;
+    }
+
+    void* OpenRead(const char* filepath, bool isText, size_t* outSize)
     {
         if (!filepath || !filepath[0] || !FileExists(filepath))
         {
             return nullptr;
         }
 
-        if (!FileExists(filepath))
-        {
-            return nullptr;
-        }
-
-        FILE* file = fopen(filepath, openMode);
+        auto file = fopen(filepath, isText ? "r" : "rb");
 
         if (file == nullptr)
         {
@@ -87,7 +98,7 @@ namespace PK::FileIO
 
             if (fstat(fileNumber, &filestat) != 0)
             {
-                fclose(file);
+                CloseFile(file);
                 return nullptr;
             }
 
@@ -95,7 +106,7 @@ namespace PK::FileIO
 
             if (*outSize == 0)
             {
-                fclose(file);
+                CloseFile(file);
                 return nullptr;
             }
         }
@@ -103,9 +114,10 @@ namespace PK::FileIO
         return file;
     }
 
-    int ReadBinary(const char* filepath, bool isText, void** data, size_t* size)
+
+    int Read(const char* filepath, bool isText, void** data, size_t* size)
     {
-        FILE* file = OpenFile(filepath, isText ? "r" : "rb", size);
+        auto file = static_cast<FILE*>(OpenRead(filepath, isText, size));
 
         if (file == nullptr)
         {
@@ -116,18 +128,17 @@ namespace PK::FileIO
 
         if (*data == nullptr)
         {
-            fclose(file);
+            CloseFile(file);
             return -1;
         }
 
         fread(*data, sizeof(char), *size, file);
-        fclose(file);
-        return 0;
+        return CloseFile(file);
     }
 
-    int ReadBinaryInPlace(const char* filepath, bool isText, size_t maxSize, void* data, size_t* size)
+    int ReadInPlace(const char* filepath, bool isText, size_t maxSize, void* data, size_t* size)
     {
-        FILE* file = OpenFile(filepath, isText ? "r" : "rb", size);
+        auto file = static_cast<FILE*>(OpenRead(filepath, isText, size));
 
         if (file == nullptr)
         {
@@ -136,39 +147,31 @@ namespace PK::FileIO
 
         if (*size >= maxSize)
         {
-            fclose(file);
+            CloseFile(file);
             return -1;
         }
 
         fread(data, sizeof(char), *size, file);
-        fclose(file);
-        return 0;
+        return CloseFile(file);
     }
 
-    int WriteBinary(const char* filepath, bool isText, void* data, size_t size)
+    int Write(const char* filepath, bool isText, void* data, size_t size)
     {
-        if (!filepath || !filepath[0] || !CreateDirectory(filepath))
+        auto file = static_cast<FILE*>(OpenWrite(filepath, isText));
+
+        if (file != nullptr)
         {
-            return -1;
+            fwrite(data, sizeof(char), size, file);
+            return CloseFile(file);
         }
 
-        FILE* file = nullptr;
-
-        file = fopen(filepath, isText ? "w" : "wb");
-
-        if (file == nullptr)
-        {
-            return -1;
-        }
-
-        fwrite(data, sizeof(char), size, file);
-        return fclose(file);
+        return -1;
     }
 
 
-    Image* ReadBMP(const char* fileName)
+    Image* ReadBMP(const char* filepath)
     {
-        FILE* file = OpenFile(fileName, "rb");
+        auto file = static_cast<FILE*>(OpenRead(filepath, false));
 
         if (file == nullptr)
         {
@@ -185,7 +188,7 @@ namespace PK::FileIO
 
         if (header[0] != 'B' || header[1] != 'M')
         {
-            fclose(file);
+            CloseFile(file);
             return nullptr;
         }
 
@@ -228,13 +231,13 @@ namespace PK::FileIO
             currentRowPointer -= unpaddedRowSize;
         }
 
-        fclose(file);
+        CloseFile(file);
         return image;
     }
 
-    Image* ReadICO(const char* fileName)
+    Image* ReadICO(const char* filepath)
     {
-        FILE* file = OpenFile(fileName, "rb");
+        auto file = static_cast<FILE*>(OpenRead(filepath, false));
 
         if (file == nullptr)
         {
@@ -250,7 +253,7 @@ namespace PK::FileIO
 
         if (imageCount == 0u || imageType != 1)
         {
-            fclose(file);
+            CloseFile(file);
             return nullptr;
         }
 
@@ -287,7 +290,7 @@ namespace PK::FileIO
         // Only 4 channel true color are images supported.
         if (biBitCount != 32)
         {
-            fclose(file);
+            CloseFile(file);
             return nullptr;
         }
 
@@ -323,18 +326,18 @@ namespace PK::FileIO
             currentRowPointer -= unpaddedRowSize;
         }
 
-        fclose(file);
+        CloseFile(file);
         return image;
     }
 
-    Image* ReadImage(const char* fileName)
+    Image* ReadImage(const char* filepath)
     {
-        if (!fileName || !fileName[0])
+        if (!filepath || !filepath[0])
         {
             return nullptr;
         }
 
-        auto pos = strchr(fileName, '.');
+        auto pos = strchr(filepath, '.');
 
         if (pos == nullptr)
         {
@@ -343,65 +346,66 @@ namespace PK::FileIO
 
         if (strcmp(pos, ".bmp") == 0)
         {
-            return ReadBMP(fileName);
+            return ReadBMP(filepath);
         }
 
         if (strcmp(pos, ".ico") == 0)
         {
-            return ReadICO(fileName);
+            return ReadICO(filepath);
         }
 
         return nullptr;
     }
 
-    void WriteBMP(const char* fileName, const Image& image)
+
+    int WriteBMP(const char* filepath, const Image& image)
     {
-        FILE* outputFile = fopen(fileName, "wb");
+        auto file = static_cast<FILE*>(OpenWrite(filepath, false));
 
         //*****HEADER************//
         const char* BM = "BM";
-        fwrite(&BM[0], 1, 1, outputFile);
-        fwrite(&BM[1], 1, 1, outputFile);
+        fwrite(&BM[0], 1, 1, file);
+        fwrite(&BM[1], 1, 1, file);
         int32_t paddedRowSize = (int32_t)(4 * ceil(image.width / 4.0f)) * BYTES_PER_PIXEL;
         uint32_t fileSize = paddedRowSize * image.height + HEADER_SIZE + INFO_HEADER_SIZE;
-        fwrite(&fileSize, 4, 1, outputFile);
+        fwrite(&fileSize, 4, 1, file);
         uint32_t reserved = 0x0000;
-        fwrite(&reserved, 4, 1, outputFile);
+        fwrite(&reserved, 4, 1, file);
         uint32_t dataOffset = HEADER_SIZE + INFO_HEADER_SIZE;
-        fwrite(&dataOffset, 4, 1, outputFile);
+        fwrite(&dataOffset, 4, 1, file);
 
         //*******INFO*HEADER******//
         uint32_t infoHeaderSize = INFO_HEADER_SIZE;
-        fwrite(&infoHeaderSize, 4, 1, outputFile);
-        fwrite(&image.width, 4, 1, outputFile);
-        fwrite(&image.height, 4, 1, outputFile);
+        fwrite(&infoHeaderSize, 4, 1, file);
+        fwrite(&image.width, 4, 1, file);
+        fwrite(&image.height, 4, 1, file);
         uint16_t planes = 1; //always 1
-        fwrite(&planes, 2, 1, outputFile);
+        fwrite(&planes, 2, 1, file);
         uint16_t bitsPerPixel = BYTES_PER_PIXEL * 8;
-        fwrite(&bitsPerPixel, 2, 1, outputFile);
+        fwrite(&bitsPerPixel, 2, 1, file);
         //write compression
         uint32_t compression = NO_COMPRESION;
-        fwrite(&compression, 4, 1, outputFile);
+        fwrite(&compression, 4, 1, file);
         //write image size(in bytes)
         uint32_t imageSize = image.width * image.height * BYTES_PER_PIXEL;
-        fwrite(&imageSize, 4, 1, outputFile);
+        fwrite(&imageSize, 4, 1, file);
         uint32_t resolutionX = 11811; //300 dpi
         uint32_t resolutionY = 11811; //300 dpi
-        fwrite(&resolutionX, 4, 1, outputFile);
-        fwrite(&resolutionY, 4, 1, outputFile);
+        fwrite(&resolutionX, 4, 1, file);
+        fwrite(&resolutionY, 4, 1, file);
         uint32_t colorsUsed = MAX_NUMBER_OF_COLORS;
-        fwrite(&colorsUsed, 4, 1, outputFile);
+        fwrite(&colorsUsed, 4, 1, file);
         uint32_t importantColors = ALL_COLORS_REQUIRED;
-        fwrite(&importantColors, 4, 1, outputFile);
+        fwrite(&importantColors, 4, 1, file);
 
         for (int32_t y = image.height - 1; y >= 0; --y)
         for (int32_t x = 0; x < image.width; ++x)
         {
             uint32_t index = (x + y * image.width) * BYTES_PER_PIXEL;
             byte color[4] = { image.pixels[index + 0], image.pixels[index + 1], image.pixels[index + 2], image.pixels[index + 3] };
-            fwrite(color, sizeof(byte), 4, outputFile);
+            fwrite(color, sizeof(byte), 4, file);
         }
 
-        fclose(outputFile);
+        return CloseFile(file);
     }
 }

@@ -66,4 +66,7 @@ namespace PK
 
     template<typename T>
     using TStructToEntityComposition = typename TMakeEntityComposition<Sequence::OnlyPtr<TReflectTypes<T>>>::Type;
+
+    template<typename T>
+    constexpr uint64_t pk_entity_composition_uuid() { return pk_type_uuid64<TStructToEntityComposition<T>>; }
 }

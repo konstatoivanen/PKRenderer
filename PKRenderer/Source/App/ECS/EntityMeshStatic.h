@@ -17,7 +17,7 @@ namespace PK::App
         struct Descriptor
         {
             FixedString64 entityName;
-            EntitySerialFlags serialFlags;
+            AssetID sceneId;
 
             ScenePrimitiveFlags flags;
             MeshStaticRef mesh;

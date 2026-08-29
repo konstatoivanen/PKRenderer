@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/ECS/EntityDatabase.h"
+#include "Core/ECS/EntityArchive.h"
 #include "Core/Math/Random.h"
 #include "Core/Math/Projection.h"
 #include "Core/Math/Color.h"
@@ -45,100 +46,14 @@ namespace PK::App
 
         auto profile = assetDatabase->Load<IESProfile>("Content/IESProfiles/IES_150W_45D.pkiesprofile", CacheMode::Shared);
 
+        auto scene = assetDatabase->CreateVirtual<EntityArchive>("Saved/SceneDebug.scene");
+
         auto minpos = float3(-70, -6, -70);
         auto maxpos = float3(+70, -4, +70);
 
         entityDb->Reserve<EntityMeshStatic>(300u);
         entityDb->Reserve<EntityLightSphere>(32u);
         entityDb->Reserve<EntityLight>(32u);
-
-        // Floor mesh
-        {
-            MaterialTarget material { materialSand, 0u };
-            EntityMeshStatic::Descriptor desc;
-            desc.entityName = "Floor";
-            desc.serialFlags = EntitySerialFlags::Serialize;
-            desc.flags = ScenePrimitiveFlags::DefaultMesh;
-            desc.mesh = planeMesh;
-            desc.materials = { &material, 1u };
-            desc.position = { 0.0f, -5.0f, 0.0f };
-            desc.rotation = { 90.0f * PK_FLOAT_DEG2RAD, 0.0f, 0.0f };
-            desc.scale = 80.0f * PK_FLOAT3_ONE;
-            m_entityDb->New<EntityMeshStatic>(desc);
-        }
-
-        // Columns mesh
-        {
-            MaterialTarget material = { materialAsphalt, 0u };
-            EntityMeshStatic::Descriptor desc;
-            desc.entityName = "Columns";
-            desc.serialFlags = EntitySerialFlags::Serialize;
-            desc.flags = ScenePrimitiveFlags::DefaultMesh;
-            desc.mesh = columnMesh;
-            desc.materials = { &material, 1u };
-            desc.position = { -20.0f, 5.0f, -20.0f };
-            desc.rotation = PK_FLOAT3_ZERO;
-            desc.scale = 3.0f * PK_FLOAT3_ONE;
-            m_entityDb->New<EntityMeshStatic>(desc);
-        }
-
-        // Rock meshes
-        {
-            auto maxsubmesh = rocksMesh->GetSubmeshCount() - 1u;
-
-            for (auto i = 0u; i < 256u; ++i)
-            {
-                MaterialTarget material { i < 128u ? materialMarble : materialPlaster, math::randomRange(0u, maxsubmesh) };
-                EntityMeshStatic::Descriptor desc;
-                desc.entityName = FixedString64("Rock_%u", i);
-                desc.serialFlags = EntitySerialFlags::Serialize;
-                desc.flags = ScenePrimitiveFlags::DefaultMesh;
-                desc.mesh = rocksMesh;
-                desc.materials = { &material, 1u };
-                desc.position = math::halton(i, uint3(7, 11, 17)) * (maxpos - minpos) + minpos;
-                desc.rotation = math::randomRadianFloat3();
-                desc.scale = math::randomRange(1.0f, 3.0f) * PK_FLOAT3_ONE;
-                m_entityDb->New<EntityMeshStatic>(desc);
-            }
-        }
-        
-        // Local lights
-        for (auto i = 0u; i < config->LightCount; ++i)
-        {
-            EntityLightSphere::Descriptor desc;
-            desc.entityName = "LightSphere";
-            desc.serialFlags = EntitySerialFlags::Serialize;
-            desc.assetDatabase = m_assetDatabase;
-            desc.type = i % 2 == 0 ? LightType::Spot : LightType::Point;
-            desc.IESProfile = i % 2 == 0 ? profile : nullptr;
-            desc.position = math::randomRange(minpos, maxpos) + PK_FLOAT3_UP * 4.0f;
-            desc.rotation = PK_FLOAT3_ZERO;// math::randomRange(float3(0.0f, 0.0f, 0.0f), float3(0.0f, PK_FLOAT_PI * 2.0f, 0.0f));
-            desc.color = math::hueToRgb(math::randomRange(0.0f, 1.0f)) * math::randomRange(8.0f, 128.0f);
-            desc.angle = 90.0f;
-            desc.radius = 20.0f;
-            desc.sourceRadius = 0.2f;
-            desc.castShadow = true;
-            desc.useIESCandelas = true;
-            m_entityDb->New<EntityLightSphere>(desc);
-        }
-
-        // Directional light
-        {
-            EntityLight::Descriptor desc;
-            desc.entityName = "Directional_Light";
-            desc.serialFlags = EntitySerialFlags::Serialize;
-            desc.type = LightType::Directional;
-            desc.IESProfile = nullptr;
-            desc.position = PK_FLOAT3_ZERO;
-            desc.rotation = float3(10, -35, 0) * PK_FLOAT_DEG2RAD;
-            desc.color = math::hexToRgb<float>(0xFF5E19FFu) * 24.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
-            desc.angle = 90.0f;
-            desc.radius = 1000.0f;
-            desc.sourceRadius = 0.1f;
-            desc.castShadow = true;
-            desc.useIESCandelas = false;
-            m_entityDb->New<EntityLight>(desc);
-        }
 
         // Fly camera
         {
@@ -157,6 +72,98 @@ namespace PK::App
             desc.sensitivity = config->CameraLookSensitivity;
             desc.settings = &config->ViewSettings;
             m_cameraEnityId = *m_entityDb->New<EntityFlyCamera>(desc).entityId;
+        }
+
+        // Test serialization thingy.
+        if (!scene->Instantiate(m_entityDb))
+        {
+            // Floor mesh
+            {
+                MaterialTarget material { materialSand, 0u };
+                EntityMeshStatic::Descriptor desc;
+                desc.entityName = "Floor";
+                desc.sceneId = scene->GetAssetID();
+                desc.flags = ScenePrimitiveFlags::DefaultMesh;
+                desc.mesh = planeMesh;
+                desc.materials = { &material, 1u };
+                desc.position = { 0.0f, -5.0f, 0.0f };
+                desc.rotation = { 90.0f * PK_FLOAT_DEG2RAD, 0.0f, 0.0f };
+                desc.scale = 80.0f * PK_FLOAT3_ONE;
+                m_entityDb->New<EntityMeshStatic>(desc);
+            }
+
+            // Columns mesh
+            {
+                MaterialTarget material = { materialAsphalt, 0u };
+                EntityMeshStatic::Descriptor desc;
+                desc.entityName = "Columns";
+                desc.sceneId = scene->GetAssetID();
+                desc.flags = ScenePrimitiveFlags::DefaultMesh;
+                desc.mesh = columnMesh;
+                desc.materials = { &material, 1u };
+                desc.position = { -20.0f, 5.0f, -20.0f };
+                desc.rotation = PK_FLOAT3_ZERO;
+                desc.scale = 3.0f * PK_FLOAT3_ONE;
+                m_entityDb->New<EntityMeshStatic>(desc);
+            }
+
+            // Rock meshes
+            {
+                auto maxsubmesh = rocksMesh->GetSubmeshCount() - 1u;
+
+                for (auto i = 0u; i < 256u; ++i)
+                {
+                    MaterialTarget material { i < 128u ? materialMarble : materialPlaster, math::randomRange(0u, maxsubmesh) };
+                    EntityMeshStatic::Descriptor desc;
+                    desc.entityName = FixedString64("Rock_%u", i);
+                    desc.sceneId = scene->GetAssetID();
+                    desc.flags = ScenePrimitiveFlags::DefaultMesh;
+                    desc.mesh = rocksMesh;
+                    desc.materials = { &material, 1u };
+                    desc.position = math::halton(i, uint3(7, 11, 17)) * (maxpos - minpos) + minpos;
+                    desc.rotation = math::randomRadianFloat3();
+                    desc.scale = math::randomRange(1.0f, 3.0f) * PK_FLOAT3_ONE;
+                    m_entityDb->New<EntityMeshStatic>(desc);
+                }
+            }
+            
+            // Local lights
+            for (auto i = 0u; i < config->LightCount; ++i)
+            {
+                EntityLightSphere::Descriptor desc;
+                desc.entityName = "LightSphere";
+                desc.sceneId = scene->GetAssetID();
+                desc.assetDatabase = m_assetDatabase;
+                desc.type = i % 2 == 0 ? LightType::Spot : LightType::Point;
+                desc.IESProfile = i % 2 == 0 ? profile : nullptr;
+                desc.position = math::randomRange(minpos, maxpos) + PK_FLOAT3_UP * 4.0f;
+                desc.rotation = PK_FLOAT3_ZERO;// math::randomRange(float3(0.0f, 0.0f, 0.0f), float3(0.0f, PK_FLOAT_PI * 2.0f, 0.0f));
+                desc.color = math::hueToRgb(math::randomRange(0.0f, 1.0f)) * math::randomRange(8.0f, 128.0f);
+                desc.angle = 90.0f;
+                desc.radius = 20.0f;
+                desc.sourceRadius = 0.2f;
+                desc.castShadow = true;
+                desc.useIESCandelas = true;
+                m_entityDb->New<EntityLightSphere>(desc);
+            }
+
+            // Directional light
+            {
+                EntityLight::Descriptor desc;
+                desc.entityName = "Directional_Light";
+                desc.sceneId = scene->GetAssetID();
+                desc.type = LightType::Directional;
+                desc.IESProfile = nullptr;
+                desc.position = PK_FLOAT3_ZERO;
+                desc.rotation = float3(10, -35, 0) * PK_FLOAT_DEG2RAD;
+                desc.color = math::hexToRgb<float>(0xFF5E19FFu) * 24.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
+                desc.angle = 90.0f;
+                desc.radius = 1000.0f;
+                desc.sourceRadius = 0.1f;
+                desc.castShadow = true;
+                desc.useIESCandelas = false;
+                m_entityDb->New<EntityLight>(desc);
+            }
         }
     }
 

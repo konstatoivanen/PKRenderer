@@ -12,17 +12,21 @@ namespace PK::FileIO
     };
 
     void FindFiles(void* ctx, const char* directory, const char* pattern, bool recursive, void (*onFile)(void*, const char*));
-    bool CreateDirectory(const char* path);
-    bool DirectoryExists(const char* path);
-    bool FileExists(const char* path);
+    bool CreateDirectory(const char* filepath);
+    bool DirectoryExists(const char* filepath);
+    bool FileExists(const char* filepath);
 
-    int ReadBinary(const char* filepath, bool isText, void** data, size_t * size);
-    int ReadBinaryInPlace(const char* filepath, bool isText, size_t maxSize, void* data, size_t * size);
-    int WriteBinary(const char* filepath, bool isText, void* data, size_t size);
+    int CloseFile(void* file);
+    void* OpenWrite(const char* filepath, bool isText);
+    void* OpenRead(const char* filepath, bool isText, size_t* outSize = nullptr);
 
-    Image* ReadBMP(const char* fileName);
-    Image* ReadICO(const char* fileName);
-    Image* ReadImage(const char* fileName);
+    int Read(const char* filepath, bool isText, void** data, size_t * size);
+    int ReadInPlace(const char* filepath, bool isText, size_t maxSize, void* data, size_t * size);
+    int Write(const char* filepath, bool isText, void* data, size_t size);
 
-    void WriteBMP(const char* fileName, const Image& image);
+    Image* ReadBMP(const char* filepath);
+    Image* ReadICO(const char* filepath);
+    Image* ReadImage(const char* filepath);
+
+    int WriteBMP(const char* filepath, const Image& image);
 }

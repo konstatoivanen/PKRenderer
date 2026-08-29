@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/ECS/EntityDatabase.h"
-#include "Core/ECS/EntitySerializer.h"
+#include "Core/ECS/EntityArchive.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/CLI/Log.h"
@@ -78,7 +78,6 @@ namespace PK::App
         auto sequencer = GetServices()->Create<Sequencer>();
         auto assetDatabase = GetServices()->Create<AssetDatabase>(sequencer);
         auto entityDb = GetServices()->Create<EntityDatabase>(32, 512);
-        auto entitySerializer = GetServices()->Create<EntityDatabaseSerializer>(entityDb);
         auto input = GetServices()->Create<EngineInput>(sequencer);
         auto time = GetServices()->Create<EngineTime>(sequencer, config.TimeScale);
         
@@ -193,6 +192,20 @@ namespace PK::App
             {
                 IApplication::Get()->GetPrimaryWindow()->SetFullscreen(!IApplication::Get()->GetPrimaryWindow()->IsFullscreen());
             });
+
+        // @TODO find a better place for these
+        CVariableRegister::Create<CVariableFunc>("Engine.Entities.Save", [](const char* const* args, [[maybe_unused]] uint32_t count)
+            {
+                auto archive = AssetDatabase::Get()->Find<EntityArchive>(args[0], false);
+                archive = archive == nullptr ? AssetDatabase::Get()->CreateVirtual<EntityArchive>(args[0]) : archive;
+                archive->SaveScene(IApplication::Get()->GetService<EntityDatabase>());
+            }, "Expected a filepath argument", 1u);
+
+        CVariableRegister::Create<CVariableFunc>("Engine.Entities.Load", [](const char* const* args, [[maybe_unused]] uint32_t count)
+            {
+                auto archive = AssetDatabase::Get()->Load<EntityArchive>(args[0]);
+                archive->Instantiate(IApplication::Get()->GetService<EntityDatabase>(), 0u);
+            }, "Expected a filepath argument", 1u);
 
         PK_LOG_HEADER("----------RendererApplication.Ctor End----------");
     }

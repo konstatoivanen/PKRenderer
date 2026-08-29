@@ -21,7 +21,7 @@ namespace PK::App
         void* historyData = nullptr;
         auto historyLength = 0ull;
 
-        if (FileIO::ReadBinary("ConsoleHistory.ini", true, &historyData, &historyLength) == 0)
+        if (FileIO::Read(HISTORY_FILENAME, true, &historyData, &historyLength) == 0)
         {
             const auto text = static_cast<char*>(historyData);
             auto lineIndex = 0ull;
@@ -70,7 +70,7 @@ namespace PK::App
                 }
             }
 
-            FileIO::WriteBinary("ConsoleHistory.ini", true, historyData, historySize);
+            FileIO::Write(HISTORY_FILENAME, true, historyData, historySize);
             Memory::Free(historyData);
         }
     }

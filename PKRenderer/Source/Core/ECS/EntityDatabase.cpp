@@ -112,14 +112,13 @@ namespace PK
         {
             const auto identifier = m_identifiers[identifierIndex];
             const auto compositionIndex = identifier.compositionIndex();
-            const auto compositionUUID = m_compositions[compositionIndex].key & COMP_MASK;
             auto* comp = &m_compositions[compositionIndex].value;
             
             for (auto i = 0u; i < comp->visitorCount; ++i)
             {
                 if (comp->visitors[i].uuid == visitorUUID)
                 {
-                    comp->visitors[i].visit(this, compositionUUID, &entityId, userdata);
+                    comp->visitors[i].visit(this, &entityId, userdata);
                     break;
                 }
             }
@@ -139,7 +138,7 @@ namespace PK
             {
                 if (comp->visitors[i].uuid == visitorUUID)
                 {
-                    comp->visitors[i].visit(this, compositionUUID, entityId, userdata);
+                    comp->visitors[i].visit(this, entityId, userdata);
                     break;
                 }
             }

@@ -12,7 +12,7 @@ namespace PK
     };
 
     template <typename U> 
-    struct TEntityVisitorTraits<void(*)(EntityDatabase*, uint64_t, uint32_t*, U*)>
+    struct TEntityVisitorTraits<void(*)(EntityDatabase*, uint32_t*, U*)>
     {
         static constexpr bool IsValid = true;
         using Type = U;
@@ -21,7 +21,7 @@ namespace PK
     struct EntityVisitor
     {
         const uint64_t uuid;
-        void (*const visit)(EntityDatabase* db, uint64_t compositionUUID, uint32_t* entityId, void* userdata);
+        void (*const visit)(EntityDatabase* db, uint32_t* entityId, void* userdata);
 
         template <auto TFunc>
         requires TEntityVisitorTraits<decltype(TFunc)>::IsValid
@@ -29,9 +29,9 @@ namespace PK
         { 
             using T = typename TEntityVisitorTraits<decltype(TFunc)>::Type;
             
-            auto invoker = [](EntityDatabase* db, uint64_t compositionUUID, uint32_t* entityId, void* userdata) 
+            auto invoker = [](EntityDatabase* db, uint32_t* entityId, void* userdata) 
             {
-                TFunc(db, compositionUUID, entityId, static_cast<T*>(userdata));
+                TFunc(db, entityId, static_cast<T*>(userdata));
             };
 
             return { pk_type_uuid64<T>, invoker }; 

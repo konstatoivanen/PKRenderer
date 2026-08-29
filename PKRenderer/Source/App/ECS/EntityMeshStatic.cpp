@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
 #include "App/Renderer/EntityEnums.h"
-#include "Core/ECS/EntitySerializer.h"
+#include "Core/ECS/EntityArchive.h"
 #include "App/ECS/EntityViewTransform.h"
 #include "App/ECS/EntityViewScenePrimitive.h"
 #include "App/ECS/EntityViewMeshStatic.h"
@@ -12,14 +12,14 @@ namespace PK::App
     EntityVisitorsView EntityMeshStatic::GetVisitors()
     {
         return MakeEntityVisitorsView<
-            EntitySerializer<EntityMeshStatic>::Serialize,
-            EntitySerializer<EntityMeshStatic>::Deserialize>();
+            EntityArchive::Serialize<EntityMeshStatic>,
+            EntityArchive::Deserialize<EntityMeshStatic>>();
     }
 
     void EntityMeshStatic::OnCreate([[maybe_unused]] EntityDatabase* entityDb, EntityMeshStatic& entity, const Descriptor& desc)
     {
         entity.serializable->name = desc.entityName;
-        entity.serializable->flags = desc.serialFlags;
+        entity.serializable->sceneId = desc.sceneId;
         entity.transform->position = desc.position;
         entity.transform->rotation = quaternion(desc.rotation);
         entity.transform->scale = desc.scale;
