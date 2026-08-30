@@ -4,19 +4,18 @@
 #include "Core/Timers/TimeFrameInfo.h"
 
 namespace PK { class AssetDatabase; }
+namespace PK { struct GUIDrawList; }
 
 namespace PK::App
 {
-    struct IGUIRenderer;
-
     class EngineProfiler :
-        public IStep<IGUIRenderer*>,
+        public IStep<GUIDrawList*>,
         public IStep<TimeFramerateInfo*>
     {
     public:
         EngineProfiler();
 
-        virtual void Step(IGUIRenderer* gui) final;
+        virtual void Step(GUIDrawList* gui) final;
         virtual void Step(TimeFramerateInfo* framerate) final { m_framerate = *framerate; }
 
     private:

@@ -9,13 +9,12 @@
 namespace PK { struct Sequencer; }
 namespace PK { struct InputState; }
 namespace PK { struct InputKeyConfig; }
+namespace PK { struct GUIDrawList; }
 
 namespace PK::App
 {
-    struct IGUIRenderer;
-
     struct EngineCommandInput : 
-        public IStep<IGUIRenderer*>,
+        public IStep<GUIDrawList*>,
         public IStepFrameUpdate<>,
         public IStep<AssetImportEvent<Config<InputKeyConfig>>*>
     {
@@ -26,7 +25,7 @@ namespace PK::App
         EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig);
         ~EngineCommandInput();
 
-        virtual void Step(IGUIRenderer* gui) final;
+        virtual void Step(GUIDrawList* gui) final;
         virtual void OnStepFrameUpdate(FrameContext* ctx) final;
         virtual void Step(AssetImportEvent<Config<InputKeyConfig>>* evt) final;
 

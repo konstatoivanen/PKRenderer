@@ -79,7 +79,8 @@ namespace PK::App
 
         if (m_gui_enabled)
         {
-            m_sequencer->Next<IGUIRenderer*>(this, this);
+            GUIDrawList drawList(this);
+            m_sequencer->Next<GUIDrawList*>(this, &drawList);
         }
 
         if (m_gui_vertexView.data != nullptr)
@@ -113,7 +114,7 @@ namespace PK::App
                 m_gui_shader = m_assetDatabase->Find<ShaderAsset>("VS_GUI").get();
                 m_gui_font = m_assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
                 m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::PersistentStorage, "GUI.VertexBuffer");
-                m_gui_indexBuffer = RHI::CreateBuffer<uint16_t>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
+                m_gui_indexBuffer = RHI::CreateBuffer<GUIIndex>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
                 m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);
                 RHI::SetBuffer(HashCache::Get()->pk_GUI_Vertices, m_gui_vertexBuffer.get());
             }
@@ -133,7 +134,17 @@ namespace PK::App
         return m_gui_commandBuffer != nullptr;
     }
 
-    uint16_t EngineGUIRenderer::GUIAddTexture(RHITexture* texture)
+    short4 EngineGUIRenderer::GUIGetRenderAreaRect() const
+    {
+        return m_gui_renderAreaRect;
+    }
+
+    Font* EngineGUIRenderer::GUIGetDefaultFont() const
+    {
+        return m_gui_font;
+    }
+
+    uint16_t EngineGUIRenderer::GUIGetTextureIndex(RHITexture* texture)
     {
         if (!GUIValidateDraw())
         {
@@ -150,194 +161,34 @@ namespace PK::App
         return (uint16_t)m_gui_textures->Add(texture);
     }
 
-    void EngineGUIRenderer::GUIDrawTriangle(const GUIVertex& a, const GUIVertex& b, const GUIVertex& c)
+    uint3 EngineGUIRenderer::GUIGetTextureSize(uint16_t textureIndex) const
     {
-        if (GUIValidateDraw())
-        {
-            auto idxv = m_gui_vertexCount;
-            auto idxi = m_gui_indexCount;
-            m_gui_vertexCount += 3u;
-            m_gui_indexCount += 3u;
+        return m_gui_textures->GetBoundTextureSize(textureIndex);
+    }
 
-            if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
-            {
-                m_gui_indexView[idxi++] = idxv + 0u;
-                m_gui_indexView[idxi++] = idxv + 1u;
-                m_gui_indexView[idxi++] = idxv + 2u;
-                m_gui_vertexView[idxv++] = a;
-                m_gui_vertexView[idxv++] = b;
-                m_gui_vertexView[idxv++] = c;
-            }
+    bool EngineGUIRenderer::GUIAllocate(uint32_t layer, uint32_t vertexCount, uint32_t indexCount, GUIAllocation* allocation)
+    {
+        *allocation = {};
+
+        if (GUIValidateDraw() &&
+            m_gui_vertexCount + vertexCount <= GUI_MAX_VERTICES &&
+            m_gui_indexCount + indexCount <= GUI_MAX_INDICES)
+        {
+            allocation->vertices = m_gui_vertexView.data + m_gui_vertexCount;
+            allocation->indices = m_gui_indexView.data + m_gui_indexCount;
+            allocation->vertexOffset = m_gui_vertexCount;
+            allocation->vertexCount = vertexCount;
+            allocation->indexCount = indexCount;
+            allocation->layer = layer;
+            m_gui_vertexCount += vertexCount;
+            m_gui_indexCount += indexCount;
+            return true;
         }
+
+        return false;
     }
 
-    void EngineGUIRenderer::GUIDrawRect(const color32& color, const short4& rect, const ushort4& textureRect, RHITexture* texture)
-    {
-        GUIDrawRect(color, rect, textureRect, GUIAddTexture(texture));
-    }
-
-    void EngineGUIRenderer::GUIDrawRect(const color32& color, const short4& rect, const ushort4& textureRect, uint16_t textureIndex)
-    {
-        if (GUIValidateDraw())
-        {
-            auto idxv = m_gui_vertexCount;
-            auto idxi = m_gui_indexCount;
-            m_gui_vertexCount += 4u;
-            m_gui_indexCount += 6u;
-
-            if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
-            {
-                const short4 sminmax = short4(rect.x, rect.y, rect.x + rect.z, rect.y + rect.w);
-                const float4 tminmax = float4(textureRect.x, textureRect.y, textureRect.x + textureRect.z, textureRect.y + textureRect.w);
-                const float2 texelSize = (1.0f / float3(m_gui_textures->GetBoundTextureSize(textureIndex))).xy;
-                m_gui_indexView[idxi++] = idxv + 0u;
-                m_gui_indexView[idxi++] = idxv + 1u;
-                m_gui_indexView[idxi++] = idxv + 2u;
-                m_gui_indexView[idxi++] = idxv + 2u;
-                m_gui_indexView[idxi++] = idxv + 3u;
-                m_gui_indexView[idxi++] = idxv + 0u;
-                m_gui_vertexView[idxv++] = { color, sminmax.xy, math::f32tof16(tminmax.xy * texelSize), textureIndex, 0u };
-                m_gui_vertexView[idxv++] = { color, sminmax.xw, math::f32tof16(tminmax.xw * texelSize), textureIndex, 0u };
-                m_gui_vertexView[idxv++] = { color, sminmax.zw, math::f32tof16(tminmax.zw * texelSize), textureIndex, 0u };
-                m_gui_vertexView[idxv++] = { color, sminmax.zy, math::f32tof16(tminmax.zy * texelSize), textureIndex, 0u };
-            }
-        }
-    }
-
-    void EngineGUIRenderer::GUIDrawRect(const color32& color, const short4& rect)
-    {
-        GUIDrawRect(color, rect, PK_USHORT4_ZERO, GUI_TEX_INDEX_WHITE);
-    }
-
-    void EngineGUIRenderer::GUIDrawWireRect(const color32& color, const short4& rect, short inset)
-    {
-        if (GUIValidateDraw())
-        {
-            auto idxv = m_gui_vertexCount;
-            auto idxi = m_gui_indexCount;
-            m_gui_vertexCount += 8u;
-            m_gui_indexCount += 24u;
-
-            if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
-            {
-                const short4 outer = short4(rect.x, rect.y, rect.x + rect.z, rect.y + rect.w);
-                const short4 inner = short4(outer.x + inset, outer.y + inset, outer.z - inset, outer.w - inset);
-
-                for (auto i = 0u; i < 4; ++i)
-                {
-                    auto base0 = idxv + i * 2u;
-                    auto base1 = idxv + ((i + 1u) % 4u) * 2u;
-
-                    m_gui_indexView[idxi++] = base0 + 0u;
-                    m_gui_indexView[idxi++] = base0 + 1u;
-                    m_gui_indexView[idxi++] = base1 + 1u;
-
-                    m_gui_indexView[idxi++] = base1 + 1u;
-                    m_gui_indexView[idxi++] = base1 + 0u;
-                    m_gui_indexView[idxi++] = base0 + 0u;
-                }
-
-                m_gui_vertexView[idxv + 0u] = { color, outer.xy, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv + 1u] = { color, inner.xy, PK_USHORT2_ZERO, 0, 0u };
-
-                m_gui_vertexView[idxv + 2u] = { color, outer.xw, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv + 3u] = { color, inner.xw, PK_USHORT2_ZERO, 0, 0u };
-                
-                m_gui_vertexView[idxv + 4u] = { color, outer.zw, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv + 5u] = { color, inner.zw, PK_USHORT2_ZERO, 0, 0u };
-                
-                m_gui_vertexView[idxv + 6u] = { color, outer.zy, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv + 7u] = { color, inner.zy, PK_USHORT2_ZERO, 0, 0u };
-            }
-        }
-    }
-
-    void EngineGUIRenderer::GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width)
-    {
-        if (GUIValidateDraw())
-        {
-            auto idxv = m_gui_vertexCount;
-            auto idxi = m_gui_indexCount;
-            m_gui_vertexCount += 4u;
-            m_gui_indexCount += 6u;
-
-            if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
-            {
-                const auto p0f = float2(p0.x + 0.5f, p0.y + 0.5f);
-                const auto p1f = float2(p1.x + 0.5f, p1.y + 0.5f);
-                const auto direction = math::normalize(p1f - p0f);
-                const auto tangent = float2(-direction.y, direction.x);
-                const auto offset = math::normalize(tangent + direction) * 0.5f * width;
  
-                m_gui_indexView[idxi++] = idxv + 0u;
-                m_gui_indexView[idxi++] = idxv + 1u;
-                m_gui_indexView[idxi++] = idxv + 2u;
-                m_gui_indexView[idxi++] = idxv + 2u;
-                m_gui_indexView[idxi++] = idxv + 3u;
-                m_gui_indexView[idxi++] = idxv + 0u;
-                m_gui_vertexView[idxv++] = { color0, math::round(p0f + float2(-offset.y, +offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
-                m_gui_vertexView[idxv++] = { color1, math::round(p1f + float2(+offset.x, +offset.y)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
-                m_gui_vertexView[idxv++] = { color1, math::round(p1f + float2(+offset.y, -offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
-                m_gui_vertexView[idxv++] = { color0, math::round(p0f + float2(-offset.x, -offset.y)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
-            }
-        }
-    }
-
-    short4 EngineGUIRenderer::GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style)
-    {
-        auto text_area_min = +PK_SHORT2_MAX;
-        auto text_area_max = -PK_SHORT2_MAX;
-        
-        if (GUIValidateDraw())
-        {
-            auto max_rects = Font::CalculateMaxRectCount(text, m_gui_font);
-            
-            if (max_rects > 0u)
-            {
-                auto text_rects = PK_STACK_ALLOC(FontRect, max_rects);
-                auto rect_count = Font::CalculateRects(text, m_gui_font, rect, rect, style, text_rects, max_rects);
-
-                if (rect_count > 0u)
-                {
-                    auto idxv = m_gui_vertexCount;
-                    auto idxi = m_gui_indexCount;
-                    m_gui_vertexCount += rect_count * 4u;
-                    m_gui_indexCount += rect_count * 6u;
-
-                    if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
-                    {
-                        const float2 texelSize = m_gui_font->GetRHI()->GetTexelSize().xy;
-
-                        for (auto i = 0u; i < rect_count; ++i)
-                        {
-                            auto& crect = text_rects[i];
-                            const auto sminmax = short4(crect.rect.x, crect.rect.y, crect.rect.x + crect.rect.z, crect.rect.y + crect.rect.w);
-                            const auto tminmax = float4(crect.texrect.x, crect.texrect.y, crect.texrect.x + crect.texrect.z, crect.texrect.y + crect.texrect.w);
-                            m_gui_indexView[idxi++] = idxv + 0u;
-                            m_gui_indexView[idxi++] = idxv + 1u;
-                            m_gui_indexView[idxi++] = idxv + 2u;
-                            m_gui_indexView[idxi++] = idxv + 2u;
-                            m_gui_indexView[idxi++] = idxv + 3u;
-                            m_gui_indexView[idxi++] = idxv + 0u;
-                            m_gui_vertexView[idxv++] = { color, sminmax.xy, math::f32tof16(tminmax.xy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-                            m_gui_vertexView[idxv++] = { color, sminmax.xw, math::f32tof16(tminmax.xw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-                            m_gui_vertexView[idxv++] = { color, sminmax.zw, math::f32tof16(tminmax.zw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-                            m_gui_vertexView[idxv++] = { color, sminmax.zy, math::f32tof16(tminmax.zy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-
-                            text_area_min.x = math::min(text_area_min.x, sminmax.x, sminmax.z);
-                            text_area_min.y = math::min(text_area_min.y, sminmax.y, sminmax.w);
-                            text_area_max.x = math::max(text_area_max.x, sminmax.x, sminmax.z);
-                            text_area_max.y = math::max(text_area_max.y, sminmax.y, sminmax.w);
-                        }
-                    }
-                }
-            }
-        }
-
-        return { text_area_min, text_area_max - text_area_min };
-    }
-
-
     void EngineGUIRenderer::GizmosCollectDraws(const uint4& renderArea, const float4x4& worldToClip, CommandBufferExt& cmd)
     {
         if (m_gizmos_enabledCPU)

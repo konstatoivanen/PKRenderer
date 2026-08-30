@@ -7,7 +7,7 @@
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Font.h"
-#include "App/Renderer/IGUIRenderer.h"
+#include "Core/GUI/GUIDrawList.h"
 #include "EngineProfiler.h"
 
 namespace PK::App
@@ -17,7 +17,7 @@ namespace PK::App
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Profiler.Toggle", [this]() { m_enabled ^= true; });
     }
     
-    void EngineProfiler::Step(IGUIRenderer* gui)
+    void EngineProfiler::Step(GUIDrawList* gui)
     {
         if (!m_enabled)
         {
@@ -37,7 +37,7 @@ namespace PK::App
         const auto height = 74;
         const auto fontSize = 16;
         const auto padding = 4;
-        const auto renderArea = gui->GUIGetRenderAreaRect();
+        const auto renderArea = gui->GetClipRect();
         const auto rectWindow = short4(renderArea.x + padding, renderArea.y + renderArea.w - height - padding, renderArea.z - padding * 2, height);
         const auto rectSample = short4(rectWindow.x + padding, rectWindow.y + rectWindow.w - padding, 2, 0);
         const auto rectBar    = short4(rectWindow.x + padding, rectWindow.y + rectWindow.w - padding, rectWindow.z - padding * 2, 1);
@@ -70,16 +70,16 @@ namespace PK::App
         FixedString64 textMemoryIram("Ram Total: %s", String::FormatBytes<16>(cpumemory.programMemoryUsedInclusive).c_str());
         FixedString64 textMemoryVram("Vram: %s", String::FormatBytes<16>(gpumemory.usedBytes).c_str());
 
-        gui->GUIDrawRect(COLOR_BG, rectWindow);
-        gui->GUIDrawWireRect(COLOR_FG, rectWindow, 1);
+        gui->DrawRect(COLOR_BG, rectWindow);
+        gui->DrawWireRect(COLOR_FG, rectWindow, 1);
         auto area_text = short4(rectWindow.xy + short2(padding * 2, padding + 2), 0, 16);
-        area_text = gui->GUIDrawText(COLOR_FPS_AVG, area_text, textFramerateCur.c_str(), FontStyle().SetSize(16.0f).SetClip(false));
-        area_text = gui->GUIDrawText(COLOR_FPS_AVG, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateAvg.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_FPS_MIN, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMin.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_FPS_MAX, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMax.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_VRAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryVram.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_ERAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryEram.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->GUIDrawText(COLOR_IRAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryIram.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->DrawText(COLOR_FPS_AVG, area_text, textFramerateCur.c_str(), FontStyle().SetSize(16.0f).SetClip(false));
+        area_text = gui->DrawText(COLOR_FPS_AVG, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateAvg.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->DrawText(COLOR_FPS_MIN, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMin.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->DrawText(COLOR_FPS_MAX, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMax.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->DrawText(COLOR_VRAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryVram.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->DrawText(COLOR_ERAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryEram.c_str(), FontStyle().SetSize(fontSize));
+        area_text = gui->DrawText(COLOR_IRAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryIram.c_str(), FontStyle().SetSize(fontSize));
 
         for (auto i = 0ull; i < sampleCountMin; ++i)
         {
@@ -88,12 +88,12 @@ namespace PK::App
             const auto s_normalized = (float)((s_sample - minHistoryTime) / (maxHistoryTime - minHistoryTime));
             const auto s_height = (int32_t)math::round(sampleHeight * s_normalized);
             const auto s_color = math::hueToRgb32((1.0f - s_normalized) / 3.0f);
-            gui->GUIDrawRect(color32(s_color.r, s_color.g, s_color.b, 127), rectSample + short4(s_offset, 0, 0, -s_height));
+            gui->DrawRect(color32(s_color.r, s_color.g, s_color.b, 127), rectSample + short4(s_offset, 0, 0, -s_height));
         }
 
-        gui->GUIDrawRect(COLOR_FPS_MIN, rectBar + short4(0, -sampleHeight * 0, 0, 0));
-        gui->GUIDrawRect(COLOR_FPS_AVG, rectBar + short4(0, -sampleHeight / 2, 0, 0));
-        gui->GUIDrawRect(COLOR_FPS_MAX, rectBar + short4(0, -sampleHeight * 1, 0, 0));
+        gui->DrawRect(COLOR_FPS_MIN, rectBar + short4(0, -sampleHeight * 0, 0, 0));
+        gui->DrawRect(COLOR_FPS_AVG, rectBar + short4(0, -sampleHeight / 2, 0, 0));
+        gui->DrawRect(COLOR_FPS_MAX, rectBar + short4(0, -sampleHeight * 1, 0, 0));
 
         m_timeHistoryHead++;
     }

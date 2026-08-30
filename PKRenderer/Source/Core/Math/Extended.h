@@ -41,4 +41,48 @@ namespace PK::math
         bool isValid = false;
         return triangleNormal(&a.x, &b.x, &c.x, isValid);
     }
+
+    template<typename T> bool intersectRects(const vector<T,4>& rect, const vector<T,4>& clipRect)
+    {
+        return (rect.x + rect.z) > clipRect.x && rect.x < (clipRect.x + clipRect.z) &&
+               (rect.y + rect.w) > clipRect.y && rect.y < (clipRect.y + clipRect.w);
+    }
+
+    template<typename T> T cubicBezier(const T& p0, const T& p1, const T& cp0, const T& cp1, float t)
+    {
+        const auto u = 1.0f - t;
+        const auto tt = t * t;
+        const auto uu = u * u;
+        return static_cast<T>((uu * u * p0) + (3.0f * uu * t * cp0) + (3.0f * u * tt * cp1) + (tt * t * p1));
+    }
+
+    template<typename T> vector<T,2> cubicBezier(const vector<T,2>& p0, const vector<T,2>& p1, const vector<T,2>& cp0, const vector<T,2>& cp1, float t)
+    {
+        return
+        {
+            cubicBezier(p0.x, p1.x, cp0.x, cp1.x, t),
+            cubicBezier(p0.y, p1.y, cp0.y, cp1.y, t)
+        };
+    }
+
+    template<typename T> vector<T,3> cubicBezier(const vector<T,3>& p0, const vector<T,3>& p1, const vector<T,3>& cp0, const vector<T,3>& cp1, float t)
+    {
+        return
+        {
+            cubicBezier(p0.x, p1.x, cp0.x, cp1.x, t),
+            cubicBezier(p0.y, p1.y, cp0.y, cp1.y, t),
+            cubicBezier(p0.z, p1.z, cp0.z, cp1.z, t)
+        };
+    }
+
+    template<typename T> vector<T,4> cubicBezier(const vector<T,4>& p0, const vector<T,4>& p1, const vector<T,4>& cp0, const vector<T,4>& cp1, float t)
+    {
+        return
+        {
+            cubicBezier(p0.x, p1.x, cp0.x, cp1.x, t),
+            cubicBezier(p0.y, p1.y, cp0.y, cp1.y, t),
+            cubicBezier(p0.z, p1.z, cp0.z, cp1.z, t),
+            cubicBezier(p0.w, p1.w, cp0.w, cp1.w, t)
+        };
+    }
 }

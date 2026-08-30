@@ -717,6 +717,12 @@
     <ClInclude Include="Source\Core\ECS\EntityComponentSerializable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\GUI\IGUIAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\GUI\GUIDrawList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
@@ -1207,6 +1213,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\GUI\GUIDrawList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

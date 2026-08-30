@@ -284,6 +284,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\ECS\EntityVisitor.h" />
     <ClInclude Include="Source\Core\ECS\NotSerialized.h" />
     <ClInclude Include="Source\Core\ECS\SerialField.h" />
+    <ClInclude Include="Source\Core\GUI\GUIDrawList.h" />
+    <ClInclude Include="Source\Core\GUI\IGUIAllocator.h" />
     <ClInclude Include="Source\Core\Input\InputStateCollection.h" />
     <ClInclude Include="Source\Core\Input\InputDevice.h" />
     <ClInclude Include="Source\Core\Input\InputState.h" />
@@ -669,6 +671,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp" />
     <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp" />
     <ClCompile Include="Source\Core\ECS\EntityArchive.cpp" />
+    <ClCompile Include="Source\Core\GUI\GUIDrawList.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
     <ClCompile Include="Source\Core\Math\Random.cpp" />
     <ClCompile Include="Source\Core\Platform\Platform.cpp" />

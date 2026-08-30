@@ -27,8 +27,23 @@ namespace PK
         FontStyle& SetClip(bool _clip) { clip = _clip; return *this; }
     };
 
+    struct FontGeometryInfo
+    {
+        FontStyle style{};
+        Font* font = nullptr;
+        const char* text = nullptr;
+        short4 area_rect = PK_SHORT4_ZERO;
+        short4 text_rect = PK_SHORT4_ZERO;
+        short4 clip_rect = PK_SHORT4_ZERO;
+        uint32_t rect_count = 0u;
+        uint32_t line_count = 0u;
+        uint32_t text_length = 0u;
+    };
+
     struct Font : public Asset
     {
+        typedef void (*OnVisibleRect)(void*, const FontRect&, uint32_t);
+
         struct Glyph
         {
             float advance = 0.0f;
@@ -39,7 +54,7 @@ namespace PK
 
         Font(const char* filepath);
 
-        constexpr const Glyph& GetGlyph(const char asciichar) const { return m_glyphs[(uint8_t)asciichar]; }
+        constexpr const Glyph& GetGlyph(const char ansichar) const { return m_glyphs[(uint8_t)ansichar]; }
         constexpr float GetLineHeight() const { return m_lineHeight; }
         constexpr float GetAscender() const { return m_ascender; }
         constexpr float GetDescender() const { return m_descender; }
@@ -47,13 +62,17 @@ namespace PK
         constexpr float GetUnderlineThickness() const { return m_underlineThickness; }
         constexpr float GetAlignTop() const { return m_alignTop; }
         constexpr float GetAlignBottom() const { return m_alignBottom; }
-
+        
+        uint32_t GetAdvance(const char ansichar, const FontStyle& style) const;
+        uint32_t GetLineHeight(const FontStyle& style) const;
+        float GetLineAlignment(const FontStyle& style) const;
+        float2 GetTexelSize() const;
+        uint2 GetAtlasSize() const;
         RHITexture* GetRHI();
         const RHITexture* GetRHI() const;
 
-        static uint32_t CalculateMaxRectCount(const char* text, const Font* font);
-        static uint32_t CalculateLineCount(const char* text, const Font* font, const short4& area_rect, const FontStyle& style);
-        static uint32_t CalculateRects(const char* text, const Font* font, const short4& area_rect, const short4& clip_rect, const FontStyle& style, FontRect* out_rects, uint32_t max_rects);
+        static uint32_t GenerateRects(const FontGeometryInfo& info, void* userData, OnVisibleRect onVisibleRect);
+        static FontGeometryInfo GenerateGeometryInfo(Font* font, const FontStyle& style, const char* text, const short4& area_rect, const short4& clip_rect);
 
     private:
         RHITextureRef m_texture = nullptr;

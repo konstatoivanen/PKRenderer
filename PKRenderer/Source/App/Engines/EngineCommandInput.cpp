@@ -2,10 +2,10 @@
 #include "Core/Input/InputState.h"
 #include "Core/Input/InputKeyConfig.h"
 #include "Core/Rendering/Font.h"
+#include "Core/GUI/GUIDrawList.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "App/FrameContext.h"
-#include "App/Renderer/IGUIRenderer.h"
 #include "EngineCommandInput.h"
 
 namespace PK::App
@@ -75,7 +75,7 @@ namespace PK::App
         }
     }
 
-    void EngineCommandInput::Step(IGUIRenderer* gui)
+    void EngineCommandInput::Step(GUIDrawList* gui)
     {
         if (m_waitingInput)
         {
@@ -86,25 +86,25 @@ namespace PK::App
             constexpr color32 COLOR_FG(255, 255, 255, 127);
             constexpr color32 COLOR_HINT(127, 127, 127, 255);
             constexpr color32 COLOR_TEXT(255, 255, 255, 255);
-            const auto renderArea = gui->GUIGetRenderAreaRect();
+            const auto renderArea = gui->GetClipRect();
             const short4 rectWindow(renderArea.x + 4, renderArea.y + 4, renderArea.z - 8, 32);
             const short4 rectText(rectWindow.x + 8, rectWindow.y + 4, rectWindow.z - 16, rectWindow.w - 8);
-            gui->GUIDrawRect(COLOR_BG, rectWindow);
-            gui->GUIDrawWireRect(COLOR_FG, rectWindow, 1);
+            gui->DrawRect(COLOR_BG, rectWindow);
+            gui->DrawWireRect(COLOR_FG, rectWindow, 1);
             
-            const auto rectTextOut = gui->GUIDrawText(COLOR_TEXT, rectText, text.c_str(), FontStyle().SetSize(16.0f).SetAlign({ 0.0f, 0.5f }).SetClip(true));
+            const auto rectTextOut = gui->DrawText(COLOR_TEXT, rectText, text.c_str(), FontStyle().SetSize(16.0f).SetAlign({ 0.0f, 0.5f }).SetClip(true));
             const auto rectTextHint = short4(rectTextOut.x + rectTextOut.z + 1, rectText.y, rectText.z - rectTextOut.z - 1, rectText.w);
 
             // Draw hint starting at the end of user input.
             if (hint.Length() > text.Length())
             {
-                gui->GUIDrawText(COLOR_HINT, rectTextHint, hint.c_str() + text.Length(), FontStyle().SetSize(16.0f).SetAlign({0.0f, 0.5f}).SetClip(true));
+                gui->DrawText(COLOR_HINT, rectTextHint, hint.c_str() + text.Length(), FontStyle().SetSize(16.0f).SetAlign({0.0f, 0.5f}).SetClip(true));
             }
 
             // Draw wide box caret. Offsets hard coded as I can't be bothered to get the actual font data here. 
             if (m_caretTimer < 500u)
             {
-                gui->GUIDrawRect(COLOR_TEXT, short4(rectText.x + text.Length() * 8, rectText.y + 5, 6, rectText.w - 10));
+                gui->DrawRect(COLOR_TEXT, short4(rectText.x + text.Length() * 8, rectText.y + 5, 6, rectText.w - 10));
             }
         }
     }

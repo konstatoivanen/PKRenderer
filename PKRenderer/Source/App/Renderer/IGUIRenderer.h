@@ -4,30 +4,6 @@
 
 namespace PK::App
 {
-    struct GUIVertex
-    {
-        color32 color;
-        short2 coord;
-        ushort2 texcoordHalf;
-        uint16_t textureIndex;
-        uint16_t renderMode;
-    };
-
-    struct IGUIRenderer
-    {
-        virtual ~IGUIRenderer() = default;
-
-        virtual short4 GUIGetRenderAreaRect() const = 0;
-        virtual uint16_t GUIAddTexture(RHITexture* texture) = 0;
-        virtual void GUIDrawTriangle(const GUIVertex& a, const GUIVertex& b, const GUIVertex& c) = 0;
-        virtual void GUIDrawRect(const color32& color, const short4& rect, const ushort4& textureRect, RHITexture* texture) = 0;
-        virtual void GUIDrawRect(const color32& color, const short4& rect, const ushort4& textureRect, uint16_t textureIndex) = 0;
-        virtual void GUIDrawRect(const color32& color, const short4& rect) = 0;
-        virtual void GUIDrawWireRect(const color32& color, const short4& rect, short inset) = 0;
-        virtual void GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width) = 0;
-        virtual short4 GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style) = 0;
-    };
-
     struct IGizmosRenderer
     {
         virtual ~IGizmosRenderer() = default;

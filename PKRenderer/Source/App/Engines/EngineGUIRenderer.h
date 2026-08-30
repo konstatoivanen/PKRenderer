@@ -3,6 +3,7 @@
 #include "Core/RHI/Layout.h"
 #include "Core/Rendering/Font.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "Core/GUI/GUIDrawList.h"
 #include "App/Renderer/IGUIRenderer.h"
 
 namespace PK { class AssetDatabase; }
@@ -20,7 +21,7 @@ namespace PK::App
 
     struct EngineGUIRenderer :
         public IStep<RenderPipelineEvent*>,
-        public IGUIRenderer,
+        public IGUIAllocator,
         public IGizmosRenderer
     {
         EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer);
@@ -34,15 +35,12 @@ namespace PK::App
         void GUICollectDraws(const uint4& renderArea, CommandBufferExt& cmd);
         void GUIDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
         bool GUIValidateDraw();
-        short4 GUIGetRenderAreaRect() const final { return m_gui_renderAreaRect; }
-        uint16_t GUIAddTexture(RHITexture* texture) final;
-        void GUIDrawTriangle(const GUIVertex& a, const GUIVertex& b, const GUIVertex& c) final;
-        void GUIDrawRect(const color32& color, const short4& screenRect, const ushort4& textureRect, RHITexture* texture) final;
-        void GUIDrawRect(const color32& color, const short4& screenRect, const ushort4& textureRect, uint16_t textureIndex) final;
-        void GUIDrawRect(const color32& color, const short4& screenRect) final;
-        void GUIDrawWireRect(const color32& color, const short4& rect, short inset) final;
-        void GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width) final;
-        short4 GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style) final;
+        
+        short4 GUIGetRenderAreaRect() const final;
+        Font* GUIGetDefaultFont() const final;
+        uint16_t GUIGetTextureIndex(RHITexture* texture) final;
+        uint3 GUIGetTextureSize(uint16_t textureIndex) const final;
+        bool GUIAllocate(uint32_t layer, uint32_t vertexCount, uint32_t indexCount, GUIAllocation* allocation) final;
 
         void GizmosCollectDraws(const uint4& renderArea, const float4x4& worldToClip, CommandBufferExt& cmd);
         void GizmosDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
@@ -60,9 +58,6 @@ namespace PK::App
         constexpr static const uint32_t GUI_MAX_VERTICES = 16384u;
         constexpr static const uint32_t GUI_MAX_INDICES = GUI_MAX_VERTICES * 3u;
         constexpr static const uint32_t GUI_MAX_TEXTURES = 64;
-        constexpr static const uint16_t GUI_TEX_INDEX_WHITE = 0u;
-        constexpr static const uint16_t GUI_TEX_INDEX_ERROR = 1u;
-        constexpr static const uint16_t GUI_TEX_INDEX_DEFAULT_FONT = 2u;
 
         Sequencer* m_sequencer = nullptr;
         AssetDatabase* m_assetDatabase = nullptr;
@@ -74,7 +69,7 @@ namespace PK::App
         RHIBufferRef m_gui_vertexBuffer;
         RHIBufferRef m_gui_indexBuffer;
         BufferView<GUIVertex> m_gui_vertexView;
-        BufferView<uint16_t> m_gui_indexView;
+        BufferView<GUIIndex> m_gui_indexView;
         short4 m_gui_renderAreaRect = PK_SHORT4_ZERO;
         uint32_t m_gui_vertexCount = 0u;
         uint32_t m_gui_indexCount = 0u;

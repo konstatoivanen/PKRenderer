@@ -10,6 +10,8 @@ namespace PK
     struct MaterialTarget;
     struct Font;
     struct FontStyle;
+    struct FontRect;
+    struct FontGeometryInfo;
     struct SubMesh;
     struct MeshDescriptor;
     struct MeshletsDescriptor;

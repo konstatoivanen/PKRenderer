@@ -11,6 +11,7 @@
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Mesh.h"
 #include "Core/Rendering/Window.h"
+#include "Core/GUI/GUIDrawList.h"
 #include "Core/IApplication.h"
 #include "App/FrameStep.h"
 #include "App/FrameContext.h"
@@ -155,8 +156,8 @@ namespace PK::App
                     engineGUIRenderer,
                     {
                         Sequencer::Step::Create<IGizmosRenderer*>(engineDebug),
-                        Sequencer::Step::Create<IGUIRenderer*>(engineProfiler),
-                        Sequencer::Step::Create<IGUIRenderer*>(engineCommands)
+                        Sequencer::Step::Create<GUIDrawList*>(engineProfiler),
+                        Sequencer::Step::Create<GUIDrawList*>(engineCommands)
                     }
                 },
                 {

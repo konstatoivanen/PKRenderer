@@ -127,6 +127,8 @@ namespace PK
         constexpr T const* GetData() const { return TData::GetPtr(m_data); }
         constexpr size_t GetCount() const { return m_count; }
         constexpr size_t GetSize() const { return m_count * sizeof(T); }
+        constexpr T* GetBack() { return m_count ? &GetData()[m_count - 1u] : nullptr; }
+        constexpr T const* GetBack() const { return m_count ? &GetData()[m_count - 1u] : nullptr; }
 
         constexpr BufferView<T> GetView() { return { GetData(), m_count }; }
         constexpr ConstBufferView<T> GetView() const { return { GetData(), m_count }; }
@@ -260,6 +262,8 @@ namespace PK
 
             return false;
         }
+
+        bool Pop() { return UnorderedRemoveAt(m_count - 1u); }
 
     private:
         TData m_data;
