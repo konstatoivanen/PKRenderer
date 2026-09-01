@@ -723,6 +723,9 @@
     <ClInclude Include="Source\Core\GUI\GUIDrawList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\GUI\GUILayout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
@@ -1216,6 +1219,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\GUI\GUIDrawList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\GUI\GUILayout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
