@@ -1,8 +1,9 @@
 #include "PrecompiledHeader.h"
+#include "Core/Base/FileIO.h"
 #include "Core/Input/InputState.h"
-#include "Core/Input/InputKeyConfig.h"
+#include "Core/Input/InputKeyCommands.h"
 #include "Core/Rendering/Font.h"
-#include "Core/GUI/GUIDrawList.h"
+#include "Core/GUI/GUI.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "App/FrameContext.h"
@@ -10,14 +11,12 @@
 
 namespace PK::App
 {
-    EngineCommandInput::EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig) :
+    EngineCommandInput::EngineCommandInput(Sequencer* sequencer, const InputKeyCommands* commands, const InputTriplet& toggleConsole) :
+        m_inputKeyCommands(commands),
+        m_keyToggleConsole(toggleConsole),
         m_sequencer(sequencer),
         m_isElevated(Platform::GetProcIsElevated())
     {
-        m_inputKeyCommands.memory.Copy(keyConfig->InputKeyCommands.memory);
-        m_inputKeyCommands.count = keyConfig->InputKeyCommands.count;
-        keyConfig->CommandInputKeys.TryGetKey("Console.Toggle", &m_keyToggleConsole);
-    
         void* historyData = nullptr;
         auto historyLength = 0ull;
 
@@ -75,7 +74,7 @@ namespace PK::App
         }
     }
 
-    void EngineCommandInput::Step(GUIDrawList* gui)
+    void EngineCommandInput::Step(GUI* gui)
     {
         if (m_waitingInput)
         {
@@ -90,7 +89,7 @@ namespace PK::App
             const short4 rectWindow(renderArea.x + 4, renderArea.y + 4, renderArea.z - 8, 32);
             const short4 rectText(rectWindow.x + 8, rectWindow.y + 4, rectWindow.z - 16, rectWindow.w - 8);
             gui->DrawRect(COLOR_BG, rectWindow);
-            gui->DrawWireRect(COLOR_FG, rectWindow, 1);
+            gui->GetDrawList()->WireRect(COLOR_FG, rectWindow, 1);
             
             const auto rectTextOut = gui->DrawText(COLOR_TEXT, rectText, text.c_str(), FontStyle().SetSize(16.0f).SetAlign({ 0.0f, 0.5f }).SetClip(true));
             const auto rectTextHint = short4(rectTextOut.x + rectTextOut.z + 1, rectText.y, rectText.z - rectTextOut.z - 1, rectText.w);
@@ -114,7 +113,6 @@ namespace PK::App
         if (ctx->input.lastDeviceState.device == ctx->window->GetNative())
         {
             auto& input = ctx->input.lastDeviceState.state;
-            auto bindings = m_inputKeyCommands.GetBindings();
             auto isWaitingInput = m_waitingInput;
 
             if (input->GetKeyDown(m_keyToggleConsole))
@@ -136,21 +134,16 @@ namespace PK::App
                 return;
             }
 
-            for (auto i = 0u; i < m_inputKeyCommands.count; ++i)
+            const auto& commands = *m_inputKeyCommands;
+
+            for (const auto& command : commands)
             {
-                if (input->GetKeyDown(bindings[i].key))
+                if (input->GetKeyDown(command.key))
                 {
-                    m_sequencer->NextRoot<CArgumentConst>({ bindings[i].command });
+                    m_sequencer->NextRoot<CArgumentConst>({ command.command });
                 }
             }
         }
-    }
-
-    void EngineCommandInput::Step(AssetImportEvent<Config<InputKeyConfig>>* evt)
-    {
-        m_inputKeyCommands.memory.Copy(evt->asset->InputKeyCommands.memory);
-        m_inputKeyCommands.count = evt->asset->InputKeyCommands.count;
-        evt->asset->CommandInputKeys.TryGetKey("Console.Toggle", &m_keyToggleConsole);
     }
 
     bool EngineCommandInput::ProcessConsoleInput(FrameContext* ctx)

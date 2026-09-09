@@ -3,7 +3,7 @@
 
 namespace PK
 {
-    enum class InputKey
+    enum class InputKey : uint8_t
     {
         None,
         Mouse1,
@@ -151,6 +151,26 @@ namespace PK
 
     typedef FixedMask<(uint32_t)InputKey::Count> InputKeyState;
 
-    const char* InputKeyToString(InputKey key);
-    InputKey StringToInputKey(const char* string);
+    struct InputShortcut
+    {
+        InputKey First;
+        InputKey Second;
+        constexpr InputShortcut() = default;
+        constexpr InputShortcut(InputKey key0) : First(key0) {}
+        constexpr InputShortcut(InputKey key0, InputKey key1) : First(key0), Second(key1) {}
+    };
+
+    struct InputTriplet
+    {
+        InputShortcut Primary;
+        InputShortcut Secondary;
+        InputShortcut Tertiary;
+        constexpr InputTriplet() = default;
+        constexpr InputTriplet(InputKey key0) : Primary(key0) {}
+        constexpr InputTriplet(InputKey key0, InputKey key1) : Primary(key0), Secondary(key1) {}
+        constexpr InputTriplet(InputKey key0, InputKey key1, InputKey key2) : Primary(key0), Secondary(key1), Tertiary(key2) {}
+        constexpr InputTriplet(InputShortcut key0) : Primary(key0) {}
+        constexpr InputTriplet(InputShortcut key0, InputShortcut key1) : Primary(key0), Secondary(key1) {}
+        constexpr InputTriplet(InputShortcut key0, InputShortcut key1, InputShortcut key2) : Primary(key0), Secondary(key1), Tertiary(key2) {}
+    };
 }

@@ -1,40 +1,37 @@
 #pragma once
+#include "Core/Base/Containers/FixedString.h"
 #include "Core/Base/Types/Ref.h"
-#include "Core/Assets/AssetImportEvent.h"
 #include "Core/CLI/CArguments.h"
-#include "Core/Input/InputKeyBinding.h"
-#include "Core/Serialization/Config.h"
+#include "Core/Input/InputKey.h"
 #include "App/FrameStep.h"
 
 namespace PK { struct Sequencer; }
 namespace PK { struct InputState; }
-namespace PK { struct InputKeyConfig; }
-namespace PK { struct GUIDrawList; }
+namespace PK { struct InputKeyCommands; }
+namespace PK { struct GUI; }
 
 namespace PK::App
 {
     struct EngineCommandInput : 
-        public IStep<GUIDrawList*>,
-        public IStepFrameUpdate<>,
-        public IStep<AssetImportEvent<Config<InputKeyConfig>>*>
+        public IStep<GUI*>,
+        public IStepFrameUpdate<>
     {
         constexpr const static uint32_t LINE_COUNT = 32u;
         constexpr const static uint32_t LINE_LENGTH = 128u;
         constexpr const static char* HISTORY_FILENAME = "Saved/ConsoleHistory.ini";
 
-        EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig);
+        EngineCommandInput(Sequencer* sequencer, const InputKeyCommands* commands, const InputTriplet& toggleConsole);
         ~EngineCommandInput();
 
-        virtual void Step(GUIDrawList* gui) final;
+        virtual void Step(GUI* gui) final;
         virtual void OnStepFrameUpdate(FrameContext* ctx) final;
-        virtual void Step(AssetImportEvent<Config<InputKeyConfig>>* evt) final;
 
     private:
         bool ProcessConsoleInput(FrameContext* ctx);
 
+        const InputKeyCommands* m_inputKeyCommands;
+        const InputTriplet m_keyToggleConsole;
         Sequencer* m_sequencer = nullptr;
-        InputKeyCommandBindings m_inputKeyCommands;
-        InputKey m_keyToggleConsole = InputKey::GraveAccent;
         
         FixedString<LINE_LENGTH> m_lineHint;
         FixedString<LINE_LENGTH> m_lines[LINE_COUNT];

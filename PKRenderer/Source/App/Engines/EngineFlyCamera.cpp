@@ -11,9 +11,10 @@
 
 namespace PK::App
 {
-    EngineFlyCamera::EngineFlyCamera(EntityDatabase* entityDb, InputKeyConfig* keyConfig) : m_entityDb(entityDb)
+    EngineFlyCamera::EngineFlyCamera(EntityDatabase* entityDb, InputConfig* keyConfig) : 
+        m_entityDb(entityDb),
+        m_keys(keyConfig->FlyCamera)
     {
-        m_keys.SetKeysFrom(keyConfig);
         CVariableRegister::Create<CVariableFuncSimple>("Engine.FlyCamera.Transforms.Log", [this](){TransformsLog();});
         CVariableRegister::Create<CVariableFuncSimple>("Engine.FlyCamera.Transforms.Reset", [this](){TransformsReset();});
     }

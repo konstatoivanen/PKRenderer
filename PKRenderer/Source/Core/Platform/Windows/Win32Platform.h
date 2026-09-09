@@ -111,7 +111,7 @@ namespace PK
     struct Win32Window;
     struct Win32Resources;
     struct InputDevice;
-    enum class InputKey;
+    enum class InputKey : uint8_t;
 
     struct Win32Platform : public IPlatform 
     {

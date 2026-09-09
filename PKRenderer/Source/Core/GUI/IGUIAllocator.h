@@ -41,10 +41,15 @@ namespace PK
     struct IGUIAllocator
     {
         virtual ~IGUIAllocator() = default;
-        virtual short4 GUIGetRenderAreaRect() const = 0;
-        virtual Font* GUIGetDefaultFont() const = 0;
         virtual uint16_t GUIGetTextureIndex(RHITexture* texture) = 0;
         virtual uint3 GUIGetTextureSize(uint16_t textureIndex) const = 0;
         virtual bool GUIAllocate(uint32_t layer, uint32_t vertexCount, uint32_t indexCount, GUIAllocation* allocation) = 0;
+        virtual void* GUIAllocateState(uint64_t uuid, size_t size) = 0;
+    
+        template<typename T>
+        T* GUIAllocateState(uint64_t uuid)
+        {
+            return reinterpret_cast<T*>(GUIAllocateState(uuid, sizeof(T)));
+        }
     };
 }

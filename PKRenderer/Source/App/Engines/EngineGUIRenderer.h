@@ -1,17 +1,21 @@
 #pragma once
+#include "Core/Base/Containers/HashArena.h"
 #include "Core/ControlFlow/IStep.h"
 #include "Core/RHI/Layout.h"
 #include "Core/Rendering/Font.h"
 #include "Core/Rendering/RenderingFwd.h"
-#include "Core/GUI/GUIDrawList.h"
-#include "App/Renderer/IGUIRenderer.h"
+#include "Core/GUI/GUI.h"
+#include "App/Renderer/IGizmosRenderer.h"
+#include "App/FrameStep.h"
 
 namespace PK { class AssetDatabase; }
 namespace PK { struct Sequencer; }
+namespace PK { struct InputState; }
 
 namespace PK::App
 {
     struct RenderPipelineEvent;
+    struct FrameContext;
 
     struct GizmosVertex
     {
@@ -21,12 +25,14 @@ namespace PK::App
 
     struct EngineGUIRenderer :
         public IStep<RenderPipelineEvent*>,
+        public IStepFrameUpdate<>,
         public IGUIAllocator,
         public IGizmosRenderer
     {
-        EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer);
+        EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer, const GUIKeys* keys);
 
         virtual void Step(RenderPipelineEvent* renderEvent) final;
+        virtual void OnStepFrameUpdate(FrameContext* ctx) final;
 
         inline void SetGUIEnabled(bool value) { m_gui_enabled = value; }
         inline void SetGizmosEnabledGPU(bool value) { m_gizmos_enabledGPU = value; }
@@ -36,11 +42,10 @@ namespace PK::App
         void GUIDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
         bool GUIValidateDraw();
         
-        short4 GUIGetRenderAreaRect() const final;
-        Font* GUIGetDefaultFont() const final;
         uint16_t GUIGetTextureIndex(RHITexture* texture) final;
         uint3 GUIGetTextureSize(uint16_t textureIndex) const final;
         bool GUIAllocate(uint32_t layer, uint32_t vertexCount, uint32_t indexCount, GUIAllocation* allocation) final;
+        void* GUIAllocateState(uint64_t uuid, size_t size) final;
 
         void GizmosCollectDraws(const uint4& renderArea, const float4x4& worldToClip, CommandBufferExt& cmd);
         void GizmosDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
@@ -64,13 +69,13 @@ namespace PK::App
 
         CommandBufferExt* m_gui_commandBuffer = nullptr;
         RHITextureBindSetRef m_gui_textures;
+        HeapHashArena m_gui_stateCache;
         ShaderAsset* m_gui_shader = nullptr;
-        Font* m_gui_font = nullptr;
         RHIBufferRef m_gui_vertexBuffer;
         RHIBufferRef m_gui_indexBuffer;
         BufferView<GUIVertex> m_gui_vertexView;
         BufferView<GUIIndex> m_gui_indexView;
-        short4 m_gui_renderAreaRect = PK_SHORT4_ZERO;
+        GUIContext m_gui_context{};
         uint32_t m_gui_vertexCount = 0u;
         uint32_t m_gui_indexCount = 0u;
         bool m_gui_enabled = true;

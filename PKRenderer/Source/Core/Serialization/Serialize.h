@@ -9,6 +9,6 @@
 #include "Serializers/SerializeMathTypes.h"
 #include "Serializers/SerializeAsset.h"
 #include "Serializers/SerializeCVariablesYaml.h"
-#include "Serializers/SerializeInputKeyBindings.h"
+#include "Serializers/SerializeInput.h"
 #include "Serializers/SerializeMaterialTarget.h"
 #undef PK_SERIALIZE_HEADER

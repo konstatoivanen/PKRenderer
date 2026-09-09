@@ -1,44 +1,27 @@
 #pragma once
 #include "Core/Assets/AssetImportEvent.h"
-#include "Core/Input/InputKeyStructMacros.h"
 #include "Core/Serialization/Config.h"
+#include "App/InputConfig.h"
 #include "App/FrameStep.h"
 
 namespace PK { struct EntityDatabase; }
 
 namespace PK::App
 {
-    PK_INPUTKEY_STRUCT_BEGIN(EngineFlyCameraInputKeys)
-        PK_INPUTKEY_STRUCT_MEMBER(Move, Forward, W)
-        PK_INPUTKEY_STRUCT_MEMBER(Move, Backward, S)
-        PK_INPUTKEY_STRUCT_MEMBER(Move, Left, A)
-        PK_INPUTKEY_STRUCT_MEMBER(Move, Right, D)
-        PK_INPUTKEY_STRUCT_MEMBER(Move, Up, Q)
-        PK_INPUTKEY_STRUCT_MEMBER(Move, Down, E)
-        PK_INPUTKEY_STRUCT_MEMBER(Camera, LookDrag, Mouse1)
-        PK_INPUTKEY_STRUCT_MEMBER(Camera, SpeedUp, MouseScrollUp)
-        PK_INPUTKEY_STRUCT_MEMBER(Camera, SpeedDown, MouseScrollDown)
-        PK_INPUTKEY_STRUCT_MEMBER(Camera, FovAdd, MouseScrollDown)
-        PK_INPUTKEY_STRUCT_MEMBER(Camera, FovSub, MouseScrollUp)
-        PK_INPUTKEY_STRUCT_MEMBER(Camera, FovControl, LeftControl)
-        PK_INPUTKEY_STRUCT_MEMBER(Camera, ResetSmoothing, LeftShift)
-        PK_INPUTKEY_STRUCT_MEMBER(Camera, DollyZoom, LeftShift)
-    PK_INPUTKEY_STRUCT_END()
-
     class EngineFlyCamera : 
         public IStepFrameUpdate<>,
-        public IStep<AssetImportEvent<Config<InputKeyConfig>>*>
+        public IStep<AssetImportEvent<Config<InputConfig>>*>
     {
     public:
-        EngineFlyCamera(EntityDatabase* entityDb, InputKeyConfig* keyConfig);
+        EngineFlyCamera(EntityDatabase* entityDb, InputConfig* keyConfig);
         virtual void OnStepFrameUpdate(FrameContext* ctx) final;
-        virtual void Step(AssetImportEvent<Config<InputKeyConfig>>* evt) final { m_keys.SetKeysFrom(evt->asset); }
+        virtual void Step(AssetImportEvent<Config<InputConfig>>* evt) final { m_keys = evt->asset->FlyCamera; }
 
         void TransformsLog() const;
         void TransformsReset();
 
     private:
         EntityDatabase* m_entityDb;
-        EngineFlyCameraInputKeys m_keys{};
+        InputFlyCamera m_keys{};
     };
 }

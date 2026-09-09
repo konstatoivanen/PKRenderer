@@ -11,7 +11,7 @@
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Mesh.h"
 #include "Core/Rendering/Window.h"
-#include "Core/GUI/GUIDrawList.h"
+#include "Core/GUI/GUI.h"
 #include "Core/IApplication.h"
 #include "App/FrameStep.h"
 #include "App/FrameContext.h"
@@ -36,6 +36,7 @@
 #include "App/Renderer/RenderPipelineScene.h"
 #include "App/Renderer/RenderView.h"
 #include "App/BaseRendererConfig.h"
+#include "App/InputConfig.h"
 #include "RendererApplication.h"
 
 namespace PK::App
@@ -91,16 +92,16 @@ namespace PK::App
 
         auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic);
 
-        auto inputConfig = assetDatabase->Load<Config<InputKeyConfig>>("Content/Configs/Input.cfg").get();
+        auto inputConfig = assetDatabase->Load<Config<InputConfig>>("Content/Configs/Input.cfg").get();
         auto remoteProcessRunner = GetServices()->Create<RemoteProcessRunner>();
         auto engineViewUpdate = GetServices()->Create<EngineViewUpdate>(sequencer, entityDb);
-        auto engineCommands = GetServices()->Create<EngineCommandInput>(sequencer, inputConfig);
+        auto engineCommands = GetServices()->Create<EngineCommandInput>(sequencer, &inputConfig->KeyCommands, inputConfig->OpenConsole);
         auto engineUpdateTransforms = GetServices()->Create<EngineUpdateTransforms>(entityDb);
         auto engineEntityCull = GetServices()->Create<EngineEntityCull>(entityDb);
         auto engineDrawGeometry = GetServices()->Create<EngineDrawGeometry>(entityDb, sequencer);
         auto engineGatherRayTracingGeometry = GetServices()->Create<EngineGatherRayTracingGeometry>(entityDb);
         auto engineScreenshot = GetServices()->Create<EngineScreenshot>();
-        auto engineGUIRenderer = GetServices()->Create<EngineGUIRenderer>(assetDatabase, sequencer);
+        auto engineGUIRenderer = GetServices()->Create<EngineGUIRenderer>(assetDatabase, sequencer, &inputConfig->GUIKeys);
         auto engineProfiler = GetServices()->Create<EngineProfiler>();
 
         auto engineFlyCamera = GetServices()->Create<EngineFlyCamera>(entityDb, inputConfig);
@@ -115,6 +116,7 @@ namespace PK::App
                     {
                         Sequencer::Step::Create<FrameStep::Initialize, FrameContext*>(time),
                         Sequencer::Step::Create<FrameStep::Update, FrameContext*>(input),
+                        Sequencer::Step::Create<FrameStep::Update, FrameContext*>(engineGUIRenderer),
                         Sequencer::Step::Create<FrameStep::Update, FrameContext*>(engineCommands),
                         Sequencer::Step::Create<FrameStep::Update, FrameContext*>(engineDebug),
                         Sequencer::Step::Create<FrameStep::Update, FrameContext*>(engineViewUpdate),
@@ -156,16 +158,15 @@ namespace PK::App
                     engineGUIRenderer,
                     {
                         Sequencer::Step::Create<IGizmosRenderer*>(engineDebug),
-                        Sequencer::Step::Create<GUIDrawList*>(engineProfiler),
-                        Sequencer::Step::Create<GUIDrawList*>(engineCommands)
+                        Sequencer::Step::Create<GUI*>(engineProfiler),
+                        Sequencer::Step::Create<GUI*>(engineCommands)
                     }
                 },
                 {
                     assetDatabase,
                     {
                         Sequencer::Step::Create<AssetImportEvent<Config<EngineDebugConfig>>*>(engineDebug),
-                        Sequencer::Step::Create<AssetImportEvent<Config<InputKeyConfig>>*>(engineFlyCamera),
-                        Sequencer::Step::Create<AssetImportEvent<Config<InputKeyConfig>>*>(engineCommands)
+                        Sequencer::Step::Create<AssetImportEvent<Config<InputConfig>>*>(engineFlyCamera)
                     }
                 },
             });

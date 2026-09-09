@@ -1,0 +1,185 @@
+#include "PrecompiledHeader.h"
+#include "Core/Math/Rect.h"
+#include "Core/Input/InputState.h"
+#include "GUIInput.h"
+
+namespace PK
+{
+    GUIInput::GUIInput(const GUIKeys* keys, GUIInputState* state, InputState* input, const short2& screenOffset, const short2& screenScale) :
+        m_keys(keys),
+        m_state(state),
+        m_input(input)
+    {
+        m_cursor = input ? short2(input->cursorPosition) : PK_SHORT2_ZERO;
+        m_cursorDelta = input ? short2(input->cursorPositionDelta) : PK_SHORT2_ZERO;
+        m_scrollDelta = input ? short2(input->cursorScroll) : PK_SHORT2_ZERO;
+        
+        m_cursor.xy *= screenScale;
+        m_cursor.xy += screenOffset;
+        m_cursorDelta *= screenScale;
+
+        if (!math::any(m_cursorDelta) && !m_state->controlId && m_state->hoverId)
+        {
+            m_navAxis.x += KeyDown(GUIKey::Right, true);
+            m_navAxis.x -= KeyDown(GUIKey::Left, true);
+            m_navAxis.y += KeyDown(GUIKey::Down, true);
+            m_navAxis.y -= KeyDown(GUIKey::Up, true);
+            m_hotHoverLayer = state->hoverLayer;
+            m_navScore = math::any(m_navAxis) ? ~0u : 0u;
+
+            if (KeyDown(GUIKey::Exit, true))
+            {
+                if (m_hotHoverLayer)
+                {
+                    m_hotHoverLayer--;
+                    m_navScore = ~0u;
+                }
+            }
+        }
+    }
+
+    GUIInput::~GUIInput()
+    {
+        m_state->controlId = m_hotControlId;
+        m_state->hoverId = m_hotHoverId;
+        m_state->hoverLayer = m_hotHoverLayer;
+        m_state->hoverPos = m_hotHoverPos;
+    }
+
+
+    void GUIInput::PushLayer()
+    {
+        ++m_layer;
+    }
+
+    void GUIInput::PopLayer()
+    {
+        if (m_layer)
+        {
+            --m_layer;
+        }
+    }
+
+    bool GUIInput::KeyDown(GUIKey key, bool consume)
+    {
+        const auto& triplet = (&m_keys->Enter)[(uint32_t)key];
+        return m_input ? consume ? m_input->ConsumeKeyDown(triplet) : m_input->GetKeyDown(triplet) : false;
+    }
+
+    bool GUIInput::KeyUp(GUIKey key, bool consume)
+    {
+        const auto& triplet = (&m_keys->Enter)[(uint32_t)key];
+        return m_input ? consume ? m_input->ConsumeKeyUp(triplet) : m_input->GetKeyUp(triplet) : false;
+    }
+
+    bool GUIInput::Key(GUIKey key, bool consume)
+    {
+        const auto& triplet = (&m_keys->Enter)[(uint32_t)key];
+        return m_input ? consume ? m_input->ConsumeKey(triplet) : m_input->GetKey(triplet) : false;
+    }
+
+    bool GUIInput::HasHover(uint64_t uuid) const { return m_state->hoverId == uuid; }
+    bool GUIInput::HasControl(uint64_t uuid) const { return m_state->controlId == uuid; }
+    bool GUIInput::LostControl(uint64_t uuid) const { return m_hotControlId != uuid && m_state->controlId == uuid; }
+    void GUIInput::SetClipRect(const short4& rect) { m_clipRect = rect; }
+
+    bool GUIInput::Hover(const short4& rect, uint64_t uuid)
+    {
+        // Mouse input hover selection
+        const auto is_nav_move = m_navScore != 0u;
+        const auto is_cursor_move = !is_nav_move && math::any(m_cursorDelta);
+
+        // No moves try to retain hover id.
+        if (!is_nav_move && !is_cursor_move && uuid != m_state->hoverId)
+        {
+            return false;
+        }
+
+        // Cursor move. didn't hit rect. not hovered. Also dicard existing hover on cursor move if invalid.
+        if (is_cursor_move && (m_layer < m_hotHoverLayer || !math::rectIntersect(rect, m_clipRect) || !math::rectIntersect(rect, m_cursor)))
+        {
+            return false;
+        }
+
+        // Nav move try to find nearest in selected layer. layer selection at the beginning of frame.
+        if (is_nav_move && m_state->hoverId != uuid)
+        {
+            const auto delta = rect.xy + rect.zw / (short)2 - m_state->hoverPos;
+            const auto has_axis = math::any(m_navAxis);
+            
+            if (has_axis && math::dot(m_navAxis, delta) <= 0)
+            {
+                return false;
+            }
+
+            const auto ortho = short2(m_navAxis.y, -m_navAxis.x);
+            const auto dist0 = (int16_t)math::length(float2(delta));
+            const auto dist1 = math::dot(m_navAxis, delta);
+            const auto dist2 = math::lerp(dist0, dist1, has_axis);
+            const auto dist3 = math::abs(math::dot(ortho, delta));
+            const auto dist4 = math::abs((int32_t)m_layer - (int32_t)m_hotHoverLayer) + 1u;
+            const auto score = (dist3 * 0xFu + dist2) * dist4;
+
+            if (score >= m_navScore)
+            {
+                return false;
+            }
+
+            m_navScore = score;
+        }
+
+        // Hacky fix for preventing passthrough of hoverid when navigating to previous element.
+        if (is_nav_move && m_state->hoverId == uuid && m_navScore != ~0u)
+        {
+            return false;
+        }
+
+        m_hotHoverId = uuid;
+        m_hotHoverLayer = m_layer;
+        m_hotHoverPos = rect.xy + rect.zw / (short)2;
+        return true;
+    }
+
+    bool GUIInput::Button(const short4& rect, uint64_t uuid)
+    {
+        Hover(rect, uuid);
+
+        if (!m_hotControlId && (HasHover(uuid) || HasControl(uuid)) && Key(GUIKey::Enter, true))
+        {
+            m_hotControlId = uuid;
+        }
+
+        return LostControl(uuid);
+    }
+
+    bool GUIInput::ButtonOffsetScale(const short4& rect, uint64_t uuid, short4* target)
+    {
+        const auto pressed = Button(rect, uuid);
+
+        if (target)
+        {
+            if (HasHover(uuid) && Key(GUIKey::Shift, true))
+            {
+                target->x += (int16_t)Key(GUIKey::Right, true) * 4u;
+                target->x -= (int16_t)Key(GUIKey::Left, true) * 4u;
+                target->y += (int16_t)Key(GUIKey::Down, true) * 4u;
+                target->y -= (int16_t)Key(GUIKey::Up, true) * 4u;
+            }
+
+            if (HasHover(uuid) && Key(GUIKey::Control, true))
+            {
+                target->z += (int16_t)Key(GUIKey::Right, true) * 4u;
+                target->z -= (int16_t)Key(GUIKey::Left, true) * 4u;
+                target->w += (int16_t)Key(GUIKey::Down, true) * 4u;
+                target->w -= (int16_t)Key(GUIKey::Up, true) * 4u;
+            }
+
+            if (HasControl(uuid))
+            {
+                target->xy += m_cursorDelta;
+            }
+        }
+
+        return pressed;
+    }
+}

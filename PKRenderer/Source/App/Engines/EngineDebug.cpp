@@ -16,7 +16,7 @@
 #include "App/ECS/EntityViewScenePrimitive.h"
 #include "App/ECS/EntityViewFlyCamera.h"
 #include "App/ECS/EntityViewRenderView.h"
-#include "App/Renderer/IGUIRenderer.h"
+#include "App/Renderer/IGizmosRenderer.h"
 #include "App/Renderer/Passes/PassLights.h"
 #include "App/Renderer/HashCache.h"
 #include "App/ECS/EntityLight.h"

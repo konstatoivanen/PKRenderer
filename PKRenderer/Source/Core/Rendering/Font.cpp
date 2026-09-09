@@ -3,7 +3,7 @@
 #include <PKAssets/PKAssetLoader.h>
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Math/Extended.h"
+#include "Core/Math/Rect.h"
 #include "Font.h"
 
 namespace PK
@@ -49,10 +49,8 @@ namespace PK
             glyph.rect.w *= -1.0f;
             #endif
 
-            miny = math::min(miny, glyph.rect.y + glyph.rect.w);
-            miny = math::min(miny, glyph.rect.y);
-            maxy = math::max(maxy, glyph.rect.y + glyph.rect.w);
-            maxy = math::max(maxy, glyph.rect.y);
+            miny = math::min(miny, glyph.rect.y, glyph.rect.y + glyph.rect.w);
+            maxy = math::max(maxy, glyph.rect.y, glyph.rect.y + glyph.rect.w);
         }
 
         m_alignTop = -miny;
@@ -87,72 +85,111 @@ namespace PK
         PKAssets::CloseAsset(&asset);
     }
 
-    uint32_t Font::GetAdvance(const char ansichar, const FontStyle& style) const { return (uint32_t)math::round(GetGlyph(ansichar).advance * style.spacing.x * style.size); }
-    uint32_t Font::GetLineHeight(const FontStyle& style) const { return (uint32_t)math::round(m_lineHeight * style.spacing.y * style.size); }
-    float Font::GetLineAlignment(const FontStyle& style) const { return math::lerp(GetAlignTop(), GetAlignBottom(), style.align.y) * style.size; }
-    float2 Font::GetTexelSize() const { return m_texture->GetTexelSize().xy(); }
-    uint2 Font::GetAtlasSize() const { return m_texture->GetResolution().xy(); }
-    RHITexture* Font::GetRHI() { return m_texture.get(); }
-    const RHITexture* Font::GetRHI() const { return m_texture.get(); }
+    uint32_t Font::GetAdvance(const char ansichar, const FontStyle& style) const 
+    { 
+        return (uint32_t)math::round(GetGlyph(ansichar).advance * style.spacing.x * style.size); 
+    }
+
+    uint32_t Font::GetLineHeight(const FontStyle& style) const 
+    { 
+        return (uint32_t)math::round(m_lineHeight * style.spacing.y * style.size); 
+    }
+
+    float Font::GetLineAlignment(const FontStyle& style) const 
+    { 
+        return math::lerp(GetAlignTop(), GetAlignBottom(), style.align.y) * style.size; 
+    }
+
+    float2 Font::GetTexelSize() const 
+    { 
+        return m_texture->GetTexelSize().xy(); 
+    }
+
+    uint2 Font::GetAtlasSize() const 
+    { 
+        return m_texture->GetResolution().xy(); 
+    }
+
+    RHITexture* Font::GetRHI() 
+    { 
+        return m_texture.get(); 
+    }
+
+    const RHITexture* Font::GetRHI() const 
+    {
+        return m_texture.get(); 
+    }
 
     uint32_t Font::GenerateRects(const FontGeometryInfo& info, void* userData, OnVisibleRect onVisibleRect)
     {
         const auto font = info.font;
         const auto text = info.text;
         const auto& style = info.style;
-        const auto max_width = info.area_rect.z;
-        const auto max_height = info.area_rect.w;
-        const auto line_height = (int16_t)font->GetLineHeight(style);
+        const auto align = style.align;
+
+        const auto line_height = static_cast<int16_t>(font->GetLineHeight(style));
         const auto line_align = font->GetLineAlignment(style);
 
-        auto offset_y = (int16_t)math::round((max_height - info.line_count * line_height) * style.align.y + line_align);
+        const auto max_width = info.area_rect.z;
+        const auto max_height = info.area_rect.w;
+        const auto text_height = info.line_count * line_height;
+        const auto slack_height = max_height - text_height;
+        const auto offset_y = static_cast<int16_t>(math::round(slack_height * align.y + line_align));
+
         auto offsets_x = PK_STACK_ALLOC(int16_t, info.line_count);
         auto rect_count = 0u;
 
-        for (auto i = 0u, line_y = 0u, line_x = 0u; i <= info.text_length; ++i)
+        auto line_y = 0u;
+        auto line_x = 0u;
+
+        // Calculate horizontal offsets for lines
+        for (auto i = 0u; i < info.text_length; ++i)
         {
-            if (i == info.text_length)
-            {
-                offsets_x[line_y] = (int16_t)((max_width - line_x) * style.align.x);
-                break;
-            }
-
             const auto advance = font->GetAdvance(text[i], style);
+            const auto is_newline = text[i] == '\n';
+            const auto is_wrap = style.wrap && (static_cast<int16_t>(line_x + advance) > max_width);
 
-            if (text[i] == '\n' || (style.wrap && (int16_t)(line_x + advance) > max_width))
+            if (is_newline || is_wrap)
             {
-                offsets_x[line_y++] = int16_t((max_width - line_x) * style.align.x);
+                offsets_x[line_y++] = static_cast<int16_t>((max_width - line_x) * align.x);
                 line_x = 0u;
             }
 
             line_x += advance;
         }
 
-        for (auto i = 0u, line_y = 0u, line_x = 0u; i < info.text_length; ++i)
+        offsets_x[line_y] = static_cast<int16_t>((max_width - line_x) * align.x);
+        line_y = 0u;
+        line_x = 0u;
+
+        for (auto i = 0u; i < info.text_length; ++i)
         {
             const auto& glyph = font->GetGlyph(text[i]);
             const auto advance = font->GetAdvance(text[i], style);
+            const auto is_newline = text[i] == '\n';
+            const auto is_wrap = style.wrap && (static_cast<int16_t>(line_x + advance) > max_width);
 
-            if (text[i] == '\n' || (style.wrap && (int16_t)(line_x + advance) > max_width))
+            if (is_newline || is_wrap)
             {
-                line_y++;
                 line_x = 0u;
+                ++line_y;
             }
 
             if (!glyph.isWhiteSpace)
             {
                 FontRect rect{};
                 rect.character = text[i];
-                rect.lineIndex = (uint16_t)line_y;
-                rect.rect.x = (int16_t)line_x + offsets_x[line_y] + (int16_t)math::round(glyph.rect.x * style.size);
-                rect.rect.y = (int16_t)line_y * line_height + offset_y + (int16_t)math::round(glyph.rect.y * style.size);
-                rect.rect.z = (int16_t)math::round(glyph.rect.z * style.size);
-                rect.rect.w = (int16_t)math::round(glyph.rect.w * style.size);
-                rect.rect.x += info.area_rect.x;
-                rect.rect.y += info.area_rect.y;
+                rect.lineIndex = static_cast<uint16_t>(line_y);
                 rect.texrect = glyph.texrect;
 
-                if (!style.clip || math::intersectRects(rect.rect, info.clip_rect))
+                const auto base_x = info.area_rect.x + static_cast<int16_t>(line_x) + offsets_x[line_y];
+                const auto base_y = info.area_rect.y + static_cast<int16_t>(line_y) * line_height + offset_y;
+                rect.rect.x = base_x + static_cast<int16_t>(math::round(glyph.rect.x * style.size));
+                rect.rect.y = base_y + static_cast<int16_t>(math::round(glyph.rect.y * style.size));
+                rect.rect.z = static_cast<int16_t>(math::round(glyph.rect.z * style.size));
+                rect.rect.w = static_cast<int16_t>(math::round(glyph.rect.w * style.size));
+
+                if (!style.clip || math::rectIntersect(rect.rect, info.clip_rect))
                 {
                     onVisibleRect(userData, rect, rect_count);
                     rect_count++;
@@ -186,10 +223,12 @@ namespace PK
         for (auto i = 0u, line_x = 0u; i < info.text_length; ++i)
         {
             const auto advance = font->GetAdvance(text[i], style);
+            const auto is_newline = text[i] == '\n';
+            const auto is_wrap = style.wrap && (static_cast<int16_t>(line_x + advance) > area_rect.z);
 
-            if (text[i] == '\n' || (style.wrap && (int16_t)(line_x + advance) > area_rect.z))
+            if (is_newline || is_wrap)
             {
-                info.line_count++;
+                ++info.line_count;
                 line_x = 0u;
             }
 
@@ -199,14 +238,14 @@ namespace PK
         info.rect_count = GenerateRects(info, &info, [](void* userData, const FontRect& rect, [[maybe_unused]] uint32_t index)
         {
             auto* info = static_cast<FontGeometryInfo*>(userData);
-            const auto sminmax = short4(rect.rect.x, rect.rect.y, rect.rect.x + rect.rect.z, rect.rect.y + rect.rect.w);
+            const auto sminmax = math::rectToMinMax(rect.rect);
             info->text_rect.x = math::min(info->text_rect.x, sminmax.x, sminmax.z);
             info->text_rect.y = math::min(info->text_rect.y, sminmax.y, sminmax.w);
             info->text_rect.z = math::max(info->text_rect.z, sminmax.x, sminmax.z);
             info->text_rect.w = math::max(info->text_rect.w, sminmax.y, sminmax.w);
         });
 
-        info.text_rect = short4(info.text_rect.xy(), info.text_rect.zw() - info.text_rect.xy());
+        info.text_rect = math::rectFromMinMax(info.text_rect);
         
         return info;
     }

@@ -100,21 +100,22 @@ namespace PK
             if constexpr (TEntityHasOnDeserialize<TEntity>)
             {
                 TEntity::OnDeserialize(entityDb, entity, archive);
-                return;
             }
-
-            Reflect(entity, [archive](const char* componentName, const char* fieldName, auto& field)
+            else
             {
-                FixedString256 namepath("%s.%s", componentName, fieldName);
-                Serialize::ReadSingle((*archive->node)[namepath.c_str()], &field);
-            });
+                Reflect(entity, [archive](const char* componentName, const char* fieldName, auto& field)
+                {
+                    FixedString256 namepath("%s.%s", componentName, fieldName);
+                    Serialize::ReadSingle((*archive->node)[namepath.c_str()], &field);
+                });
+            }
         }
 
     private:
         template<typename TEntity, typename TFunc>
         static void Reflect(TEntity& entity, TFunc&& func)
         {
-            PK::ReflectFields(entity, [&func](const char* componentName, auto& component)
+            PK::ReflectFields(entity, [&func]([[maybe_unused]] const char* componentName, auto& component)
             {
                 using TComponent = TRemovePtrCVRef_T<decltype(component)>;
 

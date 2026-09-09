@@ -9,14 +9,17 @@
 #include "Core/Rendering/ShaderAsset.h"
 #include "App/Renderer/RenderPipelineBase.h"
 #include "App/Renderer/HashCache.h"
+#include "App/FrameContext.h"
 #include "EngineGUIRenderer.h"
 
 namespace PK::App
 {
-    EngineGUIRenderer::EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer) : 
+    EngineGUIRenderer::EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer, const GUIKeys* keys) :
         m_sequencer(sequencer),
         m_assetDatabase(assetDatabase)
     { 
+        m_gui_context.keys = keys;
+
         m_gizmos_shader = assetDatabase->Find<ShaderAsset>("VS_Gizmos").get();
         m_gizmos_vertexBuffer = RHI::CreateBuffer<uint4>(m_gizmos_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
         m_gizmos_indirectVertexBuffer = RHI::CreateBuffer<uint4>(16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
@@ -67,20 +70,35 @@ namespace PK::App
         }
     }
 
+    void EngineGUIRenderer::OnStepFrameUpdate(FrameContext* ctx)
+    {
+        m_gui_context.input = nullptr;
+
+        if (ctx->input.lastDeviceState.device == ctx->window->GetNative())
+        {
+            m_gui_context.input = ctx->input.lastDeviceState.state;
+        }
+    }
+
 
     void EngineGUIRenderer::GUICollectDraws(const uint4& renderArea, CommandBufferExt& cmd)
     {
         m_gui_vertexCount = 0u;
         m_gui_indexCount = 0u;
-        m_gui_renderAreaRect = renderArea;
         m_gui_vertexView = {};
         m_gui_indexView = {};
         m_gui_commandBuffer = m_gui_enabled ? &cmd : nullptr;
 
         if (m_gui_enabled)
         {
-            GUIDrawList drawList(this);
-            m_sequencer->Next<GUIDrawList*>(this, &drawList);
+            m_gui_stateCache.Prune();
+            m_gui_context.allocator = this;
+            m_gui_context.renderArea = renderArea;
+            m_gui_context.clipRect = renderArea;
+            m_gui_context.screenOffset = { 0, renderArea.w };
+            m_gui_context.screenScale = { 1, -1 };
+            GUI gui(&m_gui_context);
+            m_sequencer->Next<GUI*>(this, &gui);
         }
 
         if (m_gui_vertexView.data != nullptr)
@@ -112,7 +130,7 @@ namespace PK::App
             if (m_gui_shader == nullptr)
             {
                 m_gui_shader = m_assetDatabase->Find<ShaderAsset>("VS_GUI").get();
-                m_gui_font = m_assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
+                m_gui_context.defautFont = m_assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
                 m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::PersistentStorage, "GUI.VertexBuffer");
                 m_gui_indexBuffer = RHI::CreateBuffer<GUIIndex>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
                 m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);
@@ -127,22 +145,13 @@ namespace PK::App
                 m_gui_textures->Clear();
                 m_gui_textures->Add(RHI::GetBuiltInResources()->WhiteTexture2D.get());
                 m_gui_textures->Add(RHI::GetBuiltInResources()->ErrorTexture2D.get());
-                m_gui_textures->Add(m_gui_font->GetRHI());
+                m_gui_textures->Add(m_gui_context.defautFont->GetRHI());
             }
         }
         
         return m_gui_commandBuffer != nullptr;
     }
 
-    short4 EngineGUIRenderer::GUIGetRenderAreaRect() const
-    {
-        return m_gui_renderAreaRect;
-    }
-
-    Font* EngineGUIRenderer::GUIGetDefaultFont() const
-    {
-        return m_gui_font;
-    }
 
     uint16_t EngineGUIRenderer::GUIGetTextureIndex(RHITexture* texture)
     {
@@ -186,6 +195,11 @@ namespace PK::App
         }
 
         return false;
+    }
+
+    void* EngineGUIRenderer::GUIAllocateState(uint64_t uuid, size_t size)
+    {
+        return m_gui_stateCache.Allocate(uuid, size);
     }
 
  

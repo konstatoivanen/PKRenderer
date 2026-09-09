@@ -7,7 +7,7 @@
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Font.h"
-#include "Core/GUI/GUIDrawList.h"
+#include "Core/GUI/GUIWidgets.h"
 #include "EngineProfiler.h"
 
 namespace PK::App
@@ -17,7 +17,7 @@ namespace PK::App
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Profiler.Toggle", [this]() { m_enabled ^= true; });
     }
     
-    void EngineProfiler::Step(GUIDrawList* gui)
+    void EngineProfiler::Step(GUI* gui)
     {
         if (!m_enabled)
         {
@@ -71,7 +71,7 @@ namespace PK::App
         FixedString64 textMemoryVram("Vram: %s", String::FormatBytes<16>(gpumemory.usedBytes).c_str());
 
         gui->DrawRect(COLOR_BG, rectWindow);
-        gui->DrawWireRect(COLOR_FG, rectWindow, 1);
+        gui->GetDrawList()->WireRect(COLOR_FG, rectWindow, 1);
         auto area_text = short4(rectWindow.xy + short2(padding * 2, padding + 2), 0, 16);
         area_text = gui->DrawText(COLOR_FPS_AVG, area_text, textFramerateCur.c_str(), FontStyle().SetSize(16.0f).SetClip(false));
         area_text = gui->DrawText(COLOR_FPS_AVG, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateAvg.c_str(), FontStyle().SetSize(fontSize));
@@ -96,5 +96,14 @@ namespace PK::App
         gui->DrawRect(COLOR_FPS_MAX, rectBar + short4(0, -sampleHeight * 1, 0, 0));
 
         m_timeHistoryHead++;
+
+
+        /*
+        GUIWindow::Begin(gui, &m_window, "Test", { "Entities", "Graphics" });
+        {
+
+        }
+        GUIWindow::End(gui, &m_window);
+        */
     }
 }

@@ -3,6 +3,8 @@
 
 namespace PK
 {
+    struct EntityDatabase;
+
     template <typename TEntityStruct>
     concept TIsValidEntityStruct = requires
     {
@@ -12,7 +14,7 @@ namespace PK
     };
 
     template <typename TEntity, typename TDescriptor>
-    concept TEntityHasOnCreate = requires(struct EntityDatabase* db, TEntity& entity, const TDescriptor& desc)
+    concept TEntityHasOnCreate = requires(EntityDatabase* db, TEntity& entity, const TDescriptor& desc)
     {
         TEntity::OnCreate(db, entity, desc);
     };

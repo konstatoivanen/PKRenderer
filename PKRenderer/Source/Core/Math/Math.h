@@ -25,6 +25,10 @@ namespace PK
     constexpr short3 PK_SHORT3_ZERO = { 0, 0, 0 };
     constexpr short4 PK_SHORT4_ZERO = { 0, 0, 0, 0 };
 
+    constexpr short2 PK_SHORT2_ONE = { 1, 1 };
+    constexpr short3 PK_SHORT3_ONE = { 1, 1, 1 };
+    constexpr short4 PK_SHORT4_ONE = { 1, 1, 1, 1 };
+
     constexpr short2 PK_SHORT2_MAX = { 32767, 32767 };
     constexpr short3 PK_SHORT3_MAX = { 32767, 32767, 32767 };
     constexpr short4 PK_SHORT4_MAX = { 32767, 32767, 32767, 32767 };

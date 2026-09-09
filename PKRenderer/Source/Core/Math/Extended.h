@@ -42,12 +42,6 @@ namespace PK::math
         return triangleNormal(&a.x, &b.x, &c.x, isValid);
     }
 
-    template<typename T> bool intersectRects(const vector<T,4>& rect, const vector<T,4>& clipRect)
-    {
-        return (rect.x + rect.z) > clipRect.x && rect.x < (clipRect.x + clipRect.z) &&
-               (rect.y + rect.w) > clipRect.y && rect.y < (clipRect.y + clipRect.w);
-    }
-
     template<typename T> T cubicBezier(const T& p0, const T& p1, const T& cp0, const T& cp1, float t)
     {
         const auto u = 1.0f - t;
