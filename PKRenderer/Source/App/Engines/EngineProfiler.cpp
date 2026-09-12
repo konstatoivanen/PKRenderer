@@ -2,6 +2,7 @@
 #include "Core/Platform/PlatformInterfaces.h"
 #include "Core/Base/Containers/FixedString.h"
 #include "Core/Math/Color.h"
+#include "Core/Math/Rect.h"
 #include "Core/Math/Extended.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
@@ -12,8 +13,14 @@
 
 namespace PK::App
 {
-    EngineProfiler::EngineProfiler()
+    EngineProfiler::EngineProfiler() : m_window(GUIWindowStyle::GetRedDark())
     {
+        m_window.style.align = PK_FLOAT2_RIGHT;
+        m_window.style.minSize = short2(256, 128);
+        m_window.style.maxSize = short2(1024, 256);
+        m_window.style.initialSize = short2(256, 128);
+        m_window.style.contentMode = GUILayoutMode::Flow;
+
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Profiler.Toggle", [this]() { m_enabled ^= true; });
     }
     
@@ -24,86 +31,112 @@ namespace PK::App
             return;
         }
 
-        constexpr auto COLOR_BG = color32(0, 0, 0, 192);
-        constexpr auto COLOR_FG = color32(255, 255, 255, 127);
-        constexpr auto COLOR_FPS_AVG = color32(255, 255, 255, 127);
-        constexpr auto COLOR_FPS_MIN = color32(0, 255, 0, 127);
-        constexpr auto COLOR_FPS_MAX = color32(255, 0, 0, 127);
-        constexpr auto COLOR_VRAM = color32(0, 255, 255, 127);
-        constexpr auto COLOR_ERAM = color32(255, 0, 255, 127);
-        constexpr auto COLOR_IRAM = color32(255, 255, 0, 127);
+        const auto cpumemory = Platform::GetMemoryInfo();
+        const auto gpumemory = RHI::GetMemoryInfo();
 
-        // @TODO this is pretty hacky & hard coded. fix later
-        const auto height = 74;
-        const auto fontSize = 16;
-        const auto padding = 4;
-        const auto renderArea = gui->GetClipRect();
-        const auto rectWindow = short4(renderArea.x + padding, renderArea.y + renderArea.w - height - padding, renderArea.z - padding * 2, height);
-        const auto rectSample = short4(rectWindow.x + padding, rectWindow.y + rectWindow.w - padding, 2, 0);
-        const auto rectBar    = short4(rectWindow.x + padding, rectWindow.y + rectWindow.w - padding, rectWindow.z - padding * 2, 1);
-        const auto sampleWidth = 2;
-        const auto sampleHeight = height - fontSize - padding * 3;
-        const auto sampleCountMax = (uint64_t)(rectBar.z / sampleWidth);
-        const auto sampleCountMin = math::min(sampleCountMax, m_timeHistoryHead + 1ull);
+        m_samples[m_sampleHead % MAX_SAMPLE_COUNT] = m_framerate.frameMs;
+        m_sampleHead++;
 
-        auto cpumemory = Platform::GetMemoryInfo();
-        auto gpumemory = RHI::GetMemoryInfo();
-
-        m_timeHistory.Reserve(sampleCountMax, true);
-        m_timeHistory[m_timeHistoryHead % sampleCountMax] = m_framerate.frameMs;
-
+        const auto sampleCount = (uint32_t)math::min(m_sampleHead, (uint64_t)MAX_SAMPLE_COUNT);
+        const auto avgHistoryTime = math::max(1e-4, 1000.0 / m_framerate.framerateAvg);
+        
         auto minHistoryTime = math::max(1e-4, 1000.0 / m_framerate.framerateMax);
         auto maxHistoryTime = math::max(1e-4, 1000.0 / m_framerate.framerateMin);
-        auto avgHistoryTime = math::max(1e-4, 1000.0 / m_framerate.framerateAvg);
 
-        for (auto i = 0ull; i < sampleCountMin; ++i)
+        for (auto i = 0ull; i < MAX_SAMPLE_COUNT; ++i)
         {
-            minHistoryTime = math::min(minHistoryTime, m_timeHistory[i]);
-            maxHistoryTime = math::max(maxHistoryTime, m_timeHistory[i]);
+            minHistoryTime = math::min(minHistoryTime, m_samples[i]);
+            maxHistoryTime = math::max(maxHistoryTime, m_samples[i]);
         }
 
-        FixedString64 textFramerateCur("FPS: %i", m_framerate.framerate);
-        FixedString64 textFramerateAvg("Avg: %4.2fms", avgHistoryTime);
-        FixedString64 textFramerateMin("Min: %4.2fms", minHistoryTime);
-        FixedString64 textFramerateMax("Max: %4.2fms", maxHistoryTime);
-        FixedString64 textMemoryEram("Ram Prog: %s", String::FormatBytes<16>(cpumemory.programMemoryUsedExclusive).c_str());
-        FixedString64 textMemoryIram("Ram Total: %s", String::FormatBytes<16>(cpumemory.programMemoryUsedInclusive).c_str());
-        FixedString64 textMemoryVram("Vram: %s", String::FormatBytes<16>(gpumemory.usedBytes).c_str());
 
-        gui->DrawRect(COLOR_BG, rectWindow);
-        gui->GetDrawList()->WireRect(COLOR_FG, rectWindow, 1);
-        auto area_text = short4(rectWindow.xy + short2(padding * 2, padding + 2), 0, 16);
-        area_text = gui->DrawText(COLOR_FPS_AVG, area_text, textFramerateCur.c_str(), FontStyle().SetSize(16.0f).SetClip(false));
-        area_text = gui->DrawText(COLOR_FPS_AVG, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateAvg.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->DrawText(COLOR_FPS_MIN, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMin.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->DrawText(COLOR_FPS_MAX, short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textFramerateMax.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->DrawText(COLOR_VRAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryVram.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->DrawText(COLOR_ERAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryEram.c_str(), FontStyle().SetSize(fontSize));
-        area_text = gui->DrawText(COLOR_IRAM,    short4(math::align(area_text.x + area_text.z + padding * 4, fontSize), rectWindow.y + padding + 2, 0, 0), textMemoryIram.c_str(), FontStyle().SetSize(fontSize));
-
-        for (auto i = 0ull; i < sampleCountMin; ++i)
+        GUIWindow::Begin(gui, &m_window, "PROFILER");
         {
-            const auto s_offset = (i + sampleCountMax - sampleCountMin) * sampleWidth;
-            const auto s_sample = m_timeHistory[(m_timeHistoryHead + i + 1ull) % sampleCountMin];
-            const auto s_normalized = (float)((s_sample - minHistoryTime) / (maxHistoryTime - minHistoryTime));
-            const auto s_height = (int32_t)math::round(sampleHeight * s_normalized);
-            const auto s_color = math::hueToRgb32((1.0f - s_normalized) / 3.0f);
-            gui->DrawRect(color32(s_color.r, s_color.g, s_color.b, 127), rectSample + short4(s_offset, 0, 0, -s_height));
-        }
+            GUILabel::Fit(gui, FixedString64("FPS: %i", m_framerate.framerate), 16, m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("AVG: %4.2fms", avgHistoryTime), 16, m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("MIN: %4.2fms", minHistoryTime), 16, m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("MAX: %4.2fms", maxHistoryTime), 16, m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("RAM.P: %s", String::FormatBytes<16>(cpumemory.programMemoryUsedExclusive).c_str()), 16, m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("RAM.T: %s", String::FormatBytes<16>(cpumemory.programMemoryUsedInclusive).c_str()), 16, m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("VRAM: %s", String::FormatBytes<16>(gpumemory.usedBytes).c_str()), 16, m_window.style.label);
 
-        gui->DrawRect(COLOR_FPS_MIN, rectBar + short4(0, -sampleHeight * 0, 0, 0));
-        gui->DrawRect(COLOR_FPS_AVG, rectBar + short4(0, -sampleHeight / 2, 0, 0));
-        gui->DrawRect(COLOR_FPS_MAX, rectBar + short4(0, -sampleHeight * 1, 0, 0));
+            gui->BeginLayout({ .mode = GUILayoutMode::Partition }, PK_SHORT4_ZERO);
 
-        m_timeHistoryHead++;
+            if (gui->GetLayoutInnerHeight() > 32 && sampleCount > 2)
+            {
+                gui->NextLayoutRect({ 0,2,0,0 });
+                gui->DrawRect(m_window.style.label.colorFg, gui->NextLayoutRect({ 0,2,0,0 }));
+                gui->DrawRect(m_window.style.label.colorFg, gui->NextLayoutRect({ 0,0,0,2 }));              
+                
+                const auto vertexSpacingPreferred = 8u;
+                
+                const auto area_graph = gui->NextLayoutRect();
+                const auto vertexCount = math::min(area_graph.z / vertexSpacingPreferred, sampleCount);
+                const auto vertexSpacing = area_graph.z / vertexCount;
+                const auto vertexSampleCount = math::max(1u, 1u << math::log2(sampleCount / vertexCount));
+                const auto vertexBinCount = MAX_SAMPLE_COUNT / vertexSampleCount;
+                
+                int16_t offsets_avg[MAX_SAMPLE_COUNT]{};
+                int16_t offsets_min[MAX_SAMPLE_COUNT]{};
+                int16_t offsets_max[MAX_SAMPLE_COUNT]{};
 
+                for (auto i = 0ull; i < vertexBinCount; ++i)
+                {
+                    auto min = 1.0f;
+                    auto max = 0.0f;
+                    auto avg = 0.0f;
 
-        /*
-        GUIWindow::Begin(gui, &m_window, "Test", { "Entities", "Graphics" });
-        {
+                    for (auto j = 0u; j < vertexSampleCount; ++j)
+                    {
+                        const auto s_sample = m_samples[i * vertexSampleCount + j];
+                        const auto s_normalized = (float)((s_sample - minHistoryTime) / (maxHistoryTime - minHistoryTime));
+                        avg = avg + s_normalized;
+                        min = math::min(min, s_normalized);
+                        max = math::max(max, s_normalized);
+                    }
 
+                    avg /= vertexSampleCount;
+                    offsets_avg[i] = (1.0f - avg) * area_graph.w;
+                    offsets_min[i] = (1.0f - min) * area_graph.w;
+                    offsets_max[i] = (1.0f - max) * area_graph.w;
+                }
+
+                for (auto i = 0ull; i < vertexCount; ++i)
+                {
+                    const auto index_high = m_sampleHead - 1ull;
+                    const auto index_low = index_high / vertexSampleCount;
+                    const auto index_bin = (index_low - i) % vertexBinCount;
+                    const auto index_frac = index_high % vertexSampleCount;
+                    const auto sub_offset = index_frac * vertexSpacing / vertexSampleCount;
+
+                    {
+                        auto rect = PK_SHORT4_ZERO;
+                        rect.x = area_graph.x + i * vertexSpacing + sub_offset;
+                        rect.z = vertexSpacing / 3;
+                        rect.y = area_graph.y + offsets_avg[index_bin];
+                        rect.w = offsets_min[index_bin] - offsets_avg[index_bin];
+                        gui->DrawRect(m_window.style.field.colorHoverFg, rect, 0);
+                    }
+
+                    {
+                        auto rect = PK_SHORT4_ZERO;
+                        rect.x = area_graph.x + i * vertexSpacing + sub_offset;
+                        rect.z = vertexSpacing / 3;
+                        rect.y = area_graph.y + offsets_avg[index_bin];
+                        rect.w = offsets_max[index_bin] - offsets_avg[index_bin];
+                        gui->DrawRect(m_window.style.field.colorFg, rect, 0);
+                    }
+                }
+
+            }
+            
+            gui->EndLayout();
         }
         GUIWindow::End(gui, &m_window);
-        */
+
+        if (m_window.requestsClose)
+        {
+            m_enabled = false;
+        }
     }
 }

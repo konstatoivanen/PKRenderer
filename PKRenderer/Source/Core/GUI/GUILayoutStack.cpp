@@ -8,6 +8,7 @@ namespace PK
     {
         m_layoutStack[0].outer = renderArea;
         m_layoutStack[0].inner = renderArea;
+        m_layoutStack[0].local = { 0, 0, renderArea.z, renderArea.w };
         m_layoutStack[0].cordon = renderArea;
         m_layoutStack[0].previous = PK_SHORT4_ZERO;
         m_layoutStack[0].content = PK_SHORT4_ZERO;
@@ -27,12 +28,16 @@ namespace PK
 
             if (style.clampToParent)
             {
-                rect = math::rectClamp(rect, parent.inner);
+                rect = math::rectClamp(rect, parent.local);
             }
 
             GUILayout layout;
             layout.outer = NextRect(rect);
             layout.inner = math::rectPad(layout.outer, style.padding);
+            layout.local.x = layout.outer.x - parent.outer.x;
+            layout.local.y = layout.outer.y - parent.outer.y;
+            layout.local.z = layout.outer.z;
+            layout.local.w = layout.outer.w;
             layout.cordon = layout.inner;
             layout.previous = layout.inner;
             layout.content = short4(layout.inner.xy, 0, 0);
@@ -125,12 +130,17 @@ namespace PK
 
             case GUILayoutMode::Flow:
             {
+                if (rect.z <= 0 && rect.w <= 0) rect.z = state.inner.z - rect.x;
+                if (rect.z <= 0) rect.z = inner_max.x - state.cursor.x + rect.x;
+
                 if (state.cursor.x + rect.x + rect.z > inner_max.x)
                 {
                     state.cursor.x = state.inner.x;
                     state.cursor.y = state.cursor.y + state.linesize;
                     state.linesize = 0;
                 }
+
+                if (rect.w <= 0) rect.w = inner_max.y - state.cursor.y + rect.y;
     
                 state.linesize = math::max(state.linesize, (uint32_t)(rect.y + rect.w));
                 rect.xy += state.cursor;

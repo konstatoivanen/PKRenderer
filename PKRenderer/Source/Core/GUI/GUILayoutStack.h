@@ -26,6 +26,7 @@ namespace PK
     {
         short4 outer;
         short4 inner;
+        short4 local;
         short4 cordon;
         short4 previous;
         short4 content;

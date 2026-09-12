@@ -13,6 +13,8 @@ namespace PK::App
         public IStep<GUI*>,
         public IStep<TimeFramerateInfo*>
     {
+        constexpr const static uint32_t MAX_SAMPLE_COUNT = 512u;
+
     public:
         EngineProfiler();
 
@@ -21,10 +23,12 @@ namespace PK::App
 
     private:
         TimeFramerateInfo m_framerate{};
-        HeapArray<double> m_timeHistory;
-        uint64_t m_timeHistoryHead = 0ull;
+        GUIWindow m_window;
+
+        double m_samples[MAX_SAMPLE_COUNT]{};
+        uint64_t m_sampleHead = 0ull;
+
         bool m_enabled = false;
 
-        GUIWindow m_window{ GUIWindowStyle::GetRed(short2(300, 420), PK_FLOAT2_RIGHT) };
     };
 }

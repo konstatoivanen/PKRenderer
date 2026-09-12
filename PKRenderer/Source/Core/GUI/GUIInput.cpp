@@ -18,23 +18,10 @@ namespace PK
         m_cursor.xy += screenOffset;
         m_cursorDelta *= screenScale;
 
-        if (!math::any(m_cursorDelta) && !m_state->controlId && m_state->hoverId)
+        if (m_state->navState != NAV_STATE_NONE)
         {
-            m_navAxis.x += KeyDown(GUIKey::Right, true);
-            m_navAxis.x -= KeyDown(GUIKey::Left, true);
-            m_navAxis.y += KeyDown(GUIKey::Down, true);
-            m_navAxis.y -= KeyDown(GUIKey::Up, true);
-            m_hotHoverLayer = state->hoverLayer;
-            m_navScore = math::any(m_navAxis) ? ~0u : 0u;
-
-            if (KeyDown(GUIKey::Exit, true))
-            {
-                if (m_hotHoverLayer)
-                {
-                    m_hotHoverLayer--;
-                    m_navScore = ~0u;
-                }
-            }
+            m_hotHoverLayer = m_state->navLayer;
+            m_navScore = ~0u;
         }
     }
 
@@ -44,6 +31,31 @@ namespace PK
         m_state->hoverId = m_hotHoverId;
         m_state->hoverLayer = m_hotHoverLayer;
         m_state->hoverPos = m_hotHoverPos;
+
+        if (m_state->navState != NAV_STATE_NONE)
+        {
+            m_state->navState = NAV_STATE_NONE;
+        }
+
+        if (!math::any(m_cursorDelta) && !m_state->controlId && m_state->hoverId)
+        {
+            m_state->navAxis = KeyDownAxis(true);
+            m_state->navLayer = m_state->hoverLayer;
+
+            if (math::any(m_state->navAxis))
+            {
+                m_state->navState = NAV_STATE_DIRECTIONAL;
+            }
+
+            if (KeyDown(GUIKey::Exit, true))
+            {
+                if (m_state->navLayer)
+                {
+                    m_state->navLayer--;
+                    m_state->navState = ~0u;
+                }
+            }
+        }
     }
 
 
@@ -78,6 +90,26 @@ namespace PK
         return m_input ? consume ? m_input->ConsumeKey(triplet) : m_input->GetKey(triplet) : false;
     }
 
+    short2 GUIInput::KeyDownAxis(bool consume)
+    {
+        short2 axis = PK_SHORT2_ZERO;;
+        axis.x += (int16_t)KeyDown(GUIKey::Right, consume);
+        axis.x -= (int16_t)KeyDown(GUIKey::Left, consume);
+        axis.y += (int16_t)KeyDown(GUIKey::Down, consume);
+        axis.y -= (int16_t)KeyDown(GUIKey::Up, consume);
+        return axis;
+    }
+
+    short2 GUIInput::KeyAxis(bool consume)
+    {
+        short2 axis = PK_SHORT2_ZERO;;
+        axis.x += (int16_t)Key(GUIKey::Right, consume);
+        axis.x -= (int16_t)Key(GUIKey::Left, consume);
+        axis.y += (int16_t)Key(GUIKey::Down, consume);
+        axis.y -= (int16_t)Key(GUIKey::Up, consume);
+        return axis;
+    }
+
     bool GUIInput::HasHover(uint64_t uuid) const { return m_state->hoverId == uuid; }
     bool GUIInput::HasControl(uint64_t uuid) const { return m_state->controlId == uuid; }
     bool GUIInput::LostControl(uint64_t uuid) const { return m_hotControlId != uuid && m_state->controlId == uuid; }
@@ -86,7 +118,7 @@ namespace PK
     bool GUIInput::Hover(const short4& rect, uint64_t uuid)
     {
         // Mouse input hover selection
-        const auto is_nav_move = m_navScore != 0u;
+        const auto is_nav_move = m_state->navState != NAV_STATE_NONE;
         const auto is_cursor_move = !is_nav_move && math::any(m_cursorDelta);
 
         // No moves try to retain hover id.
@@ -105,16 +137,16 @@ namespace PK
         if (is_nav_move && m_state->hoverId != uuid)
         {
             const auto delta = rect.xy + rect.zw / (short)2 - m_state->hoverPos;
-            const auto has_axis = math::any(m_navAxis);
+            const auto has_axis = math::any(m_state->navAxis);
             
-            if (has_axis && math::dot(m_navAxis, delta) <= 0)
+            if (has_axis && math::dot(m_state->navAxis, delta) <= 0)
             {
                 return false;
             }
 
-            const auto ortho = short2(m_navAxis.y, -m_navAxis.x);
+            const auto ortho = short2(m_state->navAxis.y, -m_state->navAxis.x);
             const auto dist0 = (int16_t)math::length(float2(delta));
-            const auto dist1 = math::dot(m_navAxis, delta);
+            const auto dist1 = math::dot(m_state->navAxis, delta);
             const auto dist2 = math::lerp(dist0, dist1, has_axis);
             const auto dist3 = math::abs(math::dot(ortho, delta));
             const auto dist4 = math::abs((int32_t)m_layer - (int32_t)m_hotHoverLayer) + 1u;
@@ -152,31 +184,20 @@ namespace PK
         return LostControl(uuid);
     }
 
-    bool GUIInput::ButtonOffsetScale(const short4& rect, uint64_t uuid, short4* target)
+    bool GUIInput::ButtonDrag(const short4& rect, uint64_t uuid, short2* offset)
     {
         const auto pressed = Button(rect, uuid);
 
-        if (target)
+        if (offset)
         {
-            if (HasHover(uuid) && Key(GUIKey::Shift, true))
-            {
-                target->x += (int16_t)Key(GUIKey::Right, true) * 4u;
-                target->x -= (int16_t)Key(GUIKey::Left, true) * 4u;
-                target->y += (int16_t)Key(GUIKey::Down, true) * 4u;
-                target->y -= (int16_t)Key(GUIKey::Up, true) * 4u;
-            }
-
             if (HasHover(uuid) && Key(GUIKey::Control, true))
             {
-                target->z += (int16_t)Key(GUIKey::Right, true) * 4u;
-                target->z -= (int16_t)Key(GUIKey::Left, true) * 4u;
-                target->w += (int16_t)Key(GUIKey::Down, true) * 4u;
-                target->w -= (int16_t)Key(GUIKey::Up, true) * 4u;
+                *offset += KeyAxis(true) * (int16_t)2;
             }
 
             if (HasControl(uuid))
             {
-                target->xy += m_cursorDelta;
+                *offset += m_cursorDelta;
             }
         }
 

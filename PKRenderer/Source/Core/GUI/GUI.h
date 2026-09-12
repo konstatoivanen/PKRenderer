@@ -76,6 +76,8 @@ namespace PK
         inline void EndLayout() { m_layoutStack.End(); }
         inline const GUILayout& GetLayout() const { return m_layoutStack.Get(); }
         inline short4 NextLayoutRect(const short4& desiredRect = PK_SHORT4_ZERO) { return m_layoutStack.NextRect(desiredRect); }
+        inline int16_t GetLayoutInnerHeight() const { return GetLayout().inner.w; }
+        inline int16_t GetLayoutInnerWidth() const { return GetLayout().inner.z; }
 
         inline void DrawLine(const short2& p0, const short2& p1, const color32& color, const float width) 
         {

@@ -38,6 +38,7 @@ namespace PK
         uint32_t rect_count = 0u;
         uint32_t line_count = 0u;
         uint32_t text_length = 0u;
+        uint32_t line_height = 0u;
     };
 
     struct Font : public Asset

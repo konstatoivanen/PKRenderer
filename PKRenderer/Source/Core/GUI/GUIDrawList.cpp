@@ -143,8 +143,8 @@ namespace PK
                     const auto normalI = float2(-dirI.y, dirI.x);
                     const auto normalO = float2(-dirO.y, dirO.x);
                     const auto offset = math::safenormalize(normalI + normalO);
-                    const auto length = 1.0f / math::max(0.1f, math::dot(offset, normalI));
-                    normal = offset * math::min(length, 2.0f);
+                    const auto length = 1.0f / math::max(0.25f, math::dot(offset, normalI));
+                    normal = offset * length;
                 }
 
                 allocation.vertices[i * 2u + 0u] = { color, math::round(pCurr + normal * width * 0.5f), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
