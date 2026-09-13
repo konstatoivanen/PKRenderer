@@ -75,8 +75,7 @@ namespace PK
 
         void BeginRecord(VkCommandBuffer commandBuffer, VkFence fence, uint16_t queueFamily, VulkanRenderState* renderState);
         void EndRecord();
-        // Called when the command buffer is finished execution.
-        void FinishExecution();
+        void Finalize();
 
         inline void MarkLastCommandStage(VkPipelineStageFlags stage) { m_lastCommandStage = stage; }
         inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }

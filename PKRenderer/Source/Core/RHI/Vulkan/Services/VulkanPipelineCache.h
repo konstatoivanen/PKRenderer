@@ -19,6 +19,7 @@ namespace PK
             VkFormat colorFormats[PK_RHI_MAX_RENDER_TARGETS]{};
             VkFormat depthFormat = VK_FORMAT_UNDEFINED;
             uint16_t excludeStageMask = 0u;
+            uint16_t sampleCountFlags = VK_SAMPLE_COUNT_1_BIT;
         };
 
         struct PipelineKey

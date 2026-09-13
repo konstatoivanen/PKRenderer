@@ -500,7 +500,7 @@ namespace PK
                 m_commandBuffers[(int64_t)(&wrapper - &m_commandWrappers[0])] = VK_NULL_HANDLE;
                 vkFreeCommandBuffers(m_device, m_commandPool, 1, &wrapper.GetCommandBuffer());
                 VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.GetFence()));
-                wrapper.FinishExecution();
+                wrapper.Finalize();
             }
         }
     }

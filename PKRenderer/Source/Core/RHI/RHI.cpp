@@ -118,8 +118,6 @@ namespace PK
                 features.presentWait.presentWait = VK_TRUE;
                 features.maximalReconvergence.shaderMaximalReconvergence = VK_TRUE;
                 features.quadControl.shaderQuadControl = VK_TRUE;
-                features.dynamicState.extendedDynamicState3RasterizationSamples = VK_TRUE;
-                features.dynamicState.extendedDynamicState3SampleMask = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 const char* PK_INSTANCE_EXTENTIONS[] =

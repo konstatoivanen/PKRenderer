@@ -162,12 +162,6 @@ extern PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusive
 extern PFN_vkWaitForPresentKHR pkfn_vkWaitForPresentKHR;
 #define vkWaitForPresentKHR pkfn_vkWaitForPresentKHR
 
-extern PFN_vkCmdSetRasterizationSamplesEXT pkfn_vkCmdSetRasterizationSamplesEXT;
-#define vkCmdSetRasterizationSamplesEXT pkfn_vkCmdSetRasterizationSamplesEXT
-
-extern PFN_vkCmdSetSampleMaskEXT pkfn_vkCmdSetSampleMaskEXT;
-#define vkCmdSetSampleMaskEXT pkfn_vkCmdSetSampleMaskEXT
-
 namespace PK
 {
     struct VulkanQueueFamilies
@@ -221,7 +215,6 @@ namespace PK
         VkPhysicalDevicePresentWaitFeaturesKHR presentWait{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR };
         VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR maximalReconvergence { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR };
         VkPhysicalDeviceShaderQuadControlFeaturesKHR quadControl{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR };
-        VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamicState{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };

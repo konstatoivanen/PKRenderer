@@ -110,7 +110,6 @@ namespace PK
         memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
         memset(m_vertexStreamLayout, 0, sizeof(m_vertexStreamLayout));
 
-        m_sampleCount = (VkSampleCountFlagBits)0;
         m_indexType = VK_INDEX_TYPE_UINT16;
         m_pipelineKey.fixed = VulkanPipelineCache::FixedFunctionState();
         m_pipeline = nullptr;
@@ -149,17 +148,6 @@ namespace PK
         if (memcmp(m_scissors, rects, sizeof(VkRect2D) * (count > PK_RHI_MAX_VIEWPORTS ? PK_RHI_MAX_VIEWPORTS : count)) != 0)
         {
             memcpy(m_scissors, rects, sizeof(VkRect2D) * (count > PK_RHI_MAX_VIEWPORTS ? PK_RHI_MAX_VIEWPORTS : count));
-            return true;
-        }
-
-        return false;
-    }
-
-    bool VulkanRenderState::SetSampleCount(uint16_t flagBits)
-    {
-        if (m_sampleCount != (VkSampleCountFlagBits)flagBits)
-        {
-            m_sampleCount = (VkSampleCountFlagBits)flagBits;
             return true;
         }
 
@@ -467,13 +455,13 @@ namespace PK
         {
             auto& colors = m_renderTarget.colors;
             auto& depth = m_renderTarget.depth;
-            auto colorCount = m_renderTarget.colorCount;
-            auto depthFormat = depth.target && depth.target->image.image ? depth.target->image.format : VK_FORMAT_UNDEFINED;
+            const auto colorCount = m_renderTarget.colorCount;
+            const auto depthFormat = depth.target && depth.target->image.image ? depth.target->image.format : VK_FORMAT_UNDEFINED;
 
             for (auto i = 0u; i < PK_RHI_MAX_RENDER_TARGETS; ++i)
             {
                 auto& color = colors[i];
-                auto format = i < colorCount && color.target && color.target->image.image ? color.target->image.format : VK_FORMAT_UNDEFINED;
+                const auto format = i < colorCount && color.target && color.target->image.image ? color.target->image.format : VK_FORMAT_UNDEFINED;
 
                 if (m_pipelineKey.fixed.colorFormats[i] != format)
                 {
@@ -483,6 +471,12 @@ namespace PK
 
                 if (format)
                 {
+                    if (m_pipelineKey.fixed.sampleCountFlags != color.target->image.samples)
+                    {
+                        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+                        m_pipelineKey.fixed.sampleCountFlags = color.target->image.samples;
+                    }
+                    
                     // Invalidate image
                     if (color.loadOp != LoadOp::Load)
                     {
@@ -525,6 +519,12 @@ namespace PK
                 };
 
                 m_depthStencilLayout = layouts[isStencil][isReadOnly];
+                
+                if (m_pipelineKey.fixed.sampleCountFlags != depth.target->image.samples)
+                {
+                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+                    m_pipelineKey.fixed.sampleCountFlags = depth.target->image.samples;
+                }
                 
                 // Invalidate image
                 if (depth.loadOp != LoadOp::Load)
