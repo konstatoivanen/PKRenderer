@@ -28,7 +28,6 @@ namespace PK
         short2 maxSize;
         float2 align;
         short2 scrollBarSize;
-        short headerHeight;
 
         constexpr static GUIWindowStyle GetRedDark()
         {
@@ -46,9 +45,9 @@ namespace PK
                 .headerUnfocus = 
                 {
                     .fontStyle = { PK_FLOAT2_UP, PK_FLOAT2_ONE, 16.0f, false, false },
-                    .padding = short4(6,4,6,4),
-                    .colorBg = color32(32,32,32,255),
-                    .colorFg = color32(192,0,0,255),
+                    .padding = short4(12,4,6,4),
+                    .colorBg = color32(16,16,16,255),
+                    .colorFg = color32(192,192,192,255),
                     .colorHoverBg = color32(192,192,192,255),
                     .colorHoverFg = color32(32,32,32,255)
                 },
@@ -71,9 +70,8 @@ namespace PK
                     .colorHoverFg = color32(192,192,192,255),
                 },
                 .contentMode = GUILayoutMode::Rows,
-                .contentPadding = short4(0,6,0,6),
+                .contentPadding = short4(14, 6, 6, 12),
                 .scrollBarSize = short2(8,8),
-                .headerHeight = 24
             };
         }
 
@@ -119,16 +117,16 @@ namespace PK
                     .colorHoverFg = color32(192,192,192,255),
                 },
                 .contentMode = GUILayoutMode::Rows,
-                .contentPadding = short4(0,6,0,6),
+                .contentPadding = short4(14, 6, 6, 12),
                 .scrollBarSize = short2(8,8),
-                .headerHeight = 24
             };
         }
     };
 
     struct GUILabel
     {
-        static void Fit(GUI* gui, const char* text, int16_t align, const GUIStyle& style);
+        static int16_t LineHeight(GUI* gui, const GUIStyle& style);
+        static void Fit(GUI* gui, const char* text, const GUIStyle& style);
     };
 
     struct GUIButton
@@ -141,6 +139,7 @@ namespace PK
         
         static bool Close(GUI* gui, const short4& rect, const GUIStyle& style);
         static bool Close(GUI* gui, const short2& size, const GUIStyle& style);
+        static bool CloseTab(GUI* gui, const short2& size, const GUIStyle& style);
 
         static bool ResizeLowerLeft(GUI* gui, short4* target, int16_t padding, int16_t size, int16_t thickness, const GUIStyle& style);
         static bool ResizeLowerRight(GUI* gui, short4* target, int16_t padding, int16_t size, int16_t thickness, const GUIStyle& style);

@@ -19,6 +19,7 @@ namespace PK::App
         m_assetDatabase(assetDatabase)
     { 
         m_gui_context.keys = keys;
+        m_gui_context.defautFont = m_assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
 
         m_gizmos_shader = assetDatabase->Find<ShaderAsset>("VS_Gizmos").get();
         m_gizmos_vertexBuffer = RHI::CreateBuffer<uint4>(m_gizmos_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
@@ -95,8 +96,10 @@ namespace PK::App
             m_gui_context.allocator = this;
             m_gui_context.renderArea = renderArea;
             m_gui_context.clipRect = renderArea;
-            m_gui_context.screenOffset = { 0, renderArea.w };
-            m_gui_context.screenScale = { 1, -1 };
+            m_gui_context.screenScale.x = +1.0f;
+            m_gui_context.screenScale.y = -1.0f;
+            m_gui_context.screenOffset.x = +1.0f * renderArea.x;
+            m_gui_context.screenOffset.y = -1.0f * renderArea.y + renderArea.w;
             GUI gui(&m_gui_context);
             m_sequencer->Next<GUI*>(this, &gui);
         }
@@ -114,7 +117,16 @@ namespace PK::App
     {
         if (m_gui_vertexCount >= 2)
         {
-            RHI::SetTextureSet(HashCache::Get()->pk_GUI_Textures, m_gui_textures.get());
+            const auto hash = HashCache::Get();
+
+            float4 screenTransform;
+            screenTransform.x = +2.0f / m_gui_context.renderArea.z;
+            screenTransform.y = -2.0f / m_gui_context.renderArea.w;
+            screenTransform.z = -1.0f;
+            screenTransform.w = +1.0f;
+
+            RHI::SetConstant<float4>(hash->pk_GUI_ScreenTransform, screenTransform);
+            RHI::SetTextureSet(hash->pk_GUI_Textures, m_gui_textures.get());
             cmd->SetIndexBuffer(m_gui_indexBuffer.get(), sizeof(uint16_t));
             cmd.SetShader(m_gui_shader);
             cmd.SetRenderTarget({ target, LoadOp::Load, StoreOp::Store }, true);
@@ -130,7 +142,6 @@ namespace PK::App
             if (m_gui_shader == nullptr)
             {
                 m_gui_shader = m_assetDatabase->Find<ShaderAsset>("VS_GUI").get();
-                m_gui_context.defautFont = m_assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
                 m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::PersistentStorage, "GUI.VertexBuffer");
                 m_gui_indexBuffer = RHI::CreateBuffer<GUIIndex>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
                 m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);

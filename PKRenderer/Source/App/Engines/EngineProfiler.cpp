@@ -18,7 +18,7 @@ namespace PK::App
         m_window.style.align = PK_FLOAT2_RIGHT;
         m_window.style.minSize = short2(256, 128);
         m_window.style.maxSize = short2(1024, 256);
-        m_window.style.initialSize = short2(256, 128);
+        m_window.style.initialSize = short2(256, 256);
         m_window.style.contentMode = GUILayoutMode::Flow;
 
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Profiler.Toggle", [this]() { m_enabled ^= true; });
@@ -49,20 +49,19 @@ namespace PK::App
             maxHistoryTime = math::max(maxHistoryTime, m_samples[i]);
         }
 
-
         GUIWindow::Begin(gui, &m_window, "PROFILER");
         {
-            GUILabel::Fit(gui, FixedString64("FPS: %i", m_framerate.framerate), 16, m_window.style.label);
-            GUILabel::Fit(gui, FixedString64("AVG: %4.2fms", avgHistoryTime), 16, m_window.style.label);
-            GUILabel::Fit(gui, FixedString64("MIN: %4.2fms", minHistoryTime), 16, m_window.style.label);
-            GUILabel::Fit(gui, FixedString64("MAX: %4.2fms", maxHistoryTime), 16, m_window.style.label);
-            GUILabel::Fit(gui, FixedString64("RAM.P: %s", String::FormatBytes<16>(cpumemory.programMemoryUsedExclusive).c_str()), 16, m_window.style.label);
-            GUILabel::Fit(gui, FixedString64("RAM.T: %s", String::FormatBytes<16>(cpumemory.programMemoryUsedInclusive).c_str()), 16, m_window.style.label);
-            GUILabel::Fit(gui, FixedString64("VRAM: %s", String::FormatBytes<16>(gpumemory.usedBytes).c_str()), 16, m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("FPS: %03u", m_framerate.framerate), m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("AVG: %4.2fms", avgHistoryTime), m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("MIN: %4.2fms", minHistoryTime), m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("MAX: %4.2fms", maxHistoryTime), m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("RAM.P: %s", String::FormatBytes<16>(cpumemory.programMemoryUsedExclusive).c_str()), m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("RAM.T: %s", String::FormatBytes<16>(cpumemory.programMemoryUsedInclusive).c_str()), m_window.style.label);
+            GUILabel::Fit(gui, FixedString64("VRAM: %s", String::FormatBytes<16>(gpumemory.usedBytes).c_str()), m_window.style.label);
 
             gui->BeginLayout({ .mode = GUILayoutMode::Partition }, PK_SHORT4_ZERO);
 
-            if (gui->GetLayoutInnerHeight() > 32 && sampleCount > 2)
+            if (gui->GetLayoutArea().w > 32 && sampleCount > 2)
             {
                 gui->NextLayoutRect({ 0,2,0,0 });
                 gui->DrawRect(m_window.style.label.colorFg, gui->NextLayoutRect({ 0,2,0,0 }));
@@ -115,7 +114,7 @@ namespace PK::App
                         rect.z = vertexSpacing / 3;
                         rect.y = area_graph.y + offsets_avg[index_bin];
                         rect.w = offsets_min[index_bin] - offsets_avg[index_bin];
-                        gui->DrawRect(m_window.style.field.colorHoverFg, rect, 0);
+                        gui->DrawRect(m_window.style.field.colorHoverFg, rect);
                     }
 
                     {
@@ -124,7 +123,7 @@ namespace PK::App
                         rect.z = vertexSpacing / 3;
                         rect.y = area_graph.y + offsets_avg[index_bin];
                         rect.w = offsets_max[index_bin] - offsets_avg[index_bin];
-                        gui->DrawRect(m_window.style.field.colorFg, rect, 0);
+                        gui->DrawRect(m_window.style.field.colorFg, rect);
                     }
                 }
 

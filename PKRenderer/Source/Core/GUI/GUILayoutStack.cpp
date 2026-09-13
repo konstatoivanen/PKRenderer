@@ -6,15 +6,12 @@ namespace PK
 {
     GUILayoutStack::GUILayoutStack(const short4& renderArea)
     {
-        m_layoutStack[0].outer = renderArea;
-        m_layoutStack[0].inner = renderArea;
-        m_layoutStack[0].local = { 0, 0, renderArea.z, renderArea.w };
-        m_layoutStack[0].cordon = renderArea;
+        m_layoutStack[0].area = renderArea;
+        m_layoutStack[0].local = short4(0, 0, renderArea.z, renderArea.w);
+        m_layoutStack[0].cursor = renderArea;
         m_layoutStack[0].previous = PK_SHORT4_ZERO;
         m_layoutStack[0].content = PK_SHORT4_ZERO;
-        m_layoutStack[0].cursor = renderArea.xy;
         m_layoutStack[0].gridsize = PK_SHORT2_ONE;
-        m_layoutStack[0].linesize = 0u;
         m_layoutStack[0].count = 0u;
         m_layoutStack[0].mode = GUILayoutMode::Absolute;
     }
@@ -32,20 +29,25 @@ namespace PK
             }
 
             GUILayout layout;
-            layout.outer = NextRect(rect);
-            layout.inner = math::rectPad(layout.outer, style.padding);
-            layout.local.x = layout.outer.x - parent.outer.x;
-            layout.local.y = layout.outer.y - parent.outer.y;
-            layout.local.z = layout.outer.z;
-            layout.local.w = layout.outer.w;
-            layout.cordon = layout.inner;
-            layout.previous = layout.inner;
-            layout.content = short4(layout.inner.xy, 0, 0);
+            layout.area = math::rectPad(NextRect(rect), style.padding);
+            layout.local.xy = layout.area.xy() - parent.area.xy();
+            layout.local.zw = layout.area.zw();
+            layout.previous = layout.area;
+            layout.content = short4(layout.area.xy, 0, 0);
             layout.gridsize = math::max(PK_SHORT2_ONE, style.gridsize);
-            layout.cursor = layout.inner.xy;
-            layout.linesize = 0u;
             layout.count = 0u;
             layout.mode = style.mode;
+
+            switch (layout.mode)
+            {
+                case GUILayoutMode::Absolute: layout.cursor = layout.area; break;
+                case GUILayoutMode::Partition: layout.cursor = layout.area; break;
+                case GUILayoutMode::Rows: layout.cursor = short4(layout.area.x, layout.area.y, layout.area.z, 0); break;
+                case GUILayoutMode::Columns: layout.cursor = short4(layout.area.x, layout.area.y, 0, layout.area.w); break;
+                case GUILayoutMode::Flow: layout.cursor = short4(layout.area.x, layout.area.y, 0, 0); break;
+                case GUILayoutMode::Grid: layout.cursor = math::rectGrid(layout.area, layout.gridsize, layout.count); break;
+            }
+
             m_layoutStack[++m_layoutHead] = layout;
             return true;
         }
@@ -71,16 +73,16 @@ namespace PK
     short4 GUILayoutStack::NextRect(const short4& desiredRect)
     {
         auto& state = m_layoutStack[m_layoutHead];
-        const auto inner_max = short2(state.inner.xy + state.inner.zw);
+        const auto inner_max = short2(state.area.xy + state.area.zw);
         auto rect = desiredRect;
 
         switch (state.mode)
         {
             case GUILayoutMode::Absolute:
             {
-                rect.xy += state.inner.xy;
-                if (rect.z <= 0) rect.z = inner_max.x - rect.x;
-                if (rect.w <= 0) rect.w = inner_max.y - rect.y;
+                rect.xy += state.area.xy;
+                rect.z = rect.z <= 0 ? inner_max.x - rect.x : rect.z;
+                rect.w = rect.w <= 0 ? inner_max.y - rect.y : rect.w;
             }
             break;
 
@@ -93,69 +95,64 @@ namespace PK
 
                 if (rect.x || rect.y)
                 {
-                    auto [head, tail] = math::rectSplitMin(state.cordon, rect.xy());
-                    state.cordon = tail;
+                    auto [head, tail] = math::rectSplitMin(state.cursor, rect.xy());
+                    state.cursor = tail;
                     rect = head;
                 }
                 else if (rect.z || rect.w)
                 {
-                    auto [head, tail] = math::rectSplitMax(state.cordon, rect.zw());
-                    state.cordon = tail;
+                    auto [head, tail] = math::rectSplitMax(state.cursor, rect.zw());
+                    state.cursor = tail;
                     rect = head;
                 }
                 else
                 {
-                    return state.cordon;
+                    return state.cursor;
                 }
             }
             break;
 
             case GUILayoutMode::Rows: 
             {
-                rect.xy += state.cursor;
-                if (rect.z <= 0) rect.z = inner_max.x - rect.x;
+                rect.xy += state.cursor.xy;
+                rect.z = rect.z <= 0 ? inner_max.x - rect.x : rect.z;
                 state.cursor.y = rect.y + rect.w;
-                state.cordon = short4(state.cursor, inner_max - state.cursor);
             }
             break;
     
             case GUILayoutMode::Columns:
             {
-                rect.xy += state.cursor;
-                if (rect.w <= 0) rect.w = inner_max.y - rect.y;
+                rect.xy += state.cursor.xy;
+                rect.w = rect.w <= 0 ? inner_max.y - rect.y : rect.w;
                 state.cursor.x = rect.x + rect.z;
-                state.cordon = short4(state.cursor, inner_max - state.cursor);
             }
             break;
 
             case GUILayoutMode::Flow:
             {
-                if (rect.z <= 0 && rect.w <= 0) rect.z = state.inner.z - rect.x;
-                if (rect.z <= 0) rect.z = inner_max.x - state.cursor.x + rect.x;
+                rect.z = rect.z <= 0 && rect.w <= 0 ? state.area.z - rect.x : rect.z;
+                rect.z = rect.z <= 0 ? state.cursor.z - rect.x : rect.z;
 
-                if (state.cursor.x + rect.x + rect.z > inner_max.x)
+                if (rect.x + rect.z > state.cursor.z)
                 {
-                    state.cursor.x = state.inner.x;
-                    state.cursor.y = state.cursor.y + state.linesize;
-                    state.linesize = 0;
+                    state.cursor.x = state.area.x;
+                    state.cursor.y = state.cursor.y + state.cursor.w;
+                    state.cursor.w = 0;
                 }
 
-                if (rect.w <= 0) rect.w = inner_max.y - state.cursor.y + rect.y;
-    
-                state.linesize = math::max(state.linesize, (uint32_t)(rect.y + rect.w));
-                rect.xy += state.cursor;
+                rect.w = rect.w <= 0 ? inner_max.y - state.cursor.y + rect.y : rect.w;
+                state.cursor.w = math::max(state.cursor.w, (int16_t)(rect.y + rect.w));
+                
+                rect.xy += state.cursor.xy;
                 state.cursor.x = rect.x + rect.z;
-                state.cordon.xy = short2(state.inner.x, state.cursor.y);
-                state.cordon.zw = inner_max - state.cordon.xy;
+                state.cursor.z = inner_max.x - state.cursor.x;
             }
             break;
     
             case GUILayoutMode::Grid:
             {
-                rect = math::rectGrid(state.inner, state.gridsize, state.count);
-                state.cursor = rect.xy;
-                state.cordon.xy = short2(state.inner.x, state.cursor.y);
-                state.cordon.zw = inner_max - state.cordon.xy;
+                rect = math::rectGrid(state.area, state.gridsize, state.count);
+                state.cursor = rect;
             }
             break;
         }

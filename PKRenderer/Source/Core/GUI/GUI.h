@@ -17,8 +17,8 @@ namespace PK
         GUIInputState inputState{};
         short4 clipRect = PK_SHORT4_ZERO;
         short4 renderArea = PK_SHORT4_ZERO;
-        short2 screenScale = PK_SHORT2_ZERO;
-        short2 screenOffset = PK_SHORT2_ZERO;
+        float2 screenScale = PK_FLOAT2_ZERO;
+        float2 screenOffset = PK_FLOAT2_ZERO;
     };
 
     struct GUI
@@ -76,8 +76,8 @@ namespace PK
         inline void EndLayout() { m_layoutStack.End(); }
         inline const GUILayout& GetLayout() const { return m_layoutStack.Get(); }
         inline short4 NextLayoutRect(const short4& desiredRect = PK_SHORT4_ZERO) { return m_layoutStack.NextRect(desiredRect); }
-        inline int16_t GetLayoutInnerHeight() const { return GetLayout().inner.w; }
-        inline int16_t GetLayoutInnerWidth() const { return GetLayout().inner.z; }
+        inline short4 GetLayoutArea() const { return GetLayout().area; }
+        inline short4 GetLayoutContent() const { return GetLayout().content; }
 
         inline void DrawLine(const short2& p0, const short2& p1, const color32& color, const float width) 
         {
@@ -113,6 +113,8 @@ namespace PK
         {
             m_drawList.Rect(color, rect, PK_USHORT4_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT);
         }
+
+        inline int16_t GetLineHeight(const FontStyle& style) { return (int16_t)m_ctx->defautFont->GetLineHeight(style); }
 
         inline FontGeometryInfo CalculateText(const short4& rect, const char* text, const FontStyle& style)
         {

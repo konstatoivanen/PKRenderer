@@ -24,15 +24,12 @@ namespace PK
 
     struct GUILayout
     {
-        short4 outer;
-        short4 inner;
+        short4 area;
         short4 local;
-        short4 cordon;
+        short4 cursor;
         short4 previous;
         short4 content;
-        short2 cursor;
         short2 gridsize;
-        uint32_t linesize;
         uint32_t count;
         GUILayoutMode mode;
     };
@@ -49,6 +46,7 @@ namespace PK
         short4 NextRect(const short4& desiredRect = PK_SHORT4_ZERO);
 
     private:
+
         GUILayout m_layoutStack[LAYOUT_STACK_MAX + 1u]{};
         uint32_t m_layoutHead = 0u;
     };

@@ -13,7 +13,8 @@
 #define PK_FONT_MSDF_UNIT 4.0f // keep upto date with definition in PKAsset.h
 
 uniform Buffer<uint4> pk_GUI_Vertices;
-uniform texture2D pk_GUI_Textures[];
+uniform Texture2D pk_GUI_Textures[];
+uniform float4 pk_GUI_ScreenTransform;
 
 PK_DECLARE_VS_ATTRIB(float2 vs_TEXCOORD);
 PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
@@ -27,9 +28,12 @@ void MainVs()
     int2 coord;
     coord.x = bitfieldExtract(int(vertex_packed.y), 0, 16);
     coord.y = bitfieldExtract(int(vertex_packed.y), 16, 16);
-    coord.y = int(pk_ScreenSize.y) - coord.y;
 
-    gl_Position = float4((coord * pk_ScreenParams.zw) * 2.0f - 1.0f, 0.0f, 1.0f);
+    float2 cs_pos = coord.xy;
+    cs_pos *= pk_GUI_ScreenTransform.xy;
+    cs_pos += pk_GUI_ScreenTransform.zw;
+
+    gl_Position = float4(cs_pos, 0.0f, 1.0f);
     vs_TEXCOORD = unpackHalf2x16(vertex_packed.z);
     vs_COLOR = unpackUnorm4x8(vertex_packed.x);
     vs_TEXTURE_INDEX = bitfieldExtract(vertex_packed.w, 0, 16);
@@ -45,11 +49,10 @@ void MainFs()
 
     if (vs_SHADING_MODE == PK_GUI_SHADING_MODE_FONT)
     {
-        const float2 unit_range = PK_FONT_MSDF_UNIT.xx / float2(textureSize(pk_GUI_Textures[vs_TEXTURE_INDEX], 0));
-        const float2 unit_size_screen = 1.0f.xx / fwidth(vs_TEXCOORD);
-        float signed_dist = max(min(value.r, value.g), min(max(value.r, value.g), value.b)) - 0.5f;
-        signed_dist *= max(0.5f * dot(unit_range, unit_size_screen), 1.0f);
-        color.a *= saturate(signed_dist + 0.5f);
+        const float signed_dist = max(min(value.r, value.g), min(max(value.r, value.g), value.b)) - 0.5f;
+        const float px_range = PK_FONT_MSDF_UNIT / length(fwidth(vs_TEXCOORD));
+        const float screen_dist = signed_dist * px_range;
+        color.a *= saturate(screen_dist + 0.5f);
     }
     else
     {

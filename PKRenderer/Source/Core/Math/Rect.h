@@ -20,6 +20,7 @@ namespace PK::math
         return r.x <= p.x && r.y <= p.y && (r.x + r.z) > p.x && (r.y + r.w) > p.y;
     }
 
+    
     template<typename T> vector<T,4> rectToMinMax(const vector<T,4>& r)
     {
         return vector<T,4>(r.x, r.y, r.x + r.z, r.y + r.w);
@@ -30,12 +31,14 @@ namespace PK::math
         return vector<T,4>(m.x, m.y, m.z - m.x, m.w - m.y);
     }
 
+
     template<typename T> vector<T,4> rectFromLine(const vector<T,2>& p0, const vector<T,2>& p1)
     {
         const auto rmax = max(p0, p1);
         const auto rmin = min(p0, p1);
         return { rmin, rmax - rmin };
     }
+
 
     template<typename T> vector<T,4> rectPad(const vector<T,4>& r, T padding)
     {
@@ -50,6 +53,24 @@ namespace PK::math
     template<typename T> vector<T,4> rectPad(const vector<T,4>& r, const vector<T,4>& padding)
     {
         return vector<T, 4>(r.x + padding.x, r.y + padding.y, r.z - padding.x - padding.z, r.w - padding.y - padding.w);
+    }
+
+
+    template<typename T> vector<T,4> rectAspect(const vector<T,4>& r, float aspect)
+    {
+        const auto srcw = static_cast<float>(r.z);
+        const auto srch = static_cast<float>(r.w);
+        const auto srca = srcw / srch;
+        const auto dstw = aspect < srca ? srch * aspect : srcw;
+        const auto dsth = aspect > srca ? srcw / aspect : srch;
+  
+        return vector<T,4>
+        { 
+            r.x + static_cast<T>((srcw - dstw) * 0.5f),
+            r.y + static_cast<T>((srch - dsth) * 0.5f),
+            static_cast<T>(dstw), 
+            static_cast<T>(dsth) 
+        };
     }
 
     template<typename T> vector<T,4> rectClamp(const vector<T,4>& r, const vector<T,4>& b)
@@ -112,6 +133,6 @@ namespace PK::math
         const auto hs = rect.w / size.y;
         const auto w = lerp(ws, rect.z - x * ws, x == size.x - 1u);
         const auto h = lerp(hs, rect.w - y * hs, y == size.y - 1u);
-        return vector<T, 4>(rect.x + x * ws, rect.y + y * hs, w, h);
+        return vector<T,4>(rect.x + x * ws, rect.y + y * hs, w, h);
     }
 }

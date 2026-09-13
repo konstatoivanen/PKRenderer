@@ -5,14 +5,19 @@
 
 namespace PK
 {
-    void GUILabel::Fit(GUI* gui, const char* text, int16_t align, const GUIStyle& style)
+    int16_t GUILabel::LineHeight(GUI* gui, const GUIStyle& style)
+    {
+        return gui->GetLineHeight(style.fontStyle) + style.padding.y + style.padding.w;
+    }
+
+    void GUILabel::Fit(GUI* gui, const char* text, const GUIStyle& style)
     {
         const auto& layout = gui->GetLayout();
-        auto info = gui->CalculateText(layout.cordon, text, style.fontStyle);
+        auto info = gui->CalculateText(layout.cursor, text, style.fontStyle);
         auto rect = PK_SHORT4_ZERO;
         rect.z = info.text_rect.z + style.padding.x + style.padding.z;
-        rect.w = info.line_height + style.padding.y + style.padding.w;
-        rect.z = math::align(rect.z, align);
+        rect.w = LineHeight(gui, style);
+        rect.z = math::align(rect.z, rect.w);
         info.area_rect = gui->NextLayoutRect(rect);
         info.area_rect = math::rectPad(info.area_rect, style.padding);
         gui->GetDrawList()->Text(style.colorFg, info);
@@ -35,7 +40,7 @@ namespace PK
         const auto rectText = math::rectPad(rect, style.padding);
         const auto colorBg = isHovered ? style.colorHoverBg : style.colorBg;
         const auto colorFg = isHovered ? style.colorHoverFg : style.colorFg;
-        gui->GetDrawList()->DentedRect(colorBg, rect, short2(2 * rect.w / 6, rect.w / 6));
+        gui->GetDrawList()->DentedRect(colorBg, rect, short2(2 * rect.w / 4, rect.w / 5));
         gui->DrawText(colorFg, rectText, name, style.fontStyle);
         gui->PopHash();
         return wasPressed;
@@ -72,8 +77,8 @@ namespace PK
         gui->PushHash("CloseButton");
         const auto wasPressed = gui->GetInput()->Button(rect, gui->GetHash());
         const auto isHovered = gui->GetInput()->HasHover(gui->GetHash());
-        const auto thickness = (int16_t)math::max(math::min(rect.z, rect.w) / 6, 1);
-        const auto rectCross = math::rectPad(rect, thickness);
+        const auto thickness = (int16_t)math::max(math::min(rect.z, rect.w) / 7, 1);
+        const auto rectCross = math::rectAspect(math::rectPad(rect, thickness), 1.0f);
         const auto color = isHovered ? style.colorHoverFg : style.colorFg;
         gui->GetDrawList()->X(color, rectCross, thickness);
         gui->PopHash();
@@ -85,45 +90,52 @@ namespace PK
         return Close(gui, gui->NextLayoutRect({ 0,0, size }), style);
     }
 
+    bool GUIButton::CloseTab(GUI* gui, const short2& size, const GUIStyle& style)
+    {
+        auto rect = gui->NextLayoutRect({ 0,0, size });
+        rect = math::rectPad(rect, { 0, rect.w / 5, 0, 0 });
+        return Close(gui, rect, style);
+    }
+
 
     bool GUIButton::ResizeLowerLeft(GUI* gui, short4* target, int16_t padding, int16_t size, int16_t thickness, const GUIStyle& style)
     {
-        const auto minmax = math::rectToMinMax(gui->GetLayout().outer);
+        const auto minmax = math::rectToMinMax(gui->GetLayoutArea());
         const auto rect = short4(minmax.x, minmax.w - size, size, size);
+        const auto rectWedge = short4(rect.x + padding, rect.y - padding, rect.z, rect.w);
+        const auto rectInput = math::rectMerge(rect, rectWedge);
+        auto offset = PK_SHORT2_ZERO;
 
         gui->PushHash("ResizeLowerLeft");
-        
-        auto offset = PK_SHORT2_ZERO;
-        const auto wasPressed = gui->GetInput()->ButtonDrag(rect, gui->GetHash(), &offset);
+        const auto wasPressed = gui->GetInput()->ButtonDrag(rectInput, gui->GetHash(), &offset);
+        const auto isHovered = gui->GetInput()->HasHover(gui->GetHash());
+        const auto color = isHovered ? style.colorHoverFg : style.colorFg;
+        gui->GetDrawList()->LowerLeftWedge(color, rectWedge, thickness);
+        gui->PopHash();
         
         target->x += offset.x;
         target->z -= offset.x;
         target->w += offset.y;
-
-        const auto isHovered = gui->GetInput()->HasHover(gui->GetHash());
-        const auto colorFg = isHovered ? style.colorHoverFg : style.colorFg;
-        gui->GetDrawList()->LowerLeftWedge(colorFg, { rect.x + padding, rect.y - padding, rect.z, rect.w }, thickness);
-        gui->PopHash();
 
         return wasPressed;
     }
 
     bool GUIButton::ResizeLowerRight(GUI* gui, short4* target, int16_t padding, int16_t size, int16_t thickness, const GUIStyle& style)
     {
-        const auto minmax = math::rectToMinMax(gui->GetLayout().outer);
+        const auto minmax = math::rectToMinMax(gui->GetLayoutArea());
         const auto rect = short4(minmax.z - size, minmax.w - size, size, size);
-        
-        gui->PushHash("ResizeLowerRight");
-
+        const auto rectWedge = short4(rect.x - padding, rect.y - padding, rect.z, rect.w);
+        const auto rectInput = math::rectMerge(rect, rectWedge);
         auto offset = PK_SHORT2_ZERO;
-        const auto wasPressed = gui->GetInput()->ButtonDrag(rect, gui->GetHash(), &offset);
+
+        gui->PushHash("ResizeLowerRight");
+        const auto wasPressed = gui->GetInput()->ButtonDrag(rectInput, gui->GetHash(), &offset);
+        const auto isHovered = gui->GetInput()->HasHover(gui->GetHash());
+        const auto color = isHovered ? style.colorHoverFg : style.colorFg;
+        gui->GetDrawList()->LowerRightWedge(color, rectWedge, thickness);
+        gui->PopHash();
 
         target->zw += offset;
-
-        const auto isHovered = gui->GetInput()->HasHover(gui->GetHash());
-        const auto colorFg = isHovered ? style.colorHoverFg : style.colorFg;
-        gui->GetDrawList()->LowerRightWedge(colorFg, { rect.x - padding, rect.y - padding, rect.z, rect.w }, thickness);
-        gui->PopHash();
 
         return wasPressed;
     }
@@ -161,7 +173,7 @@ namespace PK
 
     bool GUIScrollBar::Vertical(GUI* gui, short2* scrollpos, int16_t width, int16_t contentHeight, const GUIStyle& style)
     {
-        const auto inputRect = gui->GetLayout().cordon;
+        const auto inputRect = gui->GetLayout().cursor;
         const auto displayHeight = inputRect.w;
         const auto rect = gui->NextLayoutRect({0,0,width,0});
         return Vertical(gui, scrollpos, displayHeight, contentHeight, inputRect, rect, style);
@@ -172,6 +184,7 @@ namespace PK
     {
         const auto& style = window->style;
         const auto& area = gui->GetLayout().local;
+        const auto headerHeight = GUILabel::LineHeight(gui, style.headerFocus);
 
         window->tab = window->tab % tabs.size();
 
@@ -188,9 +201,9 @@ namespace PK
         
         window->rect = gui->GetLayout().local;
 
-        gui->BeginLayout({.mode = GUILayoutMode::Partition}, { 0, style.headerHeight, 0, 0});
+        gui->BeginLayout({.mode = GUILayoutMode::Partition}, { 0, headerHeight, 0, 0});
         {
-            window->requestsClose = GUIButton::Close(gui, { style.headerHeight, 0 }, style.field);
+            window->requestsClose = GUIButton::CloseTab(gui, { headerHeight, 0 }, style.field);
 
             gui->BeginLayout({ .mode = GUILayoutMode::Grid,.gridsize = { (uint32_t)tabs.size(), 1u} });
             {
@@ -208,14 +221,17 @@ namespace PK
         }
         gui->EndLayout();
 
-        gui->DrawRect(style.label.colorBg, gui->GetLayout().cordon);
+        gui->DrawRect(style.label.colorBg, gui->GetLayout().cursor);
 
         if (math::any(window->style.maxSize > window->style.minSize))
         {
             auto resize = math::rectClamp(window->rect, area);
 
-            GUIButton::ResizeLowerRight(gui, &resize, 3, 8, 4, style.field);
-            GUIButton::ResizeLowerLeft(gui, &resize, 3, 8, 4, style.field);
+            const auto resizePad = headerHeight / 12;
+            const auto resizeSize = headerHeight / 3;
+            const auto resizeThickness = headerHeight / 8;
+            GUIButton::ResizeLowerRight(gui, &resize, resizePad, resizeSize, resizeThickness, style.field);
+            GUIButton::ResizeLowerLeft(gui, &resize, resizePad, resizeSize, resizeThickness, style.field);
 
             resize = math::rectClip(resize, area);
 
@@ -248,8 +264,8 @@ namespace PK
 
         GUIScrollBar::Vertical(gui, &window->scrollpos, style.scrollBarSize.x, window->contentSize.y, style.field);
 
-        gui->BeginLayout({ .mode = style.contentMode, .padding = { 14, 6, 6, 12 } }, { window->scrollpos, 0, 0 });
-        gui->PushClipRect(gui->GetLayout().cordon);
+        gui->BeginLayout({ .mode = style.contentMode, .padding = style.contentPadding }, { window->scrollpos, 0, 0 });
+        gui->PushClipRect(gui->GetLayoutArea());
         gui->PushLayer();
     }
 
@@ -260,12 +276,11 @@ namespace PK
             
     void GUIWindow::End(GUI* gui, GUIWindow* window)
     {
-        window->contentSize = gui->GetLayout().content.zw;
+        window->contentSize = gui->GetLayoutContent().zw;
         gui->PopLayer();
         gui->PopClipRect();
         gui->EndLayout();
         gui->EndLayout();
         gui->PopHash();
     }
-
 }

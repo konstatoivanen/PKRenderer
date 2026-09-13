@@ -214,7 +214,6 @@ namespace PK
         info.clip_rect = clip_rect;
         info.line_count = 1u;
         info.text_length = strlen(text);
-        info.line_height = static_cast<uint32_t>(font->GetLineHeight(style));
 
         if (info.text_length == 0ull)
         {

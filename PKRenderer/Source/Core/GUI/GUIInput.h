@@ -35,8 +35,8 @@ namespace PK
         GUIInput(const GUIKeys* keys,
             GUIInputState* state, 
             InputState* input, 
-            const short2& screenOffset,
-            const short2& screenScale);
+            const float2& screenOffset,
+            const float2& screenScale);
         ~GUIInput();
 
         void PushLayer();

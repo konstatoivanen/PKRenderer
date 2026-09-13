@@ -5,7 +5,7 @@
 
 namespace PK
 {
-    GUIInput::GUIInput(const GUIKeys* keys, GUIInputState* state, InputState* input, const short2& screenOffset, const short2& screenScale) :
+    GUIInput::GUIInput(const GUIKeys* keys, GUIInputState* state, InputState* input, const float2& screenOffset, const float2& screenScale) :
         m_keys(keys),
         m_state(state),
         m_input(input)
