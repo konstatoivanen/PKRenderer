@@ -110,6 +110,7 @@ namespace PK
         memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
         memset(m_vertexStreamLayout, 0, sizeof(m_vertexStreamLayout));
 
+        m_sampleCount = (VkSampleCountFlagBits)0;
         m_indexType = VK_INDEX_TYPE_UINT16;
         m_pipelineKey.fixed = VulkanPipelineCache::FixedFunctionState();
         m_pipeline = nullptr;
@@ -148,6 +149,17 @@ namespace PK
         if (memcmp(m_scissors, rects, sizeof(VkRect2D) * (count > PK_RHI_MAX_VIEWPORTS ? PK_RHI_MAX_VIEWPORTS : count)) != 0)
         {
             memcpy(m_scissors, rects, sizeof(VkRect2D) * (count > PK_RHI_MAX_VIEWPORTS ? PK_RHI_MAX_VIEWPORTS : count));
+            return true;
+        }
+
+        return false;
+    }
+
+    bool VulkanRenderState::SetSampleCount(uint16_t flagBits)
+    {
+        if (m_sampleCount != (VkSampleCountFlagBits)flagBits)
+        {
+            m_sampleCount = (VkSampleCountFlagBits)flagBits;
             return true;
         }
 

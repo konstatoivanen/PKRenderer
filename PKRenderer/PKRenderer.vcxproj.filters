@@ -919,6 +919,7 @@
     <None Include="Content\IESProfiles\IES_45W_45D.ies" />
     <None Include="Content\IESProfiles\IES_150W_45D.ies" />
     <None Include="Content\IESProfiles\IES_300W_85D.ies" />
+    <None Include="Content\Shaders\CS_GUI_Resolve.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\PKAssets\PKAssetLoader.cpp">

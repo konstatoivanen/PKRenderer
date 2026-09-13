@@ -144,7 +144,7 @@ namespace PK
 
             VkPipelineMultisampleStateCreateInfo multisampling{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
             multisampling.sampleShadingEnable = key.fixed.multisampling.sampleShadingEnable;
-            multisampling.rasterizationSamples = VulkanEnumConvert::GetSampleCountFlags(key.fixed.multisampling.rasterizationSamples);
+            multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
             multisampling.minSampleShading = key.fixed.multisampling.minSampleShading;
             multisampling.pSampleMask = nullptr;
             multisampling.alphaToCoverageEnable = key.fixed.multisampling.alphaToCoverageEnable;
@@ -187,10 +187,12 @@ namespace PK
             {
                 VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
                 VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
+                VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT,
+                VK_DYNAMIC_STATE_SAMPLE_MASK_EXT
             };
 
             VkPipelineDynamicStateCreateInfo dynamicState{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-            dynamicState.dynamicStateCount = 2;
+            dynamicState.dynamicStateCount = 4;
             dynamicState.pDynamicStates = dynamicStates;
 
             VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };

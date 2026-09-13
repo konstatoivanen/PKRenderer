@@ -28,6 +28,8 @@ namespace PK
         state.layers = layers;
         state.colorCount = 0u;
 
+        uint16_t sampleCount = VK_SAMPLE_COUNT_1_BIT;
+
         for (auto i = 0u; i < count; ++i)
         {
             auto binding = &bindings[i];
@@ -41,9 +43,19 @@ namespace PK
             attachment->storeOp = binding->storeOp;
             attachment->clearValue = binding->clearValue;
             attachment->resolveMode = resolve ? VK_RESOLVE_MODE_AVERAGE_BIT : VK_RESOLVE_MODE_NONE;
+            sampleCount = sampleCount > target->image.samples ? sampleCount : target->image.samples;
+
         }
 
         m_renderState->SetRenderTarget(state);
+
+        if (m_renderState->SetSampleCount(sampleCount))
+        {
+            VkSampleMask mask = 0xFFFFFFFF;
+            VkSampleCountFlagBits flags = m_renderState->GetSampleCount();
+            vkCmdSetRasterizationSamplesEXT(m_commandBuffer, flags);
+            vkCmdSetSampleMaskEXT(m_commandBuffer, flags, &mask);
+        }
     }
 
     void VulkanCommandBuffer::SetViewPorts(const uint4* rects, uint32_t count)

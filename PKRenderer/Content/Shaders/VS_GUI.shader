@@ -1,5 +1,6 @@
 
 #pragma pk_blend_color Add SrcAlpha OneMinusSrcAlpha
+#pragma pk_blend_alpha Add One OneMinusSrcAlpha
 #pragma pk_ztest Off
 #pragma pk_zwrite False
 #pragma pk_cull Off
@@ -49,10 +50,12 @@ void MainFs()
 
     if (vs_SHADING_MODE == PK_GUI_SHADING_MODE_FONT)
     {
-        const float signed_dist = max(min(value.r, value.g), min(max(value.r, value.g), value.b)) - 0.5f;
+        const float sd_center = max(min(value.r, value.g), min(max(value.r, value.g), value.b)) - 0.5f;
+        const float sd_subpx = dFdx(sd_center) / 3.0f;
+        const float3 sd_rgb = sd_center + float3(-sd_subpx, 0.0f, +sd_subpx);
         const float px_range = PK_FONT_MSDF_UNIT / length(fwidth(vs_TEXCOORD));
-        const float screen_dist = signed_dist * px_range;
-        color.a *= saturate(screen_dist + 0.5f);
+        const float3 px_mask = saturate(sd_rgb * px_range + 0.5f);
+        color *= float4(px_mask, px_mask.g);
     }
     else
     {

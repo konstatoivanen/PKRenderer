@@ -520,6 +520,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\IESProfiles\IES_300W_85D.ies" />
     <None Include="Content\IESProfiles\IES_45W_45D.ies" />
     <None Include="Content\Shaders\CS_Distort.shader" />
+    <None Include="Content\Shaders\CS_GUI_Resolve.shader" />
     <None Include="Content\Shaders\CS_IntegrateDFG.shader" />
     <None Include="Content\Shaders\CS_SceneEnv_IntegrateISL.shader" />
     <None Include="Content\Shaders\CS_VolumetricFog.shader" />

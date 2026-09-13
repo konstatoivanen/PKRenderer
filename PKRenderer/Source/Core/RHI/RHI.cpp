@@ -60,6 +60,7 @@ namespace PK
             {
                 VulkanPhysicalDeviceFeatures features{};
                 features.vk10.features.alphaToOne = VK_TRUE;
+                features.vk10.features.sampleRateShading = VK_TRUE;
                 features.vk10.features.fillModeNonSolid = VK_TRUE;
                 features.vk10.features.shaderImageGatherExtended = VK_TRUE;
                 features.vk10.features.sparseBinding = VK_TRUE;
@@ -117,6 +118,8 @@ namespace PK
                 features.presentWait.presentWait = VK_TRUE;
                 features.maximalReconvergence.shaderMaximalReconvergence = VK_TRUE;
                 features.quadControl.shaderQuadControl = VK_TRUE;
+                features.dynamicState.extendedDynamicState3RasterizationSamples = VK_TRUE;
+                features.dynamicState.extendedDynamicState3SampleMask = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 const char* PK_INSTANCE_EXTENTIONS[] =
@@ -146,6 +149,7 @@ namespace PK
                     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
                     VK_KHR_MULTIVIEW_EXTENSION_NAME,
                     VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME,
+                    VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
                     VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
                     VK_KHR_PRESENT_ID_EXTENSION_NAME,
                     "VK_KHR_swapchain_maintenance1",

@@ -55,7 +55,7 @@ namespace PK::App
         {
             case RenderPipelineEvent::CollectDraws:
             {
-                GUICollectDraws(view->renderAreaRect, renderEvent->cmd);
+                GUICollectDraws(view->renderAreaRect, view->GetResolution(), renderEvent->cmd);
                 GizmosCollectDraws(view->renderAreaRect, view->worldToClip, renderEvent->cmd);
             }
             return;
@@ -82,13 +82,21 @@ namespace PK::App
     }
 
 
-    void EngineGUIRenderer::GUICollectDraws(const uint4& renderArea, CommandBufferExt& cmd)
+    void EngineGUIRenderer::GUICollectDraws(const uint4& renderArea, const uint3& resolution, CommandBufferExt& cmd)
     {
         m_gui_vertexCount = 0u;
         m_gui_indexCount = 0u;
         m_gui_vertexView = {};
         m_gui_indexView = {};
         m_gui_commandBuffer = m_gui_enabled ? &cmd : nullptr;
+
+        TextureDescriptor desc;
+        desc.format = TextureFormat::RGBA8_Unorm;
+        desc.usage = TextureUsage::RTColorSample;
+        desc.type = TextureType::Texture2D;
+        desc.resolution = resolution;
+        desc.samples = 8;
+        RHI::ValidateTexture(m_gui_msaa_target, desc, "GUI.MSAATarget");
 
         if (m_gui_enabled)
         {
@@ -127,10 +135,16 @@ namespace PK::App
 
             RHI::SetConstant<float4>(hash->pk_GUI_ScreenTransform, screenTransform);
             RHI::SetTextureSet(hash->pk_GUI_Textures, m_gui_textures.get());
+            
             cmd->SetIndexBuffer(m_gui_indexBuffer.get(), sizeof(uint16_t));
             cmd.SetShader(m_gui_shader);
-            cmd.SetRenderTarget({ target, LoadOp::Load, StoreOp::Store }, true);
+            cmd.SetRenderTarget({ m_gui_msaa_target.get(), LoadOp::Clear, StoreOp::Store }, true);
+            cmd->SetMultisampling({ .sampleShadingEnable = true });
             cmd->DrawIndexed(math::min(GUI_MAX_INDICES, m_gui_indexCount), 1u, 0u, 0u, 0u);
+
+            RHI::SetTexture(hash->pk_Texture, m_gui_msaa_target.get());
+            RHI::SetImage(hash->pk_Image, target);
+            cmd.Dispatch(m_gui_resolve_shader, target->GetResolution());
         }
     }
 
@@ -142,6 +156,7 @@ namespace PK::App
             if (m_gui_shader == nullptr)
             {
                 m_gui_shader = m_assetDatabase->Find<ShaderAsset>("VS_GUI").get();
+                m_gui_resolve_shader = m_assetDatabase->Find<ShaderAsset>("CS_GUI_Resolve").get();
                 m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::PersistentStorage, "GUI.VertexBuffer");
                 m_gui_indexBuffer = RHI::CreateBuffer<GUIIndex>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
                 m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);

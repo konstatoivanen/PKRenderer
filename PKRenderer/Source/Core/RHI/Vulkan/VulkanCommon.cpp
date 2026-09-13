@@ -43,6 +43,9 @@ PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT
 
 PFN_vkWaitForPresentKHR pkfn_vkWaitForPresentKHR = nullptr;
 
+PFN_vkCmdSetRasterizationSamplesEXT pkfn_vkCmdSetRasterizationSamplesEXT = nullptr;
+PFN_vkCmdSetSampleMaskEXT pkfn_vkCmdSetSampleMaskEXT = nullptr;
+
 namespace PK
 {
     VulkanPhysicalDeviceFeatures::VulkanPhysicalDeviceFeatures()
@@ -64,6 +67,7 @@ namespace PK
         presentId.pNext = &presentWait;
         presentWait.pNext = &maximalReconvergence;
         maximalReconvergence.pNext = &quadControl;
+        quadControl.pNext = &dynamicState;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -269,6 +273,37 @@ namespace PK
             PK_TEST_FEATURE(presentWait.presentWait)
             PK_TEST_FEATURE(maximalReconvergence.shaderMaximalReconvergence)
             PK_TEST_FEATURE(quadControl.shaderQuadControl)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3TessellationDomainOrigin)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3DepthClampEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3PolygonMode)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3RasterizationSamples)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3SampleMask)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3AlphaToCoverageEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3AlphaToOneEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3LogicOpEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ColorBlendEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ColorBlendEquation)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ColorWriteMask)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3RasterizationStream)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ConservativeRasterizationMode)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ExtraPrimitiveOverestimationSize)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3DepthClipEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3SampleLocationsEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ColorBlendAdvanced)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ProvokingVertexMode)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3LineRasterizationMode)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3LineStippleEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3DepthClipNegativeOneToOne)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ViewportWScalingEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ViewportSwizzle)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3CoverageToColorEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3CoverageToColorLocation)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3CoverageModulationMode)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3CoverageModulationTableEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3CoverageModulationTable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3CoverageReductionMode)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3RepresentativeFragmentTestEnable)
+            PK_TEST_FEATURE(dynamicState.extendedDynamicState3ShadingRateImageEnable)
         }
         
         #undef PK_TEST_FEATURE
@@ -695,6 +730,9 @@ namespace PK
         pkfn_vkReleaseFullScreenExclusiveModeEXT = (PFN_vkReleaseFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkReleaseFullScreenExclusiveModeEXT");
 
         pkfn_vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vkGetInstanceProcAddr(instance, "vkWaitForPresentKHR");
+
+        pkfn_vkCmdSetRasterizationSamplesEXT = (PFN_vkCmdSetRasterizationSamplesEXT)vkGetInstanceProcAddr(instance, "vkCmdSetRasterizationSamplesEXT");
+        pkfn_vkCmdSetSampleMaskEXT = (PFN_vkCmdSetSampleMaskEXT)vkGetInstanceProcAddr(instance, "vkCmdSetSampleMaskEXT");
     }
 
     

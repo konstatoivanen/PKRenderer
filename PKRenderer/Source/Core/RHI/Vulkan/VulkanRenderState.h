@@ -68,6 +68,7 @@ namespace PK
 
         VkRect2D area{};
         uint32_t layers = 0u;
+        uint32_t sampleCount = 1u;
         uint32_t colorCount = 0u;
         Attachment colors[PK_RHI_MAX_RENDER_TARGETS]{};
         Attachment depth{};
@@ -85,8 +86,8 @@ namespace PK
         inline const ShaderPushConstantLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetPushConstantLayout(); }
         constexpr VkDescriptorSet GetDescriptorSet() const { return m_descritorState.descriptorSet->set; }
         inline uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
-        const char* GetShaderName() const { return m_pipelineKey.shader->GetName(); }
         inline VkPipelineBindPoint GetPipelineBindPoint() const { return VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
+        inline VkSampleCountFlagBits GetSampleCount() const { return m_sampleCount; }
         VkRenderingInfo GetRenderPassInfo() const;
         VulkanVertexBufferBundle GetVertexBufferBundle() const;
         VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
@@ -96,6 +97,7 @@ namespace PK
 
         bool SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports);
         bool SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors);
+        bool SetSampleCount(uint16_t flagBits);
         void SetStageExcludeMask(const ShaderStageFlags mask);
         void SetBlending(const BlendParameters& blend);
         void SetRasterization(const RasterizationParameters& rasterization);
@@ -140,8 +142,11 @@ namespace PK
         const VulkanBindHandle* m_indexBuffer = nullptr;
         VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;
         
+        // Dynamic state
         VkViewport m_viewports[PK_RHI_MAX_VIEWPORTS]{};
         VkRect2D m_scissors[PK_RHI_MAX_VIEWPORTS]{};
+        VkSampleCountFlagBits m_sampleCount = (VkSampleCountFlagBits)0;
+
         uint32_t m_dirtyFlags = 0u;
 
         const VulkanPipeline* m_pipeline = nullptr;

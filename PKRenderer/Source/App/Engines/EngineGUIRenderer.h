@@ -38,7 +38,7 @@ namespace PK::App
         inline void SetGizmosEnabledGPU(bool value) { m_gizmos_enabledGPU = value; }
         inline void SetGizmosEnabledCPU(bool value) { m_gizmos_enabledCPU = value; }
 
-        void GUICollectDraws(const uint4& renderArea, CommandBufferExt& cmd);
+        void GUICollectDraws(const uint4& renderArea, const uint3& resolution, CommandBufferExt& cmd);
         void GUIDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
         bool GUIValidateDraw();
         
@@ -68,9 +68,11 @@ namespace PK::App
         AssetDatabase* m_assetDatabase = nullptr;
 
         CommandBufferExt* m_gui_commandBuffer = nullptr;
+        RHITextureRef m_gui_msaa_target = nullptr;
         RHITextureBindSetRef m_gui_textures;
         HeapHashArena m_gui_stateCache;
         ShaderAsset* m_gui_shader = nullptr;
+        ShaderAsset* m_gui_resolve_shader = nullptr;
         RHIBufferRef m_gui_vertexBuffer;
         RHIBufferRef m_gui_indexBuffer;
         BufferView<GUIVertex> m_gui_vertexView;

@@ -359,7 +359,6 @@ namespace PK
         bool sampleShadingEnable = false;
         bool alphaToCoverageEnable = false;
         bool alphaToOneEnable = false;
-        uint8_t rasterizationSamples = 1u;
         float minSampleShading = 1.0f;
     };
 

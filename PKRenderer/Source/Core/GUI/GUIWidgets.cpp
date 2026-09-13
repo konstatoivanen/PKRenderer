@@ -77,7 +77,7 @@ namespace PK
         gui->PushHash("CloseButton");
         const auto wasPressed = gui->GetInput()->Button(rect, gui->GetHash());
         const auto isHovered = gui->GetInput()->HasHover(gui->GetHash());
-        const auto thickness = (int16_t)math::max(math::min(rect.z, rect.w) / 7, 1);
+        const auto thickness = (int16_t)math::max(math::min(rect.z, rect.w) / 6, 1);
         const auto rectCross = math::rectAspect(math::rectPad(rect, thickness), 1.0f);
         const auto color = isHovered ? style.colorHoverFg : style.colorFg;
         gui->GetDrawList()->X(color, rectCross, thickness);
