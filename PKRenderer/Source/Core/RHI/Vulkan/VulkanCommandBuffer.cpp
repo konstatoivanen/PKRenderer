@@ -544,17 +544,17 @@ namespace PK
         vkCmdCopyAccelerationStructureKHR(m_commandBuffer, pInfo);
     }
 
-    int32_t VulkanCommandBuffer::QueryAccelerationStructureCompactSize(const VkAccelerationStructureKHR structure, VulkanQueryPool* pool)
+    void VulkanCommandBuffer::QueryAccelerationStructureCompactSize(const VkAccelerationStructureKHR structure, VulkanQueryPool* pool, uint32_t query)
     {
         PK_DEBUG_FATAL_ASSERT(pool->type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "Invalid query pool type");
-        auto queryIndex = pool->AddQuery(GetFenceRef());
+        pool->SetFence(GetFenceRef());
+        vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, (uint32_t)query);
+    }
 
-        if (queryIndex != -1)
-        {
-            vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, (uint32_t)queryIndex);
-        }
-
-        return queryIndex;
+    void VulkanCommandBuffer::QueryTimeStamp(VulkanQueryPool* pool, VkPipelineStageFlags2 stage, uint32_t query)
+    {
+        PK_DEBUG_FATAL_ASSERT(pool->type == VK_QUERY_TYPE_TIMESTAMP, "Invalid query pool type");
+        vkCmdWriteTimestamp2(m_commandBuffer, stage, pool->pool, query);
     }
 
     void VulkanCommandBuffer::TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range)
@@ -756,6 +756,7 @@ namespace PK
         m_queueFamily = queueFamily;
         m_renderState = renderState;
         m_renderState->Reset();
+        m_renderState->GetServices()->queueTimer->BeginTimeline();
 
         VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -767,6 +768,7 @@ namespace PK
         // End possibly active render pass
         EndRenderPass();
         m_renderState->GetServices()->barrierHandler->ClearBarriers();
+        m_timerTimelineIndex = m_renderState->GetServices()->queueTimer->EndTimeline();
         VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
         m_renderState = nullptr;
     }

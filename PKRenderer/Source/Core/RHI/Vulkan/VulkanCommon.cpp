@@ -588,8 +588,7 @@ namespace PK
         device(device),
         size(size),
         type(type),
-        lastQueryFence(),
-        activeCount(0u)
+        fence()
     {
         VkQueryPoolCreateInfo info{ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
         info.queryCount = size;
@@ -603,51 +602,24 @@ namespace PK
         vkDestroyQueryPool(device, pool, nullptr);
     }
 
+    void VulkanQueryPool::GetResults(void* outBuffer, uint32_t first, uint32_t count, size_t stride, VkQueryResultFlagBits flags)
+    {
+        VK_ASSERT_RESULT_CTX(vkGetQueryPoolResults(device, pool, first, count, count * stride, outBuffer, stride, flags), "Failed to get query results!");
+    }
+
     bool VulkanQueryPool::WaitResults(uint64_t timeout)
     {
-        return activeCount > 0 && lastQueryFence.WaitInvalidate(timeout);
+        return fence.WaitInvalidate(timeout);
     }
 
-    void VulkanQueryPool::ResetQuery()
+    void VulkanQueryPool::SetFence(const FenceRef& fence)
     {
-        if (activeCount > 0)
-        {
-            vkResetQueryPool(device, pool, 0, activeCount);
-            activeCount = 0u;
-        }
+        this->fence = fence;
     }
 
-    int32_t VulkanQueryPool::AddQuery(const FenceRef& fence)
+    void VulkanQueryPool::ResetQuery(uint32_t first, uint32_t count)
     {
-        if (activeCount >= size)
-        {
-            return -1;
-        }
-
-        lastQueryFence = fence;
-        return activeCount++;
-    }
-
-    bool VulkanQueryPool::GetResults(void* outBuffer, size_t first, size_t count, size_t stride, uint64_t timeout, VkQueryResultFlagBits flags)
-    {
-        if (WaitResults(timeout))
-        {
-            VK_ASSERT_RESULT_CTX(vkGetQueryPoolResults(device, pool, (uint32_t)first, (uint32_t)count, count * stride, outBuffer, stride, flags), "Failed to get query results!");
-            return true;
-        }
-
-        return false;
-    }
-
-    bool VulkanQueryPool::GetResultsAll(void* outBuffer, size_t stride, uint64_t timeout, VkQueryResultFlagBits flags)
-    {
-        if (GetResults(outBuffer, 0, activeCount, stride, timeout, flags))
-        {
-            ResetQuery();
-            return true;
-        }
-        
-        return false;
+        vkResetQueryPool(device, pool, first, count);
     }
 
 

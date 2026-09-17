@@ -22,7 +22,7 @@ int main(int argc, char** argv)
     auto flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     flag |= _CRTDBG_LEAK_CHECK_DF | _CRTDBG_ALLOC_MEM_DF;
     _CrtSetDbgFlag(flag);
-    //_crtBreakAlloc = 670;
+    //_crtBreakAlloc = 690;
 #endif
 
     auto platformStatus = PK::Platform::Initialize();

@@ -15,7 +15,7 @@ namespace PK
         m_name(name),
         m_substructures(32u, 1ull)
     {
-        m_queryPool.New(m_driver->device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 256u);
+        m_queryPool.New(m_driver->device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, MAX_COMPACTIONS);
     }
 
     VulkanAccelerationStructure::~VulkanAccelerationStructure()
@@ -152,17 +152,18 @@ namespace PK
             VkDeviceSize buildCount = 0ull;
 
             // Compaction queries
-            for (auto i = 0u; i < m_substructures.GetCount(); ++i)
+            for (auto i = 0u; i < m_substructures.GetCount() && m_queryCount < MAX_COMPACTIONS; ++i)
             {
                 auto structure = &m_substructures[i].value;
 
                 if (structure->handle && !structure->compactionId)
                 {
-                    structure->compactionId = m_cmd->QueryAccelerationStructureCompactSize(structure->handle, m_queryPool) + 1u;
+                    m_cmd->QueryAccelerationStructureCompactSize(structure->handle, m_queryPool, m_queryCount);
+                    structure->compactionId = ++m_queryCount;
                 }
             }
 
-            auto hasCompactedResults = m_queryPool->WaitResults(0ull);
+            auto hasCompactedResults = m_queryCount > 0 && m_queryPool->WaitResults(0ull);
             auto needsRealloc = false;
 
             // Update tlas header and detect if udpates are required.
@@ -180,8 +181,8 @@ namespace PK
 
                     if (hasCompactedResults && structure->handle && structure->compactionId && structure->compactionId != COMPACTED_ID)
                     {
-                        auto size0 = structure->size.accelerationStructureSize;
-                        auto size1 = m_queryPool->GetResult<VkDeviceSize>(structure->compactionId - 1u, 0, VK_QUERY_RESULT_WAIT_BIT);
+                        const auto size0 = structure->size.accelerationStructureSize;
+                        const auto size1 = m_queryPool->GetResult<VkDeviceSize>(structure->compactionId - 1u, VK_QUERY_RESULT_64_BIT);
                         structure->size.accelerationStructureSize = size1;
                         PK_LOG_RHI("BLAS Compacted from %i to %i bytes", size0, size1);
                     }
@@ -195,6 +196,12 @@ namespace PK
                         scratchSize += math::align(structure->size.buildScratchSize, 256ull);
                         ++buildCount;
                     }
+                }
+
+                if (hasCompactedResults)
+                {
+                    m_queryPool->ResetQuery(0u, m_queryCount);
+                    m_queryCount = 0u;
                 }
 
                 auto prevSize = m_structure.size.accelerationStructureSize;
@@ -230,9 +237,6 @@ namespace PK
             if (buildCount || hasCompactedResults || needsRealloc || !m_structureBuffer || m_structureBuffer->size < bufferSize)
             {
                 PK_LOG_RHI_SCOPE("Acceleration Structure Update: %s", m_name.c_str());
-
-                // Reset compaction queries.
-                m_queryPool->ResetQuery();
 
                 // Needs new buffer in case of compaction copies.
                 {

@@ -83,16 +83,16 @@ namespace PK
                 .headerFocus =
                 {
                     .fontStyle = { PK_FLOAT2_UP, PK_FLOAT2_ONE, 16.0f, false, false },
-                    .padding = short4(6,4,6,4),
+                    .padding = short4(14,4,6,4),
                     .colorBg = color32(192,0,0,255),
                     .colorFg = color32(32,32,32,255),
-                    .colorHoverBg = color32(192,0,0,255),
-                    .colorHoverFg = color32(192,192,192,255),
+                    .colorHoverBg = color32(192,192,192,255),
+                    .colorHoverFg = color32(32,32,32,255),
                 },
                 .headerUnfocus =
                 {
                     .fontStyle = { PK_FLOAT2_UP, PK_FLOAT2_ONE, 16.0f, false, false },
-                    .padding = short4(6,4,6,4),
+                    .padding = short4(14,4,6,4),
                     .colorBg = color32(32,32,32,255),
                     .colorFg = color32(192,192,192,255),
                     .colorHoverBg = color32(192,192,192,255),
@@ -100,19 +100,19 @@ namespace PK
                 },
                 .label =
                 {
-                    .fontStyle = { PK_FLOAT2_ZERO, PK_FLOAT2_ONE, 16.0f, false, false },
+                    .fontStyle = { PK_FLOAT2_ZERO, PK_FLOAT2_ONE, 14.0f, false, false },
                     .padding = short4(0,0,4,0),
-                    .colorBg = color32(32,32,32,255),
-                    .colorFg = color32(192,192,192,255),
+                    .colorBg = color32(192,0,0,255),
+                    .colorFg = color32(32,32,32,255),
                     .colorHoverBg = color32(32,32,32,255),
-                    .colorHoverFg = color32(192,0,0,255),
+                    .colorHoverFg = color32(192,192,192,255),
                 },
                 .field =
                 {
-                    .fontStyle = { PK_FLOAT2_ZERO, PK_FLOAT2_ONE, 16.0f, false, false },
+                    .fontStyle = { PK_FLOAT2_ZERO, PK_FLOAT2_ONE, 14.0f, false, false },
                     .padding = PK_SHORT4_ZERO,
-                    .colorBg = color32(32,32,32,255),
-                    .colorFg = color32(192,0,0,255),
+                    .colorBg = color32(192,0,0,255),
+                    .colorFg = color32(32,32,32,255),
                     .colorHoverBg = color32(32,32,32,255),
                     .colorHoverFg = color32(192,192,192,255),
                 },

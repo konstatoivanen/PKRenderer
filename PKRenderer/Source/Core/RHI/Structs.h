@@ -467,6 +467,13 @@ namespace PK
         uint32_t recordOffset;
     };
 
+    struct RHITimerScope
+    {
+        uint64_t userHash;
+        uint64_t timerIndex;
+        double elapsedSeconds;
+    };
+
     struct RHIDriverMemoryInfo
     {
         uint32_t blockCount;

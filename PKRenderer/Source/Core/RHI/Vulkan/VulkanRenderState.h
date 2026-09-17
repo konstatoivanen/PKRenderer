@@ -7,6 +7,7 @@
 #include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanStagingBufferCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
+#include "Core/RHI/Vulkan/Services/VulkanQueueTimer.h"
 
 namespace PK
 {
@@ -25,17 +26,15 @@ namespace PK
         PropertyBlock* globalResources = nullptr;
         VulkanDescriptorCache* descriptorCache = nullptr;
         VulkanPipelineCache* pipelineCache = nullptr;
-        VulkanSamplerCache* samplerCache = nullptr;
         VulkanStagingBufferCache* stagingBufferCache = nullptr;
         VulkanBarrierHandler* barrierHandler = nullptr;
-        Disposer* disposer = nullptr;
+        VulkanQueueTimer* queueTimer = nullptr;
         VulkanServiceContext& SetGlobalResources(PropertyBlock* value) { globalResources = value; return *this; }
         VulkanServiceContext& SetDescriptorCache(VulkanDescriptorCache* value) { descriptorCache = value; return *this; }
         VulkanServiceContext& SetPipelineCache(VulkanPipelineCache* value) { pipelineCache = value; return *this; }
-        VulkanServiceContext& SetSamplerCache(VulkanSamplerCache* value) { samplerCache = value; return *this; }
         VulkanServiceContext& SetStagingBufferCache(VulkanStagingBufferCache* value) { stagingBufferCache = value; return *this; }
         VulkanServiceContext& SetBarrierHandler(VulkanBarrierHandler* value) { barrierHandler = value; return *this; }
-        VulkanServiceContext& SetDisposer(Disposer* value) { disposer = value; return *this; }
+        VulkanServiceContext& SetQueueTimer(VulkanQueueTimer* value) { queueTimer = value; return *this; }
     };
 
     struct VulkanVertexBufferBundle

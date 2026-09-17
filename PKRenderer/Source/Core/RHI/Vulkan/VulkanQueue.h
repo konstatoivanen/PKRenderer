@@ -30,6 +30,7 @@ namespace PK
         VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, VulkanServiceContext& services, uint32_t queueIndex, const char* name);
         ~VulkanQueue();
 
+        inline ConstBufferView<RHITimerScope> GetTimerrs() { return { nullptr, 0ull }; }
         inline VkSemaphore GetNextSemaphore() { return m_semaphores[m_semaphoreIndex++ % PK_VK_QUEUE_SEMAPHORE_COUNT]; }
         constexpr VkQueue GetNative() const { return m_queue; }
         constexpr uint32_t GetFamily() const { return m_family; }
@@ -54,6 +55,7 @@ namespace PK
         const VkPipelineStageFlags m_capabilityFlags;
 
         VulkanBarrierHandler m_barrierHandler;
+        VulkanQueueTimer m_timer;
         VulkanRenderState m_renderState;
 
         VkQueue m_queue = VK_NULL_HANDLE;
@@ -74,15 +76,17 @@ namespace PK
     {
         VulkanQueueSet(VkDevice device, const VulkanQueueSetInitializer& initializer, const VulkanServiceContext& services);
 
-        inline VulkanQueue* GetQueue(QueueType type) { return m_queues[m_queueIndices[(uint32_t)type]].get(); }
-        constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
-        inline RHICommandBuffer* GetCommandBuffer(QueueType type) final { return GetQueue(type)->GetCommandBuffer(); }
         
-        VkResult SubmitCurrent(QueueType type, VkSemaphore* outSignal = nullptr);
+        ConstBufferView<RHITimerScope> GetTimers(QueueType type) final;
+        RHICommandBuffer* GetCommandBuffer(QueueType type) final;
+        FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) final;
+        FenceRef GetLastSubmitFenceRef() final;
         RHICommandBuffer* Submit(QueueType type) final;
         void Wait(QueueType to, QueueType from, int32_t submitOffset = 0) final;
-        inline FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) final { return GetQueue(type)->GetFenceRef(submitOffset); }
-        inline FenceRef GetLastSubmitFenceRef() final { return m_lastSubmitFence; }
+
+        inline VulkanQueue* GetQueue(QueueType type) { return m_queues[m_queueIndices[(uint32_t)type]].get(); }
+        constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
+        VkResult SubmitCurrent(QueueType type, VkSemaphore* outSignal = nullptr);
         void Prune();
 
     private:

@@ -318,6 +318,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Rendering\Font.h" />
     <ClInclude Include="Source\Core\Rendering\IESProfile.h" />
     <ClInclude Include="Source\Core\Rendering\Window.h" />
+    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanQueueTimer.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanLimits.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeArrayList.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeEnum.h" />
@@ -698,6 +699,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Rendering\Font.cpp" />
     <ClCompile Include="Source\Core\Rendering\IESProfile.cpp" />
     <ClCompile Include="Source\Core\Rendering\Window.cpp" />
+    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanQueueTimer.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />

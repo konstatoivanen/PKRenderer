@@ -176,10 +176,9 @@ namespace PK
                 &globalResources,
                 descriptorCache.get(),
                 pipelineCache.get(),
-                samplerCache.get(),
                 stagingBufferCache.get(),
                 nullptr, // Assigned by queues
-                disposer.get()
+                nullptr, // Assigned by queues
             }
         );
 

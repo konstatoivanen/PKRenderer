@@ -14,6 +14,9 @@ namespace PK
     {
         using TData = AllocationHeap::Data<char>;
 
+        constexpr InputKeyCommands() = default;
+        ~InputKeyCommands() { TData::Free(m_data); }
+
         InputKeyCommand& operator [](size_t i) { return GetCommands()[i]; }
         InputKeyCommand const& operator [](size_t i) const { return GetCommands()[i]; }
         operator InputKeyCommand* () { return GetCommands(); }
@@ -34,7 +37,7 @@ namespace PK
         void Clear();
     
     private:
-        AllocationHeap::Data<char> m_data{};
+        TData m_data{};
         size_t m_commandCapacity = 0ull;
         size_t m_stringCapacity = 0ull;
         size_t m_count = 0ull;

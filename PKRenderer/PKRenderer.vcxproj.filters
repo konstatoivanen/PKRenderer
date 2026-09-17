@@ -759,6 +759,9 @@
     <ClInclude Include="Source\Core\GUI\GUIKeys.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanQueueTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
@@ -1265,6 +1268,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Input\InputKeyCommands.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanQueueTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

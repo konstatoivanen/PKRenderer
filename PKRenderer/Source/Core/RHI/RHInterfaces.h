@@ -192,6 +192,7 @@ namespace PK
     struct RHIQueueSet : public NoCopy
     {
         virtual ~RHIQueueSet() = 0;
+        virtual ConstBufferView<RHITimerScope> GetTimers(QueueType type) = 0;
         virtual RHICommandBuffer* GetCommandBuffer(QueueType type) = 0;
         virtual FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) = 0;
         virtual FenceRef GetLastSubmitFenceRef() = 0;

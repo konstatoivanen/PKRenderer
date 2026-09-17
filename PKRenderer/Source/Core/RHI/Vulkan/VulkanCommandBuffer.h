@@ -62,7 +62,8 @@ namespace PK
         // Vulkan specific interface
         void BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
         void CopyAccelerationStructure(const VkCopyAccelerationStructureInfoKHR* pInfo);
-        int32_t QueryAccelerationStructureCompactSize(const VkAccelerationStructureKHR structure, VulkanQueryPool* pool);
+        void QueryAccelerationStructureCompactSize(const VkAccelerationStructureKHR structure, VulkanQueryPool* pool, uint32_t query);
+        void QueryTimeStamp(VulkanQueryPool* pool, VkPipelineStageFlags2 stage, uint32_t query);
         void TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range);
         void PipelineBarrier(const VulkanBarrierInfo& barrier);
         
@@ -83,7 +84,8 @@ namespace PK
         inline VkFence& GetFence() { return m_fence; }
         inline VkPipelineStageFlags GetLastCommandStage() { return m_lastCommandStage; }
         inline VkSemaphore GetImageSignal() { return m_imageSignal; }
-        
+        inline uint64_t GetTimerTimelineIndex() const { return m_timerTimelineIndex; }
+
     private:
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
         VkSemaphore m_imageSignal = VK_NULL_HANDLE;
@@ -91,6 +93,7 @@ namespace PK
         uint16_t m_queueFamily = 0u;
         VulkanRenderState* m_renderState = nullptr;
         
+        uint64_t m_timerTimelineIndex = 0ull;
         uint64_t m_invocationIndex = 0ull;
         VkPipelineStageFlags m_lastCommandStage = 0u;
         bool m_isInActiveRenderPass = false;

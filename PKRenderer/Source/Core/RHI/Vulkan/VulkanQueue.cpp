@@ -164,7 +164,8 @@ namespace PK
         m_queueIndex(queueIndex),
         m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags)),
         m_barrierHandler(queueFamily),
-        m_renderState(services.SetBarrierHandler(&m_barrierHandler))
+        m_timer(device, 1.0f),
+        m_renderState(services.SetBarrierHandler(&m_barrierHandler).SetQueueTimer(&m_timer))
     {
         vkGetDeviceQueue(m_device, m_family, m_queueIndex, &m_queue);
         VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_QUEUE, (uint64_t)m_queue, FixedString32("PK_Queue_%s", name).c_str());
@@ -500,6 +501,7 @@ namespace PK
                 m_commandBuffers[(int64_t)(&wrapper - &m_commandWrappers[0])] = VK_NULL_HANDLE;
                 vkFreeCommandBuffers(m_device, m_commandPool, 1, &wrapper.GetCommandBuffer());
                 VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.GetFence()));
+                m_timer.FlushTimeline(wrapper.GetTimerTimelineIndex());
                 wrapper.Finalize();
             }
         }
@@ -526,6 +528,23 @@ namespace PK
         }
     }
 
+    ConstBufferView<RHITimerScope> VulkanQueueSet::GetTimers(QueueType type) { return GetQueue(type)->GetTimerrs(); }
+    RHICommandBuffer* VulkanQueueSet::GetCommandBuffer(QueueType type) { return GetQueue(type)->GetCommandBuffer(); }
+    FenceRef VulkanQueueSet::GetFenceRef(QueueType type, int32_t submitOffset) { return GetQueue(type)->GetFenceRef(submitOffset); }
+    FenceRef VulkanQueueSet::GetLastSubmitFenceRef() { return m_lastSubmitFence; }
+
+    RHICommandBuffer* VulkanQueueSet::Submit(QueueType type)
+    {
+        VK_ASSERT_RESULT(SubmitCurrent(type));
+        return GetCommandBuffer(type);
+    }
+
+    void VulkanQueueSet::Wait(QueueType to, QueueType from, int32_t submitOffset)
+    {
+        GetQueue(to)->QueueWait(GetQueue(from), submitOffset);
+    }
+
+
     VkResult VulkanQueueSet::SubmitCurrent(QueueType type, VkSemaphore* outSignal)
     {
         auto queue = GetQueue(type);
@@ -545,17 +564,6 @@ namespace PK
         }
 
         return result;
-    }
-
-    RHICommandBuffer* VulkanQueueSet::Submit(QueueType type)
-    {
-        VK_ASSERT_RESULT(SubmitCurrent(type));
-        return GetCommandBuffer(type);
-    }
-
-    void VulkanQueueSet::Wait(QueueType to, QueueType from, int32_t submitOffset)
-    {
-        GetQueue(to)->QueueWait(GetQueue(from), submitOffset);
     }
 
     void VulkanQueueSet::Prune()

@@ -8,6 +8,7 @@ namespace PK
     struct VulkanAccelerationStructure : public RHIAccelerationStructure
     {
         constexpr const static uint32_t COMPACTED_ID = ~0u;
+        constexpr const static uint32_t MAX_COMPACTIONS = 256u;
         
         struct StructureKey
         {
@@ -63,6 +64,7 @@ namespace PK
         VulkanBindHandle m_bindHandle{};
         
         // Temporaries used during build process
+        uint32_t m_queryCount = 0u;
         uint32_t m_instanceCount = 0u;
         uint32_t m_instanceLimit = 0u;
         uint64_t m_topologyHashPrev = 0u;
