@@ -336,7 +336,7 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanRenderState.h">
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanPipelineState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanShader.h">
@@ -1057,7 +1057,7 @@
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanQueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanRenderState.cpp">
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanPipelineState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanShader.cpp">

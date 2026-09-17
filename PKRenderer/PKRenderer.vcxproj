@@ -480,7 +480,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBuffer.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanQueue.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanRenderState.h" />
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanPipelineState.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanShader.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanSparsePageTable.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanSwapchain.h" />
@@ -795,7 +795,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBuffer.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanQueue.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanRenderState.cpp" />
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanPipelineState.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanShader.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanSparsePageTable.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanSwapchain.cpp" />

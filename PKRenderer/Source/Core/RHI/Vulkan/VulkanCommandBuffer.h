@@ -4,7 +4,10 @@
 
 namespace PK
 {
-    struct VulkanRenderState;
+    struct VulkanDriver;
+    struct VulkanQueueTimer;
+    struct VulkanBarrierHandler;
+    struct VulkanPipelineState;
 
     struct VulkanCommandBuffer : public RHICommandBuffer
     {
@@ -59,11 +62,13 @@ namespace PK
         void BeginDebugScope(const char* name, const color& color) final;
         void EndDebugScope() final;
 
+        void BeginTimer(NameID name) final;
+        void EndTimer() final;
+
         // Vulkan specific interface
         void BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
         void CopyAccelerationStructure(const VkCopyAccelerationStructureInfoKHR* pInfo);
         void QueryAccelerationStructureCompactSize(const VkAccelerationStructureKHR structure, VulkanQueryPool* pool, uint32_t query);
-        void QueryTimeStamp(VulkanQueryPool* pool, VkPipelineStageFlags2 stage, uint32_t query);
         void TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range);
         void PipelineBarrier(const VulkanBarrierInfo& barrier);
         
@@ -74,7 +79,15 @@ namespace PK
         void ValidatePipeline();
         void EndRenderPass();
 
-        void BeginRecord(VkCommandBuffer commandBuffer, VkFence fence, uint16_t queueFamily, VulkanRenderState* renderState);
+        void BeginRecord(
+            const VulkanDriver* driver,
+            VulkanBarrierHandler* barrierHandler,
+            VulkanQueueTimer* timer,
+            VulkanPipelineState* state,
+            VkCommandBuffer commandBuffer, 
+            VkFence fence, 
+            uint16_t queueFamily);
+
         void EndRecord();
         void Finalize();
 
@@ -84,16 +97,19 @@ namespace PK
         inline VkFence& GetFence() { return m_fence; }
         inline VkPipelineStageFlags GetLastCommandStage() { return m_lastCommandStage; }
         inline VkSemaphore GetImageSignal() { return m_imageSignal; }
-        inline uint64_t GetTimerTimelineIndex() const { return m_timerTimelineIndex; }
 
     private:
+        const VulkanDriver* m_driver = nullptr;
+        VulkanBarrierHandler* m_barrierHandler = nullptr;
+        VulkanQueueTimer* m_timer = nullptr;
+        VulkanPipelineState* m_state = nullptr;
+
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
         VkSemaphore m_imageSignal = VK_NULL_HANDLE;
         VkFence m_fence = VK_NULL_HANDLE;
         uint16_t m_queueFamily = 0u;
-        VulkanRenderState* m_renderState = nullptr;
-        
-        uint64_t m_timerTimelineIndex = 0ull;
+
+        uint64_t m_timerIndex = 0ull;
         uint64_t m_invocationIndex = 0ull;
         VkPipelineStageFlags m_lastCommandStage = 0u;
         bool m_isInActiveRenderPass = false;

@@ -1,13 +1,8 @@
 #pragma once
 #include "Core/Base/Containers/PropertyBlock.h"
-#include "Core/ControlFlow/Disposer.h"
-#include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "Core/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
-#include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
-#include "Core/RHI/Vulkan/Services/VulkanStagingBufferCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
-#include "Core/RHI/Vulkan/Services/VulkanQueueTimer.h"
 
 namespace PK
 {
@@ -19,22 +14,6 @@ namespace PK
         PK_RENDER_STATE_DIRTY_VERTEXBUFFERS = 1 << 3,
         PK_RENDER_STATE_DIRTY_INDEXBUFFER = 1 << 4,
         PK_RENDER_STATE_DIRTY_DESCRIPTORS = 1 << 5
-    };
-
-    struct VulkanServiceContext
-    {
-        PropertyBlock* globalResources = nullptr;
-        VulkanDescriptorCache* descriptorCache = nullptr;
-        VulkanPipelineCache* pipelineCache = nullptr;
-        VulkanStagingBufferCache* stagingBufferCache = nullptr;
-        VulkanBarrierHandler* barrierHandler = nullptr;
-        VulkanQueueTimer* queueTimer = nullptr;
-        VulkanServiceContext& SetGlobalResources(PropertyBlock* value) { globalResources = value; return *this; }
-        VulkanServiceContext& SetDescriptorCache(VulkanDescriptorCache* value) { descriptorCache = value; return *this; }
-        VulkanServiceContext& SetPipelineCache(VulkanPipelineCache* value) { pipelineCache = value; return *this; }
-        VulkanServiceContext& SetStagingBufferCache(VulkanStagingBufferCache* value) { stagingBufferCache = value; return *this; }
-        VulkanServiceContext& SetBarrierHandler(VulkanBarrierHandler* value) { barrierHandler = value; return *this; }
-        VulkanServiceContext& SetQueueTimer(VulkanQueueTimer* value) { queueTimer = value; return *this; }
     };
 
     struct VulkanVertexBufferBundle
@@ -73,12 +52,11 @@ namespace PK
         Attachment depth{};
     };
 
-    struct VulkanRenderState : NoCopy
+    struct VulkanPipelineState
     {
-        VulkanRenderState(const VulkanServiceContext& services) : m_services(services) {}
+        VulkanPipelineState();
 
         constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
-        constexpr VulkanServiceContext* GetServices() { return &m_services; }
         constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
         constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
         constexpr VkShaderStageFlags GetPipelinePushConstantStageFlags() const { return m_pipelineKey.shader->GetPipelineLayout()->pushConstantStageFlags; }
@@ -90,8 +68,6 @@ namespace PK
         VulkanVertexBufferBundle GetVertexBufferBundle() const;
         VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
         const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
-
-        void Reset();
 
         bool SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports);
         bool SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors);
@@ -109,25 +85,30 @@ namespace PK
         void SetShaderBindingTableAddress(RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size);
 
         // AccessRecord Utilities
-        void RecordBuffer(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access);
+        void RecordBuffer(VulkanBarrierHandler* handler, 
+            const VulkanBindHandle* handle, 
+            VkPipelineStageFlags stage, 
+            VkAccessFlags access);
         
-        void RecordImage(const VulkanBindHandle* handle, 
+        void RecordImage(VulkanBarrierHandler* handler, 
+            const VulkanBindHandle* handle,
             VkPipelineStageFlags stage, 
             VkAccessFlags access, 
             VkImageLayout overrideLayout = VK_IMAGE_LAYOUT_MAX_ENUM, 
             uint8_t options = PK_RHI_ACCESS_OPT_BARRIER);
         
-        VkImageLayout RecordRenderTarget(const VulkanBindHandle* handle, 
+        VkImageLayout RecordRenderTarget(VulkanBarrierHandler* handler,
+            const VulkanBindHandle* handle, 
             VkPipelineStageFlags stage, 
             VkAccessFlags access,
             VkImageLayout layout,
             uint8_t options);
 
-        PKRenderStateDirtyFlags ResolvePipelineState(const FenceRef& fence);
+        PKRenderStateDirtyFlags Resolve(
+            const VulkanDriver* driver, 
+            VulkanBarrierHandler* handler, 
+            const FenceRef& fence);
 
-    private:
-        VulkanServiceContext m_services;
-    
         VulkanDescriptorState m_descritorState{};
         VulkanPipelineCache::PipelineKey m_pipelineKey{};
         VulkanRenderTargetBindings m_renderTarget{};

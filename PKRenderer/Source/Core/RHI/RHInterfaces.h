@@ -187,12 +187,15 @@ namespace PK
 
         virtual void BeginDebugScope(const char* name, const color& color) = 0;
         virtual void EndDebugScope() = 0;
+
+        virtual void BeginTimer(NameID name) = 0;
+        virtual void EndTimer() = 0;
     };
 
     struct RHIQueueSet : public NoCopy
     {
         virtual ~RHIQueueSet() = 0;
-        virtual ConstBufferView<RHITimerScope> GetTimers(QueueType type) = 0;
+        virtual ConstBufferView<RHITimerScope> GetTimers(QueueType type) const = 0;
         virtual RHICommandBuffer* GetCommandBuffer(QueueType type) = 0;
         virtual FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) = 0;
         virtual FenceRef GetLastSubmitFenceRef() = 0;

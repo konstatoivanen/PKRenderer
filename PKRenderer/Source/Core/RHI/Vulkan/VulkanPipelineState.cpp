@@ -2,11 +2,33 @@
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanBindSet.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
-#include "VulkanRenderState.h"
+#include "VulkanPipelineState.h"
 
 namespace PK
 {
-    VkRenderingInfo VulkanRenderState::GetRenderPassInfo() const
+    VulkanPipelineState::VulkanPipelineState()
+    {
+        memset(&m_descritorState, 0, sizeof(m_descritorState));
+        memset(&m_pipelineKey, 0, sizeof(m_pipelineKey));
+        memset(&m_renderTarget, 0, sizeof(m_renderTarget));
+        memset(&m_sbtAddresses, 0, sizeof(m_sbtAddresses));
+        memset(m_vertexStreamLayout, 0, sizeof(m_vertexStreamLayout));
+        memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
+        memset(m_viewports, 0, sizeof(m_viewports));
+        memset(m_scissors, 0, sizeof(m_scissors));
+
+        m_renderTarget.layers = 1;
+        m_depthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        m_indexBuffer = nullptr;
+        m_indexType = VK_INDEX_TYPE_UINT16;
+        m_pipelineKey.fixed = VulkanPipelineCache::FixedFunctionState();
+        m_pipeline = nullptr;
+        m_dirtyFlags = PK_RENDER_STATE_DIRTY_RENDERTARGET |
+            PK_RENDER_STATE_DIRTY_PIPELINE |
+            PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
+    }
+
+    VkRenderingInfo VulkanPipelineState::GetRenderPassInfo() const
     {
         static VkRenderingAttachmentInfo s_colors[PK_RHI_MAX_RENDER_TARGETS]{};
         static VkRenderingAttachmentInfo s_depthStencil;
@@ -59,7 +81,7 @@ namespace PK
         return renderPassInfo;
     }
 
-    VulkanVertexBufferBundle VulkanRenderState::GetVertexBufferBundle() const
+    VulkanVertexBufferBundle VulkanPipelineState::GetVertexBufferBundle() const
     {
         VulkanVertexBufferBundle bundle{};
 
@@ -75,7 +97,7 @@ namespace PK
         return bundle;
     }
 
-    VkStridedDeviceAddressRegionKHR* VulkanRenderState::GetShaderBindingTableAddresses()
+    VkStridedDeviceAddressRegionKHR* VulkanPipelineState::GetShaderBindingTableAddresses()
     {
         static VkStridedDeviceAddressRegionKHR addresses[(uint32_t)RayTracingShaderGroup::MaxCount];
 
@@ -93,35 +115,13 @@ namespace PK
         return addresses;
     }
 
-    const VulkanBindHandle* VulkanRenderState::GetIndexBuffer(VkIndexType* outIndexType) const
+    const VulkanBindHandle* VulkanPipelineState::GetIndexBuffer(VkIndexType* outIndexType) const
     {
         *outIndexType = m_indexType;
         return m_indexBuffer;
     }
 
-
-    void VulkanRenderState::Reset()
-    {
-        memset(&m_pipelineKey, 0, sizeof(m_pipelineKey));
-        memset(&m_renderTarget, 0, sizeof(m_renderTarget));
-        memset(&m_descritorState, 0, sizeof(m_descritorState));
-        memset(m_viewports, 0, sizeof(m_viewports));
-        memset(m_scissors, 0, sizeof(m_scissors));
-        memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
-        memset(m_vertexStreamLayout, 0, sizeof(m_vertexStreamLayout));
-
-        m_indexType = VK_INDEX_TYPE_UINT16;
-        m_pipelineKey.fixed = VulkanPipelineCache::FixedFunctionState();
-        m_pipeline = nullptr;
-        m_indexBuffer = nullptr;
-        m_dirtyFlags = PK_RENDER_STATE_DIRTY_RENDERTARGET |
-            PK_RENDER_STATE_DIRTY_PIPELINE |
-            PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
-
-        m_renderTarget.layers = 1;
-    }
-
-    bool VulkanRenderState::SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports)
+    bool VulkanPipelineState::SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports)
     {
         *outViewports = m_viewports;
         bool hasChanged = false;
@@ -141,7 +141,7 @@ namespace PK
         return hasChanged;
     }
 
-    bool VulkanRenderState::SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors)
+    bool VulkanPipelineState::SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors)
     {
         *outScissors = m_scissors;
 
@@ -154,7 +154,7 @@ namespace PK
         return false;
     }
 
-    void VulkanRenderState::SetStageExcludeMask(const ShaderStageFlags mask)
+    void VulkanPipelineState::SetStageExcludeMask(const ShaderStageFlags mask)
     {
         if (m_pipelineKey.fixed.excludeStageMask != (uint16_t)mask)
         {
@@ -163,7 +163,7 @@ namespace PK
         }
     }
    
-    void VulkanRenderState::SetBlending(const BlendParameters& blend)
+    void VulkanPipelineState::SetBlending(const BlendParameters& blend)
     {
         if (memcmp(&m_pipelineKey.fixed.blending, &blend, sizeof(BlendParameters)) != 0)
         {
@@ -172,7 +172,7 @@ namespace PK
         }
     }
     
-    void VulkanRenderState::SetRasterization(const RasterizationParameters& rasterization)
+    void VulkanPipelineState::SetRasterization(const RasterizationParameters& rasterization)
     {
         if (memcmp(&m_pipelineKey.fixed.rasterization, &rasterization, sizeof(RasterizationParameters)) != 0)
         {
@@ -181,7 +181,7 @@ namespace PK
         }
     }
     
-    void VulkanRenderState::SetDepthStencil(const DepthStencilParameters& depthStencil)
+    void VulkanPipelineState::SetDepthStencil(const DepthStencilParameters& depthStencil)
     {
         if (memcmp(&m_pipelineKey.fixed.depthStencil, &depthStencil, sizeof(DepthStencilParameters)) != 0)
         {
@@ -190,7 +190,7 @@ namespace PK
         }
     }
     
-    void VulkanRenderState::SetMultisampling(const MultisamplingParameters& multisampling)
+    void VulkanPipelineState::SetMultisampling(const MultisamplingParameters& multisampling)
     {
         if (memcmp(&m_pipelineKey.fixed.multisampling, &multisampling, sizeof(MultisamplingParameters)) != 0)
         {
@@ -200,7 +200,7 @@ namespace PK
     }
     
     
-    void VulkanRenderState::SetRenderTarget(const VulkanRenderTargetBindings& target)
+    void VulkanPipelineState::SetRenderTarget(const VulkanRenderTargetBindings& target)
     {
         if (memcmp(&m_renderTarget, &target, sizeof(VulkanRenderTargetBindings)) != 0)
         {
@@ -209,7 +209,7 @@ namespace PK
         }
     }
 
-    void VulkanRenderState::SetShader(const VulkanShader* shader)
+    void VulkanPipelineState::SetShader(const VulkanShader* shader)
     {
         if (m_pipelineKey.shader != shader)
         {
@@ -218,7 +218,7 @@ namespace PK
         }
     }
 
-    void VulkanRenderState::SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count)
+    void VulkanPipelineState::SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count)
     {
         auto i = 0u;
 
@@ -241,7 +241,7 @@ namespace PK
         }
     }
 
-    void VulkanRenderState::SetVertexStreams(const VertexStreamElement* elements, uint32_t count)
+    void VulkanPipelineState::SetVertexStreams(const VertexStreamElement* elements, uint32_t count)
     {
         PK_DEBUG_FATAL_ASSERT(count <= PK_RHI_MAX_VERTEX_ATTRIBUTES, "Tried to bind more vertex attributes than currently supported!");
 
@@ -257,7 +257,7 @@ namespace PK
         }
     }
 
-    void VulkanRenderState::SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType)
+    void VulkanPipelineState::SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType)
     {
         if (m_indexBuffer != handle || (handle != nullptr && indexType != m_indexType))
         {
@@ -267,17 +267,16 @@ namespace PK
         }
     }
 
-    void VulkanRenderState::SetShaderBindingTableAddress(RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size)
+    void VulkanPipelineState::SetShaderBindingTableAddress(RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size)
     {
         m_sbtAddresses[(uint32_t)group] = { address, stride, size };
     }
 
 
-    void VulkanRenderState::RecordBuffer(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access)
+    void VulkanPipelineState::RecordBuffer(VulkanBarrierHandler* handler, const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access)
     {
         if (handle->isTracked)
         {
-            auto handler = m_services.barrierHandler;
             VulkanBarrierHandler::AccessRecord record{};
             record.stage = stage;
             record.access = access;
@@ -288,12 +287,10 @@ namespace PK
         }
     }
 
-    void VulkanRenderState::RecordImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access, VkImageLayout overrideLayout, uint8_t options)
+    void VulkanPipelineState::RecordImage(VulkanBarrierHandler* handler, const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access, VkImageLayout overrideLayout, uint8_t options)
     {
         if (handle->isTracked)
         {
-            auto handler = m_services.barrierHandler;
-
             VulkanBarrierHandler::AccessRecord record{};
             record.stage = stage;
             record.access = access;
@@ -311,14 +308,13 @@ namespace PK
         }
     }
 
-    VkImageLayout VulkanRenderState::RecordRenderTarget(const VulkanBindHandle* handle,
+    VkImageLayout VulkanPipelineState::RecordRenderTarget(VulkanBarrierHandler* handler,
+        const VulkanBindHandle* handle,
         VkPipelineStageFlags stage,
         VkAccessFlags access,
         VkImageLayout layout,
         uint8_t options)
     {
-        auto handler = m_services.barrierHandler;
-
         VulkanBarrierHandler::AccessRecord record{};
         record.stage = stage;
         record.access = access;
@@ -338,13 +334,16 @@ namespace PK
     }
 
 
-    PKRenderStateDirtyFlags VulkanRenderState::ResolvePipelineState(const FenceRef& fence)
+    PKRenderStateDirtyFlags VulkanPipelineState::Resolve(
+        const VulkanDriver* driver,
+        VulkanBarrierHandler* handler,
+        const FenceRef& fence)
     {
         PK_DEBUG_FATAL_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
+        const auto resources = &driver->globalResources;
         const auto shader = m_pipelineKey.shader;
         const auto stageFlags = shader->GetStageFlags();
-        const auto resources = m_services.globalResources;
         const auto bindPoint = VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags());
         const auto* descriptorLayout = shader->GetDescriptorSetLayout();
         const auto& resourceLayout = shader->GetResourceLayout();
@@ -439,12 +438,12 @@ namespace PK
             // Record vertex & index buffer access.
             for (auto i = 0u; i < PK_RHI_MAX_VERTEX_ATTRIBUTES && m_vertexBuffers[i]; ++i)
             {
-                RecordBuffer(m_vertexBuffers[i], VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
+                RecordBuffer(handler, m_vertexBuffers[i], VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
             }
 
             if (m_indexBuffer != nullptr)
             {
-                RecordBuffer(m_indexBuffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_INDEX_READ_BIT);
+                RecordBuffer(handler, m_indexBuffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_INDEX_READ_BIT);
             }
         }
 
@@ -480,10 +479,11 @@ namespace PK
                     // Invalidate image
                     if (color.loadOp != LoadOp::Load)
                     {
-                        RecordImage(color.target, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+                        RecordImage(handler, color.target, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
                     }
 
-                    auto previousLayout = RecordRenderTarget(color.target, 
+                    auto previousLayout = RecordRenderTarget(handler, 
+                        color.target,
                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
                         VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 
                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -491,7 +491,7 @@ namespace PK
 
                     if (color.resolve && color.resolve->image.image)
                     {
-                        RecordImage(color.target, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, PK_RHI_ACCESS_OPT_BARRIER);
+                        RecordImage(handler, color.target, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, PK_RHI_ACCESS_OPT_BARRIER);
                     }
                  
                     if (color.loadOp == LoadOp::Load && previousLayout == VK_IMAGE_LAYOUT_UNDEFINED)
@@ -529,10 +529,11 @@ namespace PK
                 // Invalidate image
                 if (depth.loadOp != LoadOp::Load)
                 {
-                    RecordImage(depth.target, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+                    RecordImage(handler, depth.target, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
                 }
 
-                auto previousLayout = RecordRenderTarget(depth.target,
+                auto previousLayout = RecordRenderTarget(handler, 
+                    depth.target,
                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | (!isReadOnly ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0u),
                     m_depthStencilLayout,
@@ -602,17 +603,17 @@ namespace PK
                 {
                     if (binding.type == ShaderResourceType::SamplerTexture || binding.type == ShaderResourceType::Texture || binding.type == ShaderResourceType::Image)
                     {
-                        RecordImage(handles[i], layoutStageFlags, access | VK_ACCESS_SHADER_READ_BIT);
+                        RecordImage(handler, handles[i], layoutStageFlags, access | VK_ACCESS_SHADER_READ_BIT);
                     }
                     
                     if (binding.type == ShaderResourceType::StorageBuffer || binding.type == ShaderResourceType::DynamicStorageBuffer)
                     {
-                        RecordBuffer(handles[i], layoutStageFlags, access | VK_ACCESS_SHADER_READ_BIT);
+                        RecordBuffer(handler, handles[i], layoutStageFlags, access | VK_ACCESS_SHADER_READ_BIT);
                     }
                     
                     if (binding.type == ShaderResourceType::ConstantBuffer || binding.type == ShaderResourceType::DynamicConstantBuffer)
                     {
-                        RecordBuffer(handles[i], layoutStageFlags, access | VK_ACCESS_UNIFORM_READ_BIT);
+                        RecordBuffer(handler, handles[i], layoutStageFlags, access | VK_ACCESS_UNIFORM_READ_BIT);
                     }
                 }
             }
@@ -626,7 +627,7 @@ namespace PK
             if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_DESCRIPTORS)
             {
                 auto name = shader->GetName();
-                m_descritorState.descriptorSet = m_services.descriptorCache->GetDescriptorSet(descriptorLayout, m_descritorState.bindings, m_descritorState.bindingCount, fence, name);
+                m_descritorState.descriptorSet = driver->descriptorCache->GetDescriptorSet(descriptorLayout, m_descritorState.bindings, m_descritorState.bindingCount, fence, name);
             }
 
             // @TODO Technically we should maintain different sets for different bind points but...
@@ -642,12 +643,12 @@ namespace PK
                 m_descritorState.stageFlags = descriptorLayout->stageFlags;
             }
 
-            m_services.descriptorCache->SetDescriptorSetFence(m_descritorState.descriptorSet, fence);
+            driver->descriptorCache->SetDescriptorSetFence(m_descritorState.descriptorSet, fence);
         }
 
         if ((m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE) != 0u)
         {
-            m_pipeline = m_services.pipelineCache->GetPipeline(m_pipelineKey);
+            m_pipeline = driver->pipelineCache->GetPipeline(m_pipelineKey);
         }
 
         auto vertexFlags = m_dirtyFlags & (PK_RENDER_STATE_DIRTY_VERTEXBUFFERS | PK_RENDER_STATE_DIRTY_INDEXBUFFER);

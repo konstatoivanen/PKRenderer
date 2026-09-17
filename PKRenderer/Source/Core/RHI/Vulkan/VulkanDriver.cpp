@@ -167,20 +167,7 @@ namespace PK
             })
         );
 
-        queues.New
-        (
-            device,
-            queueInitializer,
-            VulkanServiceContext
-            {
-                &globalResources,
-                descriptorCache.get(),
-                pipelineCache.get(),
-                stagingBufferCache.get(),
-                nullptr, // Assigned by queues
-                nullptr, // Assigned by queues
-            }
-        );
+        queues.New(this, queueInitializer);
 
         builtInResources.New();
     }

@@ -9,33 +9,32 @@ namespace PK
     {
     }
 
-    VulkanQueueTimer::TimerScope VulkanQueueTimer::Push(uint64_t userHash)
+    bool VulkanQueueTimer::Push(NameID name, uint32_t* outIndex)
     {
         if (m_inTimeline && m_stackHead < MAX_STACK && 
             m_timerHead - m_timerFlushHead < MAX_TIMERS)
         {
             const auto index = static_cast<uint32_t>(m_timerHead % MAX_TIMERS);
-            m_userHashes[index] = userHash;
-            m_stack[m_stackHead++] = &m_userHashes[index];
+            m_scopeNames[index] = name;
+            m_stack[m_stackHead++] = &m_scopeNames[index];
             ++m_timerHead;
 
-            return { &m_pool, index * 2u + 0u };
-            //cmd->QueryTimeStamp(m_pool.get(), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, index * 2u + 0u);
+            *outIndex = index * 2u + 0u;
+            return true;
         }
 
-        return { nullptr, 0u };
+        return false;
     }
 
-    VulkanQueueTimer::TimerScope VulkanQueueTimer::Pop()
+    bool VulkanQueueTimer::Pop(uint32_t* outIndex)
     {
         if (m_inTimeline && m_stackHead)
         {
-            const auto index = static_cast<uint32_t>(m_stack[--m_stackHead] - &m_userHashes[0]);
-            //cmd->QueryTimeStamp(m_pool.get(), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, index * 2u + 1u);
-            return { &m_pool, index * 2u + 1u };
+            *outIndex = static_cast<uint32_t>(m_stack[--m_stackHead] - &m_scopeNames[0]) * 2u + 1u;
+            return true;
         }
 
-        return { nullptr, 0u };
+        return false;
     }
 
     void VulkanQueueTimer::BeginTimeline()
@@ -96,7 +95,7 @@ namespace PK
                     const auto tickBeg = m_results[i * 2u + 0u];
                     const auto tickEnd = m_results[i * 2u + 1u];
                     const auto elapsed = tickEnd >= tickBeg ? tickEnd - tickBeg : 0ull;
-                    m_resolved[index].userHash = m_userHashes[index];
+                    m_resolved[index].name = m_scopeNames[index];
                     m_resolved[index].timerIndex = timeline.first + i;
                     m_resolved[index].elapsedSeconds = static_cast<double>(elapsed) * m_ticksToSeconds;
                 }
@@ -110,7 +109,7 @@ namespace PK
         }
     }
 
-    ConstBufferView<RHITimerScope> VulkanQueueTimer::GetResults()
+    ConstBufferView<RHITimerScope> VulkanQueueTimer::GetResults() const
     {
         return { m_resolved, m_timerFlushHead > MAX_TIMERS ? MAX_TIMERS : m_timerFlushHead };
     }

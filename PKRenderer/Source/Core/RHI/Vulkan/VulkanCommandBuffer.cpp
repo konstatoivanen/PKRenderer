@@ -5,8 +5,9 @@
 #include "Core/RHI/Vulkan/VulkanTexture.h"
 #include "Core/RHI/Vulkan/VulkanAccelerationStructure.h"
 #include "Core/RHI/Vulkan/VulkanBindSet.h"
-#include "Core/RHI/Vulkan/VulkanRenderState.h"
 #include "Core/RHI/Vulkan/VulkanSwapchain.h"
+#include "Core/RHI/Vulkan/VulkanPipelineState.h"
+#include "Core/RHI/Vulkan/Services/VulkanQueueTimer.h"
 #include "VulkanCommandBuffer.h"
 
 namespace PK
@@ -43,13 +44,13 @@ namespace PK
             attachment->resolveMode = resolve ? VK_RESOLVE_MODE_AVERAGE_BIT : VK_RESOLVE_MODE_NONE;
         }
 
-        m_renderState->SetRenderTarget(state);
+        m_state->SetRenderTarget(state);
     }
 
     void VulkanCommandBuffer::SetViewPorts(const uint4* rects, uint32_t count)
     {
         VkViewport* viewports = nullptr;
-        if (m_renderState->SetViewports(rects, count, &viewports))
+        if (m_state->SetViewports(rects, count, &viewports))
         {
             vkCmdSetViewportWithCount(m_commandBuffer, count, viewports);
         }
@@ -58,7 +59,7 @@ namespace PK
     void VulkanCommandBuffer::SetScissors(const uint4* rects, uint32_t count)
     {
         VkRect2D* scissors = nullptr;
-        if (m_renderState->SetScissors(rects, count, &scissors))
+        if (m_state->SetScissors(rects, count, &scissors))
         {
             vkCmdSetScissorWithCount(m_commandBuffer, count, scissors);
         }
@@ -67,7 +68,7 @@ namespace PK
 
     void VulkanCommandBuffer::SetShader(const RHIShader* shader)
     {
-        m_renderState->SetShader(static_cast<const VulkanShader*>(shader));
+        m_state->SetShader(static_cast<const VulkanShader*>(shader));
     }
 
     void VulkanCommandBuffer::SetVertexBuffers(const RHIBuffer** buffers, uint32_t count)
@@ -79,49 +80,49 @@ namespace PK
             pHandles[i] = static_cast<const VulkanBuffer*>(buffers[i])->GetBindHandle();
         }
 
-        m_renderState->SetVertexBuffers(pHandles, count);
+        m_state->SetVertexBuffers(pHandles, count);
     }
 
     void VulkanCommandBuffer::SetVertexStreams(const VertexStreamElement* elements, uint32_t count) 
     { 
-        m_renderState->SetVertexStreams(elements, count); 
+        m_state->SetVertexStreams(elements, count); 
     }
 
     void VulkanCommandBuffer::SetIndexBuffer(const RHIBuffer* buffer, size_t indexSize)
     {
         auto handle = static_cast<const VulkanBuffer*>(buffer)->GetBindHandle();
-        m_renderState->SetIndexBuffer(handle, VulkanEnumConvert::GetIndexType(indexSize));
+        m_state->SetIndexBuffer(handle, VulkanEnumConvert::GetIndexType(indexSize));
     }
 
     void VulkanCommandBuffer::SetShaderBindingTable(RayTracingShaderGroup group, const RHIBuffer* buffer, size_t offset, size_t stride, size_t size)
     {
         auto address = buffer->GetDeviceAddress();
-        m_renderState->SetShaderBindingTableAddress(group, address + offset, stride, size);
+        m_state->SetShaderBindingTableAddress(group, address + offset, stride, size);
     }
 
     void VulkanCommandBuffer::SetStageExcludeMask(const ShaderStageFlags mask)
     {
-        m_renderState->SetStageExcludeMask(mask);
+        m_state->SetStageExcludeMask(mask);
     }
 
     void VulkanCommandBuffer::SetBlending(const BlendParameters& blend)
     {
-        m_renderState->SetBlending(blend);
+        m_state->SetBlending(blend);
     }
 
     void VulkanCommandBuffer::SetRasterization(const RasterizationParameters& rasterization)
     {
-        m_renderState->SetRasterization(rasterization);
+        m_state->SetRasterization(rasterization);
     }
 
     void VulkanCommandBuffer::SetDepthStencil(const DepthStencilParameters& depthStencil)
     {
-        m_renderState->SetDepthStencil(depthStencil);
+        m_state->SetDepthStencil(depthStencil);
     }
 
     void VulkanCommandBuffer::SetMultisampling(const MultisamplingParameters& multisampling)
     {
-        m_renderState->SetMultisampling(multisampling);
+        m_state->SetMultisampling(multisampling);
     }
 
 
@@ -142,7 +143,7 @@ namespace PK
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
         MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
@@ -166,7 +167,7 @@ namespace PK
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
         MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
@@ -190,7 +191,7 @@ namespace PK
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
         MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
@@ -212,7 +213,7 @@ namespace PK
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(vkbufferIndirect, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(vkbufferIndirect, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         auto vkbufferCount = countBuffer->GetNativeHandle<VkBuffer>();
         record.bufferRange.offset = (uint32_t)countOffset;
@@ -220,7 +221,7 @@ namespace PK
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(vkbufferCount, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(vkbufferCount, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
         MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
@@ -233,7 +234,7 @@ namespace PK
         EndRenderPass();
         ValidatePipeline();
 
-        const auto groupSize = m_renderState->GetComputeGroupSize();
+        const auto groupSize = m_state->GetComputeGroupSize();
         const auto groupCountX = (dimensions.x + groupSize.x - 1u) / groupSize.x;
         const auto groupCountY = (dimensions.y + groupSize.y - 1u) / groupSize.y;
         const auto groupCountZ = (dimensions.z + groupSize.z - 1u) / groupSize.z;
@@ -245,7 +246,7 @@ namespace PK
         MarkLastCommandStage(VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
         EndRenderPass();
         ValidatePipeline();
-        auto addresses = m_renderState->GetShaderBindingTableAddresses();
+        auto addresses = m_state->GetShaderBindingTableAddresses();
         vkCmdTraceRaysKHR(m_commandBuffer,
             addresses + (uint32_t)RayTracingShaderGroup::RayGeneration,
             addresses + (uint32_t)RayTracingShaderGroup::Miss,
@@ -298,7 +299,7 @@ namespace PK
         region.imageOffset = { 0,0,0 };
         region.imageExtent = vksrc->image.extent;
 
-        m_renderState->RecordImage(vksrc, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        m_state->RecordImage(m_barrierHandler, vksrc, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
         EndRenderPass();
         ResolveBarriers();
@@ -329,9 +330,9 @@ namespace PK
 
     void VulkanCommandBuffer::Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter)
     {
-        m_renderState->RecordImage(src, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        m_renderState->RecordImage(dst, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
-        m_renderState->RecordImage(dst, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        m_state->RecordImage(m_barrierHandler, src, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        m_state->RecordImage(m_barrierHandler, dst, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+        m_state->RecordImage(m_barrierHandler, dst, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         EndRenderPass();
         ResolveBarriers();
@@ -389,7 +390,7 @@ namespace PK
         VkClearColorValue clearColorValue{};
         memcpy(clearColorValue.uint32, &value.uint32.x, sizeof(clearColorValue.uint32));
 
-        m_renderState->RecordImage(handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
+        m_state->RecordImage(m_barrierHandler, handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
 
@@ -426,7 +427,7 @@ namespace PK
         record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
         record.queueFamily = dst->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(vkdstBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(vkdstBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
     }
 
     void* VulkanCommandBuffer::BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size)
@@ -489,14 +490,14 @@ namespace PK
 
     void VulkanCommandBuffer::CopyToTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount)
     {
-        auto stage = m_renderState->GetServices()->stagingBufferCache->Acquire(size, false, nullptr);
+        auto stage = m_driver->stagingBufferCache->Acquire(size, false, nullptr);
 
         auto pMapped = stage->BeginMap(0ull, 0ull);
         memcpy(pMapped, data, size);
         stage->EndMap(0ull, size);
         
         CopyToTexture(texture, stage, regions, regionCount);
-        m_renderState->GetServices()->stagingBufferCache->Release(stage, GetFenceRef());
+        m_driver->stagingBufferCache->Release(stage, GetFenceRef());
     }
 
 
@@ -531,6 +532,26 @@ namespace PK
         }
     }
 
+    void VulkanCommandBuffer::BeginTimer(NameID name) 
+    {
+        auto queryIndex = 0u;
+        
+        if (m_timer->Push(name, &queryIndex))
+        {
+            vkCmdWriteTimestamp2(m_commandBuffer, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, m_timer->GetQueryPool(), queryIndex);
+        }
+    }
+
+    void VulkanCommandBuffer::EndTimer()
+    {
+        auto queryIndex = 0u;
+        
+        if (m_timer->Pop(&queryIndex))
+        {
+            vkCmdWriteTimestamp2(m_commandBuffer, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, m_timer->GetQueryPool(), queryIndex);
+        }
+    }
+
 
     void VulkanCommandBuffer::BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
     {
@@ -549,12 +570,6 @@ namespace PK
         PK_DEBUG_FATAL_ASSERT(pool->type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "Invalid query pool type");
         pool->SetFence(GetFenceRef());
         vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, (uint32_t)query);
-    }
-
-    void VulkanCommandBuffer::QueryTimeStamp(VulkanQueryPool* pool, VkPipelineStageFlags2 stage, uint32_t query)
-    {
-        PK_DEBUG_FATAL_ASSERT(pool->type == VK_QUERY_TYPE_TIMESTAMP, "Invalid query pool type");
-        vkCmdWriteTimestamp2(m_commandBuffer, stage, pool->pool, query);
     }
 
     void VulkanCommandBuffer::TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range)
@@ -650,7 +665,7 @@ namespace PK
         if (forceTransition)
         {
             const auto& bindHandle = vkdst->GetBindHandle();
-            m_renderState->RecordImage(bindHandle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_NONE);
+            m_state->RecordImage(m_barrierHandler, bindHandle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_NONE);
             ResolveBarriers();
         }
     }
@@ -659,7 +674,7 @@ namespace PK
     {
         VulkanBarrierInfo barrierInfo{};
 
-        if (m_renderState->GetServices()->barrierHandler->Resolve(&barrierInfo))
+        if (m_barrierHandler->Resolve(&barrierInfo))
         {
             PipelineBarrier(barrierInfo);
             return true;
@@ -670,7 +685,7 @@ namespace PK
 
     void VulkanCommandBuffer::ValidatePipeline()
     {
-        auto flags = m_renderState->ResolvePipelineState(GetFenceRef());
+        auto flags = m_state->Resolve(m_driver, m_barrierHandler, GetFenceRef());
 
         if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {
@@ -686,19 +701,19 @@ namespace PK
 
         if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {
-            auto info = m_renderState->GetRenderPassInfo();
+            auto info = m_state->GetRenderPassInfo();
             vkCmdBeginRendering(m_commandBuffer, &info);
             m_isInActiveRenderPass = true;
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_PIPELINE) != 0)
         {
-            vkCmdBindPipeline(m_commandBuffer, m_renderState->GetPipelineBindPoint(), m_renderState->GetPipeline());
+            vkCmdBindPipeline(m_commandBuffer, m_state->GetPipelineBindPoint(), m_state->GetPipeline());
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS) != 0)
         {
-            auto vertexBufferBundle = m_renderState->GetVertexBufferBundle();
+            auto vertexBufferBundle = m_state->GetVertexBufferBundle();
 
             if (vertexBufferBundle.count > 0)
             {
@@ -709,24 +724,24 @@ namespace PK
         if ((flags & PK_RENDER_STATE_DIRTY_INDEXBUFFER) != 0)
         {
             VkIndexType indexType;
-            auto indexBufferHandle = m_renderState->GetIndexBuffer(&indexType);
+            auto indexBufferHandle = m_state->GetIndexBuffer(&indexType);
             vkCmdBindIndexBuffer(m_commandBuffer, indexBufferHandle->buffer.buffer, indexBufferHandle->buffer.offset, indexType);
         }
 
-        if (m_renderState->HasPipeline() && (flags & PK_RENDER_STATE_DIRTY_DESCRIPTORS) != 0)
+        if (m_state->HasPipeline() && (flags & PK_RENDER_STATE_DIRTY_DESCRIPTORS) != 0)
         {
-            const auto descriptorSet = m_renderState->GetDescriptorSet();
-            const auto layout = m_renderState->GetPipelineLayout();
-            const auto bindPoint = m_renderState->GetPipelineBindPoint();
+            const auto descriptorSet = m_state->GetDescriptorSet();
+            const auto layout = m_state->GetPipelineLayout();
+            const auto bindPoint = m_state->GetPipelineBindPoint();
             vkCmdBindDescriptorSets(m_commandBuffer, bindPoint, layout, 0u, 1u, &descriptorSet, 0, nullptr);
         }
 
-        if (m_renderState->HasPipeline())
+        if (m_state->HasPipeline())
         {
-            const auto resources = m_renderState->GetServices()->globalResources;
-            const auto& constantLayout = m_renderState->GetPipelinePushConstantLayout();
-            const auto layout = m_renderState->GetPipelineLayout();
-            const auto stageFlags = m_renderState->GetPipelinePushConstantStageFlags();
+            const auto resources = &m_driver->globalResources;
+            const auto& constantLayout = m_state->GetPipelinePushConstantLayout();
+            const auto layout = m_state->GetPipelineLayout();
+            const auto stageFlags = m_state->GetPipelinePushConstantStageFlags();
             const char* data = nullptr;
             size_t dataSize = 0u;
 
@@ -749,14 +764,26 @@ namespace PK
         }
     }
 
-    void VulkanCommandBuffer::BeginRecord(VkCommandBuffer commandBuffer, VkFence fence, uint16_t queueFamily, VulkanRenderState* renderState)
+    void VulkanCommandBuffer::BeginRecord(
+        const VulkanDriver* driver,
+        VulkanBarrierHandler* barrierHandler,
+        VulkanQueueTimer* timer,
+        VulkanPipelineState* state,
+        VkCommandBuffer commandBuffer,
+        VkFence fence,
+        uint16_t queueFamily)
     {
+        m_driver = driver;
+        m_barrierHandler = barrierHandler;
+        m_timer = timer;
+        m_state = state;
+        *m_state = VulkanPipelineState();
+
         m_commandBuffer = commandBuffer;
         m_fence = fence;
         m_queueFamily = queueFamily;
-        m_renderState = renderState;
-        m_renderState->Reset();
-        m_renderState->GetServices()->queueTimer->BeginTimeline();
+        
+        m_timer->BeginTimeline();
 
         VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -767,14 +794,19 @@ namespace PK
     {
         // End possibly active render pass
         EndRenderPass();
-        m_renderState->GetServices()->barrierHandler->ClearBarriers();
-        m_timerTimelineIndex = m_renderState->GetServices()->queueTimer->EndTimeline();
+        m_barrierHandler->ClearBarriers();
+        m_timerIndex = m_timer->EndTimeline();
+        m_driver = nullptr;
+        m_barrierHandler = nullptr;
+        m_state = nullptr;
+
         VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
-        m_renderState = nullptr;
     }
 
     void VulkanCommandBuffer::Finalize()
     {
+        m_timer->FlushTimeline(m_timerIndex);
+        m_timer = nullptr;
         m_imageSignal = VK_NULL_HANDLE;
         m_commandBuffer = VK_NULL_HANDLE; 
         m_fence = VK_NULL_HANDLE;

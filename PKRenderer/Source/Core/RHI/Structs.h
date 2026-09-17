@@ -469,8 +469,8 @@ namespace PK
 
     struct RHITimerScope
     {
-        uint64_t userHash;
-        uint64_t timerIndex;
+        NameID name;
+        uint32_t timerIndex;
         double elapsedSeconds;
     };
 

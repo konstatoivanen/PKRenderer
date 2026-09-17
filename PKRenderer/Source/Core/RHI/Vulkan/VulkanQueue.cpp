@@ -3,6 +3,7 @@
 #include "Core/Base/Memory.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
+#include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanQueue.h"
 
 namespace PK
@@ -158,23 +159,22 @@ namespace PK
     }
 
 
-    VulkanQueue::VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, VulkanServiceContext& services, uint32_t queueIndex, const char* name) :
-        m_device(device),
+    VulkanQueue::VulkanQueue(const VulkanDriver* driver, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, const char* name) :
+        m_driver(driver),
         m_family(queueFamily),
         m_queueIndex(queueIndex),
         m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags)),
         m_barrierHandler(queueFamily),
-        m_timer(device, 1.0f),
-        m_renderState(services.SetBarrierHandler(&m_barrierHandler).SetQueueTimer(&m_timer))
+        m_timer(driver->device, driver->physicalDeviceProperties.core.limits.timestampPeriod)
     {
-        vkGetDeviceQueue(m_device, m_family, m_queueIndex, &m_queue);
-        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_QUEUE, (uint64_t)m_queue, FixedString32("PK_Queue_%s", name).c_str());
+        vkGetDeviceQueue(m_driver->device, m_family, m_queueIndex, &m_queue);
+        VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_QUEUE, (uint64_t)m_queue, FixedString32("PK_Queue_%s", name).c_str());
 
         VkCommandPoolCreateInfo commandPoolCreateInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
         commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
         commandPoolCreateInfo.queueFamilyIndex = queueFamily;
-        VK_ASSERT_RESULT(vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &m_commandPool));
-        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_commandPool, FixedString32("PK_Cmd_Pool_%s", name).c_str());
+        VK_ASSERT_RESULT(vkCreateCommandPool(m_driver->device, &commandPoolCreateInfo, nullptr, &m_commandPool));
+        VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_commandPool, FixedString32("PK_Cmd_Pool_%s", name).c_str());
 
         VkSemaphoreTypeCreateInfo timelineCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
         timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
@@ -182,39 +182,39 @@ namespace PK
 
         VkSemaphoreCreateInfo semaphoreCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,};
         semaphoreCreateInfo.pNext = &timelineCreateInfo;
-        vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_timeline.semaphore);
-        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_timeline.semaphore, FixedString32("PK_Timeline_Semaphore_%s", name).c_str());
+        vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_timeline.semaphore);
+        VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_timeline.semaphore, FixedString32("PK_Timeline_Semaphore_%s", name).c_str());
 
         semaphoreCreateInfo.pNext = nullptr;
 
         for (auto& semaphore : m_semaphores)
         {
-            vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &semaphore);
-            VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore, FixedString32("PK_Semaphore_%s", name).c_str());
+            vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &semaphore);
+            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore, FixedString32("PK_Semaphore_%s", name).c_str());
         }
 
         for (auto& fence : m_commandFences)
         {
             VkFenceCreateInfo fenceCreateInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-            VK_ASSERT_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &fence));
-            VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_FENCE, (uint64_t)fence, FixedString32("PK_Cmd_Fence_%s", name).c_str());
+            VK_ASSERT_RESULT(vkCreateFence(m_driver->device, &fenceCreateInfo, nullptr, &fence));
+            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_FENCE, (uint64_t)fence, FixedString32("PK_Cmd_Fence_%s", name).c_str());
         }
     }
 
     VulkanQueue::~VulkanQueue()
     {
         WaitCommandBuffers(true);
-        vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-        vkDestroySemaphore(m_device, m_timeline.semaphore, nullptr);
+        vkDestroyCommandPool(m_driver->device, m_commandPool, nullptr);
+        vkDestroySemaphore(m_driver->device, m_timeline.semaphore, nullptr);
 
         for (auto& fence : m_commandFences)
         {
-            vkDestroyFence(m_device, fence, nullptr);
+            vkDestroyFence(m_driver->device, fence, nullptr);
         }
 
         for (auto& semaphore : m_semaphores)
         {
-            vkDestroySemaphore(m_device, semaphore, nullptr);
+            vkDestroySemaphore(m_driver->device, semaphore, nullptr);
         }
     }
 
@@ -230,7 +230,7 @@ namespace PK
                 waitInfo.semaphoreCount = 1u;
                 waitInfo.pSemaphores = &queue->m_timeline.semaphore;
                 waitInfo.pValues = &userdata;
-                auto result = vkWaitSemaphores(queue->m_device, &waitInfo, timeout);
+                auto result = vkWaitSemaphores(queue->m_driver->device, &waitInfo, timeout);
 
                 if (result != VK_SUCCESS && result != VK_TIMEOUT)
                 {
@@ -265,7 +265,7 @@ namespace PK
         if (allocateInfo.commandBufferCount > 0)
         {
             VkCommandBuffer buffers[PK_VK_MAX_COMMAND_BUFFERS];
-            VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, buffers));
+            VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_driver->device, &allocateInfo, buffers));
 
             for (uint32_t i = 0u, j = 0u; i < PK_VK_MAX_COMMAND_BUFFERS; ++i)
             {
@@ -290,7 +290,15 @@ namespace PK
         auto currentIndex = (int64_t)(m_currentCommandBuffer - m_commandWrappers);
         auto commandBuffer = m_commandBuffers[currentIndex];
         auto fence = m_commandFences[currentIndex];
-        m_currentCommandBuffer->BeginRecord(commandBuffer, fence, (uint16_t)m_family, &m_renderState);
+        
+        m_currentCommandBuffer->BeginRecord(m_driver, 
+            &m_barrierHandler, 
+            &m_timer, 
+            &m_pipelineState, 
+            commandBuffer, 
+            fence, 
+            (uint16_t)m_family);
+
         return m_currentCommandBuffer;
     }
 
@@ -491,17 +499,16 @@ namespace PK
 
         if (count > 0)
         {
-            VK_ASSERT_RESULT(vkWaitForFences(m_device, count, fences, (VkBool32)waitAll, UINT64_MAX));
+            VK_ASSERT_RESULT(vkWaitForFences(m_driver->device, count, fences, (VkBool32)waitAll, UINT64_MAX));
         }
 
         for (auto& wrapper : m_commandWrappers)
         {
-            if (wrapper.IsActive() && vkGetFenceStatus(m_device, wrapper.GetFence()) == VK_SUCCESS)
+            if (wrapper.IsActive() && vkGetFenceStatus(m_driver->device, wrapper.GetFence()) == VK_SUCCESS)
             {
                 m_commandBuffers[(int64_t)(&wrapper - &m_commandWrappers[0])] = VK_NULL_HANDLE;
-                vkFreeCommandBuffers(m_device, m_commandPool, 1, &wrapper.GetCommandBuffer());
-                VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.GetFence()));
-                m_timer.FlushTimeline(wrapper.GetTimerTimelineIndex());
+                vkFreeCommandBuffers(m_driver->device, m_commandPool, 1, &wrapper.GetCommandBuffer());
+                VK_ASSERT_RESULT(vkResetFences(m_driver->device, 1, &wrapper.GetFence()));
                 wrapper.Finalize();
             }
         }
@@ -514,21 +521,19 @@ namespace PK
     }
 
 
-    VulkanQueueSet::VulkanQueueSet(VkDevice device, const VulkanQueueSetInitializer& initializer, const VulkanServiceContext& services)
+    VulkanQueueSet::VulkanQueueSet(const VulkanDriver* driver, const VulkanQueueSetInitializer& initializer)
     {
-        auto servicesCopy = services;
-
         m_selectedFamilies.count = initializer.queueCount;
         memcpy(m_selectedFamilies.indices, initializer.queueFamilies, sizeof(initializer.queueFamilies));
         memcpy(m_queueIndices, initializer.typeIndices, sizeof(m_queueIndices));
 
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
-            m_queues[i] = CreateUnique<VulkanQueue>(device, initializer.familyProperties[i].queueFlags, initializer.queueFamilies[i], servicesCopy, 0, initializer.names[i]);
+            m_queues[i] = CreateUnique<VulkanQueue>(driver, initializer.familyProperties[i].queueFlags, initializer.queueFamilies[i], 0, initializer.names[i]);
         }
     }
 
-    ConstBufferView<RHITimerScope> VulkanQueueSet::GetTimers(QueueType type) { return GetQueue(type)->GetTimerrs(); }
+    ConstBufferView<RHITimerScope> VulkanQueueSet::GetTimers(QueueType type) const { return GetQueue(type)->GetTimers(); }
     RHICommandBuffer* VulkanQueueSet::GetCommandBuffer(QueueType type) { return GetQueue(type)->GetCommandBuffer(); }
     FenceRef VulkanQueueSet::GetFenceRef(QueueType type, int32_t submitOffset) { return GetQueue(type)->GetFenceRef(submitOffset); }
     FenceRef VulkanQueueSet::GetLastSubmitFenceRef() { return m_lastSubmitFence; }

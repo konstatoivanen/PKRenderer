@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Base/Types/NameID.h"
 #include "Core/Base/Containers/FixedArena.h"
 #include "Core/Base/Containers/BufferView.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
@@ -27,22 +28,23 @@ namespace PK
 
         VulkanQueueTimer(VkDevice device, float nanosecondsPerTick);
 
-        TimerScope Push(uint64_t userHash);
-        TimerScope Pop();
+        bool Push(NameID name, uint32_t* outIndex);
+        bool Pop(uint32_t* outIndex);
         void BeginTimeline();
         uint64_t EndTimeline();
         void FlushTimeline(uint64_t timelineIndex);
-        ConstBufferView<RHITimerScope> GetResults();
+        ConstBufferView<RHITimerScope> GetResults() const;
+        VkQueryPool GetQueryPool() const { return m_pool.pool; }
 
     private:
         const double m_ticksToSeconds;
         VulkanQueryPool m_pool;
 
         TimelineScope m_timelines[MAX_TIMELINES];
-        uint64_t m_userHashes[MAX_TIMERS];
+        NameID m_scopeNames[MAX_TIMERS];
         RHITimerScope m_resolved[MAX_TIMERS];
         VkDeviceSize m_results[MAX_QUERIES];
-        uint64_t* m_stack[MAX_STACK];
+        NameID* m_stack[MAX_STACK];
         
         uint64_t m_timelineHead = 0ull;
         uint64_t m_timerHead = 0ull;
