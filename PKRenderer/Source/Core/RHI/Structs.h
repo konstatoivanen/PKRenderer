@@ -46,7 +46,7 @@ namespace PK
         Graphics,
         Compute,
         Present,
-        MaxCount
+        EnumCount
     };
 
     enum class TextureBindMode : uint8_t
@@ -221,10 +221,10 @@ namespace PK
         Miss,
         Hit,
         Callable, //@TODO Add callable support
-        MaxCount
+        EnumCount
     };
 
-    constexpr const static ShaderStageFlags PK_RHI_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)RayTracingShaderGroup::MaxCount + 1u] =
+    constexpr const static ShaderStageFlags PK_RHI_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)RayTracingShaderGroup::EnumCount + 1u] =
     {
         ShaderStageFlags::RayTraceGroupGeneration,
         ShaderStageFlags::RayTraceGroupMiss,
@@ -233,16 +233,16 @@ namespace PK
         ShaderStageFlags::None
     };
 
-    constexpr const static RayTracingShaderGroup PK_RHI_SHADER_STAGE_RAYTRACING_GROUP[(uint32_t)ShaderStage::MaxCount] =
+    constexpr const static RayTracingShaderGroup PK_RHI_SHADER_STAGE_RAYTRACING_GROUP[(uint32_t)ShaderStage::EnumCount] =
     {
-        RayTracingShaderGroup::MaxCount,        //Vertex,
-        RayTracingShaderGroup::MaxCount,        //TesselationControl,
-        RayTracingShaderGroup::MaxCount,        //TesselationEvaluation,
-        RayTracingShaderGroup::MaxCount,        //Geometry,
-        RayTracingShaderGroup::MaxCount,        //MeshTask
-        RayTracingShaderGroup::MaxCount,        //MeshAssembly,
-        RayTracingShaderGroup::MaxCount,        //Fragment,
-        RayTracingShaderGroup::MaxCount,        //Compute,
+        RayTracingShaderGroup::EnumCount,        //Vertex,
+        RayTracingShaderGroup::EnumCount,        //TesselationControl,
+        RayTracingShaderGroup::EnumCount,        //TesselationEvaluation,
+        RayTracingShaderGroup::EnumCount,        //Geometry,
+        RayTracingShaderGroup::EnumCount,        //MeshTask
+        RayTracingShaderGroup::EnumCount,        //MeshAssembly,
+        RayTracingShaderGroup::EnumCount,        //Fragment,
+        RayTracingShaderGroup::EnumCount,        //Compute,
         RayTracingShaderGroup::RayGeneration,   //RayGeneration,
         RayTracingShaderGroup::Miss,            //RayMiss,
         RayTracingShaderGroup::Hit,             //RayClosestHit,

@@ -139,7 +139,7 @@ namespace PK
         RightAlt,
         RightSuper,
         Menu,
-        Count
+        EnumCount
     };
 
     enum class InputType : uint8_t
@@ -149,7 +149,7 @@ namespace PK
         DS5
     };
 
-    typedef FixedMask<(uint32_t)InputKey::Count> InputKeyState;
+    typedef FixedMask<(uint32_t)InputKey::EnumCount> InputKeyState;
 
     struct InputShortcut
     {

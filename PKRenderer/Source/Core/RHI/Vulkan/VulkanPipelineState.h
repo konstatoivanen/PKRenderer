@@ -113,7 +113,7 @@ namespace PK
         VulkanPipelineCache::PipelineKey m_pipelineKey{};
         VulkanRenderTargetBindings m_renderTarget{};
         VkImageLayout m_depthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)RayTracingShaderGroup::MaxCount]{};
+        VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)RayTracingShaderGroup::EnumCount]{};
     
         VertexStreamElement m_vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
         const VulkanBindHandle* m_vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};

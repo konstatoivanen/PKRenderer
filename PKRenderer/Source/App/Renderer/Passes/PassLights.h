@@ -36,13 +36,13 @@ namespace PK::App
                 uint32_t baseLightIndex = 0u;
                 uint32_t count = 0u;
                 uint32_t batchGroup = 0u;
-                LightType type = LightType::TypeCount;
+                LightType type = LightType::EnumCount;
             };
 
             struct LightSortKey
             {
                 uint32_t entityId = 0u;
-                LightType type = LightType::TypeCount;
+                LightType type = LightType::EnumCount;
                 ScenePrimitiveFlags flags = ScenePrimitiveFlags::None;
             };
 

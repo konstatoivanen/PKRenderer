@@ -95,9 +95,9 @@ namespace PK
         if (value->pipeline == nullptr)
         {
             auto stageCount = 0u;
-            VkPipelineShaderStageCreateInfo shaderStages[(uint32_t)ShaderStage::MaxCount];
+            VkPipelineShaderStageCreateInfo shaderStages[(uint32_t)ShaderStage::EnumCount];
 
-            for (auto i = 0u; i < (uint32_t)ShaderStage::MaxCount; ++i)
+            for (auto i = 0u; i < (uint32_t)ShaderStage::EnumCount; ++i)
             {
                 const auto module = key.shader->GetModule(i);
                 const auto stageFlag = (ShaderStageFlags)(1u << i);
@@ -270,10 +270,10 @@ namespace PK
         {
             auto stageCount = 0u;
             auto stageMask = ShaderStageFlags::StagesRayTrace;
-            VkPipelineShaderStageCreateInfo shaderStages[(int)ShaderStage::MaxCount]{};
-            VkRayTracingShaderGroupCreateInfoKHR shaderGroups[(int)ShaderStage::MaxCount]{};
+            VkPipelineShaderStageCreateInfo shaderStages[(uint32_t)ShaderStage::EnumCount]{};
+            VkRayTracingShaderGroupCreateInfoKHR shaderGroups[(uint32_t)ShaderStage::EnumCount]{};
 
-            for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
+            for (auto i = 0u; i < (uint32_t)ShaderStage::EnumCount; ++i)
             {
                 auto stageFlag = (ShaderStageFlags)(1u << i);
 

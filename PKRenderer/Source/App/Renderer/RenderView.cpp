@@ -26,7 +26,7 @@ namespace PK::App
 
         swapMask = 0u;
 
-        for (auto i = 0; i < Count; ++i)
+        for (auto i = 0; i < GBuffers::EnumCount; ++i)
         {
             swapMask |= (descriptor[i].isSwappable) << i;
             textureDescriptor.format = descriptor[i].format;
@@ -60,7 +60,7 @@ namespace PK::App
         auto buffsCur = &current.color;
         auto buffsPre = &previous.color;
 
-        for (auto i = 0u; i < GBuffers::Count; ++i)
+        for (auto i = 0u; i < GBuffers::EnumCount; ++i)
         {
             if (mask & (1 << i))
             {

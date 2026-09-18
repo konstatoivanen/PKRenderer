@@ -241,7 +241,7 @@ namespace PK
         character = 0;
         cursorPositionDelta = PK_FLOAT2_ZERO;
 
-        for (auto i = 0u; i < (uint32_t)InputKey::Count; ++i)
+        for (auto i = 0u; i < (uint32_t)InputKey::EnumCount; ++i)
         {
             keyTimers[i] += deltaMillis;
             keysRepeat[i] = keysPrevious[i] && keyTimers[i] > REPEAT_DELAY && keysRepeat[i] ^ true;

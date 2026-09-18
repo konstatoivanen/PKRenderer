@@ -28,7 +28,7 @@ namespace PK::App
         uint32_t LayerStride = 0u;
     };
 
-    static ShadowTypeInfo SHADOW_TYPE_INFOS[(uint32_t)LightType::TypeCount] =
+    static ShadowTypeInfo SHADOW_TYPE_INFOS[(uint32_t)LightType::EnumCount] =
     {
         { PassLights::ShadowCascadeCount, PassLights::ShadowCascadeCount, 1u, PassLights::ShadowCascadeCount }, // Directional light
         { 1u, 1u, 4u, 1u }, // Spot light
@@ -353,7 +353,7 @@ namespace PK::App
 
         auto atlasIndex = 0u;
 
-        uint32_t passKeywords[(uint32_t)LightType::TypeCount]
+        uint32_t passKeywords[(uint32_t)LightType::EnumCount]
         {
             hash->PK_LIGHT_PASS_DIRECTIONAL,
             hash->PK_LIGHT_PASS_SPOT,

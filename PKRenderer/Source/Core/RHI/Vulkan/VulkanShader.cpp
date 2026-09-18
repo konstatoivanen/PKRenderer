@@ -14,7 +14,7 @@ namespace PK
         m_groupSize = { variant->groupSize[0], variant->groupSize[1], variant->groupSize[2] };
         m_stageFlags = (ShaderStageFlags)0u;
 
-        for (auto i = 0u; i < (uint32_t)ShaderStage::MaxCount; ++i)
+        for (auto i = 0u; i < (uint32_t)ShaderStage::EnumCount; ++i)
         {
             m_modules[i] = VK_NULL_HANDLE;
 
@@ -129,9 +129,9 @@ namespace PK
         info.tableAlignment = (uint16_t)tableAlignment;
         info.totalTableSize = 0u;
 
-        RayTracingShaderGroup currentGroup = RayTracingShaderGroup::MaxCount;
+        RayTracingShaderGroup currentGroup = RayTracingShaderGroup::EnumCount;
 
-        for (auto i = (uint32_t)ShaderStage::RayGeneration; i < (uint32_t)ShaderStage::MaxCount; ++i)
+        for (auto i = (uint32_t)ShaderStage::RayGeneration; i < (uint32_t)ShaderStage::EnumCount; ++i)
         {
             if (m_modules[i] != VK_NULL_HANDLE)
             {
@@ -159,7 +159,7 @@ namespace PK
 
         auto pipeline = m_driver->pipelineCache->GetRayTracingPipeline(this);
 
-        for (auto i = 0u; i < (uint32_t)RayTracingShaderGroup::MaxCount; ++i)
+        for (auto i = 0u; i < (uint32_t)RayTracingShaderGroup::EnumCount; ++i)
         {
             if (info.counts[i] > 0)
             {

@@ -41,10 +41,10 @@ namespace PK::App
             ForwardOpaque,
             ForwardTransparent,
             AfterPostEffects,
-            Count
+            EnumCount
         } Type;
 
-        constexpr static const char* TypeNames[Count] =
+        constexpr static const char* TypeNames[EnumCount] =
         {
             "CollectDraws",
             "Depth",

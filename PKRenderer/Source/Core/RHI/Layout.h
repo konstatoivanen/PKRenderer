@@ -150,11 +150,11 @@ namespace PK
         constexpr static const uint32_t MaxHandles = 8u;
 
         uint8_t handleData[HandleMaxSize * MaxHandles];
-        uint16_t byteOffsets[(uint32_t)RayTracingShaderGroup::MaxCount];
-        uint16_t byteStrides[(uint32_t)RayTracingShaderGroup::MaxCount];
-        uint8_t offsets[(uint32_t)RayTracingShaderGroup::MaxCount];
-        uint8_t counts[(uint32_t)RayTracingShaderGroup::MaxCount];
-        const ShaderResourceLayout* layouts[(uint32_t)RayTracingShaderGroup::MaxCount];
+        uint16_t byteOffsets[(uint32_t)RayTracingShaderGroup::EnumCount];
+        uint16_t byteStrides[(uint32_t)RayTracingShaderGroup::EnumCount];
+        uint8_t offsets[(uint32_t)RayTracingShaderGroup::EnumCount];
+        uint8_t counts[(uint32_t)RayTracingShaderGroup::EnumCount];
+        const ShaderResourceLayout* layouts[(uint32_t)RayTracingShaderGroup::EnumCount];
         uint16_t handleSize;
         uint16_t handleSizeAligned;
         uint16_t tableAlignment;

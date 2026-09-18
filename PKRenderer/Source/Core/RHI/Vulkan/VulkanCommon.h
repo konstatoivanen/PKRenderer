@@ -163,7 +163,7 @@ namespace PK
 {
     struct VulkanQueueFamilies
     {
-        uint32_t indices[(uint32_t)QueueType::MaxCount]{};
+        uint32_t indices[(uint32_t)QueueType::EnumCount]{};
         uint32_t count;
     };
 

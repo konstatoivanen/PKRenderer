@@ -22,7 +22,7 @@ namespace PK::App
         Directional = 0,
         Spot = 1,
         Point = 2,
-        TypeCount
+        EnumCount
     };
 
     inline constexpr ScenePrimitiveFlags operator|(ScenePrimitiveFlags a, ScenePrimitiveFlags b) noexcept { return (ScenePrimitiveFlags)((uint32_t)a | (uint32_t)b); }

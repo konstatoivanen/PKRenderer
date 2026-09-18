@@ -872,7 +872,7 @@ namespace PK
             
             if (!value)
             {
-                for (auto i = 0u; i < (uint32_t)InputKey::Count; ++i)
+                for (auto i = 0u; i < (uint32_t)InputKey::EnumCount; ++i)
                 {
                     if (m_keyState[i])
                     {

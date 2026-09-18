@@ -99,11 +99,11 @@ namespace PK
 
     VkStridedDeviceAddressRegionKHR* VulkanPipelineState::GetShaderBindingTableAddresses()
     {
-        static VkStridedDeviceAddressRegionKHR addresses[(uint32_t)RayTracingShaderGroup::MaxCount];
+        static VkStridedDeviceAddressRegionKHR addresses[(uint32_t)RayTracingShaderGroup::EnumCount];
 
         if (m_pipelineKey.shader != nullptr)
         {
-            for (auto i = 0u; i < (uint32_t)RayTracingShaderGroup::MaxCount; ++i)
+            for (auto i = 0u; i < (uint32_t)RayTracingShaderGroup::EnumCount; ++i)
             {
                 if (m_pipelineKey.shader->HasRayTracingShaderGroup((RayTracingShaderGroup)i))
                 {

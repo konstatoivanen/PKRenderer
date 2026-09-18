@@ -157,7 +157,7 @@ namespace PK::App
     {
         m_rhiTimers.ClearFast();
 
-        for (auto queue = 0u; queue < (uint32_t)QueueType::MaxCount; ++queue)
+        for (auto queue = 0u; queue < (uint32_t)QueueType::EnumCount; ++queue)
         {
             auto timers = RHI::GetQueues()->GetTimers((QueueType)queue);
 

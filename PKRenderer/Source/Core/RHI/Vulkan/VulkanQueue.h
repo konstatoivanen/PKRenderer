@@ -13,12 +13,12 @@ namespace PK
     // This deferred initializer pre-selects queues for device.
     struct VulkanQueueSetInitializer
     {
-        float priorities[(uint32_t)QueueType::MaxCount] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        uint32_t queueFamilies[(uint32_t)QueueType::MaxCount]{};
-        uint32_t typeIndices[(uint32_t)QueueType::MaxCount]{};
-        const char* names[(uint32_t)QueueType::MaxCount]{};
-        VkDeviceQueueCreateInfo createInfos[(uint32_t)QueueType::MaxCount]{};
-        VkQueueFamilyProperties familyProperties[(uint32_t)QueueType::MaxCount]{};
+        float priorities[(uint32_t)QueueType::EnumCount] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        uint32_t queueFamilies[(uint32_t)QueueType::EnumCount]{};
+        uint32_t typeIndices[(uint32_t)QueueType::EnumCount]{};
+        const char* names[(uint32_t)QueueType::EnumCount]{};
+        VkDeviceQueueCreateInfo createInfos[(uint32_t)QueueType::EnumCount]{};
+        VkQueueFamilyProperties familyProperties[(uint32_t)QueueType::EnumCount]{};
         uint32_t queueCount = 0u;
 
         VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
@@ -26,7 +26,7 @@ namespace PK
 
     struct VulkanQueue : public NoCopy
     {
-        constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::MaxCount + 1u;
+        constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::EnumCount + 1u;
 
         VulkanQueue(const VulkanDriver* driver, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, const char* name);
         ~VulkanQueue();
@@ -91,8 +91,8 @@ namespace PK
         void Prune();
 
     private:
-        Unique<VulkanQueue> m_queues[(uint32_t)QueueType::MaxCount]{};
-        uint32_t m_queueIndices[(uint32_t)QueueType::MaxCount]{};
+        Unique<VulkanQueue> m_queues[(uint32_t)QueueType::EnumCount]{};
+        uint32_t m_queueIndices[(uint32_t)QueueType::EnumCount]{};
         VulkanQueueFamilies m_selectedFamilies{};
         FenceRef m_lastSubmitFence;
     };

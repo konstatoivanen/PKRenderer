@@ -12,7 +12,7 @@ namespace PK
         InputKeyState keysPrevious;
         InputKeyState keysRepeat;
         InputKeyState keysConsumed;
-        uint32_t keyTimers[(uint32_t)InputKey::Count]{};
+        uint32_t keyTimers[(uint32_t)InputKey::EnumCount]{};
         uint32_t character = 0u;
         float2 cursorPosition = PK_FLOAT2_ZERO;
         float2 cursorPositionDelta = PK_FLOAT2_ZERO;

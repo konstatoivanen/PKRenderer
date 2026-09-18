@@ -19,10 +19,10 @@ namespace PK::App
             Normals,
             DepthBiased,
             Depth,
-            Count
+            EnumCount
         } Target;
 
-        constexpr static const char* Names[Count] =
+        constexpr static const char* Names[EnumCount] =
         {
             "Color",
             "Normals",
@@ -37,7 +37,7 @@ namespace PK::App
             bool isSwappable;
         };
 
-        typedef FixedArray<TargetDescriptor, Count> Descriptor;
+        typedef FixedArray<TargetDescriptor, EnumCount> Descriptor;
 
         struct View
         {

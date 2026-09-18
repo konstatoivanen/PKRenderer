@@ -280,7 +280,7 @@ namespace PKAssets
         RayClosestHit,
         RayAnyHit,
         RayIntersection,
-        MaxCount
+        EnumCount
     };
 
     enum class PKShaderStageFlags : uint16_t
@@ -544,8 +544,8 @@ namespace PKAssets
         RelativePtr<PKDescriptor> descriptors;                              // 20 bytes
         RelativePtr<PKConstantVariable> constants;                          // 24 bytes
         RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 28 bytes
-        uint32_t sprivSizes[(int)PKShaderStage::MaxCount];                  // 80 bytes
-        RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];       // 132 bytes
+        uint32_t sprivSizes[(int)PKShaderStage::EnumCount];                 // 80 bytes
+        RelativePtr<void> sprivBuffers[(int)PKShaderStage::EnumCount];      // 132 bytes
     };
 
     struct alignas(4) PKShader
