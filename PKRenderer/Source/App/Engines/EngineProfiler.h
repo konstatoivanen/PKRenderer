@@ -29,6 +29,9 @@ namespace PK::App
         virtual void Step(TimeFramerateInfo* framerate) final { m_framerate = *framerate; }
 
     private:
+        void DrawCPUProfiler(GUI* gui);
+        void DrawGPUProfiler(GUI* gui);
+
         FixedMap<NameID, NamedTimer, 1024u> m_rhiTimers;
         TimeFramerateInfo m_framerate{};
         GUIWindow m_window;

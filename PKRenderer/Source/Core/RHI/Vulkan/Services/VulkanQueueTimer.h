@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Base/Types/NameID.h"
+#include "Core/Base/Containers/Mask.h"
 #include "Core/Base/Containers/FixedArena.h"
 #include "Core/Base/Containers/BufferView.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
@@ -40,6 +41,7 @@ namespace PK
         const double m_ticksToSeconds;
         VulkanQueryPool m_pool;
 
+        FixedMask<MAX_TIMELINES> m_timelineMask;
         TimelineScope m_timelines[MAX_TIMELINES];
         NameID m_scopeNames[MAX_TIMERS];
         RHITimerScope m_resolved[MAX_TIMERS];

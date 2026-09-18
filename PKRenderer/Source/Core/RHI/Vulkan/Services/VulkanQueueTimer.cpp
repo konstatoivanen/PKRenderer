@@ -101,10 +101,17 @@ namespace PK
                 }
             }
 
+            m_timelineMask[timelineIndex % MAX_TIMELINES] = true;
+
+            // Increment out of order counters
             if (timelineIndex == m_timelineFlushHead)
             {
-                m_timerFlushHead += timeline.count;
-                ++m_timelineFlushHead;
+                while (m_timelineMask[m_timelineFlushHead % MAX_TIMELINES])
+                {
+                    m_timelineMask[m_timelineFlushHead % MAX_TIMELINES] = false;
+                    m_timerFlushHead += m_timelines[m_timelineFlushHead % MAX_TIMELINES].count;
+                    ++m_timelineFlushHead;
+                }
             }
         }
     }

@@ -538,7 +538,7 @@ namespace PK
         
         if (m_timer->Push(name, &queryIndex))
         {
-            vkCmdWriteTimestamp2(m_commandBuffer, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, m_timer->GetQueryPool(), queryIndex);
+            vkCmdWriteTimestamp(m_commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, m_timer->GetQueryPool(), queryIndex);
         }
     }
 
@@ -548,7 +548,7 @@ namespace PK
         
         if (m_timer->Pop(&queryIndex))
         {
-            vkCmdWriteTimestamp2(m_commandBuffer, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, m_timer->GetQueryPool(), queryIndex);
+            vkCmdWriteTimestamp(m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, m_timer->GetQueryPool(), queryIndex);
         }
     }
 

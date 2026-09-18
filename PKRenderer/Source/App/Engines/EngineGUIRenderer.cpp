@@ -133,6 +133,8 @@ namespace PK::App
             screenTransform.z = -1.0f;
             screenTransform.w = +1.0f;
 
+            cmd->BeginTimer(hash->TIMER_QUI_DRAW);
+
             RHI::SetConstant<float4>(hash->pk_GUI_ScreenTransform, screenTransform);
             RHI::SetTextureSet(hash->pk_GUI_Textures, m_gui_textures.get());
             
@@ -145,6 +147,8 @@ namespace PK::App
             RHI::SetTexture(hash->pk_Texture, m_gui_msaa_target.get());
             RHI::SetImage(hash->pk_Image, target);
             cmd.Dispatch(m_gui_resolve_shader, target->GetResolution());
+        
+            cmd->EndTimer();
         }
     }
 
