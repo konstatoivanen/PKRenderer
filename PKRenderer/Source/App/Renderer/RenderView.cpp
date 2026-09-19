@@ -40,7 +40,7 @@ namespace PK::App
             }
             else
             {
-                FixedString64 name({ namePrefix, ReflectEnum<GBuffers::Target>::ToString((GBuffers::Target)i) });
+                FixedString64 name({ namePrefix, String::To((GBuffers::Target)i) });
                 isOutOfDate |= RHI::ValidateTexture((&color)[i], textureDescriptor, name.c_str());
             }
         }

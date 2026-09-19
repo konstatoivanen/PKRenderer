@@ -257,7 +257,7 @@ namespace PK::App
 
         if (type != RenderPipelineEvent::CollectDraws)
         {
-            FixedString64 name({ "RenderViewEvt.", view->name, ".", ReflectEnum<RenderPipelineEvent::Type>::ToString(type)});
+            FixedString64 name({ "RenderViewEvt.", view->name, ".", String::To(type)});
             cmd->BeginDebugScope(name, PK_COLOR_GREEN);
         }
 

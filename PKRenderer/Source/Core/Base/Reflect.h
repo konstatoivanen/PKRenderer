@@ -195,6 +195,14 @@ namespace PK
         }   
     };
 
+    namespace String
+    {
+        template<typename E> requires TIsEnum<E> constexpr const char* To(E value) noexcept { return ReflectEnum<E>::ToString(value); }
+        template<typename E> requires TIsEnum<E> constexpr E From(const char* str) noexcept { return ReflectEnum<E>::FromString(str); }
+        template<typename E> requires TIsEnum<E> constexpr size_t ToFlags(E value, char* str, size_t capacity) { return ReflectEnum<E>::EnumFlagsToString(value, str, capacity); }
+        template<typename E> requires TIsEnum<E> constexpr E FromFlags(const char* str) { return ReflectEnum<E>::FlagsFromString(str); }
+    }
+
 
     template<typename T, size_t N = 0>
     consteval static size_t ReflectFieldCount()
