@@ -16,6 +16,13 @@ namespace PK
         VK_ASSERT_RESULT_CTX(vkGetPhysicalDeviceSurfaceSupportKHR(driver->physicalDevice, presentFamily, m_surface, &presentSupported), "Surface support query failure!");
         PK_FATAL_ASSERT(presentSupported, "Surface present not supported on selected physical device!");
 
+        for (auto& semaphore : m_semaphoresAcquire)
+        {
+            VkSemaphoreCreateInfo semaphoreCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, };
+            vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &semaphore);
+            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore, "PK_Swapchain_Acquire_Semaphore");
+        }
+
         Rebuild(descriptor);
     }
 
@@ -23,6 +30,12 @@ namespace PK
     {
         WaitForPresent(0u, UINT64_MAX);
         Release();
+
+        for (auto& semaphore : m_semaphoresAcquire)
+        {
+            vkDestroySemaphore(m_driver->device, semaphore, nullptr);
+        }
+
         vkDestroySurfaceKHR(m_driver->instance, m_surface, nullptr);
     }
 
@@ -133,14 +146,14 @@ namespace PK
         // @TODO NV by default uses DXGI layered swapchain. the present of which is not visible to the application
         // In this mode the imaqe acquire fence only waits for the vk submit usage and not the full present.
         // This causes the frame time to accumulate unevenly and an eventual long wait when the dxgi swapchain has to actually wait for images.
-        PK_FATAL_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
-
-        auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);
+        {
+           // PK_FATAL_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(0), "Frame fence timeout!");
+        }
 
         // Dont spam sepmaphore acquires if we're stuck in an invalidation loop.
         if (m_imageSignal == VK_NULL_HANDLE)
         {
-            m_imageSignal = queuePresent->GetNextSemaphore();
+            m_imageSignal = m_semaphoresAcquire[m_frameIndex];
         }
 
         auto result = vkAcquireNextImageKHR(m_driver->device, m_swapchain, UINT64_MAX, m_imageSignal, VK_NULL_HANDLE, &m_imageIndex);
@@ -151,9 +164,8 @@ namespace PK
             PK_LOG_RHI("Swap chain image acquire failed! Swap chain is out of date!");
         }
 
-        if (result == VK_SUBOPTIMAL_KHR && !m_suboptimal)
+        if (result == VK_SUBOPTIMAL_KHR)
         {
-            m_suboptimal = true;
             PK_LOG_RHI("Swap chain is sub optimal!");
         }
 
@@ -170,9 +182,15 @@ namespace PK
         auto queueGraphics = m_driver->queues->GetQueue(QueueType::Graphics);
         auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);
 
-        VkSemaphore waitSignal = VK_NULL_HANDLE;
+        // Tied to frame index due to presentation being an os op that will hold this signal until complete.
+        // Tied to image index unlike due to presentation b
+        auto presentSignal = m_semaphoresPresent[m_imageIndex];
+
+        // Force transition image and consume image acquire signal if not already consumed.
         queueGraphics->GetCommandBuffer()->ResolveSwapchainAccess(this, true);
-        m_driver->queues->SubmitCurrent(QueueType::Graphics, &waitSignal);
+        
+        // submit and signal imaqe acquired and transitioned. 
+        m_driver->queues->SubmitCurrent(QueueType::Graphics, &presentSignal);
 
         // Frame synchronization for this frame is handled externally.
         if (!m_hasExternalFrameFence)
@@ -185,7 +203,7 @@ namespace PK
         m_frameIndex = (m_frameIndex + 1) % PK_RHI_MAX_FRAMES_IN_FLIGHT;
         m_presentId++;
 
-        VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, m_presentId, m_presentMode, waitSignal));
+        VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, m_presentId, m_presentMode, presentSignal));
     }
 
 
@@ -197,12 +215,14 @@ namespace PK
             m_descriptor.nativeMonitorHandle = nullptr;
         }
 
-        for (size_t i = 0u; i < PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT; ++i)
+        for (auto i = 0u; i < PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT; ++i)
         {
             if (m_imageViews[i] != nullptr)
             {
                 m_driver->DeletePooled(m_imageViews[i]);
                 m_imageViews[i] = nullptr;
+
+                vkDestroySemaphore(m_driver->device, m_semaphoresPresent[i], nullptr);
             }
         }
 
@@ -296,7 +316,7 @@ namespace PK
         vkGetSwapchainImagesKHR(m_driver->device, m_swapchain, &m_imageCount, nullptr);
         vkGetSwapchainImagesKHR(m_driver->device, m_swapchain, &m_imageCount, m_images);
 
-        for (size_t i = 0u; i < m_imageCount; ++i)
+        for (auto i = 0u; i < m_imageCount; ++i)
         {
             VulkanImageViewCreateInfo info;
             info.image = m_images[i];
@@ -317,8 +337,12 @@ namespace PK
             info.isTracked = true;
             info.isAlias = false;
 
-            FixedString64 name("Swapchain.Image%lli", i);
+            FixedString64 name("Swapchain.Image%u", i);
             m_imageViews[i] = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, name.c_str());
+
+            VkSemaphoreCreateInfo semaphoreCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, };
+            vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_semaphoresPresent[i]);
+            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_semaphoresPresent[i], "PK_Swapchain_Present_Semaphore");
         }
 
         for (auto& fence : m_frameFences)

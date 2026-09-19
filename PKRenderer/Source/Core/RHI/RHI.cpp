@@ -120,14 +120,16 @@ namespace PK
                 features.quadControl.shaderQuadControl = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
+                // Nsight uses push descriptors but they fail to set this flag
+                features.vk14.pushDescriptor = VK_TRUE;
+
                 const char* PK_INSTANCE_EXTENTIONS[] =
                 {
                     VK_KHR_SURFACE_EXTENSION_NAME,
                     PK_VK_SURFACE_EXTENSION_NAME,
-                    "VK_EXT_debug_utils",
-                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                    VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
                     VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME,
-                    "VK_KHR_surface_maintenance1"
+                    VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME
                 };
 
                 const char* PK_DEVICE_EXTENTIONS[] =
@@ -145,12 +147,11 @@ namespace PK
                     VK_KHR_SHADER_QUAD_CONTROL_EXTENSION_NAME,
                     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
                     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
-                    VK_KHR_MULTIVIEW_EXTENSION_NAME,
-                    "VK_KHR_present_mode_fifo_latest_ready",
+                    VK_KHR_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME,
                     VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
                     VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
                     VK_KHR_PRESENT_ID_EXTENSION_NAME,
-                    "VK_KHR_swapchain_maintenance1",
+                    VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME,
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanDriverDescriptor

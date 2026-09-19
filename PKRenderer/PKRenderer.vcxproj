@@ -538,7 +538,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\VS_GUI.shader" />
     <None Include="Content\Textures\T_TonemapLut_Agx.ktx2" />
     <None Include="Content\Textures\T_Bloom_LensDirt2.ktx2" />
-    <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
     <None Include="Content\Configs\BaseRenderer.cfg" />
     <None Include="Content\Configs\Input.cfg" />
     <None Include="Content\Materials\M_Asphalt.material" />

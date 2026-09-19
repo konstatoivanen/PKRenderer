@@ -37,23 +37,25 @@ namespace PK
         const VulkanDriver* m_driver = nullptr;
 
         SwapchainDescriptor m_descriptor{};
-        VkSemaphore m_imageSignal = VK_NULL_HANDLE;
         VkSurfaceKHR m_surface = VK_NULL_HANDLE;
         VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
         VkImage m_images[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VulkanImageView* m_imageViews[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
-        FenceRef m_frameFences[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
+        FenceRef m_frameFences[PK_RHI_MAX_FRAMES_IN_FLIGHT]{};
+        VkSemaphore m_semaphoresAcquire[PK_RHI_MAX_FRAMES_IN_FLIGHT]{};
+        VkSemaphore m_semaphoresPresent[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VkPresentModeKHR m_presentModes[(uint32_t)VSyncMode::EnumCount]{};
+        VkPresentModeKHR m_presentMode;
+        VkSurfaceFormatKHR m_format;
+        VkExtent2D m_extent;
         uint32_t m_presentModeCount;
         uint32_t m_imageCount;
-        VkSurfaceFormatKHR m_format;
-        VkPresentModeKHR m_presentMode;
-        VkExtent2D m_extent;
+
+        VkSemaphore m_imageSignal = VK_NULL_HANDLE;
         uint32_t m_frameIndex = 0u;
         uint32_t m_imageIndex = 0u;
         uint64_t m_presentId = 0ull;
         bool m_outofdate = false;
-        bool m_suboptimal = false;
         bool m_hasExternalFrameFence = false;
     };
 }

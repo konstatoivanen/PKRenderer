@@ -32,7 +32,6 @@ namespace PK
         ~VulkanQueue();
 
         inline ConstBufferView<RHITimerScope> GetTimers() const { return m_timer.GetResults(); }
-        inline VkSemaphore GetNextSemaphore() { return m_semaphores[m_semaphoreIndex++ % PK_VK_QUEUE_SEMAPHORE_COUNT]; }
         constexpr VkQueue GetNative() const { return m_queue; }
         constexpr uint32_t GetFamily() const { return m_family; }
         constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
@@ -40,10 +39,9 @@ namespace PK
         FenceRef GetFenceRef(int32_t timelineOffset = 0) const;
 
         VulkanCommandBuffer* GetCommandBuffer();
-        VkResult Submit(VkSemaphore* outSignal = nullptr);
-        VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal = VK_NULL_HANDLE);
+        VkResult Submit(VkSemaphore* inSignal = nullptr);
+        VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal);
         VkResult BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount);
-        VkSemaphore QueueSignal(VkPipelineStageFlags flags);
         void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);
         void QueueWait(VulkanQueue* other, int32_t timelineOffset = 0);
         void WaitCommandBuffers(bool waitAll);
@@ -64,7 +62,6 @@ namespace PK
 
         VulkanTimelineSemaphore m_timeline{};
         VulkanTimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
-        VkSemaphore m_semaphores[PK_VK_QUEUE_SEMAPHORE_COUNT] = {};
         VkFence m_commandFences[PK_VK_MAX_COMMAND_BUFFERS]{};
         VkCommandBuffer m_commandBuffers[PK_VK_MAX_COMMAND_BUFFERS]{};
         VulkanCommandBuffer m_commandWrappers[PK_VK_MAX_COMMAND_BUFFERS]{};

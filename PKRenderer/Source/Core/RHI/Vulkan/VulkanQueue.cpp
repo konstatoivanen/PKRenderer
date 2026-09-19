@@ -185,14 +185,6 @@ namespace PK
         vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_timeline.semaphore);
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_timeline.semaphore, FixedString32("PK_Timeline_Semaphore_%s", name).c_str());
 
-        semaphoreCreateInfo.pNext = nullptr;
-
-        for (auto& semaphore : m_semaphores)
-        {
-            vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &semaphore);
-            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore, FixedString32("PK_Semaphore_%s", name).c_str());
-        }
-
         for (auto& fence : m_commandFences)
         {
             VkFenceCreateInfo fenceCreateInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
@@ -210,11 +202,6 @@ namespace PK
         for (auto& fence : m_commandFences)
         {
             vkDestroyFence(m_driver->device, fence, nullptr);
-        }
-
-        for (auto& semaphore : m_semaphores)
-        {
-            vkDestroySemaphore(m_driver->device, semaphore, nullptr);
         }
     }
 
@@ -302,7 +289,7 @@ namespace PK
         return m_currentCommandBuffer;
     }
 
-    VkResult VulkanQueue::Submit(VkSemaphore* outSignal)
+    VkResult VulkanQueue::Submit(VkSemaphore* inSignal)
     {
         if (m_currentCommandBuffer == nullptr)
         {
@@ -321,7 +308,7 @@ namespace PK
 
         VkSemaphore signals[2]{ m_timeline.semaphore, VK_NULL_HANDLE };
         uint64_t signalValues[2]{ ++m_timeline.counter, 0ull };
-        uint32_t signalCount = outSignal ? 2 : 1;
+        uint32_t signalCount = inSignal ? 2 : 1;
 
         // Sync swap chain image access if accessed in cmd.
         VkSemaphore imageSignal = commandBuffer->GetImageSignal();
@@ -345,10 +332,9 @@ namespace PK
             }
         }
 
-        if (outSignal)
+        if (inSignal)
         {
-            *outSignal = GetNextSemaphore();
-            signals[1] = *outSignal;
+            signals[1] = *inSignal;
         }
 
         memset(m_waitTimelines, 0, sizeof(m_waitTimelines));
@@ -373,8 +359,6 @@ namespace PK
 
     VkResult VulkanQueue::Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal)
     {
-        auto semaphore = waitSignal ? waitSignal : QueueSignal(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-        
         VkSwapchainPresentModeInfoKHR dynamicPresentModeInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR };
         dynamicPresentModeInfo.swapchainCount = 1u;
         dynamicPresentModeInfo.pPresentModes = &mode;
@@ -387,7 +371,7 @@ namespace PK
         VkPresentInfoKHR presentInfo{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
         presentInfo.pNext = &presentIdKHR;
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &semaphore;
+        presentInfo.pWaitSemaphores = &waitSignal;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &swapchain;
         presentInfo.pImageIndices = &imageIndex;
@@ -420,32 +404,6 @@ namespace PK
         sparseBind.pSignalSemaphores = &m_timeline.semaphore;
         sparseBind.signalSemaphoreCount = 1u;
         return vkQueueBindSparse(m_queue, 1, &sparseBind, VK_NULL_HANDLE);
-    }
-
-    VkSemaphore VulkanQueue::QueueSignal(VkPipelineStageFlags flags)
-    {
-        auto semaphore = GetNextSemaphore();
-
-        VkTimelineSemaphoreSubmitInfo timelineInfo{ VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO };
-        timelineInfo.waitSemaphoreValueCount = 1;
-        timelineInfo.pWaitSemaphoreValues = &m_timeline.counter;
-        timelineInfo.signalSemaphoreValueCount = 0;
-        timelineInfo.pSignalSemaphoreValues = nullptr;
-
-        VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-        submitInfo.pNext = &timelineInfo;
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &m_timeline.semaphore;
-        submitInfo.pWaitDstStageMask = &m_timeline.waitFlags;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &semaphore;
-        submitInfo.commandBufferCount = 0;
-        submitInfo.pCommandBuffers = nullptr;
-
-        m_timeline.waitFlags = flags;
-
-        VK_ASSERT_RESULT(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));
-        return semaphore;
     }
 
     void VulkanQueue::QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags)

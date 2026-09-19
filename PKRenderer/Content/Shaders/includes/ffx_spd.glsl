@@ -94,15 +94,15 @@ SpdFormat SpdReduceLoad4(uint2 base, int2 size)
 
     if (is_border_x)
     {
-        SpdFormat v4 = SpdLoadMip6(int2(base + uint2(0, 2)));
-        SpdFormat v5 = SpdLoadMip6(int2(base + uint2(1, 2)));
+        SpdFormat v4 = SpdLoadMip6(int2(base + uint2(2, 0)));
+        SpdFormat v5 = SpdLoadMip6(int2(base + uint2(2, 1)));
         v = SpdReduce2(SpdReduce2(v4, v5), v);
     }
 
     if (is_border_y)
     {
-        SpdFormat v4 = SpdLoadMip6(int2(base + uint2(2, 0)));
-        SpdFormat v5 = SpdLoadMip6(int2(base + uint2(2, 1)));
+        SpdFormat v4 = SpdLoadMip6(int2(base + uint2(0, 2)));
+        SpdFormat v5 = SpdLoadMip6(int2(base + uint2(1, 2)));
         v = SpdReduce2(SpdReduce2(v4, v5), v);
     }
 

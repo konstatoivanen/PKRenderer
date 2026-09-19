@@ -785,7 +785,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
     <None Include="Content\Models\MDL_Cloth.mdl" />
     <None Include="Content\Configs\BaseRenderer.cfg" />
     <None Include="Content\Configs\Input.cfg" />
