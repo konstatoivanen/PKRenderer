@@ -27,16 +27,10 @@ namespace PK
         }
     };
 
-    template <size_t N>
-    struct EntityComponentMetaArray
-    {
-        EntityComponentMeta data[N];
-    };
-
     template<typename T>
     inline constexpr auto entity_component_metas = []<size_t... I>(TIndexSequence<I...>)
     {
-        return EntityComponentMetaArray<T::Size>{{ EntityComponentMeta::Get<typename Sequence::TypeAt<I, T>>()... }};
+        return TLiteral<EntityComponentMeta, T::Size>{{  EntityComponentMeta::Get<typename Sequence::TypeAt<I, T>>()... }};
     }
     (TMakeIndexSequence<T::Size>{});
 }

@@ -229,7 +229,7 @@ namespace PK::App
 
     void* EngineGUIRenderer::GUIAllocateState(uint64_t uuid, size_t size)
     {
-        return m_gui_stateCache.Allocate(uuid, size);
+        return m_gui_stateCache.Allocate(uuid, (uint32_t)size);
     }
 
  

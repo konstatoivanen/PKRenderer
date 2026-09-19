@@ -44,16 +44,6 @@ namespace PK::App
             EnumCount
         } Type;
 
-        constexpr static const char* TypeNames[EnumCount] =
-        {
-            "CollectDraws",
-            "Depth",
-            "GBuffer",
-            "ForwardOpaque",
-            "ForwardTransparent",
-            "AfterPostEffects"
-        };
-
         Type type;
         CommandBufferExt cmd;
         RenderPipelineContext* context;

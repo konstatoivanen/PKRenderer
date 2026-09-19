@@ -73,16 +73,17 @@ namespace PK
             if constexpr (TEntityHasOnSerialize<TEntity>)
             {
                 TEntity::OnSerialize(entityDb, entity, archive);
-                return;
             }
-
-            Reflect(entity, [archive](const char* componentName, const char* fieldName, auto& field)
+            else
             {
-                FixedString256 namepath("%s.%s", componentName, fieldName);
-                auto nodeField = archive->node->append_child();
-                nodeField.save_key(namepath.c_str());
-                Serialize::WriteSingle(nodeField, &field);
-            });
+                Reflect(entity, [archive](const char* componentName, const char* fieldName, auto& field)
+                {
+                    FixedString256 namepath("%s.%s", componentName, fieldName);
+                    auto nodeField = archive->node->append_child();
+                    nodeField.save_key(namepath.c_str());
+                    Serialize::WriteSingle(nodeField, &field);
+                });
+            }
         }
     
         template<typename TEntity>

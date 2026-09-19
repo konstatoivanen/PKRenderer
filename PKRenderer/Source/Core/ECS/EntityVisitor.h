@@ -38,12 +38,6 @@ namespace PK
         }
     };
 
-    template <size_t N>
-    struct EntityVisitorArray
-    {
-        EntityVisitor data[N];
-    };
-
     struct EntityVisitorsView
     {
         const EntityVisitor* visitors;
@@ -51,7 +45,7 @@ namespace PK
     };
 
     template<auto... TFuncs>
-    inline constexpr auto entity_visitors = EntityVisitorArray<sizeof...(TFuncs)>{ { EntityVisitor::Get<TFuncs>()... } };
+    inline constexpr auto entity_visitors = TLiteral<EntityVisitor,sizeof...(TFuncs)>{ { EntityVisitor::Get<TFuncs>()... } };
 
     template <auto... TFuncs>
     inline consteval EntityVisitorsView MakeEntityVisitorsView() noexcept

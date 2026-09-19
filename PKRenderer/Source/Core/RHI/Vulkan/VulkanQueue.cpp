@@ -143,7 +143,7 @@ namespace PK
         // This is just for debug naming purposes
         for (auto i = (int32_t)QueueType::EnumCount; i >= 0; --i)
         {
-            names[typeIndices[i]] = ReflectEnum<QueueType>::Meta.names[i];
+            names[typeIndices[i]] = ReflectEnum<QueueType>::Names[i];
         }
 
         {

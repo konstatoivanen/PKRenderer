@@ -163,7 +163,7 @@ namespace PK
         // Allow custom increments for preallocation calls.
         auto newCapacity = 0u;
         newCapacity += comp->count;
-        newCapacity += entryCount;
+        newCapacity += (uint32_t)entryCount;
         newCapacity = isPrimeExpand ? Hash::ExpandPrime(newCapacity) : newCapacity;
 
         // Allocate some padding so that we can align all buffers to 16 byte boundaries.

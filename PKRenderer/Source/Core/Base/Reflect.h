@@ -31,64 +31,84 @@ namespace PK
 
         using TBase = __underlying_type(E);
         constexpr static const bool IsFlags = TIsFlagsEnum<E>;
-        constexpr static const int32_t RangeMin = 0;
-        constexpr static const int32_t RangeMax = 255;
-        constexpr static const size_t MaskBitsMax = sizeof(TBase) * 8u;
-        constexpr static const size_t IterationCount = IsFlags ? (MaskBitsMax + 1u) : static_cast<size_t>(RangeMax - RangeMin + 1);
 
-        constexpr static const size_t ValueCount = []<size_t... I>(TIndexSequence<I...>) noexcept
+        constexpr static const int32_t RangeFirst = []() noexcept
+        {
+            if constexpr (IsFlags || !(requires { { E::EnumFirst };}))
+            {
+                return 0;
+            }
+            else
+            {
+                return static_cast<int32_t>(E::EnumFirst);
+            }
+        }();
+
+        constexpr static const int32_t RangeCount = []() noexcept
+        {
+            if constexpr (IsFlags || !(requires { { E::EnumCount }; }))
+            {
+                return IsFlags ? static_cast<int32_t>(sizeof(TBase) * 8ull) : 255 - RangeFirst;
+            }
+            else
+            {
+                return static_cast<int32_t>(E::EnumCount) - RangeFirst;
+            }
+        }();
+
+        #define PK_UNROLL_ENUM_RANGE(...)                                           \
+        [&]<size_t... _I>(TIndexSequence<_I...>) noexcept                           \
+        {                                                                           \
+            [[maybe_unused]] auto index = 0ull;                                     \
+            ([&]()                                                                  \
+            {                                                                       \
+                constexpr auto iter = IsFlags                                       \
+                    ? static_cast<TBase>(_I == 0ull ? 0ull : 1ull << (_I - 1ull))   \
+                    : static_cast<TBase>(RangeFirst + static_cast<int32_t>(_I));    \
+                                                                                    \
+                constexpr auto value = __builtin_bit_cast(E, iter);                 \
+                                                                                    \
+                if constexpr (decltype(pk_enum_name<E, value>)::length)             \
+                {                                                                   \
+                    __VA_ARGS__                                                     \
+                    index++;                                                        \
+                }                                                                   \
+            }                                                                       \
+            (), ...);                                                               \
+        }                                                                           \
+        (TMakeIndexSequence<RangeCount>{})
+
+        constexpr static const size_t Count = []() noexcept
         {
             auto count = 0ull;
-
-            ([&]()
-            {
-                constexpr auto iter = IsFlags ? static_cast<TBase>(I == 0ull ? 0ull : 1ull << (I - 1ull)) : static_cast<TBase>(RangeMin + static_cast<int32_t>(I));
-                if constexpr (decltype(pk_enum_name<E, __builtin_bit_cast(E, iter)>)::length)
-                {
-                    count++;
-                }
-            }
-            (), ...);
-
+            PK_UNROLL_ENUM_RANGE(count++;);
             return count;
-        }
-        (TMakeIndexSequence<IterationCount>{});
+        }();
 
-        struct TMeta
-        { 
-            E values[ValueCount]{};
-            const char* names[ValueCount]{};
-        };
-
-        inline constexpr static auto Meta = []<size_t... I>(TIndexSequence<I...>) noexcept
+        inline constexpr static auto Values = []() noexcept
         {
-            TMeta meta{};
-            auto index = 0ull;
+            TLiteral<E,Count> values{};
+            PK_UNROLL_ENUM_RANGE(values.data[index] = value;);
+            return values;
+        }();
 
-            ([&]() 
-            {
-                constexpr auto iter = IsFlags ? static_cast<TBase>(I == 0ull ? 0ull : 1ull << (I - 1ull)) : static_cast<TBase>(RangeMin + static_cast<int32_t>(I));
-                constexpr auto value = __builtin_bit_cast(E, iter);
+        inline constexpr static auto Names = []() noexcept
+        {
+            TLiteral<const char*, Count> names;
+            PK_UNROLL_ENUM_RANGE(names.data[index] = pk_enum_name<E,value>(););
+            return names;
+        }();
 
-                if constexpr (decltype(pk_enum_name<E, value>)::length)
-                {
-                    meta.values[index] = value;
-                    meta.names[index++] = pk_enum_name<E, value>();
-                }
-            }
-            (), ...);
+        #undef PK_UNROLL_ENUM_RANGE
 
-            return meta;
-        }
-        (TMakeIndexSequence<IterationCount>{});
 
         constexpr static const char* ToString(E value) noexcept
         {
-            for (auto i = 0u; i < ValueCount; ++i)
+            for (auto i = 0u; i < Count; ++i)
             {
-                if (Meta.values[i] == value)
+                if (Values[i] == value)
                 {
-                    return Meta.names[i];
+                    return Names[i];
                 }
             }
 
@@ -97,13 +117,13 @@ namespace PK
 
         constexpr static E FromString(const char* str) noexcept
         {
-            for (auto i = 0u; i < ValueCount; ++i)
+            for (auto i = 0u; i < Count; ++i)
             {
-                for (auto j = 0u; Meta.names[i][j] == str[j] && Meta.names[i][j] && str[j]; ++j)
+                for (auto j = 0u; Names[i][j] == str[j] && Names[i][j] && str[j]; ++j)
                 {
-                    if (!Meta.names[i][j + 1u] && !str[j + 1u])
+                    if (!Names[i][j + 1u] && !str[j + 1u])
                     {
-                        return Meta.values[i];
+                        return Values[i];
                     }
                 }
             }
@@ -117,19 +137,19 @@ namespace PK
 
             if constexpr (IsFlags)
             {
-                for (auto i = 0u; i < ValueCount; ++i)
+                for (auto i = 0u; i < Count; ++i)
                 {
                     // Dont write redundant zero flags.
-                    if ((Meta.values[i] & value) == Meta.values[i] && Meta.values[i] != static_cast<TBase>(0))
+                    if ((Values[i] & value) == Values[i] && Values[i] != static_cast<TBase>(0))
                     {
                         if (length && length < capacity)
                         {
                             str[length++] = '|';
                         }
 
-                        for (auto j = 0u; length < capacity && Meta.names[i][j]; ++j)
+                        for (auto j = 0u; length < capacity && Names[i][j]; ++j)
                         {
-                            str[length++] = Meta.names[i][j];
+                            str[length++] = Names[i][j];
                         }
                     }
                 }
@@ -152,14 +172,14 @@ namespace PK
                 {
                     if (!str[h] || str[h] == '|')
                     {
-                        for (auto i = 0u; i < ValueCount; ++i)
+                        for (auto i = 0u; i < Count; ++i)
                         {
-                            for (auto j = 0u; Meta.names[i][j] == s[j] && Meta.names[i][j] && s[j] && s[j] != '|'; ++j)
+                            for (auto j = 0u; Names[i][j] == s[j] && Names[i][j] && s[j] && s[j] != '|'; ++j)
                             {
-                                if (!Meta.names[i][j + 1u] && (!s[j + 1u] || s[j + 1u] == '|'))
+                                if (!Names[i][j + 1u] && (!s[j + 1u] || s[j + 1u] == '|'))
                                 {
-                                    value = Meta.values[i] | value;
-                                    i = ValueCount;
+                                    value = Values[i] | value;
+                                    i = Count;
                                     break;
                                 }
                             }
@@ -172,7 +192,7 @@ namespace PK
             }
 
             return value;
-        }
+        }   
     };
 
 

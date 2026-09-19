@@ -46,6 +46,14 @@ namespace PK
     template<size_t N> using TMakeIndexSequence = TMakeIntegerSequence<size_t, N>;
     template<typename ... Args> using TIndexSequenceFor = TMakeIndexSequence<sizeof...(Args)>;
 
+    template<typename T, size_t N> struct TLiteral 
+    { 
+        static constexpr size_t Size = N; 
+        T data[N]; 
+        constexpr T& operator[](size_t i) noexcept {return data[i];}
+        constexpr const T& operator[](size_t i) const noexcept {return data[i];}
+    };
+
     using TTrue = TIntegerConstant<bool, true>;
     using TFalse = TIntegerConstant<bool, false>;
 

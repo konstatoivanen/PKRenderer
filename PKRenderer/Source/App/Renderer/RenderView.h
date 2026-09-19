@@ -22,14 +22,6 @@ namespace PK::App
             EnumCount
         } Target;
 
-        constexpr static const char* Names[EnumCount] =
-        {
-            "Color",
-            "Normals",
-            "DepthBiased",
-            "Depth"
-        };
-
         struct TargetDescriptor
         {
             TextureFormat format;

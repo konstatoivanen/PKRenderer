@@ -68,7 +68,7 @@ namespace PK
             auto header = GetHeader(offset);
             header->hash = hash;
             header->accessed = 1u;
-            header->size = alignedSize;
+            header->size = (uint32_t)alignedSize;
             m_map[index].value = offset;
             m_head = m_head >= offset + alignedSize ? m_head : offset + alignedSize;
             return TData::GetPtr(m_data) + offset + sizeof(AllocationHeader);

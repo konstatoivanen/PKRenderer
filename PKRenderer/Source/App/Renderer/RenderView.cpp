@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Base/Containers/FixedString.h"
+#include "Core/Base/Reflect.h"
 #include "Core/Math/Extended.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "RenderView.h"
@@ -39,7 +40,8 @@ namespace PK::App
             }
             else
             {
-                isOutOfDate |= RHI::ValidateTexture((&color)[i], textureDescriptor, FixedString64({namePrefix, Names[i]}).c_str());
+                FixedString64 name({ namePrefix, ReflectEnum<GBuffers::Target>::ToString((GBuffers::Target)i) });
+                isOutOfDate |= RHI::ValidateTexture((&color)[i], textureDescriptor, name.c_str());
             }
         }
 
