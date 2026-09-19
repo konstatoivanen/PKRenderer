@@ -703,38 +703,6 @@ namespace PKAssets
     PKElementType PKElementTypeToScalar(PKElementType type);
     bool PKElementTypeIsResourceHandle(PKElementType type);
 
-    PKAssetType StringToPKAssetType(const char* str);
-    PKElementType StringToPKElementType(const char* str);
-    PKTextureType StringToPKTextureType(const char* str);
-    PKTextureFormat StringToPKTextureFormat(const char* str);
-    PKFilterMode StringToPKFilterMode(const char* str);
-    PKWrapMode StringToPKWrapMode(const char* str);
-    PKBorderColor StringToPKBorderColor(const char* str);
-    PKShaderStage StringToPKShaderStage(const char* str);
-    PKDescriptorType StringToPKDescriptorType(const char* str);
-    PKComparison StringToPKComparison(const char* str);
-    PKCullMode StringToPKCullMode(const char* str);
-    PKBlendFactor StringToPKBlendFactor(const char* str);
-    PKBlendOp StringToPKBlendOp(const char* str);
-    PKColorMask StringToPKColorMask(const char* str);
-    PKRasterMode StringToPKRasterMode(const char* str);
-
-    const char* PKAssetTypeToString(PKAssetType value);
-    const char* PKElementTypeToString(PKElementType value);
-    const char* PKTextureTypeToString(PKTextureType value);
-    const char* PKTextureFormatToString(PKTextureFormat value);
-    const char* PKFilterModeToString(PKFilterMode value);
-    const char* PKWrapModeToString(PKWrapMode value);
-    const char* PKBorderColorToString(PKBorderColor value);
-    const char* PKShaderStageToString(PKShaderStage value);
-    const char* PKDescriptorTypeToString(PKDescriptorType value);
-    const char* PKComparisonToString(PKComparison value);
-    const char* PKCullModeToString(PKCullMode value);
-    const char* PKBlendFactorToString(PKBlendFactor value);
-    const char* PKBlendOpToString(PKBlendOp value);
-    const char* PKColorMaskToString(PKColorMask value);
-    const char* PKRasterModeToString(PKRasterMode value);
-
     PKDrawInfo PackPKDrawInfo(uint16_t material, float uniformScale, uint32_t transform, uint32_t submesh, uint32_t userdata);
 
     PKMeshletVertex PackPKMeshletVertex(const float* pPosition, 

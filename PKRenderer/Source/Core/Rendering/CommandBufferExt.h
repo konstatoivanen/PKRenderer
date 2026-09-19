@@ -70,5 +70,8 @@ namespace PK
         void DrawMesh(const IMesh* mesh, int32_t submesh, const ShaderAsset* shader, int32_t variantIndex);
         void DrawMesh(const IMesh* mesh, int32_t submesh, const ShaderAsset* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex);
         void DrawMeshIndirect(const IMesh* mesh, const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride);
+
+        void BeginStatScope(NameID name, const float4& color);
+        void EndStatScope();
     };
 }

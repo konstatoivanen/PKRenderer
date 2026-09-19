@@ -133,7 +133,7 @@ namespace PK::App
             screenTransform.z = -1.0f;
             screenTransform.w = +1.0f;
 
-            cmd->BeginTimer(hash->TIMER_QUI_DRAW);
+            cmd->BeginTimer(hash->STAT_GUI);
 
             RHI::SetConstant<float4>(hash->pk_GUI_ScreenTransform, screenTransform);
             RHI::SetTextureSet(hash->pk_GUI_Textures, m_gui_textures.get());

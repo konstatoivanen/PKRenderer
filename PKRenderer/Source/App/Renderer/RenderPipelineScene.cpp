@@ -375,7 +375,7 @@ namespace PK::App
         cmdgraphics->Blit(gbuffers.current.color, gbuffers.previous.color, {}, {}, FilterMode::Point);
 
         // Post Effects
-        cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
+        cmdgraphics.BeginStatScope(hash->STAT_POSTFX, PK_COLOR_YELLOW);
         {
             // Previous color has been updated. leverage that and do taa without extra blit.
             m_temporalAntialiasing.Render(cmdgraphics, context->views[0], gbuffers.previous.color, gbuffers.current.color);
@@ -384,7 +384,7 @@ namespace PK::App
             m_bloom.Render(cmdgraphics, context);
             m_passPostEffectsComposite.Render(cmdgraphics, gbuffers.current.color);
         }
-        cmdgraphics->EndDebugScope();
+        cmdgraphics.EndStatScope();
 
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::AfterPostEffects);
 

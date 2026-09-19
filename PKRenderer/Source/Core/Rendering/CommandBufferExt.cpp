@@ -242,4 +242,16 @@ namespace PK
         SetMesh(mesh);
         commandBuffer->DrawIndexedIndirect(indirectArguments, offset, drawCount, stride);
     }
+    
+    void CommandBufferExt::BeginStatScope(NameID name, const float4& color)
+    {
+        commandBuffer->BeginDebugScope(name.c_str(), color);
+        commandBuffer->BeginTimer(name);
+    }
+
+    void CommandBufferExt::EndStatScope()
+    {
+        commandBuffer->EndTimer();
+        commandBuffer->EndDebugScope();
+    }
 }

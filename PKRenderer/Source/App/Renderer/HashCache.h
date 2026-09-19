@@ -224,7 +224,6 @@ namespace PK::App
         DECLARE_HASH(PK_META_PASS_GBUFFER)
         DECLARE_HASH(PK_META_PASS_GIVOXELIZE)
 
-        DECLARE_HASH(TIMER_QUI_DRAW)
 
 #undef DEFINE_HASH_CACHE
 
@@ -234,5 +233,12 @@ namespace PK::App
         NameID pk_Instancing_Textures2D = NameID(PKAssets::PK_SHADER_INSTANCING_TEXTURES2D);
         NameID pk_Instancing_Textures3D = NameID(PKAssets::PK_SHADER_INSTANCING_TEXTURES3D);
         NameID pk_Instancing_TexturesCube = NameID(PKAssets::PK_SHADER_INSTANCING_TEXTURESCUBE);
+
+        NameID STAT_GUI = NameID("GUI");
+        NameID STAT_POSTFX = NameID("PostProcessing");
+        NameID STAT_GI_RT = NameID("SceneGI.Raytrace");
+        NameID STAT_GI_REPROJECT = NameID("SceneGI.Reproject");
+        NameID STAT_GI_VOXELIZE = NameID("SceneGI.Voxelize");
+        NameID STAT_GI_FILTER = NameID("SceneGI.Filter");
     };
 }

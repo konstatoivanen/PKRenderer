@@ -167,37 +167,44 @@ namespace PK::App
 
     void PassSceneGI::DispatchRays(CommandBufferExt cmd, RenderPipelineContext* context)
     {
+        DECLARE_HASH(STAT_GI_RT)
+        DECLARE_HASH(STAT_GI_VOXELIZE)
+        DECLARE_HASH(STAT_GI_FILTER)
+
+
+        auto hash = HashCache::Get();
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
-        cmd->BeginDebugScope("SceneGI.DispatchRays", PK_COLOR_GREEN);
+        cmd.BeginStatScope(hash->STAT_GI_RT, PK_COLOR_GREEN);
         cmd.SetShaderBindingTable(&m_sbtRaytrace);
         cmd.DispatchRays(m_rayTraceGatherGI, resources->rayhits->GetResolution());
-        cmd->EndDebugScope();
+        cmd.EndStatScope();
     }
 
     void PassSceneGI::ReprojectGI(CommandBufferExt cmd, RenderPipelineContext* context)
     {
-        cmd->BeginDebugScope("SceneGI.Reproject", PK_COLOR_GREEN);
+        auto hash = HashCache::Get();
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
         auto resolution = resources->packedGIDiff->GetResolution();
+        cmd.BeginStatScope(hash->STAT_GI_REPROJECT, PK_COLOR_GREEN);
         cmd.Dispatch(m_computeReproject, { resolution.x, resolution.y, 1u });
-        cmd->EndDebugScope();
+        cmd.EndStatScope();
     }
 
     void PassSceneGI::Voxelize(CommandBufferExt cmd, RenderPipelineContext* context)
     {
-        auto batcher = context->batcher;
+        auto hash = HashCache::Get();
         auto view = context->views[0];
+        auto batcher = context->batcher;
         auto batchGroup = view->primaryPassGroup;
         auto resources = view->GetResource<ViewResources>();
 
         // Targets contain garbage data. skip this frame.
         if (!resources->hasResisedTargets)
         {
-            cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
+            cmd.BeginStatScope(hash->STAT_GI_VOXELIZE, PK_COLOR_GREEN);
 
-            auto hash = HashCache::Get();
             auto volumesize = m_voxels->GetResolution();
 
             uint4 viewports[3] =
@@ -213,22 +220,23 @@ namespace PK::App
             cmd.SetScissor(viewports[m_rasterAxis]);
             batcher->RenderGroup(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
 
-            cmd->EndDebugScope();
+            cmd.EndStatScope();
         }
     }
 
     void PassSceneGI::RenderGI(CommandBufferExt cmd, RenderPipelineContext* context)
     {
+        auto hash = HashCache::Get();
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
         auto resolution = resources->packedGIDiff->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
         uint3 chbdimension = GetCheckerboardResolution(dimension, m_settings.checkerboardTrace);
-        cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
+        cmd.BeginStatScope(hash->STAT_GI_FILTER, PK_COLOR_GREEN);
         cmd.Dispatch(m_computeShadeHits, chbdimension);
         cmd.Dispatch(m_computeAccumulate, chbdimension);
         cmd.Dispatch(m_computePostFilter, m_settings.checkerboardTrace ? 1 : 0, chbdimension);
-        cmd->EndDebugScope();
+        cmd.EndStatScope();
     }
 
     void PassSceneGI::VoxelMips(CommandBufferExt cmd)
