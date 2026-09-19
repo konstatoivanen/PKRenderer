@@ -100,11 +100,7 @@ namespace PK
             m_native->SetFullScreen(m_isFullScreen);
         }
 
-        while (!m_swapchain->AcquireNextImage())
-        {
-            Platform::WaitEvents();
-        }
-
+        m_swapchain->AcquireNextImage();
         m_inWindowScope = true;
     }
 

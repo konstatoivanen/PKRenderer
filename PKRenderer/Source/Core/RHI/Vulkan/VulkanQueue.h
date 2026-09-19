@@ -67,7 +67,6 @@ namespace PK
         VulkanCommandBuffer m_commandWrappers[PK_VK_MAX_COMMAND_BUFFERS]{};
 
         VulkanCommandBuffer* m_currentCommandBuffer = nullptr;
-        uint32_t m_semaphoreIndex = 0u;
     };
 
     struct VulkanQueueSet : public RHIQueueSet

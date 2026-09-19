@@ -18,7 +18,7 @@ namespace PK
         void SetFrameFence(const FenceRef& fence) final;
         void WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos) final;
         bool AcquireFullScreen(const void* nativeMonitor) final;
-        bool AcquireNextImage() final;
+        void AcquireNextImage() final;
         void Present() final;
         bool IsFullScreen() const final { return m_descriptor.nativeMonitorHandle != nullptr; }
         uint3 GetResolution() const final { return { m_extent.width, m_extent.height, 1 }; }
@@ -42,7 +42,7 @@ namespace PK
         VkImage m_images[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VulkanImageView* m_imageViews[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         FenceRef m_frameFences[PK_RHI_MAX_FRAMES_IN_FLIGHT]{};
-        VkSemaphore m_semaphoresAcquire[PK_RHI_MAX_FRAMES_IN_FLIGHT]{};
+        VkSemaphore m_semaphoresAcquire[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VkSemaphore m_semaphoresPresent[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VkPresentModeKHR m_presentModes[(uint32_t)VSyncMode::EnumCount]{};
         VkPresentModeKHR m_presentMode;

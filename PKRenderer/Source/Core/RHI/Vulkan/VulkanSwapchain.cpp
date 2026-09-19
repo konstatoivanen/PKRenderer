@@ -16,13 +16,6 @@ namespace PK
         VK_ASSERT_RESULT_CTX(vkGetPhysicalDeviceSurfaceSupportKHR(driver->physicalDevice, presentFamily, m_surface, &presentSupported), "Surface support query failure!");
         PK_FATAL_ASSERT(presentSupported, "Surface present not supported on selected physical device!");
 
-        for (auto& semaphore : m_semaphoresAcquire)
-        {
-            VkSemaphoreCreateInfo semaphoreCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, };
-            vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &semaphore);
-            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore, "PK_Swapchain_Acquire_Semaphore");
-        }
-
         Rebuild(descriptor);
     }
 
@@ -30,12 +23,6 @@ namespace PK
     {
         WaitForPresent(0u, UINT64_MAX);
         Release();
-
-        for (auto& semaphore : m_semaphoresAcquire)
-        {
-            vkDestroySemaphore(m_driver->device, semaphore, nullptr);
-        }
-
         vkDestroySurfaceKHR(m_driver->instance, m_surface, nullptr);
     }
 
@@ -131,50 +118,28 @@ namespace PK
         return m_descriptor.nativeMonitorHandle != nullptr;
     }
 
-    bool VulkanSwapchain::AcquireNextImage()
+    void VulkanSwapchain::AcquireNextImage()
     {
         if (m_outofdate)
         {
             Rebuild(m_descriptor);
         }
 
-        // Partially works in fixing the bellow issue. but causes issues with 60hz monitors.
-        WaitForPresent(1, UINT64_MAX);
-
-        // This is not strictly necesssary when not using double buffering for staging buffers.
-        // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
-        // @TODO NV by default uses DXGI layered swapchain. the present of which is not visible to the application
-        // In this mode the imaqe acquire fence only waits for the vk submit usage and not the full present.
-        // This causes the frame time to accumulate unevenly and an eventual long wait when the dxgi swapchain has to actually wait for images.
-        {
-           // PK_FATAL_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(0), "Frame fence timeout!");
-        }
-
-        // Dont spam sepmaphore acquires if we're stuck in an invalidation loop.
         if (m_imageSignal == VK_NULL_HANDLE)
         {
-            m_imageSignal = m_semaphoresAcquire[m_frameIndex];
+            // Partially works in fixing the bellow issue. but causes issues with 60hz monitors.
+            WaitForPresent(m_imageCount - 1u, UINT64_MAX);
+
+            // This is not strictly necesssary when not using double buffering for staging buffers.
+            // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
+            // @TODO NV by default uses DXGI layered swapchain. the present of which is not visible to the application
+            // In this mode the imaqe acquire fence only waits for the vk submit usage and not the full present.
+            // This causes the frame time to accumulate unevenly and an eventual long wait when the dxgi swapchain has to actually wait for images.
+            PK_FATAL_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
+
+            m_imageSignal = m_semaphoresAcquire[m_presentId % m_imageCount];
+            VK_ASSERT_RESULT(vkAcquireNextImageKHR(m_driver->device, m_swapchain, UINT64_MAX, m_imageSignal, VK_NULL_HANDLE, &m_imageIndex));
         }
-
-        auto result = vkAcquireNextImageKHR(m_driver->device, m_swapchain, UINT64_MAX, m_imageSignal, VK_NULL_HANDLE, &m_imageIndex);
-
-        if (result == VK_ERROR_OUT_OF_DATE_KHR && !m_outofdate)
-        {
-            m_outofdate = true;
-            PK_LOG_RHI("Swap chain image acquire failed! Swap chain is out of date!");
-        }
-
-        if (result == VK_SUBOPTIMAL_KHR)
-        {
-            PK_LOG_RHI("Swap chain is sub optimal!");
-        }
-
-        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR && result != VK_ERROR_OUT_OF_DATE_KHR)
-        {
-            VK_THROW_RESULT_CTX(result, "Failed to acquire swap chain image: ");
-        }
-
-        return !m_outofdate;
     }
 
     void VulkanSwapchain::Present()
@@ -223,6 +188,7 @@ namespace PK
                 m_imageViews[i] = nullptr;
 
                 vkDestroySemaphore(m_driver->device, m_semaphoresPresent[i], nullptr);
+                vkDestroySemaphore(m_driver->device, m_semaphoresAcquire[i], nullptr);
             }
         }
 
@@ -343,6 +309,8 @@ namespace PK
             VkSemaphoreCreateInfo semaphoreCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, };
             vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_semaphoresPresent[i]);
             VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_semaphoresPresent[i], "PK_Swapchain_Present_Semaphore");
+            vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_semaphoresAcquire[i]);
+            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_semaphoresAcquire[i], "PK_Swapchain_Acquire_Semaphore");
         }
 
         for (auto& fence : m_frameFences)
@@ -360,6 +328,7 @@ namespace PK
 
         m_outofdate = false;
         m_presentId = 0ull;
+        m_imageSignal = VK_NULL_HANDLE;
     }
     
     VkSemaphore VulkanSwapchain::ConsumeImageSignal()
