@@ -58,7 +58,21 @@ namespace PK
         if (m_descriptor.desiredVSyncMode != vsyncMode)
         {
             m_descriptor.desiredVSyncMode = vsyncMode;
-            m_outofdate = true;
+
+            const auto desiredPresentMode = VulkanEnumConvert::GetPresentMode(vsyncMode);
+
+            for (auto i = 0u; i < m_presentModeCount; ++i)
+            {
+                if (m_presentModes[i] == desiredPresentMode)
+                {
+                    m_presentMode = desiredPresentMode;
+                }
+            }
+
+            if (m_presentMode != desiredPresentMode)
+            {
+                m_outofdate = true;
+            }
         }
     }
 
@@ -66,6 +80,14 @@ namespace PK
     {
         m_frameFences[m_frameIndex] = fence;
         m_hasExternalFrameFence = true;
+    }
+
+    void VulkanSwapchain::WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos)
+    {
+        if (m_presentId > historyOffset && m_swapchain != VK_NULL_HANDLE)
+        {
+            vkWaitForPresentKHR(m_driver->device, m_swapchain, m_presentId - historyOffset, timeoutNanos);
+        }
     }
 
     bool VulkanSwapchain::AcquireFullScreen(const void* nativeMonitor)
@@ -162,18 +184,12 @@ namespace PK
         m_hasExternalFrameFence = false;
         m_frameIndex = (m_frameIndex + 1) % PK_RHI_MAX_FRAMES_IN_FLIGHT;
         m_presentId++;
-        VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, m_presentId, waitSignal));
+
+        VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, m_presentId, m_presentMode, waitSignal));
     }
 
-    void VulkanSwapchain::WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos)
-    {
-        if (m_presentId > historyOffset && m_swapchain != VK_NULL_HANDLE)
-        {
-            vkWaitForPresentKHR(m_driver->device, m_swapchain, m_presentId - historyOffset, timeoutNanos);
-        }
-    }
 
-    void VulkanSwapchain::Release(VkSwapchainKHR* oldSwapchain)
+    void VulkanSwapchain::Release()
     {
         if (m_descriptor.nativeMonitorHandle != nullptr)
         {
@@ -190,14 +206,9 @@ namespace PK
             }
         }
 
-        if (m_swapchain != VK_NULL_HANDLE && oldSwapchain == nullptr)
+        if (m_swapchain != VK_NULL_HANDLE)
         {
             vkDestroySwapchainKHR(m_driver->device, m_swapchain, nullptr);
-        }
-
-        if (oldSwapchain != nullptr)
-        {
-            *oldSwapchain = m_swapchain;
         }
     }
 
@@ -207,13 +218,11 @@ namespace PK
 
         // Wait for last present so that we can safely release this.
         WaitForPresent(0u, UINT64_MAX);
-
-        VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE;
-        Release(&oldSwapchain);
+        RHI::WaitForIdle();
+        Release();
 
         const auto desiredFormat = VulkanEnumConvert::GetFormat(descriptor.desiredFormat);
         const auto desiredColorSpace = VulkanEnumConvert::GetColorSpace(descriptor.desiredColorSpace);
-        const auto desiredPresentMode = VulkanEnumConvert::GetPresentMode(descriptor.desiredVSyncMode);
         const VkExtent2D desiredExtent = { descriptor.desiredResolution.x, descriptor.desiredResolution.y };
 
         auto queueGraphics = m_driver->queues->GetQueue(QueueType::Graphics);
@@ -222,8 +231,10 @@ namespace PK
         VkSurfaceCapabilitiesKHR capabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_driver->physicalDevice, m_surface, &capabilities);
         m_format = VulkanSelectSurfaceFormat(m_driver->physicalDevice, m_surface, desiredFormat, desiredColorSpace);
-        m_presentMode = VulkanSelectPresentMode(m_driver->physicalDevice, m_surface, desiredPresentMode);
         m_extent = VulkanSelectSurfaceExtent(capabilities, desiredExtent);
+
+        m_presentMode = VulkanEnumConvert::GetPresentMode(descriptor.desiredVSyncMode);
+        m_presentModeCount = VulkanQueryPresentModes(m_driver->physicalDevice, m_surface, &m_presentMode, m_presentModes, (uint32_t)VSyncMode::EnumCount);
 
         auto maxImageCount = capabilities.maxImageCount > 0 ? capabilities.maxImageCount : UINT32_MAX;
         auto minImageCount = capabilities.minImageCount;
@@ -240,8 +251,13 @@ namespace PK
         presentScalingInfo.presentGravityX = VK_PRESENT_GRAVITY_CENTERED_BIT_EXT;
         presentScalingInfo.presentGravityY = VK_PRESENT_GRAVITY_CENTERED_BIT_EXT;
 
+        VkSwapchainPresentModesCreateInfoKHR presentModes{ VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_KHR };
+        presentModes.pNext = &presentScalingInfo;
+        presentModes.presentModeCount = m_presentModeCount;
+        presentModes.pPresentModes = m_presentModes;
+
         VkSwapchainCreateInfoKHR swapchainCreateInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
-        swapchainCreateInfo.pNext = &presentScalingInfo;
+        swapchainCreateInfo.pNext = &presentModes;
         swapchainCreateInfo.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT;
         swapchainCreateInfo.surface = m_surface;
         swapchainCreateInfo.minImageCount = m_imageCount;
@@ -252,6 +268,7 @@ namespace PK
         swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         swapchainCreateInfo.queueFamilyIndexCount = 0;
+        // Not using old swapchain anymore due to dwm yielding permanent invalid state.
         swapchainCreateInfo.pQueueFamilyIndices = nullptr;
 
         if (queueFamilyIndices[0] != queueFamilyIndices[1])
@@ -265,7 +282,7 @@ namespace PK
         swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         swapchainCreateInfo.presentMode = m_presentMode;
         swapchainCreateInfo.clipped = VK_TRUE;
-        swapchainCreateInfo.oldSwapchain = oldSwapchain;
+        swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
         VK_ASSERT_RESULT_CTX(vkCreateSwapchainKHR(m_driver->device, &swapchainCreateInfo, nullptr, &m_swapchain), "failed to create swap chain!");
 
@@ -315,11 +332,6 @@ namespace PK
         if (descriptor.nativeMonitorHandle && vkAcquireFullScreenExclusiveModeEXT(m_driver->device, m_swapchain) != VK_SUCCESS)
         {
             m_descriptor.nativeMonitorHandle = nullptr;
-        }
-
-        if (oldSwapchain)
-        {
-            vkDestroySwapchainKHR(m_driver->device, oldSwapchain, nullptr);
         }
 
         m_outofdate = false;

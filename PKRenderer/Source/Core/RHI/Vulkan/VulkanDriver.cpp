@@ -120,8 +120,8 @@ namespace PK
         createInfo.pEnabledFeatures = nullptr;
         createInfo.enabledExtensionCount = (uint32_t)properties.deviceExtensions.count;
         createInfo.ppEnabledExtensionNames = properties.deviceExtensions.data;
-        createInfo.enabledLayerCount = instanceCreateInfo.enabledLayerCount;
-        createInfo.ppEnabledLayerNames = instanceCreateInfo.ppEnabledLayerNames;
+        createInfo.enabledLayerCount = 0u; 
+        createInfo.ppEnabledLayerNames = nullptr;
         createInfo.pNext = &physicalDeviceRequirements.features.vk10;
         VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");
 

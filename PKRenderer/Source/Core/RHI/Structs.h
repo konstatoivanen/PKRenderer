@@ -212,7 +212,8 @@ namespace PK
         FifoRelaxed,
         FifoLatest,
         SharedDemandRefresh,
-        SharedContinuous
+        SharedContinuous,
+        EnumCount
     };
 
     enum class RayTracingShaderGroup

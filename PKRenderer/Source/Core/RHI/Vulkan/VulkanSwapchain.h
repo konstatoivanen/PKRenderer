@@ -16,17 +16,17 @@ namespace PK
         void SetDesiredColorSpace(ColorSpace colorSpace) final;
         void SetDesiredVSyncMode(VSyncMode vsyncMode) final;
         void SetFrameFence(const FenceRef& fence) final;
+        void WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos) final;
         bool AcquireFullScreen(const void* nativeMonitor) final;
         bool AcquireNextImage() final;
         void Present() final;
-        void WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos) final;
         bool IsFullScreen() const final { return m_descriptor.nativeMonitorHandle != nullptr; }
         uint3 GetResolution() const final { return { m_extent.width, m_extent.height, 1 }; }
         TextureFormat GetFormat() const final { return VulkanEnumConvert::GetTextureFormat(m_format.format); }
         ColorSpace GetColorSpace() const final { return VulkanEnumConvert::GetColorSpace(m_format.colorSpace); }
         VSyncMode GetVSyncMode() const final { return VulkanEnumConvert::GetVSyncMode(m_presentMode); }
 
-        void Release(VkSwapchainKHR* oldSwapchain = nullptr);
+        void Release();
         void Rebuild(const SwapchainDescriptor& createInfo);
 
         const VulkanBindHandle* GetBindHandle() const { return &m_imageViews[m_imageIndex]->bindHandle; }
@@ -43,6 +43,8 @@ namespace PK
         VkImage m_images[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VulkanImageView* m_imageViews[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         FenceRef m_frameFences[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
+        VkPresentModeKHR m_presentModes[(uint32_t)VSyncMode::EnumCount]{};
+        uint32_t m_presentModeCount;
         uint32_t m_imageCount;
         VkSurfaceFormatKHR m_format;
         VkPresentModeKHR m_presentMode;

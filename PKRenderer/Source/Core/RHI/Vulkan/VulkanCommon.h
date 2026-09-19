@@ -454,8 +454,8 @@ namespace PK
     void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* device);
     VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent);
     VkSurfaceFormatKHR VulkanSelectSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace);
-    VkPresentModeKHR VulkanSelectPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPresentModeKHR desiredPresentMode);
-    
+    uint32_t VulkanQueryPresentModes(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPresentModeKHR* desiredMode, VkPresentModeKHR* outModes, uint32_t capacity);
+
     // Defined here to prevent multiple includes of vulkan.h with wrong defines.
     FixedString128 VulkanStr_VkQueueFlags(VkQueueFlags value);
     const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value);

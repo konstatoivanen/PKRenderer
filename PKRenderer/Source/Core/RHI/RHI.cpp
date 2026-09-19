@@ -146,7 +146,7 @@ namespace PK
                     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
                     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
                     VK_KHR_MULTIVIEW_EXTENSION_NAME,
-                    VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME,
+                    "VK_KHR_present_mode_fifo_latest_ready",
                     VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
                     VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
                     VK_KHR_PRESENT_ID_EXTENSION_NAME,

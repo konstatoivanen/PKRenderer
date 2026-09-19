@@ -762,6 +762,27 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanQueueTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ThirdParty\vulkan\vulkan_ubm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\vulkan\vulkan_ohos.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_av1std.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_av1std_decode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_av1std_encode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_vp9std.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_vp9std_decode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />

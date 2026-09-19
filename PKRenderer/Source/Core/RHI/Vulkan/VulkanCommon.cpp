@@ -1014,7 +1014,7 @@ namespace PK
         return formats[0];
     }
 
-    VkPresentModeKHR VulkanSelectPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPresentModeKHR desiredPresentMode)
+    uint32_t VulkanQueryPresentModes(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPresentModeKHR* desiredMode, VkPresentModeKHR* outModes, uint32_t capacity)
     {
         uint32_t presentModeCount = 0u;
         vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
@@ -1022,17 +1022,44 @@ namespace PK
         VkPresentModeKHR* presentModes = PK_STACK_ALLOC(VkPresentModeKHR, presentModeCount);
         vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes);
 
+        auto presentModeIndex = 0u;
+
         for (auto i = 0u; i < presentModeCount; ++i)
         {
-            auto& presentMode = presentModes[i];
-
-            if (presentMode == desiredPresentMode)
+            if (presentModes[i] == *desiredMode)
             {
-                return presentMode;
+                presentModeIndex = i;
+                break;
             }
         }
 
-        return VK_PRESENT_MODE_FIFO_KHR;
+        *desiredMode = presentModes[presentModeIndex];
+
+        // 1. INPUT: Define your baseline/starting presentation mode
+        VkSurfacePresentModeKHR surfacePresentModeInfo{ VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_KHR };
+        surfacePresentModeInfo.pNext = nullptr;
+        surfacePresentModeInfo.presentMode = *desiredMode; 
+
+        VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR };
+        surfaceInfo.pNext = &surfacePresentModeInfo; 
+        surfaceInfo.surface = surface;
+
+        VkSurfacePresentModeCompatibilityKHR compatibilityInfo{ VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_KHR };
+        compatibilityInfo.pNext = nullptr;
+        compatibilityInfo.presentModeCount = presentModeCount;
+        compatibilityInfo.pPresentModes = presentModes;
+
+        VkSurfaceCapabilities2KHR surfaceCapabilities{ VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR };
+        surfaceCapabilities.pNext = &compatibilityInfo; 
+
+        vkGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, &surfaceInfo, &surfaceCapabilities);
+
+        for (auto i = 0u; i < compatibilityInfo.presentModeCount && i < capacity; ++i)
+        {
+            outModes[i] = presentModes[i];
+        }
+
+        return compatibilityInfo.presentModeCount;
     }
 
 

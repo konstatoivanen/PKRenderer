@@ -371,11 +371,16 @@ namespace PK
         return vkQueueSubmit(m_queue, 1, &submitInfo, commandBuffer->GetFence());
     }
 
-    VkResult VulkanQueue::Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkSemaphore waitSignal)
+    VkResult VulkanQueue::Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal)
     {
         auto semaphore = waitSignal ? waitSignal : QueueSignal(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
         
+        VkSwapchainPresentModeInfoKHR dynamicPresentModeInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR };
+        dynamicPresentModeInfo.swapchainCount = 1u;
+        dynamicPresentModeInfo.pPresentModes = &mode;
+
         VkPresentIdKHR presentIdKHR{ VK_STRUCTURE_TYPE_PRESENT_ID_KHR };
+        presentIdKHR.pNext = &dynamicPresentModeInfo;
         presentIdKHR.swapchainCount = 1u;
         presentIdKHR.pPresentIds = &presentId;
 

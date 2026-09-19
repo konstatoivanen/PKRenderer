@@ -362,12 +362,17 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="ThirdParty\vulkan\vk_layer.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_platform.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codecs_common.h" />
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_av1std.h" />
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_av1std_decode.h" />
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_av1std_encode.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_h264std.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_h264std_decode.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_h264std_encode.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_h265std.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_h265std_decode.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_h265std_encode.h" />
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_vp9std.h" />
+    <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_vp9std_decode.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_android.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_beta.h" />
@@ -378,7 +383,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="ThirdParty\vulkan\vulkan_ios.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_macos.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_metal.h" />
+    <ClInclude Include="ThirdParty\vulkan\vulkan_ohos.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_screen.h" />
+    <ClInclude Include="ThirdParty\vulkan\vulkan_ubm.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_vi.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_wayland.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_win32.h" />

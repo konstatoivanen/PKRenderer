@@ -181,7 +181,7 @@ namespace PK::App
             {
                 // Only cycle multi backing frame modes.
                 auto current = (uint32_t)IApplication::Get()->GetPrimaryWindow()->GetVSyncMode();
-                current = (current + 1u) % (uint32_t)VSyncMode::SharedDemandRefresh;
+                current = (current + 1u) % (uint32_t)VSyncMode::EnumCount;
                 IApplication::Get()->GetPrimaryWindow()->SetVSync((VSyncMode)current);
             });
 
