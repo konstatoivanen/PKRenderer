@@ -770,7 +770,6 @@ namespace PK
         VulkanQueueTimer* timer,
         VulkanPipelineState* state,
         VkCommandBuffer commandBuffer,
-        VkFence fence,
         uint16_t queueFamily)
     {
         m_driver = driver;
@@ -779,8 +778,8 @@ namespace PK
         m_state = state;
         *m_state = VulkanPipelineState();
 
+        m_queueTimelineIndex = ~0ull;
         m_commandBuffer = commandBuffer;
-        m_fence = fence;
         m_queueFamily = queueFamily;
         
         m_timer->BeginTimeline();
@@ -790,12 +789,13 @@ namespace PK
         VK_ASSERT_RESULT(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
     }
 
-    void VulkanCommandBuffer::EndRecord()
+    void VulkanCommandBuffer::EndRecord(uint64_t queueTimelineIndex)
     {
         // End possibly active render pass
         EndRenderPass();
         m_barrierHandler->ClearBarriers();
         m_timerIndex = m_timer->EndTimeline();
+        m_queueTimelineIndex = queueTimelineIndex;
         m_driver = nullptr;
         m_barrierHandler = nullptr;
         m_state = nullptr;
@@ -803,13 +803,19 @@ namespace PK
         VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
     }
 
-    void VulkanCommandBuffer::Finalize()
+    bool VulkanCommandBuffer::Complete(uint64_t currentQueueTimelineIndex)
     {
-        m_timer->FlushTimeline(m_timerIndex);
-        m_timer = nullptr;
-        m_imageSignal = VK_NULL_HANDLE;
-        m_commandBuffer = VK_NULL_HANDLE; 
-        m_fence = VK_NULL_HANDLE;
-        ++m_invocationIndex;
+        if (m_commandBuffer != VK_NULL_HANDLE && m_queueTimelineIndex <= currentQueueTimelineIndex)
+        {
+            m_timer->FlushTimeline(m_timerIndex);
+            m_timer = nullptr;
+            m_imageSignal = VK_NULL_HANDLE;
+            m_commandBuffer = VK_NULL_HANDLE; 
+            m_queueTimelineIndex = 0ull;
+            ++m_invocationIndex;
+            return true;
+        }
+
+        return false;
     }
 }

@@ -184,13 +184,6 @@ namespace PK
         semaphoreCreateInfo.pNext = &timelineCreateInfo;
         vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_timeline.semaphore);
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_timeline.semaphore, FixedString32("PK_Timeline_Semaphore_%s", name).c_str());
-
-        for (auto& fence : m_commandFences)
-        {
-            VkFenceCreateInfo fenceCreateInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-            VK_ASSERT_RESULT(vkCreateFence(m_driver->device, &fenceCreateInfo, nullptr, &fence));
-            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_FENCE, (uint64_t)fence, FixedString32("PK_Cmd_Fence_%s", name).c_str());
-        }
     }
 
     VulkanQueue::~VulkanQueue()
@@ -198,11 +191,6 @@ namespace PK
         WaitCommandBuffers(true);
         vkDestroyCommandPool(m_driver->device, m_commandPool, nullptr);
         vkDestroySemaphore(m_driver->device, m_timeline.semaphore, nullptr);
-
-        for (auto& fence : m_commandFences)
-        {
-            vkDestroyFence(m_driver->device, fence, nullptr);
-        }
     }
 
 
@@ -276,14 +264,12 @@ namespace PK
 
         auto currentIndex = (int64_t)(m_currentCommandBuffer - m_commandWrappers);
         auto commandBuffer = m_commandBuffers[currentIndex];
-        auto fence = m_commandFences[currentIndex];
         
         m_currentCommandBuffer->BeginRecord(m_driver, 
             &m_barrierHandler, 
             &m_timer, 
             &m_pipelineState, 
             commandBuffer, 
-            fence, 
             (uint16_t)m_family);
 
         return m_currentCommandBuffer;
@@ -296,10 +282,13 @@ namespace PK
             return VK_SUCCESS;
         }
 
-        auto commandBuffer = m_currentCommandBuffer;
-        m_currentCommandBuffer->EndRecord();
+        m_currentCommandBuffer->EndRecord(++m_timeline.counter);
+        auto lastStage = m_currentCommandBuffer->GetLastCommandStage();
+        auto imageSignal = m_currentCommandBuffer->GetImageSignal();
+        auto commandBuffer = m_currentCommandBuffer->GetCommandBuffer();
         m_currentCommandBuffer = nullptr;
-        m_timeline.waitFlags = commandBuffer->GetLastCommandStage();
+
+        m_timeline.waitFlags = lastStage;
 
         VkPipelineStageFlags waitFlags[MAX_DEPENDENCIES]{};
         VkSemaphore waits[MAX_DEPENDENCIES]{};
@@ -307,11 +296,8 @@ namespace PK
         uint32_t waitCount = 0u;
 
         VkSemaphore signals[2]{ m_timeline.semaphore, VK_NULL_HANDLE };
-        uint64_t signalValues[2]{ ++m_timeline.counter, 0ull };
-        uint32_t signalCount = inSignal ? 2 : 1;
-
-        // Sync swap chain image access if accessed in cmd.
-        VkSemaphore imageSignal = commandBuffer->GetImageSignal();
+        uint64_t signalValues[2]{ m_timeline.counter, 0ull };
+        uint32_t signalCount = inSignal ? 2u : 1u;
 
         if (imageSignal != VK_NULL_HANDLE)
         {
@@ -353,8 +339,8 @@ namespace PK
         submitInfo.signalSemaphoreCount = signalCount;
         submitInfo.pSignalSemaphores = signals;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer->GetCommandBuffer();
-        return vkQueueSubmit(m_queue, 1, &submitInfo, commandBuffer->GetFence());
+        submitInfo.pCommandBuffers = &commandBuffer;
+        return vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
     VkResult VulkanQueue::Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal)
@@ -440,39 +426,21 @@ namespace PK
 
     void VulkanQueue::WaitCommandBuffers(bool waitAll)
     {
-        VkFence fences[PK_VK_MAX_COMMAND_BUFFERS];
-        uint32_t count = 0;
+        if (waitAll)
+        {
+            vkQueueWaitIdle(m_queue);
+        }
+
+        uint64_t counterValue = 0ull;
+        VK_ASSERT_RESULT(vkGetSemaphoreCounterValue(m_driver->device, m_timeline.semaphore, &counterValue));
 
         for (auto& wrapper : m_commandWrappers)
         {
-            if (m_currentCommandBuffer != &wrapper)
+            if (wrapper.Complete(counterValue))
             {
-                if (wrapper.IsActive())
-                {
-                    fences[count++] = wrapper.GetFence();
-                }
-                else if (!waitAll)
-                {
-                    // At least one command buffer has been released/completed.
-                    count = 0u;
-                    break;
-                }
-            }
-        }
-
-        if (count > 0)
-        {
-            VK_ASSERT_RESULT(vkWaitForFences(m_driver->device, count, fences, (VkBool32)waitAll, UINT64_MAX));
-        }
-
-        for (auto& wrapper : m_commandWrappers)
-        {
-            if (wrapper.IsActive() && vkGetFenceStatus(m_driver->device, wrapper.GetFence()) == VK_SUCCESS)
-            {
-                m_commandBuffers[(int64_t)(&wrapper - &m_commandWrappers[0])] = VK_NULL_HANDLE;
-                vkFreeCommandBuffers(m_driver->device, m_commandPool, 1, &wrapper.GetCommandBuffer());
-                VK_ASSERT_RESULT(vkResetFences(m_driver->device, 1, &wrapper.GetFence()));
-                wrapper.Finalize();
+                const auto index = (uint64_t)(&wrapper - &m_commandWrappers[0]);
+                vkFreeCommandBuffers(m_driver->device, m_commandPool, 1, &m_commandBuffers[index]);
+                m_commandBuffers[index] = VK_NULL_HANDLE;
             }
         }
     }

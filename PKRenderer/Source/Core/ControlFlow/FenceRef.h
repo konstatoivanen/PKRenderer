@@ -8,7 +8,8 @@ namespace PK
         constexpr static const uint64_t INVALID_USER_DATA = 0xFFFFFFFFFFFFFFFF;
         typedef bool (*WaitFunction)(const void*, uint64_t, uint64_t);
 
-        FenceRef() {};
+        constexpr FenceRef() = default;
+
         FenceRef(const void* context, WaitFunction waitFunction, uint64_t userdata) :
             m_context(context),
             m_waitFunction(waitFunction), 

@@ -62,10 +62,8 @@ namespace PK
 
         VulkanTimelineSemaphore m_timeline{};
         VulkanTimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
-        VkFence m_commandFences[PK_VK_MAX_COMMAND_BUFFERS]{};
         VkCommandBuffer m_commandBuffers[PK_VK_MAX_COMMAND_BUFFERS]{};
         VulkanCommandBuffer m_commandWrappers[PK_VK_MAX_COMMAND_BUFFERS]{};
-
         VulkanCommandBuffer* m_currentCommandBuffer = nullptr;
     };
 
