@@ -14,8 +14,8 @@ namespace PK
         m_cursorDelta = input ? short2(input->cursorPositionDelta) : PK_SHORT2_ZERO;
         m_scrollDelta = input ? short2(input->cursorScroll) : PK_SHORT2_ZERO;
         
-        m_cursor.xy *= screenScale;
-        m_cursor.xy += screenOffset;
+        m_cursor *= screenScale;
+        m_cursor += screenOffset;
         m_cursorDelta *= screenScale;
 
         if (m_state->navState != NAV_STATE_NONE)

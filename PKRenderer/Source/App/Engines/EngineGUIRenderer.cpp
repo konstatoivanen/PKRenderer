@@ -107,7 +107,7 @@ namespace PK::App
             m_gui_context.screenScale.x = +1.0f;
             m_gui_context.screenScale.y = -1.0f;
             m_gui_context.screenOffset.x = +1.0f * renderArea.x;
-            m_gui_context.screenOffset.y = -1.0f * renderArea.y + renderArea.w;
+            m_gui_context.screenOffset.y = +1.0f * renderArea.y + renderArea.w;
             GUI gui(&m_gui_context);
             m_sequencer->Next<GUI*>(this, &gui);
         }
@@ -128,8 +128,8 @@ namespace PK::App
             const auto hash = HashCache::Get();
 
             float4 screenTransform;
-            screenTransform.x = +2.0f / m_gui_context.renderArea.z;
-            screenTransform.y = -2.0f / m_gui_context.renderArea.w;
+            screenTransform.x = +2.0f / m_gui_msaa_target->GetResolution().x;
+            screenTransform.y = -2.0f / m_gui_msaa_target->GetResolution().y;
             screenTransform.z = -1.0f;
             screenTransform.w = +1.0f;
 
