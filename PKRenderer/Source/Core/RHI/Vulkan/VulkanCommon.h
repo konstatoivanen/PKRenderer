@@ -513,5 +513,7 @@ namespace PK
         VkImageAspectFlagBits GetFormatAspect(VkFormat format);
         bool IsReadAccess(VkAccessFlags flags);
         bool IsWriteAccess(VkAccessFlags flags);
+        bool IsReadAccess(VkAccessFlags2 flags);
+        bool IsWriteAccess(VkAccessFlags2 access);
     }
 }
