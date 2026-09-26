@@ -43,6 +43,7 @@ namespace PK
         virtual uint64_t GetAlignedHead(size_t alignment) const = 0;
         virtual uint64_t GetRelativeHead(size_t alignment) const = 0;
         virtual void* AllocateBlock(size_t size, size_t alignment) = 0;
+        virtual void* GetData() = 0;
         virtual void Clear() = 0;
         virtual void ClearFast() = 0;
      };
@@ -68,6 +69,11 @@ namespace PK
             m_head = relativeHead + size;
             Memory::Assert(m_head <= capacity, "Arena capacity exceeded!");
             return m_data + relativeHead;
+        }
+
+        void* GetData() final
+        {
+            return &m_data[0];
         }
 
         void Clear() final
