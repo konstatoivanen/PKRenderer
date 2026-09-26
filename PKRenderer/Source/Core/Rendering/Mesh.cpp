@@ -20,7 +20,7 @@ namespace PK
         const auto maxMeshlets = 65535u * 4u;
         const auto maxVertices = 65535u * 32u;
         const auto maxTriangles = 65535u * 16u * 3u;
-        const auto flags = BufferUsage::GPUOnly | BufferUsage::TransferDst | BufferUsage::Storage | BufferUsage::Sparse;
+        const auto flags = BufferUsage::GPUOnly | BufferUsage::TransferDst | BufferUsage::Storage;
 
         static_assert((maxTriangles * 3ull) % 4ull == 0ull, "Input triangle count x3 must be divisible by 4");
 
@@ -33,13 +33,21 @@ namespace PK
         });
 
         m_vertexBuffers.ClearFast();
-        m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000u, BufferUsage::SparseVertex, "MeshStaticCollection.VertexAttributes"));
-        m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000u, BufferUsage::SparseVertex | BufferUsage::Storage, "MeshStaticCollection.VertexPositions"));
-        m_indexBuffer = RHI::CreateBuffer(m_indexSize * 2000000u, BufferUsage::SparseIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
+        m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000u, BufferUsage::DefaultVertex, "MeshStaticCollection.VertexAttributes"));
+        m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000u, BufferUsage::DefaultVertex | BufferUsage::Storage, "MeshStaticCollection.VertexPositions"));
+        m_indexBuffer = RHI::CreateBuffer(m_indexSize * 2000000u, BufferUsage::DefaultIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
         m_submeshBuffer = RHI::CreateBuffer<PKAssets::PKMeshletSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
         m_meshletBuffer = RHI::CreateBuffer<PKAssets::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
         m_meshletVertexBuffer = RHI::CreateBuffer<uint4>(maxVertices, flags, "Meshlet.VertexBuffer");
         m_meshletIndexBuffer = RHI::CreateBuffer<uint32_t>((maxTriangles * 3ull) / 4ull, flags, "Meshlet.IndexBuffer");
+
+        m_allocatorPositions.ClearAndReserve(m_vertexBuffers[0]->GetSize(), 128u);
+        m_allocatorAttributes.ClearAndReserve(m_vertexBuffers[1]->GetSize(), 128u);
+        m_allocatorIndices.ClearAndReserve(m_indexBuffer->GetSize(), 128u);
+        m_allocatorSubmeshes.ClearAndReserve(m_submeshBuffer->GetSize(), 128u);
+        m_allocatorMeshlets.ClearAndReserve(m_meshletBuffer->GetSize(), 128u);
+        m_allocatorMeshletVertices.ClearAndReserve(m_meshletVertexBuffer->GetSize(), 128u);
+        m_allocatorMeshletIndices.ClearAndReserve(m_meshletIndexBuffer->GetSize(), 128u);
     }
 
     MeshStaticAllocator::Allocation* MeshStaticAllocator::Allocate(const MeshStaticDescriptor& desc)
@@ -85,13 +93,29 @@ namespace PK
 
         PK_FATAL_ASSERT((meshletIndicesSize % 4ull) == 0ull, "Index counts must be aligned to 4!");
 
-        const auto submeshOffset = m_submeshBuffer->SparseAllocate(submeshesSize, QueueType::Transfer);
-        const auto meshletOffset = m_meshletBuffer->SparseAllocate(meshletsSize, QueueType::Transfer);
-        const auto meshletVertexOffset = m_meshletVertexBuffer->SparseAllocate(meshletVerticesSize, QueueType::Transfer);
-        const auto meshletIndexOffset = m_meshletIndexBuffer->SparseAllocate(meshletIndicesSize, QueueType::Transfer);
-        const auto attributesOffset = m_vertexBuffers[0]->SparseAllocate(attributesSize, QueueType::Transfer);
-        const auto positionsOffset = m_vertexBuffers[1]->SparseAllocate(positionsSize, QueueType::Transfer);
-        const auto indexOffset = m_indexBuffer->SparseAllocate(indicesSize, QueueType::Transfer);
+        allocation->allocPositions = m_allocatorPositions.Allocate(positionsSize, positionsStride);
+        allocation->allocAttributes = m_allocatorAttributes.Allocate(attributesSize, attributesStride);
+        allocation->allocIndices = m_allocatorIndices.Allocate(indicesSize, m_indexSize);
+        allocation->allocSubmeshes = m_allocatorSubmeshes.Allocate(submeshesSize, submeshStride);
+        allocation->allocMeshlets = m_allocatorMeshlets.Allocate(meshletsSize, meshletStride);
+        allocation->allocMeshletVertices = m_allocatorMeshletVertices.Allocate(meshletVerticesSize, meshletVertexStride);
+        allocation->allocMeshletIndices = m_allocatorMeshletIndices.Allocate(meshletIndicesSize, 12ull);
+
+        PK_FATAL_ASSERT(allocation->allocPositions, "Failed to allocate mesh resources!");
+        PK_FATAL_ASSERT(allocation->allocAttributes, "Failed to allocate mesh resources!");
+        PK_FATAL_ASSERT(allocation->allocIndices, "Failed to allocate mesh resources!");
+        PK_FATAL_ASSERT(allocation->allocSubmeshes, "Failed to allocate mesh resources!");
+        PK_FATAL_ASSERT(allocation->allocMeshlets, "Failed to allocate mesh resources!");
+        PK_FATAL_ASSERT(allocation->allocMeshletVertices, "Failed to allocate mesh resources!");
+        PK_FATAL_ASSERT(allocation->allocMeshletIndices, "Failed to allocate mesh resources!");
+
+        const auto positionsOffset = allocation->allocPositions.offset;
+        const auto attributesOffset = allocation->allocAttributes.offset;
+        const auto indexOffset = allocation->allocIndices.offset;
+        const auto submeshOffset = allocation->allocSubmeshes.offset;
+        const auto meshletOffset = allocation->allocMeshlets.offset;
+        const auto meshletVertexOffset = allocation->allocMeshletVertices.offset;
+        const auto meshletIndexOffset = allocation->allocMeshletIndices.offset;
 
         PK_FATAL_ASSERT((meshletIndexOffset % 12ull) == 0ull, "Meshlet Index offsets must be aligned to 12!");
 
@@ -178,13 +202,13 @@ namespace PK
         auto attributesSize = allocation->vertexCount * attributesStride;
         auto indicesSize = allocation->indexCount * m_indexSize;
 
-        m_submeshBuffer->SparseDeallocate({ submeshOffset, submeshesSize });
-        m_meshletBuffer->SparseDeallocate({ meshletOffset, meshletsSize });
-        m_meshletVertexBuffer->SparseDeallocate({ meshletVertexOffset, meshletVerticesSize });
-        m_meshletIndexBuffer->SparseDeallocate({ meshletIndexOffset, meshletIndicesSize });
-        m_vertexBuffers[0]->SparseDeallocate({ attributesOffset, attributesSize });
-        m_vertexBuffers[1]->SparseDeallocate({ positionsOffset, positionsSize });
-        m_indexBuffer->SparseDeallocate({ indexOffset, indicesSize });
+        m_allocatorPositions.Free(allocation->allocPositions);
+        m_allocatorAttributes.Free(allocation->allocAttributes);
+        m_allocatorIndices.Free(allocation->allocIndices);
+        m_allocatorSubmeshes.Free(allocation->allocSubmeshes);
+        m_allocatorMeshlets.Free(allocation->allocMeshlets);
+        m_allocatorMeshletVertices.Free(allocation->allocMeshletVertices);
+        m_allocatorMeshletIndices.Free(allocation->allocMeshletIndices);
 
         m_submeshCount -= allocation->submeshCount;
         m_meshletCount -= allocation->meshletCount;

@@ -243,7 +243,7 @@ namespace PK::App
             m_gizmos_matrix = PK_FLOAT4X4_IDENTITY;
             m_gizmos_worldToClip = worldToClip;
             m_gizmos_vertexCount = 0u;
-            m_gizmos_maxVertices = (uint32_t)m_gizmos_vertexBuffer->GetCount<uint4>();
+            m_gizmos_maxVertices = (uint32_t)(m_gizmos_vertexBuffer->GetSize() / sizeof(uint4));
             m_gizmos_vertexView = cmd.BeginBufferWrite<GizmosVertex>(m_gizmos_vertexBuffer.get());
             m_sequencer->Next<IGizmosRenderer*>(this, this);
             cmd.EndBufferWrite(m_gizmos_vertexBuffer.get(), m_gizmos_vertexView);

@@ -58,24 +58,6 @@ namespace PK
         m_buffer->EndMap(offset, size);
     }
 
-    size_t VulkanBuffer::SparseAllocate(const size_t size, QueueType type)
-    {
-        PK_DEBUG_FATAL_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
-        return m_pageTable->Allocate(size, type);
-    }
-
-    void VulkanBuffer::SparseAllocateRange(const BufferIndexRange& range, QueueType type)
-    {
-        PK_DEBUG_FATAL_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
-        m_pageTable->AllocateRange(range, type);
-    }
-
-    void VulkanBuffer::SparseDeallocate(const BufferIndexRange& range)
-    {
-        PK_DEBUG_FATAL_ASSERT(m_pageTable, "Non sparse buffer cannot be deallocated from!");
-        m_pageTable->DeallocateRange(range);
-    }
-
     const VulkanBindHandle* VulkanBuffer::GetBindHandle(const BufferIndexRange& range)
     {
         PK_DEBUG_FATAL_ASSERT(range.offset + range.count <= GetSize(), "Trying to get a buffer bind handle for a range that it outside of buffer bounds");

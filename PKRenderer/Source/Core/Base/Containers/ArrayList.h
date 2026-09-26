@@ -263,7 +263,12 @@ namespace PK
             return false;
         }
 
-        bool Pop() { return UnorderedRemoveAt(m_count - 1u); }
+        T&& Pop() 
+        { 
+            auto value = PK::MoveTemp(GetData()[m_count - 1u]);
+            UnorderedRemoveAt(m_count - 1u); 
+            return PK::MoveTemp(value);
+        }
 
     private:
         TData m_data;

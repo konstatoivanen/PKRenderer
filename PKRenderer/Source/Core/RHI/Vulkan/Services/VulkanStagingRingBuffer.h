@@ -21,10 +21,6 @@ namespace PK
         void* GetNativeHandle() const final { return buffer; }
         uint64_t GetDeviceAddress() const final { return deviceAddress + region.srcOffset; }
 
-        size_t SparseAllocate(const size_t size, QueueType type) final { return 0ull; }
-        void SparseAllocateRange(const BufferIndexRange& range, QueueType type) final {};
-        void SparseDeallocate(const BufferIndexRange& range) final {};
-
         virtual void* BeginMap(size_t offset, size_t readsize) const final { return mappedData; }
         virtual void EndMap(size_t offset, size_t size) const final {};
     };

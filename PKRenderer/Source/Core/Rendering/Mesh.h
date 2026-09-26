@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Base/Containers/Pool.h"
 #include "Core/Base/Containers/ArrayList.h"
+#include "Core/Base/Containers/TLSFAllocator.h"
 #include "Core/ControlFlow/FenceRef.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/Assets/Asset.h"
@@ -88,6 +89,14 @@ namespace PK
         struct Allocation
         {
             MeshStaticAllocator* allocator = nullptr;
+            TLSFAllocator::Allocation allocPositions;
+            TLSFAllocator::Allocation allocAttributes;
+            TLSFAllocator::Allocation allocIndices;
+            TLSFAllocator::Allocation allocSubmeshes;
+            TLSFAllocator::Allocation allocMeshlets;
+            TLSFAllocator::Allocation allocMeshletVertices;
+            TLSFAllocator::Allocation allocMeshletIndices;
+
             NameID name = 0u;
             uint32_t submeshFirst = 0u;
             uint32_t submeshCount = 0u;
@@ -128,6 +137,13 @@ namespace PK
         RHIBufferRef m_meshletBuffer;
         RHIBufferRef m_meshletVertexBuffer;
         RHIBufferRef m_meshletIndexBuffer;
+        TLSFAllocator m_allocatorPositions;
+        TLSFAllocator m_allocatorAttributes;
+        TLSFAllocator m_allocatorIndices;
+        TLSFAllocator m_allocatorSubmeshes;
+        TLSFAllocator m_allocatorMeshlets;
+        TLSFAllocator m_allocatorMeshletVertices;
+        TLSFAllocator m_allocatorMeshletIndices;
         FixedPool<Allocation, 4096ull> m_allocations;
         FixedPool<SubMesh, 8192ull> m_submeshes;
         VertexStreamLayout m_streamLayout;

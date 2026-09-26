@@ -63,16 +63,9 @@ namespace PK
         virtual void* GetNativeHandle() const = 0;
         virtual uint64_t GetDeviceAddress() const = 0;
 
-        virtual size_t SparseAllocate(const size_t size, QueueType type) = 0;
-        virtual void SparseAllocateRange(const BufferIndexRange& range, QueueType type) = 0;
-        virtual void SparseDeallocate(const BufferIndexRange& range) = 0;
-        
         virtual void* BeginMap(size_t offset, size_t readsize) const = 0;
         virtual void EndMap(size_t offset, size_t size) const = 0;
 
-        template<typename T>
-        inline size_t GetCount() const { return GetSize() / sizeof(T); }
-        inline bool IsSparse() const { return (GetUsage() & BufferUsage::Sparse) != 0; }
         inline bool IsConcurrent() const { return (GetUsage() & BufferUsage::Concurrent) != 0u; }
         inline BufferIndexRange GetFullRange() const { return { 0ull, GetSize() }; }
 

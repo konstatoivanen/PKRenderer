@@ -228,7 +228,6 @@ namespace PK::Memory
         return ret; 
     }
 
-
     template<typename TAlignment>
     constexpr size_t AlignSize(size_t size) noexcept 
     { 

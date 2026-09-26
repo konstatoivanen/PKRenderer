@@ -19,10 +19,6 @@ namespace PK
         void* BeginMap(size_t offset, size_t readsize) const final;
         void EndMap(size_t offset, size_t size) const final;
 
-        size_t SparseAllocate(const size_t size, QueueType type) final;
-        void SparseAllocateRange(const BufferIndexRange& range, QueueType type) final;
-        void SparseDeallocate(const BufferIndexRange& range) final;
-
         constexpr const VulkanBindHandle* GetBindHandle() const { return m_defaultView; }
         const VulkanBindHandle* GetBindHandle(const BufferIndexRange& range);
             

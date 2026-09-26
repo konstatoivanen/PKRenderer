@@ -783,6 +783,9 @@
     <ClInclude Include="ThirdParty\vulkan\vk_video\vulkan_video_codec_vp9std_decode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Base\Containers\TLSFAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Models\MDL_Cloth.mdl" />
@@ -1291,6 +1294,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanQueueTimer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Base\Containers\TLSFAllocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
