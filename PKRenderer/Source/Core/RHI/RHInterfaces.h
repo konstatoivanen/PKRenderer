@@ -56,6 +56,7 @@ namespace PK
     struct RHIBuffer : public NoCopy
     {
         virtual ~RHIBuffer() = 0;
+        virtual size_t GetOffset() const = 0;
         virtual size_t GetSize() const = 0;
         virtual BufferUsage GetUsage() const = 0;
         virtual const char* GetDebugName() const = 0;
@@ -143,6 +144,9 @@ namespace PK
         virtual FenceRef GetFenceRef() const = 0;
         virtual void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) = 0;
 
+        virtual RHIBuffer* AcquireStagingBuffer(size_t size) = 0;
+        virtual void ReleaseStagingBuffer(RHIBuffer* buffer) = 0;
+
         virtual void SetViewPorts(const uint4* rects, uint32_t count) = 0;
         virtual void SetScissors(const uint4* rects, uint32_t count) = 0;
 
@@ -177,11 +181,7 @@ namespace PK
         
         virtual void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, const void* data) = 0;
         virtual void CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size) = 0;
-        virtual void* BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size) = 0;
-        virtual void EndBufferWrite(RHIBuffer* buffer) = 0;
-
         virtual void CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount) = 0;
-        virtual void CopyToTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount) = 0;
         
         virtual void InvalidateTexture(RHITexture* texture) = 0;
 
@@ -225,9 +225,6 @@ namespace PK
         virtual RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) = 0;
         virtual RHIShaderRef CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) = 0;
         virtual RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) = 0;
-
-        virtual RHIBuffer* AcquireStage(size_t size) = 0;
-        virtual void ReleaseStage(RHIBuffer* buffer, const FenceRef& fence) = 0;
 
         virtual void SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) = 0;
         virtual void SetBufferSet(NameID name, RHIBufferBindSet* bufferSet) = 0;

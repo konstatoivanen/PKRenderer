@@ -29,7 +29,7 @@ PK::BuiltInResources::BuiltInResources()
     const uint32_t stageSize = sizeof(blackData) + sizeof(blackArrayData) + sizeof(whiteData) + sizeof(errorData) + sizeof(transparentData);
 
     auto commandBuffer = RHI::GetCommandBuffer(QueueType::Transfer);
-    auto stage = RHI::AcquireStage(stageSize);
+    auto stage = commandBuffer->AcquireStagingBuffer(stageSize);
     {
         TextureDataRegion region;
         region.bufferOffset = 0ull;
@@ -64,5 +64,5 @@ PK::BuiltInResources::BuiltInResources()
 
         stage->EndMap(0, stageSize);
     }
-    RHI::ReleaseStage(stage, commandBuffer->GetFenceRef());
+    commandBuffer->ReleaseStagingBuffer(stage);
 }

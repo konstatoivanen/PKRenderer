@@ -30,7 +30,6 @@ namespace PK
             DisposeVkAccelerationStructureKHR(m_substructures[i].value.handle, fence);
         }
 
-        m_driver->DisposePooled(m_instanceInputBuffer, fence);
         m_driver->DisposePooled(m_scratchBuffer, fence);
         m_driver->DisposePooled(m_structureBuffer, fence);
     }
@@ -72,21 +71,10 @@ namespace PK
         m_instanceLimit = instanceLimit;
         m_topologyHashCurr = 0u;
 
-        auto inputBufferStride = sizeof(VkAccelerationStructureInstanceKHR) * instanceLimit;
-        auto inputBufferSize = inputBufferStride * PK_RHI_MAX_FRAMES_IN_FLIGHT;
-        m_instanceBufferOffset = (m_instanceBufferOffset + inputBufferStride) % inputBufferSize;
-
-        if (m_instanceInputBuffer == nullptr || m_instanceInputBuffer->size < inputBufferSize)
-        {
-            m_instanceBufferOffset = 0ull;
-            m_driver->DisposePooled(m_instanceInputBuffer, m_cmd->GetFenceRef());
-            m_instanceInputBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device,
-                m_driver->allocator,
-                VulkanBufferCreateInfo(BufferUsage::InstanceInput | BufferUsage::DefaultStaging | BufferUsage::PersistentStage, inputBufferSize),
-                FixedString128({ m_name.c_str(), ".InstanceInputBuffer" }).c_str());
-        }
-
-        m_writeBuffer = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(m_instanceInputBuffer->BeginMap(m_instanceBufferOffset, 0ull));
+        auto inputBufferSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceLimit;
+        m_instanceIndices = m_driver->arena.Allocate<uint32_t>(instanceLimit);
+        m_instanceInputStage = m_cmd->AcquireStagingBuffer(inputBufferSize);
+        m_writeBuffer = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(m_instanceInputStage->BeginMap(0ull, 0ull));
     }
 
     void VulkanAccelerationStructure::AddInstance(const RayTracingGeometryInfo& geometry, const float3x4& matrix)
@@ -130,15 +118,19 @@ namespace PK
             structure->size = VulkanGetAccelerationBuildSizesInfo(m_driver->device, structure->buildInfo, structure->range.primitiveCount);
         }
 
-        VkAccelerationStructureInstanceKHR* instance = m_writeBuffer + m_instanceCount++;
-        instance->transform = Memory::BitCast<float3x4, VkTransformMatrixKHR>(matrix);
-        instance->instanceCustomIndex = geometry.customIndex;
-        instance->mask = 0xFF;
-        instance->instanceShaderBindingTableRecordOffset = geometry.recordOffset;
-        instance->flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-        instance->accelerationStructureReference = (uint64_t)index;
+        VkAccelerationStructureInstanceKHR instance;
+        instance.transform = Memory::BitCast<float3x4, VkTransformMatrixKHR>(matrix);
+        instance.instanceCustomIndex = geometry.customIndex;
+        instance.mask = 0xFF;
+        instance.instanceShaderBindingTableRecordOffset = geometry.recordOffset;
+        instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+        instance.accelerationStructureReference = 0ull;
 
-        m_topologyHashCurr += math::hash(matrix, 0.01f) * (instance->accelerationStructureReference + 1ull);
+        // Important do not not "optimize" this to assign the members individually.
+        // This goes directly to PCIE BAR.
+        m_writeBuffer[m_instanceCount] = instance;
+        m_instanceIndices[m_instanceCount++] = index;
+        m_topologyHashCurr += math::hash(matrix, 0.01f) * ((uint64_t)index + 1ull);
     }
 
     void VulkanAccelerationStructure::EndWrite()
@@ -209,7 +201,7 @@ namespace PK
                 m_structure.geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
                 m_structure.geometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
                 m_structure.geometry.geometry.instances.arrayOfPointers = VK_FALSE;
-                m_structure.geometry.geometry.instances.data.deviceAddress = m_instanceInputBuffer->deviceAddress + m_instanceBufferOffset;
+                m_structure.geometry.geometry.instances.data.deviceAddress = m_instanceInputStage->GetDeviceAddress();
                 m_structure.geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
                 m_structure.buildInfo = VkAccelerationStructureBuildGeometryInfoKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
                 m_structure.buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
@@ -315,11 +307,9 @@ namespace PK
 
         for (auto i = 0u; i < m_instanceCount && hasChanged; ++i)
         {
-            auto index = (uint32_t)m_writeBuffer[i].accelerationStructureReference;
+            auto index = m_instanceIndices[i];
             m_writeBuffer[i].accelerationStructureReference = m_substructures[index].value.deviceAddress;
         }
-
-        m_instanceInputBuffer->EndMap(m_instanceBufferOffset, sizeof(VkAccelerationStructureInstanceKHR) * m_instanceLimit);
 
         if (hasChanged)
         {
@@ -331,7 +321,10 @@ namespace PK
             m_lastBuildFenceRef = m_cmd->GetFenceRef();
         }
 
+        m_cmd->ReleaseStagingBuffer(m_instanceInputStage);
         m_topologyHashPrev = m_topologyHashCurr;
+        m_instanceInputStage = nullptr;
+        m_instanceIndices = nullptr;
         m_writeBuffer = nullptr;
         m_cmd = nullptr;
     }

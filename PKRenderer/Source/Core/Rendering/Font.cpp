@@ -1,9 +1,10 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAsset.h>
 #include <PKAssets/PKAssetLoader.h>
+#include "Core/Math/Rect.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Math/Rect.h"
+#include "Core/Rendering/CommandBufferExt.h"
 #include "Font.h"
 
 namespace PK
@@ -68,20 +69,9 @@ namespace PK
 
         m_texture = RHI::CreateTexture(descriptor, String::ToFilePathStem<64>(filepath));
 
-        TextureDataRegion dataRegion;
-        dataRegion.bufferOffset = 0u;
-        dataRegion.level = 0u;
-        dataRegion.layer = 0u;
-        dataRegion.layers = 1u;
-        dataRegion.offset = PK_UINT3_ZERO;
-        dataRegion.extent = descriptor.resolution;;
-
-        RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(),
-            font->atlasData.Get(base),
-            font->atlasDataSize,
-            &dataRegion,
-            1u);
-
+        CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
+        cmd.UploadTexture(m_texture.get(), font->atlasData.Get(base), font->atlasDataSize, 0u, 0u, 1u);
+ 
         PKAssets::CloseAsset(&asset);
     }
 

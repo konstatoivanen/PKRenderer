@@ -15,10 +15,10 @@ namespace PK::App
     {
         PK_LOG_VERBOSE_FUNC();
         m_textures2D = RHI::CreateBindSet<RHITexture>(PK_RHI_MAX_UNBOUNDED_SIZE);
-        m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::PersistentStorage, "Batching.Matrices");
-        m_indices = RHI::CreateBuffer<PKAssets::PKDrawInfo>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
-        m_properties = RHI::CreateBuffer(16384ull, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
-        m_tasklets = RHI::CreateBuffer<uint2>(4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
+        m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::DefaultStorage, "Batching.Matrices");
+        m_indices = RHI::CreateBuffer<PKAssets::PKDrawInfo>(1024ull, BufferUsage::DefaultStorage, "Batching.DrawInfos");
+        m_properties = RHI::CreateBuffer(16384ull, BufferUsage::DefaultStorage, "Batching.MaterialProperties");
+        m_tasklets = RHI::CreateBuffer<uint2>(4096u, BufferUsage::DefaultStorage, "Batching.Meshlet.Tasklets");
     }
 
     void BatcherMeshStatic::AssetConstruct(MeshStatic* memory, const char* filepath)
@@ -56,7 +56,7 @@ namespace PK::App
             matrixView[index] = m_transforms[index]->localToWorld;
         }
 
-        cmd->EndBufferWrite(m_matrices.get());
+        cmd.EndBufferWrite(m_matrices.get(), matrixView);
     }
 
     void BatcherMeshStatic::UploadMaterials(CommandBufferExt cmd)
@@ -92,7 +92,7 @@ namespace PK::App
                 }
             }
 
-            cmd->EndBufferWrite(m_properties.get());
+            cmd.EndBufferWrite(m_properties.get(), propertyView);
         }
     }
 
@@ -161,8 +161,8 @@ namespace PK::App
         m_drawArena.New<DrawCall>(DrawCall({ m_shaders[lastInfo->shader].reference, { taskletDrawStart, taskletCount - taskletDrawStart } }));
         m_resolvedGroups[m_groupCount++] = { passDrawCalls, m_drawArena.GetHeadDelta(passDrawCalls) };
 
-        cmd->EndBufferWrite(m_indices.get());
-        cmd->EndBufferWrite(m_tasklets.get());
+        cmd.EndBufferWrite(m_indices.get(), indexView);
+        cmd.EndBufferWrite(m_tasklets.get(), taskletView);
     }
 
     void BatcherMeshStatic::EndCollectDrawCalls(CommandBufferExt cmd)

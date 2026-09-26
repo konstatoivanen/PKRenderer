@@ -5,6 +5,7 @@
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommandBuffer.h"
 #include "Core/RHI/Vulkan/Services/VulkanQueueTimer.h"
+#include "Core/RHI/Vulkan/Services/VulkanStagingRingBuffer.h"
 #include "Core/RHI/Vulkan/VulkanPipelineState.h"
 
 namespace PK
@@ -16,19 +17,25 @@ namespace PK
         float priorities[(uint32_t)QueueType::EnumCount] = { 1.0f, 1.0f, 1.0f, 1.0f };
         uint32_t queueFamilies[(uint32_t)QueueType::EnumCount]{};
         uint32_t typeIndices[(uint32_t)QueueType::EnumCount]{};
+        VkDeviceSize stagingBufferSizes[(uint32_t)QueueType::EnumCount]{};
         const char* names[(uint32_t)QueueType::EnumCount]{};
         VkDeviceQueueCreateInfo createInfos[(uint32_t)QueueType::EnumCount]{};
         VkQueueFamilyProperties familyProperties[(uint32_t)QueueType::EnumCount]{};
         uint32_t queueCount = 0u;
 
-        VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
+        VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const RHIQueueStagingBufferSizes& stagingBufferSizes);
     };
 
     struct VulkanQueue : public NoCopy
     {
         constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::EnumCount + 1u;
 
-        VulkanQueue(const VulkanDriver* driver, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, const char* name);
+        VulkanQueue(const VulkanDriver* driver, 
+            VkQueueFlags flags, 
+            uint32_t queueFamily, 
+            uint32_t queueIndex,
+            VkDeviceSize stagingBufferSize,
+            const char* name);
         ~VulkanQueue();
 
         inline ConstBufferView<RHITimerScope> GetTimers() const { return m_timer.GetResults(); }
@@ -55,6 +62,7 @@ namespace PK
 
         VulkanBarrierHandler m_barrierHandler;
         VulkanQueueTimer m_timer;
+        VulkanStagingRingBuffer m_stagingBuffer;
         VulkanPipelineState m_pipelineState;
 
         VkQueue m_queue = VK_NULL_HANDLE;
@@ -78,8 +86,9 @@ namespace PK
         RHICommandBuffer* Submit(QueueType type) final;
         void Wait(QueueType to, QueueType from, int32_t submitOffset = 0) final;
 
-        inline VulkanQueue* GetQueue(QueueType type) { return m_queues[m_queueIndices[(uint32_t)type]].get(); }
-        inline const VulkanQueue* GetQueue(QueueType type) const { return m_queues[m_queueIndices[(uint32_t)type]].get(); }
+        inline uint32_t GetQueueIndex(QueueType type) const { return m_queueIndices[(uint32_t)type]; }
+        inline VulkanQueue* GetQueue(QueueType type) { return m_queues[GetQueueIndex(type)].get(); }
+        inline const VulkanQueue* GetQueue(QueueType type) const { return m_queues[GetQueueIndex(type)].get(); }
         constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
         VkResult SubmitCurrent(QueueType type, VkSemaphore* outSignal = nullptr);
         void Prune();

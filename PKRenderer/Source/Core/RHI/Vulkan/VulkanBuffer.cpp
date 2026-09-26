@@ -12,22 +12,8 @@ namespace PK
         m_name(name),
         m_usage(usage)
     {
-        // Sparse buffers cannot be persistently mapped
-        if ((m_usage & BufferUsage::Sparse) != 0)
-        {
-            m_usage = m_usage & ~((uint32_t)BufferUsage::PersistentStage);
-        }
-
-        // Dont persistent map the backing buffer.
-        auto bufferUsage = m_usage & ~((uint32_t)BufferUsage::PersistentStage);
-        auto bufferCreateInfo = VulkanBufferCreateInfo(bufferUsage, size, &m_driver->queues->GetSelectedFamilies());
+        auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size, &m_driver->queues->GetSelectedFamilies());
         m_buffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
-
-        // Acquire persistent staging buffer
-        if ((m_usage & BufferUsage::PersistentStage) != 0)
-        {
-            m_stage = m_driver->stagingBufferCache->Acquire(size, true, m_name.c_str());
-        }
 
         if ((m_usage & BufferUsage::Sparse) != 0)
         {
@@ -52,14 +38,6 @@ namespace PK
             m_driver->DisposePooled(view, fence);
         }
 
-        if (m_stage != nullptr && !m_stage->isPersistentMap)
-        {
-            m_stage->EndMap(0ull, 0ull);
-        }
-
-        m_driver->stagingBufferCache->Release(m_stage, fence);
-        m_stage = nullptr;
-
         m_driver->disposer->Dispose(m_pageTable, fence);
         m_driver->DisposePooled(m_buffer, fence);
         m_pageTable = nullptr;
@@ -67,8 +45,6 @@ namespace PK
         m_firstView = nullptr;
         m_defaultView = nullptr;
     }
-
-
 
     void* VulkanBuffer::BeginMap(size_t offset, size_t readsize) const
     {
@@ -98,43 +74,6 @@ namespace PK
     {
         PK_DEBUG_FATAL_ASSERT(m_pageTable, "Non sparse buffer cannot be deallocated from!");
         m_pageTable->DeallocateRange(range);
-    }
-
-
-    void* VulkanBuffer::BeginStagedWrite(size_t offset, size_t size)
-    {
-        PK_DEBUG_FATAL_ASSERT((offset + size) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + size, GetSize());
-
-        if (m_stage == nullptr || !m_stage->isPersistentMap)
-        {
-            PK_DEBUG_FATAL_ASSERT(m_stage == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
-            m_stage = m_driver->stagingBufferCache->Acquire(size, false, nullptr);
-        }
-
-        m_stageRegion.srcOffset = m_stage->isPersistentMap ? m_stageRegion.ringOffset + offset : 0ull;
-        m_stageRegion.dstOffset = offset;
-        m_stageRegion.size = size;
-        return m_stage->BeginMap(m_stageRegion.srcOffset, 0ull);
-    }
-
-    void VulkanBuffer::EndStagedWrite(RHIBuffer** dst, RHIBuffer** src, VkBufferCopy* region, const FenceRef& fence)
-    {
-        PK_DEBUG_FATAL_ASSERT(m_stage != nullptr, "Trying to end buffer map for an unmapped buffer!");
-        
-        *src = m_stage;
-        *dst = this;
-        region->srcOffset = m_stageRegion.srcOffset;
-        region->dstOffset = m_stageRegion.dstOffset;
-        region->size = m_stageRegion.size;
-
-        m_stage->EndMap(m_stageRegion.srcOffset, m_stageRegion.size);
-        m_stageRegion.ringOffset = (m_stageRegion.ringOffset + m_buffer->size) % m_stage->size;
-
-        if (!m_stage->isPersistentMap)
-        {
-            m_driver->stagingBufferCache->Release(m_stage, fence);
-            m_stage = nullptr;
-        }
     }
 
     const VulkanBindHandle* VulkanBuffer::GetBindHandle(const BufferIndexRange& range)

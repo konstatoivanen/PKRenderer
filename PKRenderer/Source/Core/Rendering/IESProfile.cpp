@@ -5,6 +5,7 @@
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Structs.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/Rendering/CommandBufferExt.h"
 #include "IESProfile.h"
 
 namespace PK
@@ -68,8 +69,8 @@ namespace PK
         region.offset = PK_UINT3_ZERO;
         region.extent = m_texture->GetResolution();
 
-        auto cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-        cmd->CopyToTexture(m_texture.get(), profile->data.Get(asset.rawData), PKAssets::PK_IES_PROFILE_DATA_SIZE, &region, 1u);
+        CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
+        cmd.UploadTexture(m_texture.get(), profile->data.Get(asset.rawData), PKAssets::PK_IES_PROFILE_DATA_SIZE, &region, 1u);
 
         Memory::Construct(memory, this, static_cast<uint32_t>(index) + 1u, profile->lumens, profile->candelaMax, profile->candelaAverage);
         PKAssets::CloseAsset(&asset);

@@ -142,12 +142,11 @@ namespace PK
         Constant              = 1 << 8,
         Storage               = 1 << 9,
         Indirect              = 1 << 10,
-        PersistentStage       = 1 << 11,
-        Sparse                = 1 << 12,
-        AccelerationStructure = 1 << 13,
-        InstanceInput         = 1 << 14,
-        ShaderBindingTable    = 1 << 15,
-        Concurrent            = 1 << 16,
+        Sparse                = 1 << 11,
+        AccelerationStructure = 1 << 12,
+        InstanceInput         = 1 << 13,
+        ShaderBindingTable    = 1 << 14,
+        Concurrent            = 1 << 15,
 
         TypeBits = 7,
         DefaultVertex = GPUOnly | TransferDst | Vertex,
@@ -156,7 +155,6 @@ namespace PK
         SparseIndex = DefaultIndex | Sparse,
         DefaultConstant = GPUOnly | TransferDst | Constant,
         DefaultStorage = GPUOnly | TransferDst | Storage,
-        PersistentStorage = DefaultStorage | PersistentStage,
         DefaultStaging = CPUOnly | TransferSrc,
         DefaultShaderBindingTable = GPUOnly | TransferDst | ShaderBindingTable,
         DefaultAccelerationStructure = GPUOnly | AccelerationStructure
@@ -490,12 +488,21 @@ namespace PK
         size_t unusedRangeSizeMax;
     };
 
+    struct RHIQueueStagingBufferSizes
+    {
+        uint32_t sizeTransfer;
+        uint32_t sizeGraphics;
+        uint32_t sizeCompute;
+        uint32_t sizePresent;
+    };
+
     struct RHIDriverDescriptor
     {
         RHIAPI api;
         uint32_t apiVersionMajor;
         uint32_t apiVersionMinor;
         uint32_t gcPruneDelay;
+        RHIQueueStagingBufferSizes stagingBufferSizes;
         bool enableValidation;
         bool enableDebugNames;
         bool enableDebugLabels;

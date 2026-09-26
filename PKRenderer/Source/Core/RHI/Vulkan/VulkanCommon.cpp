@@ -344,11 +344,6 @@ namespace PK
             buffer.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
         }
 
-        if ((usage & BufferUsage::PersistentStage) != 0)
-        {
-            allocation.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        }
-
         if ((usage & BufferUsage::AccelerationStructure) != 0)
         {
             buffer.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;

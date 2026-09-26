@@ -55,7 +55,6 @@ namespace PK
         const VulkanDriver* m_driver = nullptr;
         const FixedString128 m_name;
 
-        VulkanRawBuffer* m_instanceInputBuffer = nullptr;
         VulkanRawBuffer* m_scratchBuffer = nullptr;
         VulkanRawBuffer* m_structureBuffer = nullptr;
         FixedUnique<VulkanQueryPool> m_queryPool;
@@ -69,11 +68,12 @@ namespace PK
         uint32_t m_instanceLimit = 0u;
         uint64_t m_topologyHashPrev = 0u;
         uint64_t m_topologyHashCurr = 0u;
-        VkDeviceSize m_instanceBufferOffset = 0ull;
 
         //@TODO This shouldnt be here. replace begin end with cmd injection
         struct VulkanCommandBuffer* m_cmd = nullptr;
         FenceRef m_lastBuildFenceRef = {};
+        RHIBuffer* m_instanceInputStage = nullptr;
+        uint32_t* m_instanceIndices = nullptr;
         VkAccelerationStructureInstanceKHR* m_writeBuffer = nullptr;
     };
 }

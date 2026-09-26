@@ -366,7 +366,7 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanSamplerCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanStagingBufferCache.h">
+    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanStagingRingBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommon.h">
@@ -1107,7 +1107,7 @@
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanSamplerCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanStagingBufferCache.cpp">
+    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanStagingRingBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommon.cpp">

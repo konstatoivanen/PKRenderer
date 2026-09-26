@@ -22,6 +22,16 @@ namespace PK
             m_invocationIndex + 1);
     }
 
+    RHIBuffer* VulkanCommandBuffer::AcquireStagingBuffer(size_t size)
+    {
+        return m_stagingBuffer->BeginWrite(0ull, size);
+    }
+    
+    void VulkanCommandBuffer::ReleaseStagingBuffer(RHIBuffer* buffer)
+    {
+        m_stagingBuffer->EndWrite(buffer);
+    }
+
     void VulkanCommandBuffer::SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers)
     {
         VulkanRenderTargetBindings state{};
@@ -97,7 +107,7 @@ namespace PK
     void VulkanCommandBuffer::SetShaderBindingTable(RayTracingShaderGroup group, const RHIBuffer* buffer, size_t offset, size_t stride, size_t size)
     {
         auto address = buffer->GetDeviceAddress();
-        m_state->SetShaderBindingTableAddress(group, address + offset, stride, size);
+        m_state->SetShaderBindingTableAddress(group, address + buffer->GetOffset() + offset, stride, size);
     }
 
     void VulkanCommandBuffer::SetStageExcludeMask(const ShaderStageFlags mask)
@@ -136,6 +146,7 @@ namespace PK
     void VulkanCommandBuffer::DrawIndirect(const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
         auto vkBuffer = indirectArguments->GetNativeHandle<VkBuffer>();
+        offset += indirectArguments->GetOffset();
 
         VulkanBarrierHandler::AccessRecord record{};
         record.bufferRange.offset = (uint32_t)offset;
@@ -160,6 +171,7 @@ namespace PK
     void VulkanCommandBuffer::DrawIndexedIndirect(const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
         auto vkBuffer = indirectArguments->GetNativeHandle<VkBuffer>();
+        offset += indirectArguments->GetOffset();
 
         VulkanBarrierHandler::AccessRecord record{};
         record.bufferRange.offset = (uint32_t)offset;
@@ -184,6 +196,7 @@ namespace PK
     void VulkanCommandBuffer::DrawMeshTasksIndirect(const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
         auto vkBuffer = indirectArguments->GetNativeHandle<VkBuffer>();
+        offset += indirectArguments->GetOffset();
         
         VulkanBarrierHandler::AccessRecord record{};
         record.bufferRange.offset = (uint32_t)offset;
@@ -206,6 +219,9 @@ namespace PK
         uint32_t stride)
     {
         VulkanBarrierHandler::AccessRecord record{};
+
+        offset += indirectArguments->GetOffset();
+        countOffset += countBuffer->GetOffset();
 
         auto vkbufferIndirect = indirectArguments->GetNativeHandle<VkBuffer>();
         record.bufferRange.offset = (uint32_t)offset;
@@ -298,6 +314,7 @@ namespace PK
         region.imageSubresource.layerCount = 1u;
         region.imageOffset = { 0,0,0 };
         region.imageExtent = vksrc->image.extent;
+        region.bufferOffset = dst->GetOffset();
 
         m_state->RecordImage(m_barrierHandler, vksrc, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
@@ -379,7 +396,7 @@ namespace PK
     {
         EndRenderPass();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdFillBuffer(m_commandBuffer, dst->GetNativeHandle<VkBuffer>(), offset, size, value);
+        vkCmdFillBuffer(m_commandBuffer, dst->GetNativeHandle<VkBuffer>(), dst->GetOffset() + offset, size, value);
     }
 
     void VulkanCommandBuffer::Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value)
@@ -409,12 +426,12 @@ namespace PK
     {
         EndRenderPass();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdUpdateBuffer(m_commandBuffer, dst->GetNativeHandle<VkBuffer>(), offset, size, data);
+        vkCmdUpdateBuffer(m_commandBuffer, dst->GetNativeHandle<VkBuffer>(), dst->GetOffset() + offset, size, data);
     }
 
     void VulkanCommandBuffer::CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size)
     {
-        VkBufferCopy copyRegion{ srcOffset, dstOffset, size };
+        VkBufferCopy copyRegion{ src->GetOffset() + srcOffset, dst->GetOffset() + dstOffset, size };
         auto vksrcBuffer = src->GetNativeHandle<VkBuffer>();
         auto vkdstBuffer = dst->GetNativeHandle<VkBuffer>();
 
@@ -429,21 +446,6 @@ namespace PK
         record.queueFamily = dst->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_barrierHandler->Record(vkdstBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
     }
-
-    void* VulkanCommandBuffer::BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size)
-    {
-        return static_cast<VulkanBuffer*>(buffer)->BeginStagedWrite(offset, size);
-    }
-
-    void VulkanCommandBuffer::EndBufferWrite(RHIBuffer* buffer)
-    {
-        VkBufferCopy copyRegion;
-        RHIBuffer* src;
-        RHIBuffer* dst;
-        static_cast<VulkanBuffer*>(buffer)->EndStagedWrite(&dst, &src, &copyRegion, GetFenceRef());
-        CopyBuffer(dst, src, copyRegion.srcOffset, copyRegion.dstOffset, copyRegion.size);
-    }
-
 
     void VulkanCommandBuffer::CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount)
     {
@@ -460,7 +462,7 @@ namespace PK
         for (auto i = 0u; i < regionCount; ++i)
         {
             auto& region = regions[i];
-            copyRegions[i].bufferOffset = region.bufferOffset;
+            copyRegions[i].bufferOffset = buffer->GetOffset() + region.bufferOffset;
             copyRegions[i].bufferRowLength = 0u;
             copyRegions[i].bufferImageHeight = 0u;
             copyRegions[i].imageSubresource.aspectMask = resourceRange.aspectMask;
@@ -486,18 +488,6 @@ namespace PK
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdCopyBufferToImage(m_commandBuffer, vkBuffer, vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regionCount, copyRegions);
         TransitionImageLayout(vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, resourceRange);
-    }
-
-    void VulkanCommandBuffer::CopyToTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount)
-    {
-        auto stage = m_driver->stagingBufferCache->Acquire(size, false, nullptr);
-
-        auto pMapped = stage->BeginMap(0ull, 0ull);
-        memcpy(pMapped, data, size);
-        stage->EndMap(0ull, size);
-        
-        CopyToTexture(texture, stage, regions, regionCount);
-        m_driver->stagingBufferCache->Release(stage, GetFenceRef());
     }
 
 
@@ -768,6 +758,7 @@ namespace PK
         const VulkanDriver* driver,
         VulkanBarrierHandler* barrierHandler,
         VulkanQueueTimer* timer,
+        VulkanStagingRingBuffer* stagingBuffer,
         VulkanPipelineState* state,
         VkCommandBuffer commandBuffer,
         uint16_t queueFamily)
@@ -775,6 +766,7 @@ namespace PK
         m_driver = driver;
         m_barrierHandler = barrierHandler;
         m_timer = timer;
+        m_stagingBuffer = stagingBuffer;
         m_state = state;
         *m_state = VulkanPipelineState();
 
@@ -783,6 +775,7 @@ namespace PK
         m_queueFamily = queueFamily;
         
         m_timer->BeginTimeline();
+        m_stagingBuffer->BeginRange();
 
         VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -795,6 +788,7 @@ namespace PK
         EndRenderPass();
         m_barrierHandler->ClearBarriers();
         m_timerIndex = m_timer->EndTimeline();
+        m_stageIndex = m_stagingBuffer->EndRange();
         m_queueTimelineIndex = queueTimelineIndex;
         m_driver = nullptr;
         m_barrierHandler = nullptr;
@@ -808,7 +802,9 @@ namespace PK
         if (m_commandBuffer != VK_NULL_HANDLE && m_queueTimelineIndex <= currentQueueTimelineIndex)
         {
             m_timer->FlushTimeline(m_timerIndex);
+            m_stagingBuffer->FreeRange(m_stageIndex);
             m_timer = nullptr;
+            m_stagingBuffer = nullptr;
             m_imageSignal = VK_NULL_HANDLE;
             m_commandBuffer = VK_NULL_HANDLE; 
             m_queueTimelineIndex = 0ull;

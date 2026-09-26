@@ -147,25 +147,22 @@ namespace PK
         commandBuffer->DispatchRays(dimensions);
     }
 
-    void CommandBufferExt::UploadBufferData(RHIBuffer* buffer, const void* data)
-    {
-        auto dst = commandBuffer->BeginBufferWrite(buffer, 0, buffer->GetSize());
-        memcpy(static_cast<char*>(dst), data, buffer->GetSize());
-        commandBuffer->EndBufferWrite(buffer);
-    }
-
     void CommandBufferExt::UploadBufferData(RHIBuffer* buffer, const void* data, size_t offset, size_t size)
     {
-        auto dst = commandBuffer->BeginBufferWrite(buffer, 0, buffer->GetSize());
-        memcpy(static_cast<char*>(dst) + offset, data, size);
-        commandBuffer->EndBufferWrite(buffer);
+        offset = size ? offset : 0ull;
+        size = size ? size : buffer->GetSize();
+        auto stage = commandBuffer->AcquireStagingBuffer(size);
+        memcpy(stage->BeginMap(0ull,0ull), data, size);
+        commandBuffer->CopyBuffer(buffer, stage, 0ull, offset, size);
+        commandBuffer->ReleaseStagingBuffer(stage);
     }
 
-    void CommandBufferExt::UploadBufferSubData(RHIBuffer* buffer, const void* data, size_t offset, size_t size)
+    void CommandBufferExt::UploadTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount)
     {
-        auto dst = commandBuffer->BeginBufferWrite(buffer, offset, size);
-        memcpy(dst, data, size);
-        commandBuffer->EndBufferWrite(buffer);
+        auto stage = commandBuffer->AcquireStagingBuffer(size);
+        memcpy(stage->BeginMap(0ull,0ull), data, size);
+        commandBuffer->CopyToTexture(texture, stage, regions, regionCount);
+        commandBuffer->ReleaseStagingBuffer(stage);
     }
 
     void CommandBufferExt::UploadTexture(RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer, uint32_t layers)
@@ -177,7 +174,7 @@ namespace PK
         region.layers = layers;
         region.offset = PK_UINT3_ZERO;
         region.extent = texture->GetResolution();
-        commandBuffer->CopyToTexture(texture, data, size, &region, 1u);
+        UploadTexture(texture, data, size, &region, 1u);
     }
 
     void CommandBufferExt::SetMesh(const IMesh* mesh)

@@ -88,7 +88,7 @@ namespace PK
         return ctx.selectedCount++;
     }
 
-    VulkanQueueSetInitializer::VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
+    VulkanQueueSetInitializer::VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const RHIQueueStagingBufferSizes& stagingBufferSizes)
     {
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
@@ -132,6 +132,8 @@ namespace PK
         typeIndices[(uint32_t)QueueType::Present] = GetQueueIndex(context, maskGraphics, maskTransfer, true, false, false);
         typeIndices[(uint32_t)QueueType::Compute] = GetQueueIndex(context, maskCompute, maskTransfer, false, false, true);
         typeIndices[(uint32_t)QueueType::Transfer] = GetQueueIndex(context, maskTransfer, 0u, false, false, true);
+        
+
         queueCount = context.selectedCount;
 
         for (auto i = 0u; i < context.selectedCount; ++i)
@@ -140,10 +142,10 @@ namespace PK
             familyProperties[i] = queueFamilyProperties[context.selectedIndices[i]];
         }
 
-        // This is just for debug naming purposes
         for (auto i = (int32_t)QueueType::EnumCount; i >= 0; --i)
         {
             names[typeIndices[i]] = ReflectEnum<QueueType>::Names[i];
+            this->stagingBufferSizes[typeIndices[i]] = (&stagingBufferSizes.sizeTransfer)[i];
         }
 
         {
@@ -159,13 +161,14 @@ namespace PK
     }
 
 
-    VulkanQueue::VulkanQueue(const VulkanDriver* driver, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, const char* name) :
+    VulkanQueue::VulkanQueue(const VulkanDriver* driver, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, VkDeviceSize stagingBufferSize, const char* name) :
         m_driver(driver),
         m_family(queueFamily),
         m_queueIndex(queueIndex),
         m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags)),
         m_barrierHandler(queueFamily),
-        m_timer(driver->device, driver->physicalDeviceProperties.core.limits.timestampPeriod)
+        m_timer(driver->device, driver->physicalDeviceProperties.core.limits.timestampPeriod),
+        m_stagingBuffer(driver->device, driver->allocator, stagingBufferSize)
     {
         vkGetDeviceQueue(m_driver->device, m_family, m_queueIndex, &m_queue);
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_QUEUE, (uint64_t)m_queue, FixedString32("PK_Queue_%s", name).c_str());
@@ -265,11 +268,12 @@ namespace PK
         auto currentIndex = (int64_t)(m_currentCommandBuffer - m_commandWrappers);
         auto commandBuffer = m_commandBuffers[currentIndex];
         
-        m_currentCommandBuffer->BeginRecord(m_driver, 
-            &m_barrierHandler, 
-            &m_timer, 
-            &m_pipelineState, 
-            commandBuffer, 
+        m_currentCommandBuffer->BeginRecord(m_driver,
+            &m_barrierHandler,
+            &m_timer,
+            &m_stagingBuffer,
+            &m_pipelineState,
+            commandBuffer,
             (uint16_t)m_family);
 
         return m_currentCommandBuffer;
@@ -460,7 +464,12 @@ namespace PK
 
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
-            m_queues[i] = CreateUnique<VulkanQueue>(driver, initializer.familyProperties[i].queueFlags, initializer.queueFamilies[i], 0, initializer.names[i]);
+            m_queues[i] = CreateUnique<VulkanQueue>(driver, 
+                initializer.familyProperties[i].queueFlags, 
+                initializer.queueFamilies[i], 
+                0,
+                initializer.stagingBufferSizes[i],
+                initializer.names[i]);
         }
     }
 

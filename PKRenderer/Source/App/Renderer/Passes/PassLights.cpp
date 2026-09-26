@@ -137,9 +137,9 @@ namespace PK::App
         atlasDesc.sampler.filterMag = FilterMode::Bilinear;
         m_shadowmaps = RHI::CreateTexture(atlasDesc, "Lights.Shadowmap.Atlas");
 
-        m_lightsBuffer = RHI::CreateBuffer<PackedLight>(1024ull, BufferUsage::PersistentStorage, "Lights");
+        m_lightsBuffer = RHI::CreateBuffer<PackedLight>(1024ull, BufferUsage::DefaultStorage, "Lights");
         m_lightsCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::DefaultStorage, "Lights.AtomicCounter");
-        m_lightMatricesBuffer = RHI::CreateBuffer<float4x4>(32ull, BufferUsage::PersistentStorage, "Lights.Matrices");
+        m_lightMatricesBuffer = RHI::CreateBuffer<float4x4>(32ull, BufferUsage::DefaultStorage, "Lights.Matrices");
 
         auto hash = HashCache::Get();
         RHI::SetTexture(hash->pk_IESProfiles, m_iesAtlas.GetRHI());
@@ -203,7 +203,7 @@ namespace PK::App
 
         CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
         auto packedLights = cmd.BeginBufferWrite<PackedLight>(m_lightsBuffer.get(), 0u, lightCount + 1u);
-        auto matricesView = matrixCount > 0u ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
+        auto matricesView = matrixCount > 0u ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : StagedBufferView<float4x4>();
 
         for (auto lightIndex = 0u; lightIndex < lightCount; ++lightIndex)
         {
@@ -325,11 +325,11 @@ namespace PK::App
         // Empty last one for clustering
         packedLights[lightCount] = PackedLight();
 
-        cmd->EndBufferWrite(m_lightsBuffer.get());
+        cmd.EndBufferWrite(m_lightsBuffer.get(), packedLights);
 
         if (matrixCount > 0)
         {
-            cmd->EndBufferWrite(m_lightMatricesBuffer.get());
+            cmd.EndBufferWrite(m_lightMatricesBuffer.get(), matricesView);
         }
 
         if (m_shadowmaps->GetLayers() < shadowCount + ShadowCascadeCount)

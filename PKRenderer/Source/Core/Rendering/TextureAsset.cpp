@@ -18,7 +18,9 @@ namespace PK
         PKAssets::PKTexture texture;
         PKAssets::StreamAsTexture(&asset, &texture);
 
-        auto stage = RHI::AcquireStage(texture.dataSize);
+        auto cmd = RHI::GetCommandBuffer(QueueType::Transfer);
+
+        auto stage = cmd->AcquireStagingBuffer(texture.dataSize);
         {
             auto pMapped = stage->BeginMap(0, 0);
             PKAssets::StreamData(&asset, pMapped, texture.data.offset, texture.dataSize);
@@ -68,8 +70,8 @@ namespace PK
             }
         }
 
-        RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(), stage, regions, descriptor.levels);
-        RHI::ReleaseStage(stage, RHI::GetCommandBuffer(QueueType::Transfer)->GetFenceRef());
+        cmd->CopyToTexture(m_texture.get(), stage, regions, descriptor.levels);
+        cmd->ReleaseStagingBuffer(stage);
 
         PKAssets::CloseAssetStream(&asset);
     }

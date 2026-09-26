@@ -9,6 +9,7 @@ namespace PK
         VulkanBuffer(struct VulkanDriver* driver, size_t size, BufferUsage usage, const char* name);
         ~VulkanBuffer();
         
+        size_t GetOffset() const final { return 0ull; }
         size_t GetSize() const final { return m_buffer->size; }
         BufferUsage GetUsage() const final { return m_usage; }
         const char* GetDebugName() const final { return m_name.c_str(); }
@@ -22,10 +23,6 @@ namespace PK
         void SparseAllocateRange(const BufferIndexRange& range, QueueType type) final;
         void SparseDeallocate(const BufferIndexRange& range) final;
 
-        // @TODO bad pattern. Difficult to inline into begin/end map as user wont know the necessary flush context.
-        void* BeginStagedWrite(size_t offset, size_t size);
-        void EndStagedWrite(RHIBuffer** dst, RHIBuffer** src, VkBufferCopy* region, const FenceRef& fence);
-
         constexpr const VulkanBindHandle* GetBindHandle() const { return m_defaultView; }
         const VulkanBindHandle* GetBindHandle(const BufferIndexRange& range);
             
@@ -34,18 +31,8 @@ namespace PK
         const FixedString128 m_name;
         BufferUsage m_usage = BufferUsage::None;
         VulkanRawBuffer* m_buffer = nullptr;
-        struct VulkanStagingBuffer* m_stage = nullptr;
         struct VulkanSparsePageTable* m_pageTable = nullptr;
         VulkanBufferView* m_defaultView = nullptr;
         LinkedList<VulkanBufferView, BufferIndexRange> m_firstView = nullptr;
-
-        struct
-        {
-            VkDeviceSize ringOffset = 0u;
-            VkDeviceSize srcOffset = 0u;
-            VkDeviceSize dstOffset = 0u;
-            VkDeviceSize size = 0u;
-        }
-        m_stageRegion{};
     };
 }

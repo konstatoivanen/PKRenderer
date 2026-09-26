@@ -22,7 +22,7 @@ namespace PK::App
         m_gui_context.defautFont = m_assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
 
         m_gizmos_shader = assetDatabase->Find<ShaderAsset>("VS_Gizmos").get();
-        m_gizmos_vertexBuffer = RHI::CreateBuffer<uint4>(m_gizmos_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
+        m_gizmos_vertexBuffer = RHI::CreateBuffer<uint4>(m_gizmos_maxVertices, BufferUsage::DefaultVertex, "Gizmos.VertexBuffer");
         m_gizmos_indirectVertexBuffer = RHI::CreateBuffer<uint4>(16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
         m_gizmos_indirectArgsBuffer = RHI::CreateBuffer<uint4>(1u, BufferUsage::Storage | BufferUsage::Indirect | BufferUsage::TransferDst, "Gizmos.Indirect.Arguments");
         m_gizmos_fixedFunctionAttribs = m_gizmos_shader->GetFixedFunctionAttributes();
@@ -114,8 +114,8 @@ namespace PK::App
 
         if (m_gui_vertexView.data != nullptr)
         {
-            cmd->EndBufferWrite(m_gui_vertexBuffer.get());
-            cmd->EndBufferWrite(m_gui_indexBuffer.get());
+            cmd.EndBufferWrite(m_gui_vertexBuffer.get(), m_gui_vertexView);
+            cmd.EndBufferWrite(m_gui_indexBuffer.get(), m_gui_indexView);
         }
 
         m_gui_commandBuffer = nullptr;
@@ -161,8 +161,8 @@ namespace PK::App
             {
                 m_gui_shader = m_assetDatabase->Find<ShaderAsset>("VS_GUI").get();
                 m_gui_resolve_shader = m_assetDatabase->Find<ShaderAsset>("CS_GUI_Resolve").get();
-                m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::PersistentStorage, "GUI.VertexBuffer");
-                m_gui_indexBuffer = RHI::CreateBuffer<GUIIndex>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
+                m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::DefaultStorage, "GUI.VertexBuffer");
+                m_gui_indexBuffer = RHI::CreateBuffer<GUIIndex>(GUI_MAX_INDICES, BufferUsage::DefaultIndex, "GUI.IndexBuffer");
                 m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);
                 RHI::SetBuffer(HashCache::Get()->pk_GUI_Vertices, m_gui_vertexBuffer.get());
             }
@@ -246,7 +246,7 @@ namespace PK::App
             m_gizmos_maxVertices = (uint32_t)m_gizmos_vertexBuffer->GetCount<uint4>();
             m_gizmos_vertexView = cmd.BeginBufferWrite<GizmosVertex>(m_gizmos_vertexBuffer.get());
             m_sequencer->Next<IGizmosRenderer*>(this, this);
-            cmd->EndBufferWrite(m_gizmos_vertexBuffer.get());
+            cmd.EndBufferWrite(m_gizmos_vertexBuffer.get(), m_gizmos_vertexView);
         }
 
         uint4 clearValue{ 0u, 1u, 0u, 0u };

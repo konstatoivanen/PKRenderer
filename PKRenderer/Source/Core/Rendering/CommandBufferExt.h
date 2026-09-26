@@ -6,6 +6,18 @@
 
 namespace PK
 {
+    template<typename T>
+    struct StagedBufferView
+    {
+        RHIBuffer* stage = nullptr;
+        size_t offset;
+        size_t size;
+
+        T* data = nullptr;
+        size_t count = 0;
+        T& operator[](size_t index) { return data[index]; }
+    };
+
     // Extended wrapper class with utility functions beyond the pure virtual interface
     struct CommandBufferExt
     {
@@ -39,29 +51,25 @@ namespace PK
         void DispatchRays(const ShaderAsset* shader, uint3 dimensions);
         void DispatchRays(const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions);
 
-        void UploadBufferData(RHIBuffer* buffer, const void* data);
-        void UploadBufferData(RHIBuffer* buffer, const void* data, size_t offset, size_t size);
-        void UploadBufferSubData(RHIBuffer* buffer, const void* data, size_t offset, size_t size);
+        void UploadBufferData(RHIBuffer* buffer, const void* data, size_t offset = 0ull, size_t size = 0ull);
 
         template<typename T>
-        BufferView<T> BeginBufferWrite(RHIBuffer* buffer)
+        StagedBufferView<T> BeginBufferWrite([[maybe_unused]] RHIBuffer* buffer, size_t first = 0ull, size_t count = 0ull)
         {
-            size_t bufSize = buffer->GetSize();
-            return { reinterpret_cast<T*>(commandBuffer->BeginBufferWrite(buffer, 0, bufSize)), bufSize / sizeof(T) };
+            auto offset = first * sizeof(T);
+            auto size = count ? count * sizeof(T) : (buffer->GetSize() / sizeof(T));
+            auto stage = commandBuffer->AcquireStagingBuffer(size);
+            return { stage, offset, size, reinterpret_cast<T*>(stage->BeginMap(0ull,0ull)), count };
         }
 
         template<typename T>
-        BufferView<T> BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t count)
+        void EndBufferWrite(RHIBuffer* buffer, const StagedBufferView<T>& view)
         {
-            return { reinterpret_cast<T*>(commandBuffer->BeginBufferWrite(buffer, offset * sizeof(T), count * sizeof(T))), count };
+            commandBuffer->CopyBuffer(buffer, view.stage, 0ull, view.offset, view.size);
+            commandBuffer->ReleaseStagingBuffer(view.stage);
         }
 
-        template<typename T>
-        InterleavedBufferView<T> BeginBufferWrite(RHIBuffer* buffer, size_t stride, size_t elementOffset, size_t bufferOffset, size_t count)
-        {
-            return { static_cast<uint8_t*>(commandBuffer->BeginBufferWrite(buffer, bufferOffset * stride, count * stride)), count, stride, elementOffset };
-        }
-
+        void UploadTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount);
         void UploadTexture(RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer, uint32_t layers);
 
         void SetMesh(const IMesh* mesh);

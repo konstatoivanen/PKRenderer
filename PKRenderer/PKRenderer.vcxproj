@@ -497,7 +497,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanPipelineCache.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanSamplerCache.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanStagingBufferCache.h" />
+    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanStagingRingBuffer.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommon.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDriver.h" />
     <ClInclude Include="Source\App\Renderer\RenderPipelineScene.h" />
@@ -811,7 +811,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanPipelineCache.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanSamplerCache.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanStagingBufferCache.cpp" />
+    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanStagingRingBuffer.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommon.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDriver.cpp" />
     <ClCompile Include="Source\App\Renderer\RenderPipelineScene.cpp" />

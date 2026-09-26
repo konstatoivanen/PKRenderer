@@ -10,7 +10,6 @@
 #include "Core/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
-#include "Core/RHI/Vulkan/Services/VulkanStagingBufferCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanLayoutCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
@@ -66,9 +65,6 @@ namespace PK
         RHIShaderRef CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) final;
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) final;
 
-        virtual RHIBuffer* AcquireStage(size_t size) final;
-        virtual void ReleaseStage(RHIBuffer* buffer, const FenceRef& fence) final;
-
         void SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) final;
         void SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) final;
         void SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) final;
@@ -121,7 +117,6 @@ namespace PK
         uint32_t apiVersion;
 
         mutable FixedUnique<VulkanQueueSet> queues;
-        mutable FixedUnique<VulkanStagingBufferCache> stagingBufferCache;
         mutable FixedUnique<VulkanDescriptorCache> descriptorCache;
         mutable FixedUnique<VulkanPipelineCache> pipelineCache;
         mutable FixedUnique<VulkanSamplerCache> samplerCache;

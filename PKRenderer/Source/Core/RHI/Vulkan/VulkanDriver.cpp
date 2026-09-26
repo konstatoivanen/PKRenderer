@@ -110,7 +110,7 @@ namespace PK
         VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
         physicalDeviceProperties = VulkanGetPhysicalDeviceProperties(physicalDevice);
 
-        VulkanQueueSetInitializer queueInitializer(physicalDevice, temporarySurface);
+        VulkanQueueSetInitializer queueInitializer(physicalDevice, temporarySurface, properties.stagingBufferSizes);
 
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
 
@@ -145,7 +145,6 @@ namespace PK
         VK_ASSERT_RESULT_CTX(vmaCreateAllocator(&allocatorInfo, &allocator), "Failed to create a VMA allocator!");
 
         disposer.New(512u);
-        stagingBufferCache.New(disposer.get(), device, allocator, properties.gcPruneDelay);
         pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.enablePipelineCache, properties.gcPruneDelay);
         samplerCache.New(device);
         layoutCache.New(device);
@@ -181,7 +180,6 @@ namespace PK
         descriptorCache.Delete();
         samplerCache.Delete();
         pipelineCache.Delete();
-        stagingBufferCache.Delete();
         layoutCache.Delete();
         queues.Delete();
         disposer.Delete();
@@ -261,9 +259,6 @@ namespace PK
     RHIShaderRef VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return shaderPool.CreateRef(this, base, pVariant, name); }
     RHISwapchainScope VulkanDriver::CreateSwapchain(const SwapchainDescriptor& descriptor) { return CreateUnique<VulkanSwapchain>(this, descriptor); }
 
-    RHIBuffer* VulkanDriver::AcquireStage(size_t size) { return stagingBufferCache->Acquire(size, false, nullptr); }
-    void VulkanDriver::ReleaseStage(RHIBuffer* buffer, const FenceRef& fence) { stagingBufferCache->Release(static_cast<VulkanStagingBuffer*>(buffer), fence); }
-
     #define PK_VK_BIND_HANDLES(name, assigner, count)\
         auto handles = PK_STACK_ALLOC(const VulkanBindHandle*, count);\
         for (auto i = 0u; i < (uint32_t)count; ++i) handles[i] = assigner;\
@@ -283,7 +278,6 @@ namespace PK
 
     void VulkanDriver::GC()
     {
-        stagingBufferCache->Prune();
         pipelineCache->Prune();
         descriptorCache->Prune();
         disposer->Prune();
@@ -335,7 +329,8 @@ namespace PK
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
-            PK_FATAL_ERROR("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+           // PK_FATAL_ERROR("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+            PK_LOG_WARNING("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 

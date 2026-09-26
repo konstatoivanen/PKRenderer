@@ -134,20 +134,20 @@ namespace PK
         }
 
         auto commandBuffer = CommandBufferExt(RHI::GetCommandBuffer(QueueType::Transfer));
-        commandBuffer.UploadBufferSubData(m_submeshBuffer.get(), desc.meshlets.pSubmeshes, submeshOffset, submeshesSize);
-        commandBuffer.UploadBufferSubData(m_meshletBuffer.get(), desc.meshlets.pMeshlets, meshletOffset, meshletsSize);
-        commandBuffer.UploadBufferSubData(m_meshletVertexBuffer.get(), desc.meshlets.pVertices, meshletVertexOffset, meshletVerticesSize);
-        commandBuffer.UploadBufferSubData(m_meshletIndexBuffer.get(), desc.meshlets.pIndices, meshletIndexOffset, meshletIndicesSize);
+        commandBuffer.UploadBufferData(m_submeshBuffer.get(), desc.meshlets.pSubmeshes, submeshOffset, submeshesSize);
+        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pMeshlets, meshletOffset, meshletsSize);
+        commandBuffer.UploadBufferData(m_meshletVertexBuffer.get(), desc.meshlets.pVertices, meshletVertexOffset, meshletVerticesSize);
+        commandBuffer.UploadBufferData(m_meshletIndexBuffer.get(), desc.meshlets.pIndices, meshletIndexOffset, meshletIndicesSize);
 
-        auto pIndices = commandBuffer->BeginBufferWrite(m_indexBuffer.get(), indexOffset, indicesSize);
-        MeshUtilities::CopyIndexBuffer(pIndices, desc.regular.pIndices, desc.regular.indexCount, desc.regular.indexSize, m_indexSize);
-        commandBuffer->EndBufferWrite(m_indexBuffer.get());
+        auto indexView = commandBuffer.BeginBufferWrite<uint8_t>(m_indexBuffer.get(), indexOffset, indicesSize);
+        MeshUtilities::CopyIndexBuffer(indexView.data, desc.regular.pIndices, desc.regular.indexCount, desc.regular.indexSize, m_indexSize);
+        commandBuffer.EndBufferWrite(m_indexBuffer.get(), indexView);
 
         // Align vertices into split layout if necessary
         MeshUtilities::AlignVertexStreams(desc.regular.pVertices, desc.regular.vertexCount, desc.regular.streamLayout, m_streamLayout);
 
-        commandBuffer.UploadBufferSubData(m_vertexBuffers[0].get(), (char*)desc.regular.pVertices, attributesOffset, attributesSize);
-        commandBuffer.UploadBufferSubData(m_vertexBuffers[1].get(), (char*)desc.regular.pVertices + attributesSize, positionsOffset, positionsSize);
+        commandBuffer.UploadBufferData(m_vertexBuffers[0].get(), (char*)desc.regular.pVertices, attributesOffset, attributesSize);
+        commandBuffer.UploadBufferData(m_vertexBuffers[1].get(), (char*)desc.regular.pVertices + attributesSize, positionsOffset, positionsSize);
 
         m_uploadFence = commandBuffer->GetFenceRef();
 

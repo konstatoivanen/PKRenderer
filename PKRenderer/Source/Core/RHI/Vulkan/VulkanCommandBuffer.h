@@ -6,6 +6,7 @@ namespace PK
 {
     struct VulkanDriver;
     struct VulkanQueueTimer;
+    struct VulkanStagingRingBuffer;
     struct VulkanBarrierHandler;
     struct VulkanPipelineState;
 
@@ -14,6 +15,9 @@ namespace PK
         VulkanCommandBuffer() {}
 
         FenceRef GetFenceRef() const final;
+
+        RHIBuffer* AcquireStagingBuffer(size_t size) final;
+        void ReleaseStagingBuffer(RHIBuffer* buffer) final;
 
         void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) final;
         void SetViewPorts(const uint4* rects, uint32_t count) final;
@@ -51,11 +55,7 @@ namespace PK
 
         void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, const void* data) final;
         void CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size) final;
-        void* BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size) final;
-        void EndBufferWrite(RHIBuffer* buffer) final;
-
         void CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount) final;
-        void CopyToTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount) final;
 
         void InvalidateTexture(RHITexture* texture) final;
 
@@ -83,6 +83,7 @@ namespace PK
             const VulkanDriver* driver,
             VulkanBarrierHandler* barrierHandler,
             VulkanQueueTimer* timer,
+            VulkanStagingRingBuffer* stagingBuffer,
             VulkanPipelineState* state,
             VkCommandBuffer commandBuffer, 
             uint16_t queueFamily);
@@ -100,6 +101,7 @@ namespace PK
         const VulkanDriver* m_driver = nullptr;
         VulkanBarrierHandler* m_barrierHandler = nullptr;
         VulkanQueueTimer* m_timer = nullptr;
+        VulkanStagingRingBuffer* m_stagingBuffer = nullptr;
         VulkanPipelineState* m_state = nullptr;
 
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
@@ -107,6 +109,7 @@ namespace PK
         uint16_t m_queueFamily = 0u;
 
         uint64_t m_timerIndex = 0ull;
+        uint64_t m_stageIndex = 0ull;
         uint64_t m_invocationIndex = 0ull;
         uint64_t m_queueTimelineIndex = ~0ull;
         VkPipelineStageFlags m_lastCommandStage = 0u;
