@@ -7,15 +7,27 @@
 namespace PK
 {
     template<typename T>
-    struct StagedBufferView
+    struct StagingBufferView
     {
-        RHIBuffer* stage = nullptr;
-        size_t offset;
-        size_t size;
+        // A thin write wrapper to prevent reads from the buffer.
+        // Buffer reads will cause an uncached read and stall through the PCIe BAR0 which is very bad.
+        struct RestrictedElement
+        {
+            T* ptr;
+            inline explicit RestrictedElement(T* ptr) noexcept : ptr(ptr) {}
+            RestrictedElement(const RestrictedElement&) = delete;
+            RestrictedElement& operator=(const RestrictedElement&) = delete;
+            inline RestrictedElement& operator=(const T& value) noexcept { *ptr = value; return *this; }
+            inline RestrictedElement& operator=(T&& value) noexcept { *ptr = static_cast<T&&>(value); return *this; }
+        };
 
+        RHIBuffer* stage = nullptr;
         T* data = nullptr;
-        size_t count = 0;
-        T& operator[](size_t index) { return data[index]; }
+        size_t offset = 0ull;
+        size_t size = 0ull;
+        size_t count = 0ull;
+
+        [[nodiscard]] inline RestrictedElement operator[](size_t index) noexcept { return RestrictedElement(data + index); }
     };
 
     // Extended wrapper class with utility functions beyond the pure virtual interface
@@ -54,16 +66,19 @@ namespace PK
         void UploadBufferData(RHIBuffer* buffer, const void* data, size_t offset = 0ull, size_t size = 0ull);
 
         template<typename T>
-        StagedBufferView<T> BeginBufferWrite([[maybe_unused]] RHIBuffer* buffer, size_t first = 0ull, size_t count = 0ull)
+        StagingBufferView<T> BeginBufferWrite([[maybe_unused]] RHIBuffer* buffer, size_t offset = 0ull, size_t count = 0ull)
         {
-            auto offset = first * sizeof(T);
-            auto size = count ? count * sizeof(T) : (buffer->GetSize() / sizeof(T));
-            auto stage = commandBuffer->AcquireStagingBuffer(size);
-            return { stage, offset, size, reinterpret_cast<T*>(stage->BeginMap(0ull,0ull)), count };
+            StagingBufferView<T> view;
+            view.offset = offset * sizeof(T);
+            view.count = count ? count : (buffer->GetSize() / sizeof(T));
+            view.size = view.count * sizeof(T);
+            view.stage = commandBuffer->AcquireStagingBuffer(view.size);
+            view.data = reinterpret_cast<T*>(view.stage->BeginMap(0ull, 0ull));
+            return view;
         }
 
         template<typename T>
-        void EndBufferWrite(RHIBuffer* buffer, const StagedBufferView<T>& view)
+        void EndBufferWrite(RHIBuffer* buffer, const StagingBufferView<T>& view)
         {
             commandBuffer->CopyBuffer(buffer, view.stage, 0ull, view.offset, view.size);
             commandBuffer->ReleaseStagingBuffer(view.stage);

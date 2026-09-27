@@ -485,21 +485,16 @@ namespace PK
         size_t unusedRangeSizeMax;
     };
 
-    struct RHIQueueStagingBufferSizes
-    {
-        uint32_t sizeTransfer;
-        uint32_t sizeGraphics;
-        uint32_t sizeCompute;
-        uint32_t sizePresent;
-    };
-
     struct RHIDriverDescriptor
     {
         RHIAPI api;
         uint32_t apiVersionMajor;
         uint32_t apiVersionMinor;
         uint32_t gcPruneDelay;
-        RHIQueueStagingBufferSizes stagingBufferSizes;
+        uint32_t stagingSizeTransfer;
+        uint32_t stagingSizeGraphics;
+        uint32_t stagingSizeCompute;
+        uint32_t stagingSizePresent;
         bool enableValidation;
         bool enableDebugNames;
         bool enableDebugLabels;

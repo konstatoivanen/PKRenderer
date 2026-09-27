@@ -8,7 +8,6 @@
 #include "Core/RHI/BuiltInResources.h"
 #include "VulkanDriver.h"
 
-
 namespace PK
 {
     VulkanDriver::VulkanDriver(const VulkanDriverDescriptor& properties) : 
@@ -110,7 +109,13 @@ namespace PK
         VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
         physicalDeviceProperties = VulkanGetPhysicalDeviceProperties(physicalDevice);
 
-        VulkanQueueSetInitializer queueInitializer(physicalDevice, temporarySurface, properties.stagingBufferSizes);
+        VulkanQueueSetInitializer queueInitializer(physicalDevice, temporarySurface, 
+        {
+            properties.stagingSizeTransfer,
+            properties.stagingSizeGraphics,
+            properties.stagingSizeCompute,
+            properties.stagingSizePresent
+        });
 
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
 

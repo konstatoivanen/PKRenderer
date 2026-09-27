@@ -203,7 +203,7 @@ namespace PK::App
 
         CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
         auto packedLights = cmd.BeginBufferWrite<PackedLight>(m_lightsBuffer.get(), 0u, lightCount + 1u);
-        auto matricesView = matrixCount > 0u ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : StagedBufferView<float4x4>();
+        auto matricesView = matrixCount > 0u ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : StagingBufferView<float4x4>();
 
         for (auto lightIndex = 0u; lightIndex < lightCount; ++lightIndex)
         {

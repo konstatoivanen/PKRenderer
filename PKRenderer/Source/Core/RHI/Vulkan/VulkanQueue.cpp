@@ -88,7 +88,7 @@ namespace PK
         return ctx.selectedCount++;
     }
 
-    VulkanQueueSetInitializer::VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const RHIQueueStagingBufferSizes& stagingBufferSizes)
+    VulkanQueueSetInitializer::VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const size_t(&stagingBufferSizes)[MAX_QUEUES])
     {
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
@@ -142,10 +142,10 @@ namespace PK
             familyProperties[i] = queueFamilyProperties[context.selectedIndices[i]];
         }
 
-        for (auto i = (int32_t)QueueType::EnumCount; i >= 0; --i)
+        for (auto i = (uint32_t)QueueType::EnumCount; i > 0u; --i)
         {
-            names[typeIndices[i]] = ReflectEnum<QueueType>::Names[i];
-            this->stagingBufferSizes[typeIndices[i]] = (&stagingBufferSizes.sizeTransfer)[i];
+            names[typeIndices[i - 1u]] = ReflectEnum<QueueType>::Names[i - 1u];
+            this->stagingBufferSizes[typeIndices[i - 1u]] = stagingBufferSizes[i - 1u];
         }
 
         {

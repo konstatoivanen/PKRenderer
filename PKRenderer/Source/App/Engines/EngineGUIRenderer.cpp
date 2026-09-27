@@ -114,6 +114,9 @@ namespace PK::App
 
         if (m_gui_vertexView.data != nullptr)
         {
+            // Modify copy sizes @TODO suboptimal api
+            m_gui_vertexView.size = m_gui_vertexCount * sizeof(GUIVertex);
+            m_gui_indexView.size = m_gui_indexCount * sizeof(GUIIndex);
             cmd.EndBufferWrite(m_gui_vertexBuffer.get(), m_gui_vertexView);
             cmd.EndBufferWrite(m_gui_indexBuffer.get(), m_gui_indexView);
         }

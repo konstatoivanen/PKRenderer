@@ -14,16 +14,18 @@ namespace PK
     // This deferred initializer pre-selects queues for device.
     struct VulkanQueueSetInitializer
     {
-        float priorities[(uint32_t)QueueType::EnumCount] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        uint32_t queueFamilies[(uint32_t)QueueType::EnumCount]{};
-        uint32_t typeIndices[(uint32_t)QueueType::EnumCount]{};
-        VkDeviceSize stagingBufferSizes[(uint32_t)QueueType::EnumCount]{};
-        const char* names[(uint32_t)QueueType::EnumCount]{};
-        VkDeviceQueueCreateInfo createInfos[(uint32_t)QueueType::EnumCount]{};
-        VkQueueFamilyProperties familyProperties[(uint32_t)QueueType::EnumCount]{};
+        constexpr static const uint32_t MAX_QUEUES = (uint32_t)QueueType::EnumCount;
+
+        float priorities[MAX_QUEUES] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        uint32_t queueFamilies[MAX_QUEUES]{};
+        uint32_t typeIndices[MAX_QUEUES]{};
+        VkDeviceSize stagingBufferSizes[MAX_QUEUES]{};
+        const char* names[MAX_QUEUES]{};
+        VkDeviceQueueCreateInfo createInfos[MAX_QUEUES]{};
+        VkQueueFamilyProperties familyProperties[MAX_QUEUES]{};
         uint32_t queueCount = 0u;
 
-        VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const RHIQueueStagingBufferSizes& stagingBufferSizes);
+        VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const size_t (&stagingBufferSizes)[MAX_QUEUES]);
     };
 
     struct VulkanQueue : public NoCopy

@@ -76,8 +76,8 @@ namespace PK::App
         ShaderAsset* m_gui_resolve_shader = nullptr;
         RHIBufferRef m_gui_vertexBuffer;
         RHIBufferRef m_gui_indexBuffer;
-        StagedBufferView<GUIVertex> m_gui_vertexView;
-        StagedBufferView<GUIIndex> m_gui_indexView;
+        StagingBufferView<GUIVertex> m_gui_vertexView;
+        StagingBufferView<GUIIndex> m_gui_indexView;
         GUIContext m_gui_context{};
         uint32_t m_gui_vertexCount = 0u;
         uint32_t m_gui_indexCount = 0u;
@@ -87,7 +87,7 @@ namespace PK::App
         RHIBufferRef m_gizmos_vertexBuffer;
         RHIBufferRef m_gizmos_indirectVertexBuffer;
         RHIBufferRef m_gizmos_indirectArgsBuffer;
-        StagedBufferView<GizmosVertex> m_gizmos_vertexView;
+        StagingBufferView<GizmosVertex> m_gizmos_vertexView;
         FixedFunctionShaderAttributes m_gizmos_fixedFunctionAttribs;
         VertexStreamElement m_gizmos_vertexStreamElement;
 

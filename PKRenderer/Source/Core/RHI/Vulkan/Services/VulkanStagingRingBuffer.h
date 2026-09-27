@@ -7,7 +7,7 @@
 
 namespace PK
 {
-    struct VulkanStagingScope : public RHIBuffer
+    struct VulkanStagingBuffer : public RHIBuffer
     {
         VkBuffer buffer;
         VkDeviceAddress deviceAddress;
@@ -40,8 +40,8 @@ namespace PK
         VulkanStagingRingBuffer(VkDevice device, VmaAllocator allocator, uint64_t stagingSize);
         ~VulkanStagingRingBuffer();
 
-        VulkanStagingScope* BeginWrite(VkDeviceSize size);
-        VulkanStagingScope* EndWrite(RHIBuffer* buffer);
+        VulkanStagingBuffer* BeginWrite(VkDeviceSize size);
+        VulkanStagingBuffer* EndWrite(RHIBuffer* alias);
 
         void BeginRange();
         uint64_t EndRange();
@@ -59,8 +59,8 @@ namespace PK
         FixedMask<MAX_RANGES> m_rangeMask;
         BufferRange m_ranges[MAX_RANGES];
 
-        FixedMask<MAX_STACK> m_scopeMask;
-        VulkanStagingScope m_scopes[MAX_STACK];
+        FixedMask<MAX_STACK> m_bufferMask;
+        VulkanStagingBuffer m_buffers[MAX_STACK];
 
         uint64_t m_rangeHead = 0ull;
         uint64_t m_bufferHead = 0ull;

@@ -40,9 +40,9 @@ namespace PK
         vmaDestroyBuffer(m_allocator, m_buffer, m_memory);
     }
 
-    VulkanStagingScope* VulkanStagingRingBuffer::BeginWrite(VkDeviceSize size)
+    VulkanStagingBuffer* VulkanStagingRingBuffer::BeginWrite(VkDeviceSize size)
     {
-        auto index = m_scopeMask.FindFirstZero();
+        auto index = m_bufferMask.FindFirstZero();
 
         PK_FATAL_ASSERT(m_inRange && m_size && size && index >= 0 && index < MAX_STACK, "VulkanStagingRingBuffer: Failed to acquire staging buffer!");
 
@@ -58,24 +58,24 @@ namespace PK
         PK_FATAL_ASSERT(m_bufferHead - m_bufferFlushHead + alignedSize <= m_size, "VulkanStagingRingBuffer: overflow!");
         m_bufferHead += alignedSize;
 
-        auto scope = &m_scopes[index];
-        m_scopeMask[index] = true;
-        scope->buffer = m_buffer;
-        scope->deviceAddress = m_deviceAddress;
-        scope->mappedData = static_cast<uint8_t*>(m_mappedData) + allocationOffset;
-        scope->srcOffset = allocationOffset;
-        scope->size = size;
-        return scope;
+        auto buffer = &m_buffers[index];
+        m_bufferMask[index] = true;
+        buffer->buffer = m_buffer;
+        buffer->deviceAddress = m_deviceAddress;
+        buffer->mappedData = static_cast<uint8_t*>(m_mappedData) + allocationOffset;
+        buffer->srcOffset = allocationOffset;
+        buffer->size = size;
+        return buffer;
     }
 
-    VulkanStagingScope* VulkanStagingRingBuffer::EndWrite(RHIBuffer* buffer)
+    VulkanStagingBuffer* VulkanStagingRingBuffer::EndWrite(RHIBuffer* alias)
     {
-        auto scope = static_cast<VulkanStagingScope*>(buffer);
-        auto scopes = &m_scopes[0];
-        auto index = (uint32_t)(scope - scopes);
-        PK_FATAL_ASSERT(scope >= scopes && scope < scopes + MAX_STACK, "VulkanStagingRingBuffer: Trying to end write scope outside of scope pool bounds!");
-        m_scopeMask[index] = false;
-        return scope;
+        auto buffer = static_cast<VulkanStagingBuffer*>(alias);
+        auto buffers = &m_buffers[0];
+        auto index = (uint32_t)(buffer - buffers);
+        PK_FATAL_ASSERT(buffer >= buffers && buffer < buffers + MAX_STACK, "VulkanStagingRingBuffer: Trying to end write scope outside of pool bounds!");
+        m_bufferMask[index] = false;
+        return buffer;
     }
 
     void VulkanStagingRingBuffer::BeginRange()
@@ -90,7 +90,7 @@ namespace PK
     uint64_t VulkanStagingRingBuffer::EndRange()
     {
         PK_FATAL_ASSERT(m_inRange, "VulkanStagingRingBuffer: Failed to end allocation range!");
-        PK_FATAL_ASSERT(m_scopeMask.CountBits() == 0, "VulkanStagingRingBuffer: out of execution scope writes!");
+        PK_FATAL_ASSERT(m_bufferMask.CountBits() == 0, "VulkanStagingRingBuffer: out of execution scope writes!");
         auto index = m_rangeHead;
         auto& range = m_ranges[m_rangeHead % MAX_RANGES];
         range.size = m_bufferHead - range.offset;
