@@ -18,6 +18,7 @@ namespace PK
         uint32_t vertexCount = 0u;
         uint32_t indexFirst = 0u;
         uint32_t indexCount = 0u;
+        uint32_t meshletSubmesh = 0u;
         uint32_t meshletFirst = 0u;
         uint32_t meshletCount = 0u;
         AABB<float3> bounds = PK_FLOAT3_MIN_AABB;
@@ -89,35 +90,20 @@ namespace PK
         struct Allocation
         {
             MeshStaticAllocator* allocator = nullptr;
-            TLSFAllocator::Allocation allocPositions;
-            TLSFAllocator::Allocation allocAttributes;
+            TLSFAllocator::Allocation allocVertices;
             TLSFAllocator::Allocation allocIndices;
-            TLSFAllocator::Allocation allocSubmeshes;
             TLSFAllocator::Allocation allocMeshlets;
-            TLSFAllocator::Allocation allocMeshletVertices;
-            TLSFAllocator::Allocation allocMeshletIndices;
-
-            NameID name = 0u;
             uint32_t submeshFirst = 0u;
             uint32_t submeshCount = 0u;
-            uint32_t meshletFirst = 0u;
-            uint32_t meshletCount = 0u;
-            uint32_t meshletVertexFirst = 0u;
-            uint32_t meshletVertexCount = 0u;
-            uint32_t meshletTriangleFirst = 0u;
-            uint32_t meshletTriangleCount = 0u;
-            uint32_t vertexFirst = 0u;
-            uint32_t vertexCount = 0u;
-            uint32_t indexFirst = 0u;
-            uint32_t indexCount = 0u;
+            NameID name = 0u;
         };
 
         MeshStaticAllocator();
 
-        constexpr RHIBuffer* GetMeshletVertexBuffer() const { return m_meshletVertexBuffer.get(); }
-        constexpr RHIBuffer* GetMeshletIndexBuffer() const { return m_meshletIndexBuffer.get(); }
-        constexpr RHIBuffer* GetMeshletSubmeshBuffer() const { return m_submeshBuffer.get(); }
+        constexpr RHIBuffer* GetMeshletVertexBuffer() const { return m_meshletBuffer.get(); }
+        constexpr RHIBuffer* GetMeshletIndexBuffer() const { return m_meshletBuffer.get(); }
         constexpr RHIBuffer* GetMeshletBuffer() const { return m_meshletBuffer.get(); }
+        constexpr RHIBuffer* GetMeshletSubmeshBuffer() const { return m_meshletBuffer.get(); }
         constexpr const VertexBuffers& GetVertexBuffers() const { return m_vertexBuffers; }
         constexpr RHIBuffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
         inline const SubMesh& GetSubmesh(uint32_t index) const { return *m_submeshes[index]; }
@@ -133,27 +119,14 @@ namespace PK
     private:
         VertexBuffers m_vertexBuffers;
         RHIBufferRef m_indexBuffer;
-        RHIBufferRef m_submeshBuffer;
         RHIBufferRef m_meshletBuffer;
-        RHIBufferRef m_meshletVertexBuffer;
-        RHIBufferRef m_meshletIndexBuffer;
-        TLSFAllocator m_allocatorPositions;
-        TLSFAllocator m_allocatorAttributes;
+        TLSFAllocator m_allocatorVertices;
         TLSFAllocator m_allocatorIndices;
-        TLSFAllocator m_allocatorSubmeshes;
         TLSFAllocator m_allocatorMeshlets;
-        TLSFAllocator m_allocatorMeshletVertices;
-        TLSFAllocator m_allocatorMeshletIndices;
         FixedPool<Allocation, 4096ull> m_allocations;
         FixedPool<SubMesh, 8192ull> m_submeshes;
         VertexStreamLayout m_streamLayout;
         uint32_t m_indexSize = sizeof(uint32_t);
-        uint32_t m_submeshCount = 0u;
-        uint32_t m_meshletCount = 0u;
-        uint32_t m_meshletVertexCount = 0u;
-        uint32_t m_meshletTriangleCount = 0u;
-        uint32_t m_vertexCount = 0u;
-        uint32_t m_indexCount = 0u;
         int64_t m_preferredIndex = -1;
         mutable FenceRef m_uploadFence;
     };

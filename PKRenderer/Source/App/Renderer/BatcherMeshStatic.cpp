@@ -142,7 +142,7 @@ namespace PK::App
                     (uint16_t)m_shaders[info->shader].materialFirstIndex + info->material,
                     m_transforms[info->transform]->minUniformScale,
                     info->transform, 
-                    info->submesh, 
+                    submesh.meshletSubmesh,
                     info->userdata
                 );
 

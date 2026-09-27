@@ -513,6 +513,7 @@ namespace PK::MeshUtilities
         submesh.vertexCount = ctx->countVertex;
         submesh.indexFirst = 0u;
         submesh.indexCount = ctx->countIndex;
+        submesh.meshletSubmesh= 0u;
         submesh.meshletFirst = 0u;
         submesh.meshletCount = 0u;
         submesh.bounds = ctx->aabb;

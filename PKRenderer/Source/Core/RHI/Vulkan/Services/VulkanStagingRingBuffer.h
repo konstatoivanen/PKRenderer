@@ -11,15 +11,16 @@ namespace PK
     {
         VkBuffer buffer;
         VkDeviceAddress deviceAddress;
+        VkDeviceSize srcOffset;
+        VkDeviceSize size;
         void* mappedData;
-        VkBufferCopy region;
 
-        size_t GetOffset() const final { return region.srcOffset; }
-        size_t GetSize() const final { return region.size; }
+        size_t GetOffset() const final { return srcOffset; }
+        size_t GetSize() const final { return size; }
         BufferUsage GetUsage() const final { return BufferUsage::DefaultStaging | BufferUsage::InstanceInput; }
         const char* GetDebugName() const final { return "VulkanStagingRingBuffer"; }
         void* GetNativeHandle() const final { return buffer; }
-        uint64_t GetDeviceAddress() const final { return deviceAddress + region.srcOffset; }
+        uint64_t GetDeviceAddress() const final { return deviceAddress + srcOffset; }
 
         virtual void* BeginMap(size_t offset, size_t readsize) const final { return mappedData; }
         virtual void EndMap(size_t offset, size_t size) const final {};
@@ -39,7 +40,7 @@ namespace PK
         VulkanStagingRingBuffer(VkDevice device, VmaAllocator allocator, uint64_t stagingSize);
         ~VulkanStagingRingBuffer();
 
-        VulkanStagingScope* BeginWrite(VkDeviceSize offset, VkDeviceSize size);
+        VulkanStagingScope* BeginWrite(VkDeviceSize size);
         VulkanStagingScope* EndWrite(RHIBuffer* buffer);
 
         void BeginRange();

@@ -40,7 +40,7 @@ namespace PK
         vmaDestroyBuffer(m_allocator, m_buffer, m_memory);
     }
 
-    VulkanStagingScope* VulkanStagingRingBuffer::BeginWrite(VkDeviceSize offset, VkDeviceSize size)
+    VulkanStagingScope* VulkanStagingRingBuffer::BeginWrite(VkDeviceSize size)
     {
         auto index = m_scopeMask.FindFirstZero();
 
@@ -63,9 +63,8 @@ namespace PK
         scope->buffer = m_buffer;
         scope->deviceAddress = m_deviceAddress;
         scope->mappedData = static_cast<uint8_t*>(m_mappedData) + allocationOffset;
-        scope->region.srcOffset = allocationOffset;
-        scope->region.dstOffset = offset;
-        scope->region.size = size;
+        scope->srcOffset = allocationOffset;
+        scope->size = size;
         return scope;
     }
 

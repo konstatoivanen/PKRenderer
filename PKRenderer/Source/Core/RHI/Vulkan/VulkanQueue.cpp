@@ -369,33 +369,6 @@ namespace PK
         return vkQueuePresentKHR(m_queue, &presentInfo);
     }
 
-    VkResult VulkanQueue::BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount)
-    {
-        m_timeline.waitFlags = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        ++m_timeline.counter;
-
-        VkTimelineSemaphoreSubmitInfo timelineInfo{ VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO };
-        timelineInfo.waitSemaphoreValueCount = 0;
-        timelineInfo.pWaitSemaphoreValues = nullptr;
-        timelineInfo.signalSemaphoreValueCount = 1;
-        timelineInfo.pSignalSemaphoreValues = &m_timeline.counter;
-
-        VkSparseBufferMemoryBindInfo bufferBind{};
-        bufferBind.buffer = buffer;
-        bufferBind.bindCount = bindCount;
-        bufferBind.pBinds = binds;
-
-        VkBindSparseInfo sparseBind{ VK_STRUCTURE_TYPE_BIND_SPARSE_INFO };
-        sparseBind.pNext = &timelineInfo;
-        sparseBind.bufferBindCount = 1;
-        sparseBind.pBufferBinds = &bufferBind;
-        sparseBind.pWaitSemaphores = nullptr;
-        sparseBind.waitSemaphoreCount = 0;
-        sparseBind.pSignalSemaphores = &m_timeline.semaphore;
-        sparseBind.signalSemaphoreCount = 1u;
-        return vkQueueBindSparse(m_queue, 1, &sparseBind, VK_NULL_HANDLE);
-    }
-
     void VulkanQueue::QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags)
     {
         for (auto& timeline : m_waitTimelines)

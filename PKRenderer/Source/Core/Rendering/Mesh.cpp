@@ -12,18 +12,8 @@ namespace PK
     IMeshlets::~IMeshlets() = default;
     IRayTracingGeometry::~IRayTracingGeometry() = default;
 
-
     MeshStaticAllocator::MeshStaticAllocator()
     {
-        // @TODO refactor these into a descriptor
-        const auto maxSubmeshes = 65535u;
-        const auto maxMeshlets = 65535u * 4u;
-        const auto maxVertices = 65535u * 32u;
-        const auto maxTriangles = 65535u * 16u * 3u;
-        const auto flags = BufferUsage::GPUOnly | BufferUsage::TransferDst | BufferUsage::Storage;
-
-        static_assert((maxTriangles * 3ull) % 4ull == 0ull, "Input triangle count x3 must be divisible by 4");
-
         m_streamLayout = VertexStreamLayout(
         {
             { ElementType::Half4, PK_RHI_VS_NORMAL, 0 },
@@ -36,18 +26,12 @@ namespace PK
         m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000u, BufferUsage::DefaultVertex, "MeshStaticCollection.VertexAttributes"));
         m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000u, BufferUsage::DefaultVertex | BufferUsage::Storage, "MeshStaticCollection.VertexPositions"));
         m_indexBuffer = RHI::CreateBuffer(m_indexSize * 2000000u, BufferUsage::DefaultIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
-        m_submeshBuffer = RHI::CreateBuffer<PKAssets::PKMeshletSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
-        m_meshletBuffer = RHI::CreateBuffer<PKAssets::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
-        m_meshletVertexBuffer = RHI::CreateBuffer<uint4>(maxVertices, flags, "Meshlet.VertexBuffer");
-        m_meshletIndexBuffer = RHI::CreateBuffer<uint32_t>((maxTriangles * 3ull) / 4ull, flags, "Meshlet.IndexBuffer");
-
-        m_allocatorPositions.ClearAndReserve(m_vertexBuffers[0]->GetSize(), 128u);
-        m_allocatorAttributes.ClearAndReserve(m_vertexBuffers[1]->GetSize(), 128u);
+        m_allocatorVertices.ClearAndReserve(m_vertexBuffers[0]->GetSize(), 128u);
         m_allocatorIndices.ClearAndReserve(m_indexBuffer->GetSize(), 128u);
-        m_allocatorSubmeshes.ClearAndReserve(m_submeshBuffer->GetSize(), 128u);
-        m_allocatorMeshlets.ClearAndReserve(m_meshletBuffer->GetSize(), 128u);
-        m_allocatorMeshletVertices.ClearAndReserve(m_meshletVertexBuffer->GetSize(), 128u);
-        m_allocatorMeshletIndices.ClearAndReserve(m_meshletIndexBuffer->GetSize(), 128u);
+
+        const auto meshletBufferSize = 67108864ull; // 64MB
+        m_meshletBuffer = RHI::CreateBuffer(meshletBufferSize, BufferUsage::DefaultStorage, "Meshlet.DataBuffer");
+        m_allocatorMeshlets.ClearAndReserve(m_meshletBuffer->GetSize(), 256u);
     }
 
     MeshStaticAllocator::Allocation* MeshStaticAllocator::Allocate(const MeshStaticDescriptor& desc)
@@ -70,108 +54,93 @@ namespace PK
         allocation->allocator = this;
         m_preferredIndex = -1;
 
-        m_submeshCount += desc.meshlets.submeshCount;
-        m_meshletCount += desc.meshlets.meshletCount;
-        m_meshletVertexCount += desc.meshlets.vertexCount;
-        m_meshletVertexCount += desc.meshlets.triangleCount;
-        m_vertexCount += desc.regular.vertexCount;
-        m_indexCount += desc.regular.indexCount;
+        const auto stridePositions = m_streamLayout.GetStride(1u);
+        const auto strideAttributes = m_streamLayout.GetStride(0u);
+        const auto strideIndex = m_indexSize;
 
-        const auto submeshStride = sizeof(PKAssets::PKMeshletSubmesh);
-        const auto meshletStride = sizeof(PKAssets::PKMeshlet);
-        const auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
-        const auto positionsStride = m_streamLayout.GetStride(1u);
-        const auto attributesStride = m_streamLayout.GetStride(0u);
+        const auto sizePositions = desc.regular.vertexCount * stridePositions;
+        const auto sizeAttributes = desc.regular.vertexCount * strideAttributes;
+        const auto sizeIndices = desc.regular.indexCount * strideIndex;
 
-        const auto submeshesSize = desc.meshlets.submeshCount * submeshStride;
-        const auto meshletsSize = desc.meshlets.meshletCount * meshletStride;
-        const auto meshletVerticesSize = desc.meshlets.vertexCount * meshletVertexStride;
-        const auto meshletIndicesSize = (size_t)desc.meshlets.triangleCount * 3ull;
-        const auto positionsSize = desc.regular.vertexCount * positionsStride;
-        const auto attributesSize = desc.regular.vertexCount * attributesStride;
-        const auto indicesSize = desc.regular.indexCount * m_indexSize;
+        PK_FATAL_ASSERT(m_allocatorVertices.Allocate(desc.regular.vertexCount, 1ull, allocation->allocVertices), "Failed to allocate mesh vertices!");
+        const auto vertexFirst = allocation->allocVertices.offset;
+        const auto offsetPositions = vertexFirst * stridePositions;
+        const auto offsetAttributes = vertexFirst * strideAttributes;
 
-        PK_FATAL_ASSERT((meshletIndicesSize % 4ull) == 0ull, "Index counts must be aligned to 4!");
+        PK_FATAL_ASSERT(m_allocatorIndices.Allocate(desc.regular.indexCount, 1ull, allocation->allocIndices), "Failed to allocate mesh indices!");
+        const auto indexFirst = allocation->allocIndices.offset;
+        const auto offsetIndices = indexFirst * strideIndex;
 
-        allocation->allocPositions = m_allocatorPositions.Allocate(positionsSize, positionsStride);
-        allocation->allocAttributes = m_allocatorAttributes.Allocate(attributesSize, attributesStride);
-        allocation->allocIndices = m_allocatorIndices.Allocate(indicesSize, m_indexSize);
-        allocation->allocSubmeshes = m_allocatorSubmeshes.Allocate(submeshesSize, submeshStride);
-        allocation->allocMeshlets = m_allocatorMeshlets.Allocate(meshletsSize, meshletStride);
-        allocation->allocMeshletVertices = m_allocatorMeshletVertices.Allocate(meshletVerticesSize, meshletVertexStride);
-        allocation->allocMeshletIndices = m_allocatorMeshletIndices.Allocate(meshletIndicesSize, 12ull);
+        const auto strideMeshletSubmesh = sizeof(PKAssets::PKMeshletSubmesh);
+        const auto strideMeshlet = sizeof(PKAssets::PKMeshlet);
+        const auto strideMeshletVertex = sizeof(PKAssets::PKMeshletVertex);
 
-        PK_FATAL_ASSERT(allocation->allocPositions, "Failed to allocate mesh resources!");
-        PK_FATAL_ASSERT(allocation->allocAttributes, "Failed to allocate mesh resources!");
-        PK_FATAL_ASSERT(allocation->allocIndices, "Failed to allocate mesh resources!");
-        PK_FATAL_ASSERT(allocation->allocSubmeshes, "Failed to allocate mesh resources!");
-        PK_FATAL_ASSERT(allocation->allocMeshlets, "Failed to allocate mesh resources!");
-        PK_FATAL_ASSERT(allocation->allocMeshletVertices, "Failed to allocate mesh resources!");
-        PK_FATAL_ASSERT(allocation->allocMeshletIndices, "Failed to allocate mesh resources!");
+        const auto sizeMeshletSubmeshes = desc.meshlets.submeshCount * strideMeshletSubmesh;
+        const auto sizeMeshlets = desc.meshlets.meshletCount * strideMeshlet;
+        const auto sizeMeshletVertices = desc.meshlets.vertexCount * strideMeshletVertex;
+        const auto sizeMeshletIndices = math::align((size_t)desc.meshlets.triangleCount * 3ull, 4ull);
+        
+        auto allocationSizeMeshlets = 0u;
+        allocationSizeMeshlets += sizeMeshletSubmeshes + strideMeshletSubmesh - 1ull;
+        allocationSizeMeshlets += sizeMeshlets         + strideMeshlet - 1ull;
+        allocationSizeMeshlets += sizeMeshletVertices  + strideMeshletVertex - 1ull;
+        allocationSizeMeshlets += sizeMeshletIndices   + 12ull - 1ull;
+        PK_FATAL_ASSERT(m_allocatorMeshlets.Allocate(allocationSizeMeshlets, 16ull, allocation->allocMeshlets), "Failed to allocate mesh meshlets!");
 
-        const auto positionsOffset = allocation->allocPositions.offset;
-        const auto attributesOffset = allocation->allocAttributes.offset;
-        const auto indexOffset = allocation->allocIndices.offset;
-        const auto submeshOffset = allocation->allocSubmeshes.offset;
-        const auto meshletOffset = allocation->allocMeshlets.offset;
-        const auto meshletVertexOffset = allocation->allocMeshletVertices.offset;
-        const auto meshletIndexOffset = allocation->allocMeshletIndices.offset;
+        const auto offsetMeshletBase    = allocation->allocMeshlets.offset;
+        const auto offsetMeshletSubmesh = math::align(offsetMeshletBase    + 0ull,                 strideMeshletSubmesh);
+        const auto offsetMeshlet        = math::align(offsetMeshletSubmesh + sizeMeshletSubmeshes, strideMeshlet);
+        const auto offsetMeshletVertex  = math::align(offsetMeshlet        + sizeMeshlets,         strideMeshletVertex);
+        const auto offsetMeshletIndex   = math::align(offsetMeshletVertex  + sizeMeshletVertices,  12ull);
 
-        PK_FATAL_ASSERT((meshletIndexOffset % 12ull) == 0ull, "Meshlet Index offsets must be aligned to 12!");
+        const auto meshletSubmeshFirst  = (uint32_t)(offsetMeshletSubmesh / strideMeshletSubmesh);
+        const auto meshletFirst         = (uint32_t)(offsetMeshlet / strideMeshlet);
+        const auto meshletVertexFirst   = (uint32_t)(offsetMeshletVertex / strideMeshletVertex);
+        const auto meshletTriangleFirst = (uint32_t)(offsetMeshletIndex / 3ull);
 
-        // Used accross mesh types
-        // Leverage submesh buffer offset by using it on cpu side submesh index as well.
-        allocation->submeshFirst = (uint32_t)(submeshOffset / submeshStride);
+        auto submeshes = m_submeshes.NewArray(desc.meshlets.submeshCount);
+        allocation->submeshFirst = m_submeshes.GetIndex(submeshes);
         allocation->submeshCount = desc.meshlets.submeshCount;
 
-        allocation->meshletFirst = (uint32_t)(meshletOffset / meshletStride);
-        allocation->meshletCount = desc.meshlets.meshletCount;
-        allocation->meshletVertexFirst = (uint32_t)(meshletVertexOffset / meshletVertexStride);
-        allocation->meshletVertexCount = desc.meshlets.vertexCount;
-        allocation->meshletTriangleFirst = (uint32_t)(meshletIndexOffset / 3ull);
-        allocation->meshletTriangleCount = desc.meshlets.triangleCount;
-
-        allocation->vertexFirst = (uint32_t)(positionsOffset / positionsStride);
-        allocation->vertexCount = (uint32_t)(positionsSize / positionsStride);
-        allocation->indexFirst = (uint32_t)(indexOffset / m_indexSize);
-        allocation->indexCount = (uint32_t)(indicesSize / m_indexSize);
         allocation->name = desc.name;
 
         for (auto i = 0u; i < allocation->submeshCount; ++i)
         {
-            desc.meshlets.pSubmeshes[i].firstMeshlet += allocation->meshletFirst;
-            auto submesh = m_submeshes.NewAt(allocation->submeshFirst + i);
-            submesh->meshletFirst = desc.meshlets.pSubmeshes[i].firstMeshlet;
-            submesh->meshletCount = desc.meshlets.pSubmeshes[i].meshletCount;
-            submesh->vertexFirst = desc.regular.pSubmeshes[i].vertexFirst + allocation->vertexFirst;
-            submesh->vertexCount = desc.regular.pSubmeshes[i].vertexCount;
-            submesh->indexFirst = desc.regular.pSubmeshes[i].indexFirst + allocation->indexFirst;
-            submesh->indexCount = desc.regular.pSubmeshes[i].indexCount;
-            submesh->bounds = desc.regular.pSubmeshes[i].bounds;
-            submesh->name = FixedString128("%s.Submesh%u", desc.name.c_str(), i).c_str();
+            desc.meshlets.pSubmeshes[i].firstMeshlet += meshletFirst;
+
+            // GPU Meshlet submeshes are not in a contiguous block. 
+            // This index is needed to address them correctly.
+            submeshes[i].meshletSubmesh = meshletSubmeshFirst + i;
+            submeshes[i].meshletFirst = desc.meshlets.pSubmeshes[i].firstMeshlet;
+            submeshes[i].meshletCount = desc.meshlets.pSubmeshes[i].meshletCount;
+            submeshes[i].vertexFirst = desc.regular.pSubmeshes[i].vertexFirst + vertexFirst;
+            submeshes[i].vertexCount = desc.regular.pSubmeshes[i].vertexCount;
+            submeshes[i].indexFirst = desc.regular.pSubmeshes[i].indexFirst + indexFirst;
+            submeshes[i].indexCount = desc.regular.pSubmeshes[i].indexCount;
+            submeshes[i].bounds = desc.regular.pSubmeshes[i].bounds;
+            submeshes[i].name = FixedString128("%s.Submesh%u", desc.name.c_str(), i).c_str();
         }
 
-        for (auto i = 0u; i < allocation->meshletCount; ++i)
+        for (auto i = 0u; i < desc.meshlets.meshletCount; ++i)
         {
-            desc.meshlets.pMeshlets[i].vertexFirst += allocation->meshletVertexFirst;
-            desc.meshlets.pMeshlets[i].triangleFirst += allocation->meshletTriangleFirst;
+            desc.meshlets.pMeshlets[i].vertexFirst += meshletVertexFirst;
+            desc.meshlets.pMeshlets[i].triangleFirst += meshletTriangleFirst;
         }
 
         auto commandBuffer = CommandBufferExt(RHI::GetCommandBuffer(QueueType::Transfer));
-        commandBuffer.UploadBufferData(m_submeshBuffer.get(), desc.meshlets.pSubmeshes, submeshOffset, submeshesSize);
-        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pMeshlets, meshletOffset, meshletsSize);
-        commandBuffer.UploadBufferData(m_meshletVertexBuffer.get(), desc.meshlets.pVertices, meshletVertexOffset, meshletVerticesSize);
-        commandBuffer.UploadBufferData(m_meshletIndexBuffer.get(), desc.meshlets.pIndices, meshletIndexOffset, meshletIndicesSize);
+        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pSubmeshes, offsetMeshletSubmesh,   sizeMeshletSubmeshes);
+        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pMeshlets,  offsetMeshlet,          sizeMeshlets);
+        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pVertices,  offsetMeshletVertex,    sizeMeshletVertices);
+        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pIndices,   offsetMeshletIndex,     sizeMeshletIndices);
 
-        auto indexView = commandBuffer.BeginBufferWrite<uint8_t>(m_indexBuffer.get(), indexOffset, indicesSize);
-        MeshUtilities::CopyIndexBuffer(indexView.data, desc.regular.pIndices, desc.regular.indexCount, desc.regular.indexSize, m_indexSize);
+        auto indexView = commandBuffer.BeginBufferWrite<uint8_t>(m_indexBuffer.get(), offsetIndices, sizeIndices);
+        MeshUtilities::CopyIndexBuffer(indexView.data, desc.regular.pIndices, desc.regular.indexCount, desc.regular.indexSize, strideIndex);
         commandBuffer.EndBufferWrite(m_indexBuffer.get(), indexView);
 
         // Align vertices into split layout if necessary
         MeshUtilities::AlignVertexStreams(desc.regular.pVertices, desc.regular.vertexCount, desc.regular.streamLayout, m_streamLayout);
-
-        commandBuffer.UploadBufferData(m_vertexBuffers[0].get(), (char*)desc.regular.pVertices, attributesOffset, attributesSize);
-        commandBuffer.UploadBufferData(m_vertexBuffers[1].get(), (char*)desc.regular.pVertices + attributesSize, positionsOffset, positionsSize);
+        commandBuffer.UploadBufferData(m_vertexBuffers[0].get(), (char*)desc.regular.pVertices + 0ull,           offsetAttributes, sizeAttributes);
+        commandBuffer.UploadBufferData(m_vertexBuffers[1].get(), (char*)desc.regular.pVertices + sizeAttributes, offsetPositions,  sizePositions);
 
         m_uploadFence = commandBuffer->GetFenceRef();
 
@@ -180,50 +149,11 @@ namespace PK
 
     void MeshStaticAllocator::Deallocate(Allocation* allocation)
     {
-        auto submeshStride = sizeof(PKAssets::PKMeshletSubmesh);
-        auto meshletStride = sizeof(PKAssets::PKMeshlet);
-        auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
-        auto positionsStride = m_streamLayout.GetStride(1u);
-        auto attributesStride = m_streamLayout.GetStride(0u);
-
-        auto submeshOffset = allocation->submeshFirst * submeshStride;
-        auto meshletOffset = allocation->meshletFirst * meshletStride;
-        auto meshletVertexOffset = allocation->meshletVertexFirst * meshletVertexStride;
-        auto meshletIndexOffset = ((size_t)allocation->meshletTriangleFirst * 3ull);
-        auto positionsOffset = allocation->vertexFirst * positionsStride;
-        auto attributesOffset = allocation->vertexFirst * attributesStride;
-        auto indexOffset = allocation->indexFirst * m_indexSize;
-
-        auto submeshesSize = allocation->submeshCount * submeshStride;
-        auto meshletsSize = allocation->meshletCount * meshletStride;
-        auto meshletVerticesSize = allocation->meshletVertexCount * meshletVertexStride;
-        auto meshletIndicesSize = ((size_t)allocation->meshletTriangleCount * 3ull);
-        auto positionsSize = allocation->vertexCount * positionsStride;
-        auto attributesSize = allocation->vertexCount * attributesStride;
-        auto indicesSize = allocation->indexCount * m_indexSize;
-
-        m_allocatorPositions.Free(allocation->allocPositions);
-        m_allocatorAttributes.Free(allocation->allocAttributes);
+        m_allocatorVertices.Free(allocation->allocVertices);
         m_allocatorIndices.Free(allocation->allocIndices);
-        m_allocatorSubmeshes.Free(allocation->allocSubmeshes);
         m_allocatorMeshlets.Free(allocation->allocMeshlets);
-        m_allocatorMeshletVertices.Free(allocation->allocMeshletVertices);
-        m_allocatorMeshletIndices.Free(allocation->allocMeshletIndices);
-
-        m_submeshCount -= allocation->submeshCount;
-        m_meshletCount -= allocation->meshletCount;
-        m_meshletVertexCount -= allocation->meshletVertexCount;
-        m_meshletTriangleCount -= allocation->meshletTriangleCount;
-        m_vertexCount -= allocation->vertexCount;
-        m_indexCount -= allocation->indexCount;
         m_preferredIndex = m_allocations.GetIndex(allocation);
-
-        for (auto i = 0u; i < allocation->submeshCount; ++i)
-        {
-            auto submeshIndex = allocation->submeshFirst + i;
-            m_submeshes.Delete(submeshIndex);
-        }
-
+        m_submeshes.Delete(m_submeshes.GetData() + allocation->submeshFirst, allocation->submeshCount);
         m_allocations.Delete(allocation);
     }
 
@@ -278,6 +208,7 @@ namespace PK
             submeshes[i].vertexCount = mesh->vertexCount;
             submeshes[i].indexFirst = pSubmeshes[i].firstIndex;
             submeshes[i].indexCount = pSubmeshes[i].indexCount;
+            submeshes[i].meshletSubmesh = 0u;
             submeshes[i].meshletFirst = 0u;
             submeshes[i].meshletCount = 0u;
             submeshes[i].bounds = AABB<float3>(float3(pSubmeshes[i].bbmin), float3(pSubmeshes[i].bbmax));
@@ -386,6 +317,7 @@ namespace PK
             descriptor.pSubmeshes[i].vertexCount = mesh->vertexCount;
             descriptor.pSubmeshes[i].indexFirst = pSubmeshes[i].firstIndex;
             descriptor.pSubmeshes[i].indexCount = pSubmeshes[i].indexCount;
+            descriptor.pSubmeshes[i].meshletSubmesh = 0u;
             descriptor.pSubmeshes[i].meshletFirst = 0u;
             descriptor.pSubmeshes[i].meshletCount = 0u;
             descriptor.pSubmeshes[i].bounds = AABB<float3>(float3(pSubmeshes[i].bbmin), float3(pSubmeshes[i].bbmax));

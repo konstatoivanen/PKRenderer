@@ -33,7 +33,7 @@ namespace PK
         ~TLSFAllocator() = default;
 
         void ClearAndReserve(uint64_t size, size_t blockCapacity);
-        Allocation Allocate(uint64_t size, uint64_t alignment = 16ull);
+        bool Allocate(uint64_t size, uint64_t alignment, Allocation& alloc);
         void Free(Allocation& alloc);
 
     private:

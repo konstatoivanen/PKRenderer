@@ -48,7 +48,6 @@ namespace PK
         VulkanCommandBuffer* GetCommandBuffer();
         VkResult Submit(VkSemaphore* inSignal = nullptr);
         VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal);
-        VkResult BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount);
         void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);
         void QueueWait(VulkanQueue* other, int32_t timelineOffset = 0);
         void WaitCommandBuffers(bool waitAll);

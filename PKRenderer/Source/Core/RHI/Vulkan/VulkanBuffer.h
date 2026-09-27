@@ -27,7 +27,6 @@ namespace PK
         const FixedString128 m_name;
         BufferUsage m_usage = BufferUsage::None;
         VulkanRawBuffer* m_buffer = nullptr;
-        struct VulkanSparsePageTable* m_pageTable = nullptr;
         VulkanBufferView* m_defaultView = nullptr;
         LinkedList<VulkanBufferView, BufferIndexRange> m_firstView = nullptr;
     };

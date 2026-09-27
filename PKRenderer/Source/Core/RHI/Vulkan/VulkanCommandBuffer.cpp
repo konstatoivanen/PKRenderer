@@ -24,7 +24,7 @@ namespace PK
 
     RHIBuffer* VulkanCommandBuffer::AcquireStagingBuffer(size_t size)
     {
-        return m_stagingBuffer->BeginWrite(0ull, size);
+        return m_stagingBuffer->BeginWrite(size);
     }
     
     void VulkanCommandBuffer::ReleaseStagingBuffer(RHIBuffer* buffer)
@@ -106,8 +106,8 @@ namespace PK
 
     void VulkanCommandBuffer::SetShaderBindingTable(RayTracingShaderGroup group, const RHIBuffer* buffer, size_t offset, size_t stride, size_t size)
     {
-        auto address = buffer->GetDeviceAddress();
-        m_state->SetShaderBindingTableAddress(group, address + buffer->GetOffset() + offset, stride, size);
+        const auto address = buffer->GetDeviceAddress();
+        m_state->SetShaderBindingTableAddress(group, address + offset, stride, size);
     }
 
     void VulkanCommandBuffer::SetStageExcludeMask(const ShaderStageFlags mask)

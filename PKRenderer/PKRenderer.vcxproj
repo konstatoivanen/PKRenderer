@@ -490,7 +490,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanQueue.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanPipelineState.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanShader.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanSparsePageTable.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanSwapchain.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanTexture.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.h" />
@@ -516,7 +515,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Base\Types\NameID.h" />
     <ClInclude Include="Source\Core\Base\NoCopy.h" />
     <ClInclude Include="Source\Core\Base\Containers\PropertyBlock.h" />
-    <ClInclude Include="Source\Core\Base\Containers\RangeTable.h" />
     <ClInclude Include="Source\Core\Base\Types\Ref.h" />
     <ClInclude Include="Source\Core\Base\Types\VersionedObject.h" />
   </ItemGroup>
@@ -805,7 +803,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanQueue.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanPipelineState.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanShader.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanSparsePageTable.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanSwapchain.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanTexture.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.cpp" />

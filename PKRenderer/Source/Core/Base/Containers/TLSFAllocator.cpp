@@ -80,11 +80,14 @@ namespace PK
         InsertFreeBlock(idx_head);
     }
 
-    TLSFAllocator::Allocation TLSFAllocator::Allocate(uint64_t size, uint64_t alignment)
+    bool TLSFAllocator::Allocate(uint64_t size, uint64_t alignment, Allocation& alloc)
     {
+        alloc.offset = 0ull;
+        alloc.block_idx = 0u;
+        
         if (size == 0ull)
         {
-            return {};
+            return false;
         }
     
         const auto size_search = Max(size + (Max(alignment, 1ull) - 1ull), SIZE_MIN);
@@ -92,7 +95,7 @@ namespace PK
     
         if (!idx_block)
         {
-            return {};
+            return false;
         }
     
         RemoveFreeBlock(idx_block);
@@ -122,10 +125,9 @@ namespace PK
             InsertFreeBlock(idx_split);
         }
 
-        Allocation alloc{};
         alloc.offset = offset_aligned;
         alloc.block_idx = idx_block; 
-        return alloc;
+        return true;
     }
 
     void TLSFAllocator::Free(Allocation& alloc)

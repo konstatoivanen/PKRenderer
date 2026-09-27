@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Base/Containers/FixedString.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
-#include "Core/RHI/Vulkan/VulkanSparsePageTable.h"
 #include "Core/CLI/Log.h"
 #include "VulkanBuffer.h"
 
@@ -14,12 +13,6 @@ namespace PK
     {
         auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size, &m_driver->queues->GetSelectedFamilies());
         m_buffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
-
-        if ((m_usage & BufferUsage::Sparse) != 0)
-        {
-            FixedString128 pageTableName({ name, ".PageTable" });
-            m_pageTable = Memory::New<VulkanSparsePageTable>(m_driver, m_buffer->buffer, bufferCreateInfo.allocation.usage, pageTableName.c_str());
-        }
 
         // host local buffers cannot be bound and dont need tracking.
         if ((m_usage & BufferUsage::TypeBits) != BufferUsage::CPUOnly)
@@ -38,9 +31,7 @@ namespace PK
             m_driver->DisposePooled(view, fence);
         }
 
-        m_driver->disposer->Dispose(m_pageTable, fence);
         m_driver->DisposePooled(m_buffer, fence);
-        m_pageTable = nullptr;
         m_buffer = nullptr;
         m_firstView = nullptr;
         m_defaultView = nullptr;
