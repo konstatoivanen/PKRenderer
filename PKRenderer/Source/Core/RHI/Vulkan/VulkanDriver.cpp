@@ -256,7 +256,7 @@ namespace PK
         return sizeof(char);
     }
 
-    RHIBufferRef VulkanDriver::CreateBuffer(size_t size, BufferUsage usage, const char* name) { return CreateRef<VulkanBuffer>(this, size, usage, name); }
+    RHIBufferRef VulkanDriver::CreateBuffer(size_t size, BufferUsage usage, const char* name) { return bufferPool.CreateRef(this, size, usage, name); }
     RHITextureRef VulkanDriver::CreateTexture(const TextureDescriptor& descriptor, const char* name) { return texturePool.CreateRef(this, descriptor, name); }
     RHIAccelerationStructureRef VulkanDriver::CreateAccelerationStructure(const char* name) { return CreateRef<VulkanAccelerationStructure>(this, name); }
     RHITextureBindSetRef VulkanDriver::CreateTextureBindSet(size_t capacity) { return CreateRef<VulkanBindSet>(capacity); }

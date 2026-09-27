@@ -63,26 +63,14 @@ namespace PK
         virtual void* GetNativeHandle() const = 0;
         virtual uint64_t GetDeviceAddress() const = 0;
 
-        virtual void* BeginMap(size_t offset, size_t readsize) const = 0;
-        virtual void EndMap(size_t offset, size_t size) const = 0;
+        virtual void* BeginMap(size_t offset, [[maybe_unused]] size_t readsize) const = 0;
+        virtual void EndMap(size_t offset, [[maybe_unused]] size_t writeSize) const = 0;
 
         inline bool IsConcurrent() const { return (GetUsage() & BufferUsage::Concurrent) != 0u; }
         inline BufferIndexRange GetFullRange() const { return { 0ull, GetSize() }; }
 
         template<typename T>
         inline T GetNativeHandle() const { return static_cast<T>(GetNativeHandle()); }
-
-        template<typename T>
-        ConstBufferView<T> BeginRead() const
-        {
-            return { reinterpret_cast<const T*>(BeginMap(0, GetSize())), GetSize() / sizeof(T) };
-        }
-
-        template<typename T>
-        ConstBufferView<T> BeginRead(size_t offset, size_t count) const
-        {
-            return { reinterpret_cast<const T*>(BeginMap(offset * sizeof(T), count * sizeof(T))), count };
-        }
     };
 
     struct RHIAccelerationStructure : public NoCopy

@@ -9,21 +9,20 @@ namespace PK
 {
     struct VulkanStagingBuffer : public RHIBuffer
     {
-        VkBuffer buffer;
-        VkDeviceAddress deviceAddress;
-        VkDeviceSize srcOffset;
-        VkDeviceSize size;
-        void* mappedData;
-
         size_t GetOffset() const final { return srcOffset; }
         size_t GetSize() const final { return size; }
         BufferUsage GetUsage() const final { return BufferUsage::DefaultStaging | BufferUsage::InstanceInput; }
         const char* GetDebugName() const final { return "VulkanStagingRingBuffer"; }
         void* GetNativeHandle() const final { return buffer; }
         uint64_t GetDeviceAddress() const final { return deviceAddress + srcOffset; }
+        virtual void* BeginMap([[maybe_unused]] size_t offset, [[maybe_unused]] size_t readsize) const final { return mappedData; }
+        virtual void EndMap([[maybe_unused]] size_t offset, [[maybe_unused]] size_t writeSize) const final {};
 
-        virtual void* BeginMap(size_t offset, size_t readsize) const final { return mappedData; }
-        virtual void EndMap(size_t offset, size_t size) const final {};
+        VkBuffer buffer;
+        VkDeviceAddress deviceAddress;
+        VkDeviceSize srcOffset;
+        VkDeviceSize size;
+        void* mappedData;
     };
 
     struct VulkanStagingRingBuffer : public NoCopy

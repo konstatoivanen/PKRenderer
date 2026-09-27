@@ -41,14 +41,14 @@ namespace PK::App
 
         if (m_copyFence.IsValid() && m_copyFence.IsComplete())
         {
-            auto pxView = m_copyBuffer->BeginRead<byte>();
+            auto pxView = static_cast<byte*>(m_copyBuffer->BeginMap(0ull, elementCount));
 
             for (auto i = 0u; i < elementCount; ++i)
             {
                 m_accumulatedPixels[i] += pxView[i];
             }
 
-            m_copyBuffer->EndMap(0ull, 0ull);
+            m_copyBuffer->EndMap(0ull,0ull);
         }
 
         m_captureCounter--;
@@ -86,7 +86,7 @@ namespace PK::App
     {
         if (m_captureCounter == 0u && m_currentResolution.x > 0u && m_currentResolution.y > 0u)
         {
-            auto usage = BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc;
+            auto usage = BufferUsage::RamRead | BufferUsage::TransferDst | BufferUsage::TransferSrc;
             RHI::ValidateBuffer<uint32_t>(m_copyBuffer, m_currentResolution.x * m_currentResolution.y, usage, "Screenshot.CopyBuffer");
 
             m_copyFence.Invalidate();

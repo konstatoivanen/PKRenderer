@@ -235,16 +235,6 @@ namespace PK
         void* swapchainPNext = nullptr;
     };
 
-    struct VulkanBufferCreateInfo
-    {
-        VulkanBufferCreateInfo() {};
-        VulkanBufferCreateInfo(BufferUsage usage, size_t size, const VulkanQueueFamilies* families = nullptr);
-
-        VkBufferCreateInfo buffer { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-        VmaAllocationCreateInfo allocation {};
-        VulkanQueueFamilies queueFamilies{};
-    };
-
     struct VulkanImageViewCreateInfo
     {
         VkImage image;
@@ -320,22 +310,6 @@ namespace PK
         const VkDevice device;
         VkImageView view;
         VulkanBindHandle bindHandle;
-    };
-
-    struct VulkanRawBuffer : public VersionedObject
-    {
-        VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name);
-        ~VulkanRawBuffer();
-
-        void* BeginMap(size_t offset, size_t readsize) const;
-        void EndMap(size_t offset, size_t size) const;
-
-        const VmaAllocator allocator;
-        const VkDeviceSize size;
-        const bool isPersistentMap;
-        VmaAllocation memory;
-        VkBuffer buffer;
-        VkDeviceAddress deviceAddress;
     };
 
     struct VulkanPipeline : public NoCopy

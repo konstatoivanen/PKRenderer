@@ -30,8 +30,8 @@ namespace PK
             DisposeVkAccelerationStructureKHR(m_substructures[i].value.handle, fence);
         }
 
-        m_driver->DisposePooled(m_scratchBuffer, fence);
-        m_driver->DisposePooled(m_structureBuffer, fence);
+        m_scratchBuffer = nullptr;
+        m_structureBuffer = nullptr;
     }
 
 
@@ -51,7 +51,7 @@ namespace PK
     VkAccelerationStructureKHR VulkanAccelerationStructure::CreateVkAccelerationStructureKHR(const Structure* structure, VkAccelerationStructureTypeKHR type, const char* name) const
     {
         VkAccelerationStructureCreateInfoKHR createInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
-        createInfo.buffer = m_structureBuffer->buffer;
+        createInfo.buffer = m_structureBuffer->GetNativeHandle<VkBuffer>();
         createInfo.offset = structure->bufferOffset;
         createInfo.size = structure->size.accelerationStructureSize;
         createInfo.type = type;
@@ -218,24 +218,20 @@ namespace PK
                 scratchSize += math::align(m_structure.size.buildScratchSize, 256ull);
             }
 
-            if (m_scratchBuffer == nullptr || m_scratchBuffer->size < scratchSize)
+            if (m_scratchBuffer == nullptr || m_scratchBuffer->GetSize() < scratchSize)
             {
-                m_driver->DisposePooled(m_scratchBuffer, m_cmd->GetFenceRef());
                 FixedString128 name({ m_name.c_str(),".ScratchBuffer" });
-                auto createInfo = VulkanBufferCreateInfo(BufferUsage::DefaultStorage | BufferUsage::AccelerationStructure, scratchSize);
-                m_scratchBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, createInfo, name.c_str());
+                m_scratchBuffer = RHI::CreateBuffer(scratchSize, BufferUsage::DefaultStorage | BufferUsage::AccelerationStructure, name.c_str());
             }
 
-            if (buildCount || hasCompactedResults || needsRealloc || !m_structureBuffer || m_structureBuffer->size < bufferSize)
+            if (buildCount || hasCompactedResults || needsRealloc || !m_structureBuffer || m_structureBuffer->GetSize() < bufferSize)
             {
                 PK_LOG_RHI_SCOPE("Acceleration Structure Update: %s", m_name.c_str());
 
                 // Needs new buffer in case of compaction copies.
                 {
-                    m_driver->DisposePooled(m_structureBuffer, m_cmd->GetFenceRef());
                     FixedString128 name({ m_name.c_str(),".StructureBuffer" });
-                    auto createInfo = VulkanBufferCreateInfo(BufferUsage::DefaultAccelerationStructure, bufferSize);
-                    m_structureBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, createInfo, name.c_str());
+                    m_structureBuffer = RHI::CreateBuffer(bufferSize, BufferUsage::DefaultAccelerationStructure, name.c_str());
                 }
 
                 auto buildGeometryInfos = m_driver->arena.Allocate<VkAccelerationStructureBuildGeometryInfoKHR>(buildCount);
@@ -252,7 +248,7 @@ namespace PK
                     {
                         buildGeometryInfos[buildCount] = structure->buildInfo;
                         buildGeometryInfos[buildCount].dstAccelerationStructure = newHandle;
-                        buildGeometryInfos[buildCount].scratchData.deviceAddress = m_scratchBuffer->deviceAddress + structure->scratchOffset;
+                        buildGeometryInfos[buildCount].scratchData.deviceAddress = m_scratchBuffer->GetDeviceAddress() + structure->scratchOffset;
                         buildStructureRangeInfoPtrs[buildCount++] = &structure->range;
                     }
                     else
@@ -315,7 +311,7 @@ namespace PK
         {
             auto buildInfo = m_structure.buildInfo;
             buildInfo.dstAccelerationStructure = m_structure.handle;
-            buildInfo.scratchData.deviceAddress = m_scratchBuffer->deviceAddress + m_structure.scratchOffset;
+            buildInfo.scratchData.deviceAddress = m_scratchBuffer->GetDeviceAddress() + m_structure.scratchOffset;
             const auto* pBuildStructureRangeInfo = &m_structure.range;
             m_cmd->BuildAccelerationStructures(1u, &buildInfo, &pBuildStructureRangeInfo);
             m_lastBuildFenceRef = m_cmd->GetFenceRef();

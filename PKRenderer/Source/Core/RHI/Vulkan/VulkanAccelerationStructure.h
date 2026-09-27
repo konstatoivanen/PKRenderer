@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/Base/Containers/HashMap.h"
-#include "Core/RHI/RHInterfaces.h"
-#include "Core/RHI/Vulkan/VulkanCommon.h"
+#include "Core/RHI/Vulkan/VulkanBuffer.h"
 
 namespace PK
 {
@@ -55,8 +54,8 @@ namespace PK
         const VulkanDriver* m_driver = nullptr;
         const FixedString128 m_name;
 
-        VulkanRawBuffer* m_scratchBuffer = nullptr;
-        VulkanRawBuffer* m_structureBuffer = nullptr;
+        RHIBufferRef m_scratchBuffer = nullptr;
+        RHIBufferRef m_structureBuffer = nullptr;
         FixedUnique<VulkanQueryPool> m_queryPool;
         HashMap<StructureKey, Structure> m_substructures;
         Structure m_structure{};

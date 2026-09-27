@@ -129,11 +129,11 @@ namespace PK
     {
         None = 0,
 
-        GPUOnly     = 1,
-        CPUOnly     = 2,
-        CPUToGPU    = 3,
-        GPUToCPU    = 4,
-        CPUCopy     = 5,
+        Vram     = 1,
+        BARWrite = 2,
+        BARRead  = 3,
+        RamWrite = 4,
+        RamRead  = 5,
 
         TransferDst           = 1 << 4,
         TransferSrc           = 1 << 5,
@@ -148,13 +148,13 @@ namespace PK
         Concurrent            = 1 << 14,
 
         TypeBits = 7,
-        DefaultVertex = GPUOnly | TransferDst | Vertex,
-        DefaultIndex = GPUOnly | TransferDst | Index,
-        DefaultConstant = GPUOnly | TransferDst | Constant,
-        DefaultStorage = GPUOnly | TransferDst | Storage,
-        DefaultStaging = CPUOnly | TransferSrc,
-        DefaultShaderBindingTable = GPUOnly | TransferDst | ShaderBindingTable,
-        DefaultAccelerationStructure = GPUOnly | AccelerationStructure
+        DefaultVertex = Vram | TransferDst | Vertex,
+        DefaultIndex = Vram | TransferDst | Index,
+        DefaultConstant = Vram | TransferDst | Constant,
+        DefaultStorage = Vram | TransferDst | Storage,
+        DefaultStaging = RamWrite | TransferSrc,
+        DefaultShaderBindingTable = Vram | TransferDst | ShaderBindingTable,
+        DefaultAccelerationStructure = Vram | AccelerationStructure
     };
 
     enum class TextureUsage : uint16_t

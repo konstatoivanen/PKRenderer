@@ -13,6 +13,7 @@
 #include "Core/RHI/Vulkan/Services/VulkanLayoutCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
+#include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanQueue.h"
 
 namespace PK
@@ -130,10 +131,10 @@ namespace PK
 
         FixedRefPool<VulkanTexture, PK_VK_MAX_IMAGES> texturePool;
         FixedRefPool<VulkanShader, PK_VK_MAX_SHADERS> shaderPool;
+        FixedRefPool<VulkanBuffer, PK_VK_MAX_BUFFERS> bufferPool;
 
         mutable FixedTypeSet<
             FixedPool<VulkanBufferView, PK_VK_MAX_BUFFER_VIEWS>,
-            FixedPool<VulkanImageView, PK_VK_MAX_IMAGE_VIEWS>,
-            FixedPool<VulkanRawBuffer, PK_VK_MAX_RAW_BUFFERS>> objectPools;
+            FixedPool<VulkanImageView, PK_VK_MAX_IMAGE_VIEWS>> objectPools;
     };
 }
