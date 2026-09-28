@@ -279,7 +279,6 @@ namespace PK
                     m_structure.handle = CreateVkAccelerationStructureKHR(&m_structure, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, FixedString128({ m_name.c_str(), ".TLAS" }));
                     VkAccelerationStructureDeviceAddressInfoKHR addressInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR, nullptr, m_structure.handle };
                     m_structure.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(m_driver->device, &addressInfo);
-                    m_bindHandle.acceleration.structure = m_structure.handle;
                     m_bindHandle.acceleration.deviceAddress = m_structure.deviceAddress;
                     m_bindHandle.IncrementVersion();
                 }

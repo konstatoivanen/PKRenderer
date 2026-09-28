@@ -7,15 +7,6 @@ namespace PK
 {
     struct VulkanDescriptorArena : public NoCopy
     {
-        struct alignas(8) DescriptorBinding
-        {
-            const VulkanBindHandle* const* handles;
-            uint32_t version;
-            uint16_t count;
-            ShaderResourceType type;
-            bool isVariableSize;
-        };
-    
         static constexpr uint32_t MAX_RANGES = 64u;
     
         struct DescriptorRange
@@ -27,7 +18,7 @@ namespace PK
         VulkanDescriptorArena(VkDevice device, VmaAllocator allocator, const VulkanPhysicalDeviceProperties& properties, uint32_t size);
         ~VulkanDescriptorArena();
     
-        VkDeviceSize AllocateDescriptorSet(const VulkanDescriptorSetLayout* layout, const DescriptorBinding* bindings, const uint32_t bindingCount);
+        VkDeviceSize AllocateDescriptorSet(const VulkanDescriptorSetLayout* layout, const VulkanDescriptorBinding* bindings, const uint32_t bindingCount);
         void BeginRange();
         uint64_t EndRange();
         void FreeRange(uint64_t rangeIndex);

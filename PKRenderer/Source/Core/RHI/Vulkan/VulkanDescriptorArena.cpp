@@ -54,7 +54,7 @@ namespace PK
         }
     }
 
-    VkDeviceSize VulkanDescriptorArena::AllocateDescriptorSet(const VulkanDescriptorSetLayout* layout, const DescriptorBinding* bindings, const uint32_t bindingCount)
+    VkDeviceSize VulkanDescriptorArena::AllocateDescriptorSet(const VulkanDescriptorSetLayout* layout, const VulkanDescriptorBinding* bindings, const uint32_t bindingCount)
     {
         auto layoutSize = 0ull;
         vkGetDescriptorSetLayoutSizeEXT(m_device, layout->layout, &layoutSize);

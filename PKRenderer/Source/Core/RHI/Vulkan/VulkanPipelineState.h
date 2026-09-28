@@ -25,7 +25,7 @@ namespace PK
 
     struct VulkanDescriptorState
     {
-        VulkanDescriptorArena::DescriptorBinding bindings[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
+        VulkanDescriptorBinding bindings[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         VkDeviceSize descriptorSetOffset = 0ull;
         VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         VkShaderStageFlagBits stageFlags = (VkShaderStageFlagBits)0;

@@ -298,7 +298,6 @@ namespace PK
 
             struct
             {
-                VkAccelerationStructureKHR structure;
                 VkDeviceSize deviceAddress;
             } 
             acceleration;
@@ -308,6 +307,15 @@ namespace PK
         bool isTracked = true;
 
         VulkanBindHandle() : image{}{};
+    };
+
+    struct VulkanDescriptorBinding
+    {
+        const VulkanBindHandle* const* handles;
+        uint16_t count;
+        ShaderResourceType type;
+        uint32_t version;
+        bool isVariableSize;
     };
 
     struct VulkanTimelineSemaphore
