@@ -1,8 +1,8 @@
 #pragma once
 #include "Core/Base/Containers/PropertyBlock.h"
-#include "Core/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
+#include "Core/RHI/Vulkan/VulkanDescriptorArena.h"
 
 namespace PK
 {
@@ -25,8 +25,8 @@ namespace PK
 
     struct VulkanDescriptorState
     {
-        VulkanDescriptorCache::DescriptorBinding bindings[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
-        const VulkanDescriptorSet* descriptorSet = nullptr;
+        VulkanDescriptorArena::DescriptorBinding bindings[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
+        VkDeviceSize descriptorSetOffset = 0ull;
         VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         VkShaderStageFlagBits stageFlags = (VkShaderStageFlagBits)0;
         uint32_t bindingCount = 0u;
@@ -61,7 +61,7 @@ namespace PK
         constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
         constexpr VkShaderStageFlags GetPipelinePushConstantStageFlags() const { return m_pipelineKey.shader->GetPipelineLayout()->pushConstantStageFlags; }
         inline const ShaderPushConstantLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetPushConstantLayout(); }
-        constexpr VkDescriptorSet GetDescriptorSet() const { return m_descritorState.descriptorSet->set; }
+        inline VkDeviceSize GetDescriptorSetOffset() const { return m_descritorState.descriptorSetOffset; }
         inline uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
         inline VkPipelineBindPoint GetPipelineBindPoint() const { return VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
         VkRenderingInfo GetRenderPassInfo() const;
@@ -104,10 +104,7 @@ namespace PK
             VkImageLayout layout,
             uint8_t options);
 
-        PKRenderStateDirtyFlags Resolve(
-            const VulkanDriver* driver, 
-            VulkanBarrierHandler* handler, 
-            const FenceRef& fence);
+        PKRenderStateDirtyFlags Resolve(const VulkanDriver* driver, VulkanBarrierHandler* handler, VulkanDescriptorArena* descriptorArena);
 
         VulkanDescriptorState m_descritorState{};
         VulkanPipelineCache::PipelineKey m_pipelineKey{};

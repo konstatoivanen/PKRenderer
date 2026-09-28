@@ -1,12 +1,11 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
-#include "VulkanStagingRingBuffer.h"
+#include "VulkanStagingArena.h"
 
 namespace PK
 {
-    VulkanStagingRingBuffer::VulkanStagingRingBuffer(VkDevice device, VmaAllocator allocator, uint64_t stagingSize) :
+    VulkanStagingArena::VulkanStagingArena(VkDevice device, VmaAllocator allocator, uint64_t stagingSize) :
         m_allocator(allocator),
-        m_device(device),
         m_size(math::align(stagingSize, 512ull))
     {
         if (m_size)
@@ -27,7 +26,7 @@ namespace PK
             VK_ASSERT_RESULT(vmaCreateBuffer(m_allocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_memory, &allocationInfo));
             m_mappedData = allocationInfo.pMappedData;
             
-            VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanStagingRingBuffer");
+            VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanStagingArena");
 
             VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
             addressInfo.buffer = m_buffer;
@@ -35,18 +34,21 @@ namespace PK
         }
     }
 
-    VulkanStagingRingBuffer::~VulkanStagingRingBuffer()
+    VulkanStagingArena::~VulkanStagingArena()
     {
-        vmaDestroyBuffer(m_allocator, m_buffer, m_memory);
+        if (m_size)
+        {
+            vmaDestroyBuffer(m_allocator, m_buffer, m_memory);
+        }
     }
 
-    VulkanStagingBuffer* VulkanStagingRingBuffer::BeginWrite(VkDeviceSize size)
+    VulkanStagingBuffer* VulkanStagingArena::BeginWrite(VkDeviceSize size)
     {
         auto index = m_bufferMask.FindFirstZero();
 
-        PK_FATAL_ASSERT(m_inRange && m_size && size && index >= 0 && index < MAX_STACK, "VulkanStagingRingBuffer: Failed to acquire staging buffer!");
+        PK_DEBUG_FATAL_ASSERT(m_inRange && m_size && size && index >= 0 && index < MAX_STACK, "VulkanStagingArena: Failed to acquire staging buffer!");
 
-        const auto alignedSize = math::align(size, 512ull);
+        const auto alignedSize = math::align(size, 64ull); // 512
         auto allocationOffset = m_bufferHead % m_size;
 
         if (allocationOffset + alignedSize > m_size)
@@ -55,7 +57,7 @@ namespace PK
             allocationOffset = 0ull;
         }
         
-        PK_FATAL_ASSERT(m_bufferHead - m_bufferFlushHead + alignedSize <= m_size, "VulkanStagingRingBuffer: overflow!");
+        PK_DEBUG_FATAL_ASSERT(m_bufferHead - m_bufferFlushHead + alignedSize <= m_size, "VulkanStagingArena: overflow!");
         m_bufferHead += alignedSize;
 
         auto buffer = &m_buffers[index];
@@ -68,29 +70,29 @@ namespace PK
         return buffer;
     }
 
-    VulkanStagingBuffer* VulkanStagingRingBuffer::EndWrite(RHIBuffer* alias)
+    VulkanStagingBuffer* VulkanStagingArena::EndWrite(RHIBuffer* alias)
     {
         auto buffer = static_cast<VulkanStagingBuffer*>(alias);
         auto buffers = &m_buffers[0];
         auto index = (uint32_t)(buffer - buffers);
-        PK_FATAL_ASSERT(buffer >= buffers && buffer < buffers + MAX_STACK, "VulkanStagingRingBuffer: Trying to end write scope outside of pool bounds!");
+        PK_DEBUG_FATAL_ASSERT(buffer >= buffers && buffer < buffers + MAX_STACK, "VulkanStagingArena: Trying to end write scope outside of pool bounds!");
         m_bufferMask[index] = false;
         return buffer;
     }
 
-    void VulkanStagingRingBuffer::BeginRange()
+    void VulkanStagingArena::BeginRange()
     {
-        PK_FATAL_ASSERT(!m_inRange && m_rangeHead - m_rangeFlushHead < MAX_RANGES, "VulkanStagingRingBuffer: Failed to begin allocation range!");
+        PK_DEBUG_FATAL_ASSERT(!m_inRange && m_rangeHead - m_rangeFlushHead < MAX_RANGES, "VulkanStagingArena: Failed to begin allocation range!");
         m_inRange = true;
         auto& range = m_ranges[m_rangeHead % MAX_RANGES];
         range.offset = m_bufferHead;
         range.size = 0ull;
     }
 
-    uint64_t VulkanStagingRingBuffer::EndRange()
+    uint64_t VulkanStagingArena::EndRange()
     {
-        PK_FATAL_ASSERT(m_inRange, "VulkanStagingRingBuffer: Failed to end allocation range!");
-        PK_FATAL_ASSERT(m_bufferMask.CountBits() == 0, "VulkanStagingRingBuffer: out of execution scope writes!");
+        PK_DEBUG_FATAL_ASSERT(m_inRange, "VulkanStagingArena: Failed to end allocation range!");
+        PK_DEBUG_FATAL_ASSERT(m_bufferMask.CountBits() == 0, "VulkanStagingArena: out of execution scope writes!");
         auto index = m_rangeHead;
         auto& range = m_ranges[m_rangeHead % MAX_RANGES];
         range.size = m_bufferHead - range.offset;
@@ -99,7 +101,7 @@ namespace PK
         return index;
     }
 
-    void VulkanStagingRingBuffer::FreeRange(uint64_t rangeIndex)
+    void VulkanStagingArena::FreeRange(uint64_t rangeIndex)
     {
         if (rangeIndex >= m_rangeFlushHead)
         {

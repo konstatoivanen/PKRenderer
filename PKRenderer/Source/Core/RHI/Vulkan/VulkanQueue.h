@@ -4,8 +4,9 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommandBuffer.h"
-#include "Core/RHI/Vulkan/Services/VulkanQueueTimer.h"
-#include "Core/RHI/Vulkan/Services/VulkanStagingRingBuffer.h"
+#include "Core/RHI/Vulkan/VulkanTimerArena.h"
+#include "Core/RHI/Vulkan/VulkanStagingArena.h"
+#include "Core/RHI/Vulkan/VulkanDescriptorArena.h"
 #include "Core/RHI/Vulkan/VulkanPipelineState.h"
 
 namespace PK
@@ -19,13 +20,14 @@ namespace PK
         float priorities[MAX_QUEUES] = { 1.0f, 1.0f, 1.0f, 1.0f };
         uint32_t queueFamilies[MAX_QUEUES]{};
         uint32_t typeIndices[MAX_QUEUES]{};
-        VkDeviceSize stagingBufferSizes[MAX_QUEUES]{};
+        VkDeviceSize stagingArenaSizes[MAX_QUEUES]{};
+        VkDeviceSize descriptorArenaSizes[MAX_QUEUES]{};
         const char* names[MAX_QUEUES]{};
         VkDeviceQueueCreateInfo createInfos[MAX_QUEUES]{};
         VkQueueFamilyProperties familyProperties[MAX_QUEUES]{};
         uint32_t queueCount = 0u;
 
-        VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const size_t (&stagingBufferSizes)[MAX_QUEUES]);
+        VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const RHIDriverDescriptor& descriptor);
     };
 
     struct VulkanQueue : public NoCopy
@@ -36,11 +38,12 @@ namespace PK
             VkQueueFlags flags, 
             uint32_t queueFamily, 
             uint32_t queueIndex,
-            VkDeviceSize stagingBufferSize,
+            VkDeviceSize stagingArenaSize,
+            VkDeviceSize descriptorArenaSize,
             const char* name);
         ~VulkanQueue();
 
-        inline ConstBufferView<RHITimerScope> GetTimers() const { return m_timer.GetResults(); }
+        inline ConstBufferView<RHITimerScope> GetTimers() const { return m_timerArena.GetResults(); }
         constexpr VkQueue GetNative() const { return m_queue; }
         constexpr uint32_t GetFamily() const { return m_family; }
         constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
@@ -62,8 +65,9 @@ namespace PK
         const VkPipelineStageFlags m_capabilityFlags;
 
         VulkanBarrierHandler m_barrierHandler;
-        VulkanQueueTimer m_timer;
-        VulkanStagingRingBuffer m_stagingBuffer;
+        VulkanTimerArena m_timerArena;
+        VulkanStagingArena m_stagingArena;
+        VulkanDescriptorArena m_descriptorArena;
         VulkanPipelineState m_pipelineState;
 
         VkQueue m_queue = VK_NULL_HANDLE;

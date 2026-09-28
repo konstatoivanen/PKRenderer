@@ -8,7 +8,7 @@
 
 namespace PK
 {
-    struct VulkanQueueTimer : public NoCopy
+    struct VulkanTimerArena : public NoCopy
     {
         constexpr const static uint32_t MAX_TIMERS = 4096u;
         constexpr const static uint32_t MAX_QUERIES = MAX_TIMERS * 2ull;
@@ -27,7 +27,7 @@ namespace PK
             uint32_t query;
         };
 
-        VulkanQueueTimer(VkDevice device, float nanosecondsPerTick);
+        VulkanTimerArena(VkDevice device, float nanosecondsPerTick);
 
         bool Push(NameID name, uint32_t* outIndex);
         bool Pop(uint32_t* outIndex);

@@ -159,6 +159,21 @@ extern PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusive
 extern PFN_vkWaitForPresentKHR pkfn_vkWaitForPresentKHR;
 #define vkWaitForPresentKHR pkfn_vkWaitForPresentKHR
 
+extern PFN_vkGetDescriptorSetLayoutSizeEXT pkfn_vkGetDescriptorSetLayoutSizeEXT;
+#define vkGetDescriptorSetLayoutSizeEXT pkfn_vkGetDescriptorSetLayoutSizeEXT
+    
+extern PFN_vkGetDescriptorSetLayoutBindingOffsetEXT pkfn_vkGetDescriptorSetLayoutBindingOffsetEXT;
+#define vkGetDescriptorSetLayoutBindingOffsetEXT pkfn_vkGetDescriptorSetLayoutBindingOffsetEXT
+
+extern PFN_vkGetDescriptorEXT pkfn_vkGetDescriptorEXT;
+#define vkGetDescriptorEXT pkfn_vkGetDescriptorEXT
+
+extern PFN_vkCmdBindDescriptorBuffersEXT pkfn_vkCmdBindDescriptorBuffersEXT;
+#define vkCmdBindDescriptorBuffersEXT pkfn_vkCmdBindDescriptorBuffersEXT
+
+extern PFN_vkCmdSetDescriptorBufferOffsetsEXT pkfn_vkCmdSetDescriptorBufferOffsetsEXT;
+#define vkCmdSetDescriptorBufferOffsetsEXT pkfn_vkCmdSetDescriptorBufferOffsetsEXT
+
 namespace PK
 {
     struct VulkanQueueFamilies
@@ -190,6 +205,7 @@ namespace PK
         VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterization;
         VkPhysicalDeviceSubgroupProperties subgroup;
         VkPhysicalDeviceMeshShaderPropertiesEXT meshShader;
+        VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptorBuffer;
     };
 
     struct VulkanPhysicalDeviceFeatures
@@ -212,6 +228,7 @@ namespace PK
         VkPhysicalDevicePresentWaitFeaturesKHR presentWait{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR };
         VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR maximalReconvergence { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR };
         VkPhysicalDeviceShaderQuadControlFeaturesKHR quadControl{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR };
+        VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBuffer { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };
@@ -273,6 +290,7 @@ namespace PK
             struct
             {
                 VkBuffer buffer;
+                VkDeviceSize deviceAddress;
                 VkDeviceSize offset;
                 VkDeviceSize range;
             } 
@@ -281,6 +299,7 @@ namespace PK
             struct
             {
                 VkAccelerationStructureKHR structure;
+                VkDeviceSize deviceAddress;
             } 
             acceleration;
         };
@@ -349,33 +368,6 @@ namespace PK
         FixedString128 name;
         FenceRef releaseFence;
         uint32_t referenceCount;
-    };
-
-    struct VulkanDescriptorPool : public NoCopy
-    {
-        VulkanDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo& createInfo);
-        ~VulkanDescriptorPool();
-
-        const VkDevice device;
-        VkDescriptorPool pool;
-        uint64_t pruneTick;
-        mutable FenceRef fence;
-    };
-
-    struct VulkanDescriptorSet
-    {
-        VkDescriptorSet set;
-        mutable uint64_t pruneTick;
-        mutable FenceRef fence;
-    };
-
-    struct VulkanSampler : public NoCopy
-    {
-        VulkanSampler(VkDevice device, const SamplerDescriptor& descriptor, const char* name);
-        ~VulkanSampler();
-
-        const VkDevice device;
-        VkSampler sampler;
     };
 
     struct VulkanQueryPool : public NoCopy

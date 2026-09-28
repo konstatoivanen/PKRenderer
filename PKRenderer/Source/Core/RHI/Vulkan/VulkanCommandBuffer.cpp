@@ -7,7 +7,7 @@
 #include "Core/RHI/Vulkan/VulkanBindSet.h"
 #include "Core/RHI/Vulkan/VulkanSwapchain.h"
 #include "Core/RHI/Vulkan/VulkanPipelineState.h"
-#include "Core/RHI/Vulkan/Services/VulkanQueueTimer.h"
+#include "Core/RHI/Vulkan/VulkanTimerArena.h"
 #include "VulkanCommandBuffer.h"
 
 namespace PK
@@ -24,12 +24,12 @@ namespace PK
 
     RHIBuffer* VulkanCommandBuffer::AcquireStagingBuffer(size_t size)
     {
-        return m_stagingBuffer->BeginWrite(size);
+        return m_stagingArena->BeginWrite(size);
     }
     
     void VulkanCommandBuffer::ReleaseStagingBuffer(RHIBuffer* buffer)
     {
-        m_stagingBuffer->EndWrite(buffer);
+        m_stagingArena->EndWrite(buffer);
     }
 
     void VulkanCommandBuffer::SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers)
@@ -526,9 +526,9 @@ namespace PK
     {
         auto queryIndex = 0u;
         
-        if (m_timer->Push(name, &queryIndex))
+        if (m_timerArena->Push(name, &queryIndex))
         {
-            vkCmdWriteTimestamp(m_commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, m_timer->GetQueryPool(), queryIndex);
+            vkCmdWriteTimestamp(m_commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, m_timerArena->GetQueryPool(), queryIndex);
         }
     }
 
@@ -536,9 +536,9 @@ namespace PK
     {
         auto queryIndex = 0u;
         
-        if (m_timer->Pop(&queryIndex))
+        if (m_timerArena->Pop(&queryIndex))
         {
-            vkCmdWriteTimestamp(m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, m_timer->GetQueryPool(), queryIndex);
+            vkCmdWriteTimestamp(m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, m_timerArena->GetQueryPool(), queryIndex);
         }
     }
 
@@ -675,7 +675,7 @@ namespace PK
 
     void VulkanCommandBuffer::ValidatePipeline()
     {
-        auto flags = m_state->Resolve(m_driver, m_barrierHandler, GetFenceRef());
+        auto flags = m_state->Resolve(m_driver, m_barrierHandler, m_descriptorArena);
 
         if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {
@@ -720,10 +720,11 @@ namespace PK
 
         if (m_state->HasPipeline() && (flags & PK_RENDER_STATE_DIRTY_DESCRIPTORS) != 0)
         {
-            const auto descriptorSet = m_state->GetDescriptorSet();
+            auto bufferIndex = 0u;
+            const auto setOffset = m_state->GetDescriptorSetOffset();
             const auto layout = m_state->GetPipelineLayout();
             const auto bindPoint = m_state->GetPipelineBindPoint();
-            vkCmdBindDescriptorSets(m_commandBuffer, bindPoint, layout, 0u, 1u, &descriptorSet, 0, nullptr);
+            vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer, bindPoint, layout, 0, 1, &bufferIndex, &setOffset);
         }
 
         if (m_state->HasPipeline())
@@ -757,16 +758,18 @@ namespace PK
     void VulkanCommandBuffer::BeginRecord(
         const VulkanDriver* driver,
         VulkanBarrierHandler* barrierHandler,
-        VulkanQueueTimer* timer,
-        VulkanStagingRingBuffer* stagingBuffer,
+        VulkanTimerArena* timerArena,
+        VulkanStagingArena* stagingArena,
+        VulkanDescriptorArena* descriptorArena,
         VulkanPipelineState* state,
         VkCommandBuffer commandBuffer,
         uint16_t queueFamily)
     {
         m_driver = driver;
         m_barrierHandler = barrierHandler;
-        m_timer = timer;
-        m_stagingBuffer = stagingBuffer;
+        m_timerArena = timerArena;
+        m_stagingArena = stagingArena;
+        m_descriptorArena = descriptorArena;
         m_state = state;
         *m_state = VulkanPipelineState();
 
@@ -774,12 +777,21 @@ namespace PK
         m_commandBuffer = commandBuffer;
         m_queueFamily = queueFamily;
         
-        m_timer->BeginTimeline();
-        m_stagingBuffer->BeginRange();
+        m_timerArena->BeginTimeline();
+        m_stagingArena->BeginRange();
+        m_descriptorArena->BeginRange();
 
         VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         VK_ASSERT_RESULT(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
+
+        if (m_descriptorArena->IsValid())
+        {
+            VkDescriptorBufferBindingInfoEXT bindingInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT };
+            bindingInfo.address = m_descriptorArena->GetDeviceAddress();
+            bindingInfo.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+            vkCmdBindDescriptorBuffersEXT(commandBuffer, 1, &bindingInfo);
+        }
     }
 
     void VulkanCommandBuffer::EndRecord(uint64_t queueTimelineIndex)
@@ -787,8 +799,9 @@ namespace PK
         // End possibly active render pass
         EndRenderPass();
         m_barrierHandler->ClearBarriers();
-        m_timerIndex = m_timer->EndTimeline();
-        m_stageIndex = m_stagingBuffer->EndRange();
+        m_timerIndex = m_timerArena->EndTimeline();
+        m_stageIndex = m_stagingArena->EndRange();
+        m_descriptorIndex = m_descriptorArena->EndRange();
         m_queueTimelineIndex = queueTimelineIndex;
         m_driver = nullptr;
         m_barrierHandler = nullptr;
@@ -801,10 +814,12 @@ namespace PK
     {
         if (m_commandBuffer != VK_NULL_HANDLE && m_queueTimelineIndex <= currentQueueTimelineIndex)
         {
-            m_timer->FlushTimeline(m_timerIndex);
-            m_stagingBuffer->FreeRange(m_stageIndex);
-            m_timer = nullptr;
-            m_stagingBuffer = nullptr;
+            m_timerArena->FlushTimeline(m_timerIndex);
+            m_stagingArena->FreeRange(m_stageIndex);
+            m_descriptorArena->FreeRange(m_descriptorIndex);
+            m_timerArena = nullptr;
+            m_stagingArena = nullptr;
+            m_descriptorArena = nullptr;
             m_imageSignal = VK_NULL_HANDLE;
             m_commandBuffer = VK_NULL_HANDLE; 
             m_queueTimelineIndex = 0ull;

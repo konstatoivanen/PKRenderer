@@ -12,7 +12,7 @@ namespace PK
         size_t GetOffset() const final { return srcOffset; }
         size_t GetSize() const final { return size; }
         BufferUsage GetUsage() const final { return BufferUsage::DefaultStaging | BufferUsage::InstanceInput; }
-        const char* GetDebugName() const final { return "VulkanStagingRingBuffer"; }
+        const char* GetDebugName() const final { return "VulkanStagingArena"; }
         void* GetNativeHandle() const final { return buffer; }
         uint64_t GetDeviceAddress() const final { return deviceAddress + srcOffset; }
         virtual void* BeginMap([[maybe_unused]] size_t offset, [[maybe_unused]] size_t readsize) const final { return mappedData; }
@@ -25,7 +25,7 @@ namespace PK
         void* mappedData;
     };
 
-    struct VulkanStagingRingBuffer : public NoCopy
+    struct VulkanStagingArena : public NoCopy
     {
         constexpr const static uint32_t MAX_RANGES = 4096u;
         constexpr const static uint32_t MAX_STACK = 32u;
@@ -36,8 +36,8 @@ namespace PK
             VkDeviceSize size;
         };
 
-        VulkanStagingRingBuffer(VkDevice device, VmaAllocator allocator, uint64_t stagingSize);
-        ~VulkanStagingRingBuffer();
+        VulkanStagingArena(VkDevice device, VmaAllocator allocator, uint64_t stagingSize);
+        ~VulkanStagingArena();
 
         VulkanStagingBuffer* BeginWrite(VkDeviceSize size);
         VulkanStagingBuffer* EndWrite(RHIBuffer* alias);
@@ -48,7 +48,6 @@ namespace PK
 
     private:
         const VmaAllocator m_allocator;
-        const VkDevice m_device;
         const VkDeviceSize m_size;
         VmaAllocation m_memory;
         VkDeviceAddress m_deviceAddress;

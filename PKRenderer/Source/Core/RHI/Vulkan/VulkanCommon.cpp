@@ -42,8 +42,11 @@ PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT
 
 PFN_vkWaitForPresentKHR pkfn_vkWaitForPresentKHR = nullptr;
 
-PFN_vkCmdSetRasterizationSamplesEXT pkfn_vkCmdSetRasterizationSamplesEXT = nullptr;
-PFN_vkCmdSetSampleMaskEXT pkfn_vkCmdSetSampleMaskEXT = nullptr;
+PFN_vkGetDescriptorSetLayoutSizeEXT pkfn_vkGetDescriptorSetLayoutSizeEXT = nullptr;
+PFN_vkGetDescriptorSetLayoutBindingOffsetEXT pkfn_vkGetDescriptorSetLayoutBindingOffsetEXT = nullptr;
+PFN_vkGetDescriptorEXT pkfn_vkGetDescriptorEXT = nullptr;
+PFN_vkCmdBindDescriptorBuffersEXT pkfn_vkCmdBindDescriptorBuffersEXT = nullptr;
+PFN_vkCmdSetDescriptorBufferOffsetsEXT pkfn_vkCmdSetDescriptorBufferOffsetsEXT = nullptr;
 
 namespace PK
 {
@@ -66,6 +69,7 @@ namespace PK
         presentId.pNext = &presentWait;
         presentWait.pNext = &maximalReconvergence;
         maximalReconvergence.pNext = &quadControl;
+        quadControl.pNext = &descriptorBuffer;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -271,6 +275,10 @@ namespace PK
             PK_TEST_FEATURE(presentWait.presentWait)
             PK_TEST_FEATURE(maximalReconvergence.shaderMaximalReconvergence)
             PK_TEST_FEATURE(quadControl.shaderQuadControl)
+            PK_TEST_FEATURE(descriptorBuffer.descriptorBuffer)
+            PK_TEST_FEATURE(descriptorBuffer.descriptorBufferCaptureReplay)
+            PK_TEST_FEATURE(descriptorBuffer.descriptorBufferImageLayoutIgnored)
+            PK_TEST_FEATURE(descriptorBuffer.descriptorBufferPushDescriptors)
         }
         
         #undef PK_TEST_FEATURE
@@ -377,52 +385,6 @@ namespace PK
         vkDestroyDescriptorSetLayout(device, layout, nullptr);
     }
 
-
-    VulkanDescriptorPool::VulkanDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo& createInfo) : device(device), fence()
-    {
-        VK_ASSERT_RESULT_CTX(vkCreateDescriptorPool(device, &createInfo, nullptr, &pool), "Failed to create a descriptor pool");
-    }
-
-    VulkanDescriptorPool::~VulkanDescriptorPool()
-    {
-        vkDestroyDescriptorPool(device, pool, nullptr);
-    }
-
-
-    VulkanSampler::VulkanSampler(VkDevice device, const SamplerDescriptor& descriptor, const char* name) : device(device)
-    {
-        VkSamplerCreateInfo info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-        info.addressModeU = VulkanEnumConvert::GetSamplerAddressMode(descriptor.wrap[0]);
-        info.addressModeV = VulkanEnumConvert::GetSamplerAddressMode(descriptor.wrap[1]);
-        info.addressModeW = VulkanEnumConvert::GetSamplerAddressMode(descriptor.wrap[2]);
-        info.minLod = descriptor.mipMin;
-        info.maxLod = descriptor.mipMax <= 0.0f ? VK_LOD_CLAMP_NONE : descriptor.mipMax;
-        info.mipLodBias = descriptor.mipBias;
-        info.maxAnisotropy = descriptor.anisotropy;
-        info.anisotropyEnable = descriptor.anisotropy > 0.0f ? VK_TRUE : VK_FALSE;
-        info.unnormalizedCoordinates = !descriptor.normalized;
-        info.borderColor = VulkanEnumConvert::GetBorderColor(descriptor.borderColor);
-        info.mipmapMode = (uint32_t)descriptor.filterMin > (uint32_t)FilterMode::Bilinear ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        info.compareEnable = descriptor.comparison != Comparison::Off ? VK_TRUE : VK_FALSE;
-        info.compareOp = VulkanEnumConvert::GetCompareOp(descriptor.comparison);
-        info.magFilter = VulkanEnumConvert::GetFilterMode(descriptor.filterMag);
-        info.minFilter = VulkanEnumConvert::GetFilterMode(descriptor.filterMin);
-
-        if (info.unnormalizedCoordinates)
-        {
-            info.minLod = info.maxLod = 0.0f;
-        }
-
-        VK_ASSERT_RESULT_CTX(vkCreateSampler(device, &info, nullptr, &sampler), "Failed to create a sampler!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, name);
-    }
-
-    VulkanSampler::~VulkanSampler()
-    {
-        vkDestroySampler(device, sampler, nullptr);
-    }
-
-
     VulkanQueryPool::VulkanQueryPool(VkDevice device, VkQueryType type, uint32_t size) :
         device(device),
         size(size),
@@ -508,6 +470,12 @@ namespace PK
         pkfn_vkReleaseFullScreenExclusiveModeEXT = (PFN_vkReleaseFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkReleaseFullScreenExclusiveModeEXT");
 
         pkfn_vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vkGetInstanceProcAddr(instance, "vkWaitForPresentKHR");
+
+        pkfn_vkGetDescriptorSetLayoutSizeEXT = (PFN_vkGetDescriptorSetLayoutSizeEXT)vkGetInstanceProcAddr(instance, "vkGetDescriptorSetLayoutSizeEXT");
+        pkfn_vkGetDescriptorSetLayoutBindingOffsetEXT = (PFN_vkGetDescriptorSetLayoutBindingOffsetEXT)vkGetInstanceProcAddr(instance, "vkGetDescriptorSetLayoutBindingOffsetEXT");
+        pkfn_vkGetDescriptorEXT = (PFN_vkGetDescriptorEXT)vkGetInstanceProcAddr(instance, "vkGetDescriptorEXT");
+        pkfn_vkCmdBindDescriptorBuffersEXT = (PFN_vkCmdBindDescriptorBuffersEXT)vkGetInstanceProcAddr(instance, "vkCmdBindDescriptorBuffersEXT");
+        pkfn_vkCmdSetDescriptorBufferOffsetsEXT = (PFN_vkCmdSetDescriptorBufferOffsetsEXT)vkGetInstanceProcAddr(instance, "vkCmdSetDescriptorBufferOffsetsEXT");
     }
 
     
@@ -616,27 +584,23 @@ namespace PK
 
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device)
     {
-        VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
-        VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR };
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
-        VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterizationProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT };
-        VkPhysicalDeviceSubgroupProperties subgroupProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES };
-        VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT };
-        deviceProperties.pNext = &accelerationStructureProperties;
-        accelerationStructureProperties.pNext = &rayTracingProperties;
-        rayTracingProperties.pNext = &conservativeRasterizationProperties;
-        conservativeRasterizationProperties.pNext = &subgroupProperties;
-        subgroupProperties.pNext = &meshShaderProperties;
-
-        vkGetPhysicalDeviceProperties2(device, &deviceProperties);
-
         VulkanPhysicalDeviceProperties returnProperties;
+        returnProperties.accelerationStructure = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR };
+        returnProperties.rayTracing = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
+        returnProperties.conservativeRasterization = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT };
+        returnProperties.subgroup = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES };
+        returnProperties.meshShader = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT };
+        returnProperties.descriptorBuffer = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT };
+        
+        VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+        deviceProperties.pNext = &returnProperties.accelerationStructure;
+        returnProperties.accelerationStructure.pNext = &returnProperties.rayTracing;
+        returnProperties.rayTracing.pNext = &returnProperties.conservativeRasterization;
+        returnProperties.conservativeRasterization.pNext = &returnProperties.subgroup;
+        returnProperties.subgroup.pNext = &returnProperties.meshShader;
+        returnProperties.meshShader.pNext = &returnProperties.descriptorBuffer;
+        vkGetPhysicalDeviceProperties2(device, &deviceProperties);
         returnProperties.core = deviceProperties.properties;
-        returnProperties.accelerationStructure = accelerationStructureProperties;
-        returnProperties.rayTracing = rayTracingProperties;
-        returnProperties.conservativeRasterization = conservativeRasterizationProperties;
-        returnProperties.subgroup = subgroupProperties;
-        returnProperties.meshShader = meshShaderProperties;
         return returnProperties;
     }
 
@@ -1673,8 +1637,6 @@ namespace PK
                 case ShaderResourceType::Image: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
                 case ShaderResourceType::ConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 case ShaderResourceType::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                case ShaderResourceType::DynamicConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-                case ShaderResourceType::DynamicStorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
                 case ShaderResourceType::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
                 case ShaderResourceType::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
                 default: return VK_DESCRIPTOR_TYPE_MAX_ENUM;
@@ -1691,8 +1653,6 @@ namespace PK
                 case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: return ShaderResourceType::Image;
                 case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: return ShaderResourceType::ConstantBuffer;
                 case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER: return ShaderResourceType::StorageBuffer;
-                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC: return ShaderResourceType::DynamicConstantBuffer;
-                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: return ShaderResourceType::DynamicStorageBuffer;
                 case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: return ShaderResourceType::InputAttachment;
                 case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: return ShaderResourceType::AccelerationStructure;
                 default: return ShaderResourceType::Invalid;

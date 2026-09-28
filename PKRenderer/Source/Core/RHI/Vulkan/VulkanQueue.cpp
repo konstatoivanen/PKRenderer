@@ -88,7 +88,7 @@ namespace PK
         return ctx.selectedCount++;
     }
 
-    VulkanQueueSetInitializer::VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const size_t(&stagingBufferSizes)[MAX_QUEUES])
+    VulkanQueueSetInitializer::VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const RHIDriverDescriptor& descriptor)
     {
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
@@ -132,7 +132,6 @@ namespace PK
         typeIndices[(uint32_t)QueueType::Present] = GetQueueIndex(context, maskGraphics, maskTransfer, true, false, false);
         typeIndices[(uint32_t)QueueType::Compute] = GetQueueIndex(context, maskCompute, maskTransfer, false, false, true);
         typeIndices[(uint32_t)QueueType::Transfer] = GetQueueIndex(context, maskTransfer, 0u, false, false, true);
-        
 
         queueCount = context.selectedCount;
 
@@ -142,10 +141,23 @@ namespace PK
             familyProperties[i] = queueFamilyProperties[context.selectedIndices[i]];
         }
 
+        VkDeviceSize sizesStaging[(uint32_t)QueueType::EnumCount];
+        sizesStaging[(uint32_t)QueueType::Transfer] = descriptor.stagingSizeTransfer;
+        sizesStaging[(uint32_t)QueueType::Graphics] = descriptor.stagingSizeGraphics;
+        sizesStaging[(uint32_t)QueueType::Compute] = descriptor.stagingSizeCompute;
+        sizesStaging[(uint32_t)QueueType::Present] = descriptor.stagingSizePresent;
+
+        VkDeviceSize sizesDescriptor[(uint32_t)QueueType::EnumCount];
+        sizesDescriptor[(uint32_t)QueueType::Transfer] = descriptor.descriptorSizeTransfer;
+        sizesDescriptor[(uint32_t)QueueType::Graphics] = descriptor.descriptorSizeGraphics;
+        sizesDescriptor[(uint32_t)QueueType::Compute] = descriptor.descriptorSizeCompute;
+        sizesDescriptor[(uint32_t)QueueType::Present] = descriptor.descriptorSizePresent;
+
         for (auto i = (uint32_t)QueueType::EnumCount; i > 0u; --i)
         {
             names[typeIndices[i - 1u]] = ReflectEnum<QueueType>::Names[i - 1u];
-            this->stagingBufferSizes[typeIndices[i - 1u]] = stagingBufferSizes[i - 1u];
+            stagingArenaSizes[typeIndices[i - 1u]] = sizesStaging[i - 1u];
+            descriptorArenaSizes[typeIndices[i - 1u]] = sizesDescriptor[i - 1u];
         }
 
         {
@@ -161,14 +173,21 @@ namespace PK
     }
 
 
-    VulkanQueue::VulkanQueue(const VulkanDriver* driver, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, VkDeviceSize stagingBufferSize, const char* name) :
+    VulkanQueue::VulkanQueue(const VulkanDriver* driver, 
+        VkQueueFlags flags, 
+        uint32_t queueFamily, 
+        uint32_t queueIndex, 
+        VkDeviceSize stagingArenaSize, 
+        VkDeviceSize descriptorArenaSize, 
+        const char* name) :
         m_driver(driver),
         m_family(queueFamily),
         m_queueIndex(queueIndex),
         m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags)),
         m_barrierHandler(queueFamily),
-        m_timer(driver->device, driver->physicalDeviceProperties.core.limits.timestampPeriod),
-        m_stagingBuffer(driver->device, driver->allocator, stagingBufferSize)
+        m_timerArena(driver->device, driver->physicalDeviceProperties.core.limits.timestampPeriod),
+        m_stagingArena(driver->device, driver->allocator, stagingArenaSize),
+        m_descriptorArena(driver->device, driver->allocator, driver->physicalDeviceProperties, descriptorArenaSize)
     {
         vkGetDeviceQueue(m_driver->device, m_family, m_queueIndex, &m_queue);
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_QUEUE, (uint64_t)m_queue, FixedString32("PK_Queue_%s", name).c_str());
@@ -270,8 +289,9 @@ namespace PK
         
         m_currentCommandBuffer->BeginRecord(m_driver,
             &m_barrierHandler,
-            &m_timer,
-            &m_stagingBuffer,
+            &m_timerArena,
+            &m_stagingArena,
+            &m_descriptorArena,
             &m_pipelineState,
             commandBuffer,
             (uint16_t)m_family);
@@ -441,7 +461,8 @@ namespace PK
                 initializer.familyProperties[i].queueFlags, 
                 initializer.queueFamilies[i], 
                 0,
-                initializer.stagingBufferSizes[i],
+                initializer.stagingArenaSizes[i],
+                initializer.descriptorArenaSizes[i],
                 initializer.names[i]);
         }
     }

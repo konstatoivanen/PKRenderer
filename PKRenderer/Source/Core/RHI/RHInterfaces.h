@@ -67,7 +67,7 @@ namespace PK
         virtual void EndMap(size_t offset, [[maybe_unused]] size_t writeSize) const = 0;
 
         inline bool IsConcurrent() const { return (GetUsage() & BufferUsage::Concurrent) != 0u; }
-        inline BufferIndexRange GetFullRange() const { return { 0ull, GetSize() }; }
+        inline BufferIndexRange GetFullRange() const { return { GetOffset(), GetSize()}; }
 
         template<typename T>
         inline T GetNativeHandle() const { return static_cast<T>(GetNativeHandle()); }

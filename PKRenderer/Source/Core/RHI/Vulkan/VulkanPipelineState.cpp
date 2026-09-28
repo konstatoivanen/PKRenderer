@@ -337,7 +337,7 @@ namespace PK
     PKRenderStateDirtyFlags VulkanPipelineState::Resolve(
         const VulkanDriver* driver,
         VulkanBarrierHandler* handler,
-        const FenceRef& fence)
+        VulkanDescriptorArena* descriptorArena)
     {
         PK_DEBUG_FATAL_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
@@ -606,12 +606,12 @@ namespace PK
                         RecordImage(handler, handles[i], layoutStageFlags, access | VK_ACCESS_SHADER_READ_BIT);
                     }
                     
-                    if (binding.type == ShaderResourceType::StorageBuffer || binding.type == ShaderResourceType::DynamicStorageBuffer)
+                    if (binding.type == ShaderResourceType::StorageBuffer)
                     {
                         RecordBuffer(handler, handles[i], layoutStageFlags, access | VK_ACCESS_SHADER_READ_BIT);
                     }
                     
-                    if (binding.type == ShaderResourceType::ConstantBuffer || binding.type == ShaderResourceType::DynamicConstantBuffer)
+                    if (binding.type == ShaderResourceType::ConstantBuffer)
                     {
                         RecordBuffer(handler, handles[i], layoutStageFlags, access | VK_ACCESS_UNIFORM_READ_BIT);
                     }
@@ -626,8 +626,7 @@ namespace PK
 
             if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_DESCRIPTORS)
             {
-                auto name = shader->GetName();
-                m_descritorState.descriptorSet = driver->descriptorCache->GetDescriptorSet(descriptorLayout, m_descritorState.bindings, m_descritorState.bindingCount, fence, name);
+                m_descritorState.descriptorSetOffset = descriptorArena->AllocateDescriptorSet(descriptorLayout, m_descritorState.bindings, m_descritorState.bindingCount);
             }
 
             // @TODO Technically we should maintain different sets for different bind points but...
@@ -642,8 +641,6 @@ namespace PK
                 m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
                 m_descritorState.stageFlags = descriptorLayout->stageFlags;
             }
-
-            driver->descriptorCache->SetDescriptorSetFence(m_descritorState.descriptorSet, fence);
         }
 
         if ((m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE) != 0u)

@@ -160,6 +160,7 @@ namespace PK
 
         auto view = m_driver->CreatePooled<VulkanBufferView>();
         view->buffer.buffer = m_buffer;
+        view->buffer.deviceAddress = m_deviceAddress;
         view->buffer.range = range.count;
         view->buffer.offset = range.offset;
         view->isConcurrent = IsConcurrent();

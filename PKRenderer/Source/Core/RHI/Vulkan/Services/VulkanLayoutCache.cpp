@@ -20,6 +20,7 @@ namespace PK
         VkDescriptorSetLayoutBinding bindings[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         VkDescriptorBindingFlags bindingFlags[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
 
+        layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
         layoutCreateInfo.pNext = &bindingFlagsInfo;
         layoutCreateInfo.pBindings = bindings;
         bindingFlagsInfo.pBindingFlags = bindingFlags;

@@ -495,6 +495,10 @@ namespace PK
         uint32_t stagingSizeGraphics;
         uint32_t stagingSizeCompute;
         uint32_t stagingSizePresent;
+        uint32_t descriptorSizeTransfer; // @TODO Will be replace by descriptor heap size.
+        uint32_t descriptorSizeGraphics; // @TODO Will be replace by descriptor heap size.
+        uint32_t descriptorSizeCompute;  // @TODO Will be replace by descriptor heap size.
+        uint32_t descriptorSizePresent;  // @TODO Will be replace by descriptor heap size.
         bool enableValidation;
         bool enableDebugNames;
         bool enableDebugLabels;

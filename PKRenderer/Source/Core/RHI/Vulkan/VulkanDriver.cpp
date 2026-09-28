@@ -109,14 +109,7 @@ namespace PK
         VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
         physicalDeviceProperties = VulkanGetPhysicalDeviceProperties(physicalDevice);
 
-        VulkanQueueSetInitializer queueInitializer(physicalDevice, temporarySurface, 
-        {
-            properties.stagingSizeTransfer,
-            properties.stagingSizeGraphics,
-            properties.stagingSizeCompute,
-            properties.stagingSizePresent
-        });
-
+        VulkanQueueSetInitializer queueInitializer(physicalDevice, temporarySurface, properties);
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
@@ -154,23 +147,6 @@ namespace PK
         samplerCache.New(device);
         layoutCache.New(device);
 
-        descriptorCache.New
-        (
-            device,
-            properties.gcPruneDelay,
-            PK_VK_DESCRIPTOR_INITIAL_COUNT_SETS,
-            initializer_list<Pair<const VkDescriptorType, uint32_t>>(
-            {
-                { VK_DESCRIPTOR_TYPE_SAMPLER, PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLERS },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER , PK_VK_DESCRIPTOR_INITIAL_COUNT_STORAGE_BUFFER },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, PK_VK_DESCRIPTOR_INITIAL_COUNT_UNIFORM_BUFFER },
-                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE , PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLED_IMAGE },
-                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , PK_VK_DESCRIPTOR_INITIAL_COUNT_STORAGE_IMAGE },
-                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, PK_VK_DESCRIPTOR_INITIAL_COUNT_COMBINED_IMAGE },
-                { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, PK_VK_DESCRIPTOR_INITIAL_COUNT_ACCELERATION_STRUCTURE }
-            })
-        );
-
         queues.New(this, queueInitializer);
 
         builtInResources.New();
@@ -182,7 +158,6 @@ namespace PK
 
         vkDeviceWaitIdle(device);
 
-        descriptorCache.Delete();
         samplerCache.Delete();
         pipelineCache.Delete();
         layoutCache.Delete();
@@ -284,7 +259,6 @@ namespace PK
     void VulkanDriver::GC()
     {
         pipelineCache->Prune();
-        descriptorCache->Prune();
         disposer->Prune();
         queues->Prune();
         layoutCache->Prune();
@@ -334,8 +308,8 @@ namespace PK
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
-           // PK_FATAL_ERROR("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
-            PK_LOG_WARNING("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+            PK_FATAL_ERROR("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+            //PK_LOG_WARNING("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 

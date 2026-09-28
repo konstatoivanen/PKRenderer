@@ -8,20 +8,26 @@
 
 namespace PK
 {
-    struct VulkanSamplerCache : NoCopy
+    struct VulkanSamplerCache : public NoCopy
     {
-        using SampelerHash = Hash::TMurmurHash<SamplerDescriptor>;
-
         VulkanSamplerCache(VkDevice device) : m_device(device) {}
-        VkSampler GetSampler(const SamplerDescriptor& descriptor);
-        const VulkanBindHandle* GetBindHandle(const SamplerDescriptor& descriptor);
+        ~VulkanSamplerCache();
+
+        inline VkSampler GetSampler(const SamplerDescriptor& descriptor) { return GetPooledSampler(descriptor)->sampler; }
+        inline const VulkanBindHandle* GetBindHandle(const SamplerDescriptor& descriptor) { return &GetPooledSampler(descriptor)->handle; }
         
     private:
-        VulkanSampler* GetPooledSampler(const SamplerDescriptor& descriptor);
+        using SampelerHash = Hash::TMurmurHash<SamplerDescriptor>;
+
+        struct Sampler
+        {
+            VkSampler sampler;
+            VulkanBindHandle handle;
+        };
+        
+        Sampler* GetPooledSampler(const SamplerDescriptor& descriptor);
 
         const VkDevice m_device;
-        FixedPool<VulkanBindHandle, PK_VK_MAX_SAMPLERS> m_bindhandlePool;
-        FixedPool<VulkanSampler, PK_VK_MAX_SAMPLERS> m_samplerPool;
-        FixedMap<SamplerDescriptor, VulkanSampler*, PK_VK_MAX_SAMPLERS, SampelerHash, 2ull> m_samplers;
+        FixedMap<SamplerDescriptor, Sampler, PK_VK_MAX_SAMPLERS, SampelerHash, 2ull> m_samplers;
     };
 }

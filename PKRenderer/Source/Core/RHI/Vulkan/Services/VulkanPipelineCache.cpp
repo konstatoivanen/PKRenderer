@@ -199,6 +199,7 @@ namespace PK
 
             VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
             pipelineInfo.pNext = &renderingInfo;
+            pipelineInfo.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
             pipelineInfo.stageCount = stageCount;
             pipelineInfo.pStages = shaderStages;
             pipelineInfo.pVertexInputState = nullptr;
@@ -250,6 +251,7 @@ namespace PK
             PK_DEBUG_WARNING_ASSERT(value->pipeline == nullptr, "Wack");
 
             VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+            pipelineInfo.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
             pipelineInfo.stage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
             pipelineInfo.stage.stage = VulkanEnumConvert::GetShaderStage(ShaderStage::Compute);
             pipelineInfo.stage.module = shader->GetModule((uint32_t)ShaderStage::Compute);
@@ -316,6 +318,7 @@ namespace PK
             pipelineInfo.maxPipelineRayRecursionDepth = 1;
             pipelineInfo.flags |= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR;
             pipelineInfo.flags |= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
+            pipelineInfo.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
             pipelineInfo.layout = shader->GetPipelineLayout()->layout;
             value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         }

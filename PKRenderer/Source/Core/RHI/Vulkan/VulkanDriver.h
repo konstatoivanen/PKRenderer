@@ -7,7 +7,6 @@
 #include "Core/RHI/BuiltInResources.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
-#include "Core/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanLayoutCache.h"
@@ -118,7 +117,6 @@ namespace PK
         uint32_t apiVersion;
 
         mutable FixedUnique<VulkanQueueSet> queues;
-        mutable FixedUnique<VulkanDescriptorCache> descriptorCache;
         mutable FixedUnique<VulkanPipelineCache> pipelineCache;
         mutable FixedUnique<VulkanSamplerCache> samplerCache;
         mutable FixedUnique<VulkanLayoutCache> layoutCache;

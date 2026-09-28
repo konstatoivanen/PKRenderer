@@ -320,10 +320,9 @@ namespace PKAssets
         Image,
         ConstantBuffer,
         StorageBuffer,
-        DynamicConstantBuffer,
-        DynamicStorageBuffer,
         InputAttachment,
-        AccelerationStructure
+        AccelerationStructure,
+        EnumCount
     };
 
     enum class PKComparison : uint8_t

@@ -319,7 +319,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Rendering\Font.h" />
     <ClInclude Include="Source\Core\Rendering\IESProfile.h" />
     <ClInclude Include="Source\Core\Rendering\Window.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanQueueTimer.h" />
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDescriptorArena.h" />
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanTimerArena.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanLimits.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeArrayList.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeEnum.h" />
@@ -493,11 +494,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanSwapchain.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanTexture.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanDescriptorCache.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanPipelineCache.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanSamplerCache.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanStagingRingBuffer.h" />
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanStagingArena.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommon.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDriver.h" />
     <ClInclude Include="Source\App\Renderer\RenderPipelineScene.h" />
@@ -705,7 +705,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Rendering\Font.cpp" />
     <ClCompile Include="Source\Core\Rendering\IESProfile.cpp" />
     <ClCompile Include="Source\Core\Rendering\Window.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanQueueTimer.cpp" />
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDescriptorArena.cpp" />
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanTimerArena.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
@@ -806,11 +807,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanSwapchain.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanTexture.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanDescriptorCache.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanPipelineCache.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanSamplerCache.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanStagingRingBuffer.cpp" />
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanStagingArena.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommon.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDriver.cpp" />
     <ClCompile Include="Source\App\Renderer\RenderPipelineScene.cpp" />

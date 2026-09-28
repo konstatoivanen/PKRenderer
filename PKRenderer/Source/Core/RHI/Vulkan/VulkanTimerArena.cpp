@@ -1,15 +1,15 @@
 #include "PrecompiledHeader.h"
-#include "VulkanQueueTimer.h"
+#include "VulkanTimerArena.h"
 
 namespace PK
 {
-    VulkanQueueTimer::VulkanQueueTimer(VkDevice device, float nanosecondsPerTick) :
+    VulkanTimerArena::VulkanTimerArena(VkDevice device, float nanosecondsPerTick) :
         m_ticksToSeconds(static_cast<double>(nanosecondsPerTick) * 1e-9),
         m_pool(device, VK_QUERY_TYPE_TIMESTAMP, MAX_QUERIES)
     {
     }
 
-    bool VulkanQueueTimer::Push(NameID name, uint32_t* outIndex)
+    bool VulkanTimerArena::Push(NameID name, uint32_t* outIndex)
     {
         if (m_inTimeline && m_stackHead < MAX_STACK && 
             m_timerHead - m_timerFlushHead < MAX_TIMERS)
@@ -26,7 +26,7 @@ namespace PK
         return false;
     }
 
-    bool VulkanQueueTimer::Pop(uint32_t* outIndex)
+    bool VulkanTimerArena::Pop(uint32_t* outIndex)
     {
         if (m_inTimeline && m_stackHead)
         {
@@ -37,7 +37,7 @@ namespace PK
         return false;
     }
 
-    void VulkanQueueTimer::BeginTimeline()
+    void VulkanTimerArena::BeginTimeline()
     {
         if (!m_inTimeline && m_timelineHead - m_timelineFlushHead < MAX_TIMELINES)
         {
@@ -48,7 +48,7 @@ namespace PK
         }
     }
 
-    uint64_t VulkanQueueTimer::EndTimeline()
+    uint64_t VulkanTimerArena::EndTimeline()
     {
         auto index = m_timelineHead;
 
@@ -63,7 +63,7 @@ namespace PK
         return index;
     }
 
-    void VulkanQueueTimer::FlushTimeline(uint64_t timelineIndex)
+    void VulkanTimerArena::FlushTimeline(uint64_t timelineIndex)
     {
         if (timelineIndex >= m_timelineFlushHead)
         {
@@ -116,7 +116,7 @@ namespace PK
         }
     }
 
-    ConstBufferView<RHITimerScope> VulkanQueueTimer::GetResults() const
+    ConstBufferView<RHITimerScope> VulkanTimerArena::GetResults() const
     {
         return { m_resolved, m_timerFlushHead > MAX_TIMERS ? MAX_TIMERS : m_timerFlushHead };
     }

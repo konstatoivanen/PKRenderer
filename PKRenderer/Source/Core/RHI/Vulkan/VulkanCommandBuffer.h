@@ -5,8 +5,9 @@
 namespace PK
 {
     struct VulkanDriver;
-    struct VulkanQueueTimer;
-    struct VulkanStagingRingBuffer;
+    struct VulkanTimerArena;
+    struct VulkanStagingArena;
+    struct VulkanDescriptorArena;
     struct VulkanBarrierHandler;
     struct VulkanPipelineState;
 
@@ -82,8 +83,9 @@ namespace PK
         void BeginRecord(
             const VulkanDriver* driver,
             VulkanBarrierHandler* barrierHandler,
-            VulkanQueueTimer* timer,
-            VulkanStagingRingBuffer* stagingBuffer,
+            VulkanTimerArena* timerArena,
+            VulkanStagingArena* stagingArena,
+            VulkanDescriptorArena* descriptorArena,
             VulkanPipelineState* state,
             VkCommandBuffer commandBuffer, 
             uint16_t queueFamily);
@@ -100,8 +102,9 @@ namespace PK
     private:
         const VulkanDriver* m_driver = nullptr;
         VulkanBarrierHandler* m_barrierHandler = nullptr;
-        VulkanQueueTimer* m_timer = nullptr;
-        VulkanStagingRingBuffer* m_stagingBuffer = nullptr;
+        VulkanTimerArena* m_timerArena = nullptr;
+        VulkanStagingArena* m_stagingArena = nullptr;
+        VulkanDescriptorArena* m_descriptorArena = nullptr;
         VulkanPipelineState* m_state = nullptr;
 
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
@@ -110,6 +113,7 @@ namespace PK
 
         uint64_t m_timerIndex = 0ull;
         uint64_t m_stageIndex = 0ull;
+        uint64_t m_descriptorIndex = 0ull;
         uint64_t m_invocationIndex = 0ull;
         uint64_t m_queueTimelineIndex = ~0ull;
         VkPipelineStageFlags m_lastCommandStage = 0u;
