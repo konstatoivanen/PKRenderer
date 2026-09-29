@@ -4,7 +4,7 @@
 
 namespace PK
 {
-    constexpr static uint64_t GetViewKey(const TextureViewRange& range, TextureBindMode mode)
+    constexpr static uint64_t GetViewKey(const TextureViewRange& range, VulkanTextureBindMode mode)
     {
         uint64_t h = 0ull;
         h |= range.level & 0xFFull;
@@ -37,80 +37,61 @@ namespace PK
         imageCreateInfo.usage = 0;
         imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageCreateInfo.sharingMode = isConcurrent != 0 ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
-        imageCreateInfo.pQueueFamilyIndices = isConcurrent ? families.indices : nullptr;
-        imageCreateInfo.queueFamilyIndexCount = isConcurrent ? families.count : 0u;
+        imageCreateInfo.pQueueFamilyIndices = families.indices;
+        //imageCreateInfo.pQueueFamilyIndices = isConcurrent ? families.indices : nullptr;
+        imageCreateInfo.queueFamilyIndexCount = families.count;
+        //imageCreateInfo.queueFamilyIndexCount = isConcurrent ? families.count : 0u;
 
         VmaAllocationCreateInfo allocationCreateInfo{};
-        allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+        allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
-        if (descriptor.type == TextureType::Cubemap ||
-            descriptor.type == TextureType::CubemapArray)
+        if (descriptor.type != TextureType::Texture3D)
+        {
+            imageCreateInfo.extent.depth = 1u;
+        }
+
+        if (descriptor.type == TextureType::Cubemap || descriptor.type == TextureType::CubemapArray)
         {
             imageCreateInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         }
 
         if (descriptor.formatAlias != TextureFormat::Invalid && descriptor.formatAlias != descriptor.format)
         {
-            // Set VK_IMAGE_CREATE_ALIAS_BIT  for block compressed formats
             imageCreateInfo.flags |= VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_ALIAS_BIT;
             allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT;
         }
 
-        if ((descriptor.usage & TextureUsage::RTColor) != 0)
-        {
-            imageCreateInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::RTDepth) != 0)
-        {
-            imageCreateInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::RTStencil) != 0)
-        {
-            imageCreateInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Upload) != 0)
-        {
-            imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Sample) != 0)
-        {
-            imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Input) != 0)
-        {
-            imageCreateInfo.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Storage) != 0)
-        {
-            imageCreateInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-        }
-
+        if ((descriptor.usage & TextureUsage::RTColor) != 0)   imageCreateInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        if ((descriptor.usage & TextureUsage::RTDepth) != 0)   imageCreateInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        if ((descriptor.usage & TextureUsage::RTStencil) != 0) imageCreateInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        if ((descriptor.usage & TextureUsage::Upload) != 0)    imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        if ((descriptor.usage & TextureUsage::Sample) != 0)    imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        if ((descriptor.usage & TextureUsage::Input) != 0)     imageCreateInfo.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+        if ((descriptor.usage & TextureUsage::Storage) != 0)   imageCreateInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+        
         if ((descriptor.usage & TextureUsage::Transient) != 0)
         {
-            imageCreateInfo.usage &= ~(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+            imageCreateInfo.usage &= ~(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
             imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-            // Not supported on desktop
-            // allocation.usage = VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED;
+            allocationCreateInfo.preferredFlags |= VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
         }
 
         if (imageCreateInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)
         {
-            auto aliasInfo = imageCreateInfo;
-            aliasInfo.usage &= ~VK_IMAGE_USAGE_STORAGE_BIT;
-            VK_ASSERT_RESULT_CTX(vmaCreateImage(m_driver->allocator, &aliasInfo, &allocationCreateInfo, &m_image, &m_memory, nullptr), "Failed to create an image!");
-            vmaCreateAliasingImage(m_driver->allocator, m_memory, &imageCreateInfo, &m_imageAlias);
+            auto primaryCreateInfo = imageCreateInfo;
+            primaryCreateInfo.usage &= ~VK_IMAGE_USAGE_STORAGE_BIT;
+            VK_ASSERT_RESULT_CTX(vmaCreateImage(m_driver->allocator, &primaryCreateInfo, &allocationCreateInfo, &m_image, &m_memory, nullptr), "Failed to create a VkImage!");
+
+            auto aliasCreateInfo = imageCreateInfo;
+            aliasCreateInfo.format = VulkanEnumConvert::GetFormat(descriptor.formatAlias);
+            VK_ASSERT_RESULT_CTX(vmaCreateAliasingImage(m_driver->allocator, m_memory, &imageCreateInfo, &m_imageAlias), "Failed to create a VkImage alias!");
+
             VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)m_imageAlias, FixedString128({ name, ".Alias" }).c_str());
         }
         else
         {
             m_imageAlias = VK_NULL_HANDLE;
-            VK_ASSERT_RESULT_CTX(vmaCreateImage(m_driver->allocator, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_memory, nullptr), "Failed to create an image!");
+            VK_ASSERT_RESULT_CTX(vmaCreateImage(m_driver->allocator, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_memory, nullptr), "Failed to create a VkImage!");
         }
 
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)m_image, name);
@@ -199,7 +180,7 @@ namespace PK
         return out;
     }
 
-    void VulkanTexture::FillBindHandle(VulkanBindHandle* handle, const TextureViewRange& range, TextureBindMode bindMode) const
+    void VulkanTexture::FillBindHandle(VulkanBindHandle* handle, const TextureViewRange& range, VulkanTextureBindMode bindMode) const
     {
         auto normalizedRange = NormalizeViewRange(range);
         handle->isConcurrent = IsConcurrent();
@@ -212,20 +193,20 @@ namespace PK
         handle->image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
         handle->image.range = VulkanConvertRange(normalizedRange, handle->image.format);
  
-        if (bindMode == TextureBindMode::SampledTexture)
+        if (bindMode == VulkanTextureBind_SRV)
         {
             handle->image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
         }
     }
 
-    const VulkanImageView* VulkanTexture::GetView(const TextureViewRange& range, TextureBindMode mode)
+    const VulkanImageView* VulkanTexture::GetView(const TextureViewRange& range, VulkanTextureBindMode mode)
     {
         auto normalizedRange = NormalizeViewRange(range);
         auto key = GetViewKey(normalizedRange, mode);
 
         if (!m_firstView.FindAndSwapFirst(key))
         {
-            auto useAlias = mode != TextureBindMode::SampledTexture && m_imageAlias != VK_NULL_HANDLE;
+            auto useAlias = mode == VulkanTextureBind_UAV && m_imageAlias != VK_NULL_HANDLE;
             auto viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
             auto swizzle = VulkanEnumConvert::GetSwizzle(m_format);
 
@@ -236,16 +217,15 @@ namespace PK
             info.format = m_format;
             info.formatAlias = m_formatAlias;
             info.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
-            info.components = mode == TextureBindMode::SampledTexture ? swizzle : (VkComponentMapping{});
+            info.components = mode == VulkanTextureBind_SRV ? swizzle : (VkComponentMapping{});
             info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
             info.isConcurrent = IsConcurrent();
             info.isTracked = IsTracked();
             info.isAlias = useAlias;
             info.subresourceRange = VulkanConvertRange(normalizedRange, info.format);
-
             auto newView = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, m_name.c_str());
 
-            if (mode == TextureBindMode::SampledTexture)
+            if (mode == VulkanTextureBind_SRV)
             {
                 newView->bindHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
             }

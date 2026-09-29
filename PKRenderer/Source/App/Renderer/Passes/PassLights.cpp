@@ -110,7 +110,7 @@ namespace PK::App
         depthDesc.sampler.wrap[2] = WrapMode::Mirror;
         depthDesc.sampler.filterMin = FilterMode::Bilinear;
         depthDesc.sampler.filterMag = FilterMode::Bilinear;
-        depthDesc.usage = TextureUsage::RTDepthSample;
+        depthDesc.usage = TextureUsage::RTDepth | TextureUsage::Transient;
         m_depthTargetCube = RHI::CreateTexture(depthDesc, "Lights.DepthTarget.Cube");
 
         depthDesc.usage = TextureUsage::RTColorSample;
@@ -121,7 +121,7 @@ namespace PK::App
         depthDesc.format = TextureFormat::Depth16;
         depthDesc.resolution = { m_shadowmapSize.Value, m_shadowmapSize.Value, 1u };
         depthDesc.layers = ShadowCascadeCount;
-        depthDesc.usage = TextureUsage::RTDepth;
+        depthDesc.usage = TextureUsage::RTDepth | TextureUsage::Transient;
         m_depthTarget2D = RHI::CreateTexture(depthDesc, "Lights.DepthTarget.2D");
 
         TextureDescriptor atlasDesc;
@@ -185,9 +185,10 @@ namespace PK::App
             auto view = context->entityDb->Query<EntityViewLight>(culledLights[i].entityId);
             resources->lightKeys[i] = { *view.entityId, view.light->type, view.primitive->flags };
 
-            auto castsSHadows = bool(view.primitive->flags & ScenePrimitiveFlags::CastShadows);
-            matrixCount += SHADOW_TYPE_INFOS[(int)view.light->type].MatrixCount * castsSHadows;
-            context->frameArena->Allocate<ShadowbatchInfo>(castsSHadows);
+            auto castsShadows = bool(view.primitive->flags & ScenePrimitiveFlags::CastShadows);
+            matrixCount += SHADOW_TYPE_INFOS[(int)view.light->type].MatrixCount * castsShadows;
+
+            context->frameArena->Allocate<ShadowbatchInfo>(castsShadows);
         }
 
         PK::IntroSort(resources->lightKeys.data, resources->lightKeys.data + lightCount, TLessFunc<LightSortKey>(
@@ -326,16 +327,8 @@ namespace PK::App
         packedLights[lightCount] = PackedLight();
 
         cmd.EndBufferWrite(m_lightsBuffer.get(), packedLights);
-
-        if (matrixCount > 0)
-        {
-            cmd.EndBufferWrite(m_lightMatricesBuffer.get(), matricesView);
-        }
-
-        if (m_shadowmaps->GetLayers() < shadowCount + ShadowCascadeCount)
-        {
-            RHI::ValidateTexture(m_shadowmaps, 1u, shadowCount + ShadowCascadeCount);
-        }
+        cmd.EndBufferWrite(m_lightMatricesBuffer.get(), matricesView);
+        RHI::ValidateTexture(m_shadowmaps, 1u, math::max(m_shadowmaps->GetLayers(), shadowCount + ShadowCascadeCount));
 
         auto hash = HashCache::Get();
         RHI::SetConstant<uint32_t>(hash->pk_LastLightIndex, lightCount - 1u);
@@ -374,7 +367,7 @@ namespace PK::App
 
             if (batch.type == LightType::Point)
             {
-                auto targetDepth = RenderTargetBinding(m_depthTargetCube.get(), range0, LoadOp::Clear, StoreOp::Store, { PK_CLIPZ_FAR, 0u });
+                auto targetDepth = RenderTargetBinding(m_depthTargetCube.get(), range0, LoadOp::Clear, StoreOp::Discard, { PK_CLIPZ_FAR, 0u });
                 auto targetDist = RenderTargetBinding(m_shadowTargetCube.get(), range0, LoadOp::Clear, StoreOp::Store, float4(PK_HALF_MAX) );
                 cmd.SetRenderTarget({ targetDepth, targetDist }, true);
                 context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
@@ -385,7 +378,7 @@ namespace PK::App
             }
             else
             {
-                auto targetDepth = RenderTargetBinding(m_depthTarget2D.get(), range0, LoadOp::Clear, StoreOp::Store, { PK_CLIPZ_FAR, 0u });
+                auto targetDepth = RenderTargetBinding(m_depthTarget2D.get(), range0, LoadOp::Clear, StoreOp::Discard, { PK_CLIPZ_FAR, 0u });
                 auto targetDist = RenderTargetBinding(m_shadowmaps.get(), range1, LoadOp::Clear, StoreOp::Store, float4(PK_HALF_MAX));
                 cmd.SetRenderTarget({ targetDepth, targetDist }, true);
                 context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);

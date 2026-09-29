@@ -281,7 +281,7 @@ namespace PK
             record.access = access;
             record.bufferRange.offset = (uint32_t)handle->buffer.offset;
             record.bufferRange.size = (uint32_t)handle->buffer.range;
-            record.queueFamily = handle->isConcurrent ? PK_VK_QUEUE_FAMILY_IGNORED : (uint16_t)handler->GetQueueFamily();
+            record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
             handler->Record(handle->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
         }
     }

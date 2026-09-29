@@ -42,8 +42,8 @@ namespace PK
         for (auto i = 0u; i < count; ++i)
         {
             auto binding = &bindings[i];
-            auto target = static_cast<VulkanTexture*>(binding->target)->GetBindHandle(binding->targetRange, TextureBindMode::RenderTarget);
-            auto resolve = binding->resolve ? static_cast<VulkanTexture*>(binding->resolve)->GetBindHandle(binding->resolveRange, TextureBindMode::RenderTarget) : nullptr;
+            auto target = static_cast<VulkanTexture*>(binding->target)->GetBindHandle(binding->targetRange, VulkanTextureBind_RTV);
+            auto resolve = binding->resolve ? static_cast<VulkanTexture*>(binding->resolve)->GetBindHandle(binding->resolveRange, VulkanTextureBind_RTV) : nullptr;
             auto isDepth = VulkanEnumConvert::IsDepthFormat(target->image.format);
             auto attachment = isDepth ? &state.depth : (state.colors + state.colorCount++);
             attachment->target = target;
@@ -153,7 +153,7 @@ namespace PK
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
         m_barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -178,7 +178,7 @@ namespace PK
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
         m_barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -203,7 +203,7 @@ namespace PK
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
         m_barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -228,7 +228,7 @@ namespace PK
         record.bufferRange.size = maxDrawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
         m_barrierHandler->Record(vkbufferIndirect, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         auto vkbufferCount = countBuffer->GetNativeHandle<VkBuffer>();
@@ -236,7 +236,7 @@ namespace PK
         record.bufferRange.size = sizeof(uint32_t);
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
         m_barrierHandler->Record(vkbufferCount, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -278,7 +278,7 @@ namespace PK
     {
         auto vksrc = static_cast<VulkanTexture*>(src);
         auto vkdst = static_cast<VulkanSwapchain*>(dst);
-        const auto& srcHandle = vksrc->GetBindHandle(TextureBindMode::RenderTarget);
+        const auto& srcHandle = vksrc->GetBindHandle(VulkanTextureBind_RTV);
         const auto& dstHandle = vkdst->GetBindHandle();
 
         auto srcRes = src->GetResolution();
@@ -329,8 +329,8 @@ namespace PK
     {
         VulkanBindHandle srcHandle;
         VulkanBindHandle dstHandle;
-        static_cast<VulkanTexture*>(src)->FillBindHandle(&srcHandle, srcRange, TextureBindMode::RenderTarget);
-        static_cast<VulkanTexture*>(dst)->FillBindHandle(&dstHandle, dstRange, TextureBindMode::RenderTarget);
+        static_cast<VulkanTexture*>(src)->FillBindHandle(&srcHandle, srcRange, VulkanTextureBind_RTV);
+        static_cast<VulkanTexture*>(dst)->FillBindHandle(&dstHandle, dstRange, VulkanTextureBind_RTV);
         auto srcLayers = math::min(srcHandle.image.range.layerCount, src->GetLayers());
         auto dstLayers = math::min(dstHandle.image.range.layerCount, dst->GetLayers());
 
@@ -401,7 +401,7 @@ namespace PK
 
     void VulkanCommandBuffer::Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value)
     {
-        auto handle = static_cast<VulkanTexture*>(dst)->GetBindHandle(range, TextureBindMode::Image);
+        auto handle = static_cast<VulkanTexture*>(dst)->GetBindHandle(range, VulkanTextureBind_UAV);
         auto clearValue = VulkanEnumConvert::GetClearValue(value);
 
         VkClearColorValue clearColorValue{};
@@ -443,7 +443,7 @@ namespace PK
         record.bufferRange.size = (uint32_t)copyRegion.size;
         record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
-        record.queueFamily = dst->IsConcurrent() ? PK_VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
         m_barrierHandler->Record(vkdstBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
     }
 

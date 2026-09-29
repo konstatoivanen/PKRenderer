@@ -246,9 +246,9 @@ namespace PK
 
     void VulkanDriver::SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanBuffer*>(buffers[i])->GetBindHandle(ranges[i]), count); }
     void VulkanDriver::SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) { globalResources.Set(name, static_cast<const VulkanBindSet*>(bufferArray)); }
-    void VulkanDriver::SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanTexture*>(textures[i])->GetBindHandle(ranges[i], TextureBindMode::SampledTexture), count); }
+    void VulkanDriver::SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanTexture*>(textures[i])->GetBindHandle(ranges[i], VulkanTextureBind_SRV), count); }
     void VulkanDriver::SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureArray) { globalResources.Set(name, static_cast<const VulkanBindSet*>(textureArray)); }
-    void VulkanDriver::SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanTexture*>(images[i])->GetBindHandle(ranges[i], TextureBindMode::Image), count); }
+    void VulkanDriver::SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanTexture*>(images[i])->GetBindHandle(ranges[i], VulkanTextureBind_UAV), count); }
     void VulkanDriver::SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) { PK_VK_BIND_HANDLES(name, samplerCache->GetBindHandle(samplers[i]), count); }
     void VulkanDriver::SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanAccelerationStructure*>(structures[i])->GetBindHandle(), count); }
     void VulkanDriver::SetConstant(NameID name, const void* data, uint32_t size) { globalResources.Set<char>(name, static_cast<const char*>(data), size); }

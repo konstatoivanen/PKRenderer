@@ -80,8 +80,11 @@ namespace PK
         template<typename T>
         void EndBufferWrite(RHIBuffer* buffer, const StagingBufferView<T>& view)
         {
-            commandBuffer->CopyBuffer(buffer, view.stage, 0ull, view.offset, view.size);
-            commandBuffer->ReleaseStagingBuffer(view.stage);
+            if (view.stage && view.size)
+            {
+                commandBuffer->CopyBuffer(buffer, view.stage, 0ull, view.offset, view.size);
+                commandBuffer->ReleaseStagingBuffer(view.stage);
+            }
         }
 
         void UploadTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount);

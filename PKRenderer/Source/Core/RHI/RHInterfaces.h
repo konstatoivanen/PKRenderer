@@ -66,7 +66,6 @@ namespace PK
         virtual void* BeginMap(size_t offset, [[maybe_unused]] size_t readsize) const = 0;
         virtual void EndMap(size_t offset, [[maybe_unused]] size_t writeSize) const = 0;
 
-        inline bool IsConcurrent() const { return (GetUsage() & BufferUsage::Concurrent) != 0u; }
         inline BufferIndexRange GetFullRange() const { return { GetOffset(), GetSize()}; }
 
         template<typename T>

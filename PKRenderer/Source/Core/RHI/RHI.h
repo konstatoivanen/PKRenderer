@@ -83,7 +83,6 @@ namespace PK
     enum class RHIAPI;
     enum class QueueType;
     enum class SamplerType : uint8_t;
-    enum class TextureBindMode : uint8_t;
     enum class PolygonMode : uint8_t;
     enum class Topology : uint8_t;
     enum class LogicOp : uint8_t;

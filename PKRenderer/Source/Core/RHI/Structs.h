@@ -49,13 +49,6 @@ namespace PK
         EnumCount
     };
 
-    enum class TextureBindMode : uint8_t
-    {
-        SampledTexture,
-        Image,
-        RenderTarget
-    };
-
     enum class PolygonMode : uint8_t
     {
         Fill,
@@ -135,25 +128,23 @@ namespace PK
         RamWrite = 4,
         RamRead  = 5,
 
-        TransferDst           = 1 << 4,
-        TransferSrc           = 1 << 5,
-        Vertex                = 1 << 6,
-        Index                 = 1 << 7,
-        Constant              = 1 << 8,
-        Storage               = 1 << 9,
-        Indirect              = 1 << 10,
-        AccelerationStructure = 1 << 11,
-        InstanceInput         = 1 << 12,
-        ShaderBindingTable    = 1 << 13,
-        Concurrent            = 1 << 14,
+        TransferSrc           = 1 << 4,
+        Vertex                = 1 << 5,
+        Index                 = 1 << 6,
+        Constant              = 1 << 7,
+        Storage               = 1 << 8,
+        Indirect              = 1 << 9,
+        AccelerationStructure = 1 << 10,
+        InstanceInput         = 1 << 11,
+        ShaderBindingTable    = 1 << 12,
 
         TypeBits = 7,
-        DefaultVertex = Vram | TransferDst | Vertex,
-        DefaultIndex = Vram | TransferDst | Index,
-        DefaultConstant = Vram | TransferDst | Constant,
-        DefaultStorage = Vram | TransferDst | Storage,
+        DefaultVertex = Vram | Vertex,
+        DefaultIndex = Vram | Index,
+        DefaultConstant = Vram | Constant,
+        DefaultStorage = Vram | Storage,
         DefaultStaging = RamWrite | TransferSrc,
-        DefaultShaderBindingTable = Vram | TransferDst | ShaderBindingTable,
+        DefaultShaderBindingTable = Vram | ShaderBindingTable,
         DefaultAccelerationStructure = Vram | AccelerationStructure
     };
 

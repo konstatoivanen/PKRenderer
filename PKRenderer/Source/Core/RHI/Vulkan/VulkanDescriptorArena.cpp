@@ -108,7 +108,6 @@ namespace PK
                     {
                         bufferInfo.address = handle->buffer.deviceAddress + handle->buffer.offset;
                         bufferInfo.range = handle->buffer.range;
-                        bufferInfo.format = VK_FORMAT_UNDEFINED;
                         data.pUniformBuffer = &bufferInfo;
                         break;
                     }
@@ -116,7 +115,6 @@ namespace PK
                     {
                         bufferInfo.address = handle->buffer.deviceAddress + handle->buffer.offset;
                         bufferInfo.range = handle->buffer.range;
-                        bufferInfo.format = VK_FORMAT_UNDEFINED;
                         data.pStorageBuffer = &bufferInfo;
                         break;
                     }
