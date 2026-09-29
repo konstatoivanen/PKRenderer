@@ -101,7 +101,6 @@ namespace PK
             const VulkanBindHandle* handle, 
             VkPipelineStageFlags stage, 
             VkAccessFlags access,
-            VkImageLayout layout,
             uint8_t options);
 
         PKRenderStateDirtyFlags Resolve(const VulkanDriver* driver, VulkanBarrierHandler* handler, VulkanDescriptorArena* descriptorArena);
@@ -109,7 +108,6 @@ namespace PK
         VulkanDescriptorState m_descritorState{};
         VulkanPipelineCache::PipelineKey m_pipelineKey{};
         VulkanRenderTargetBindings m_renderTarget{};
-        VkImageLayout m_depthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)RayTracingShaderGroup::EnumCount]{};
     
         VertexStreamElement m_vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};

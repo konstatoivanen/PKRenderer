@@ -192,16 +192,21 @@ Device Extensions:
 - VK_EXT_shader_atomic_float
 - VK_KHR_ray_tracing_position_fetch
 - VK_EXT_mesh_shader
+- VK_KHR_shader_maximal_reconvergence
+- VK_KHR_shader_quad_control
 - VK_KHR_fragment_shading_rate
+- VK_EXT_extended_dynamic_state3
 - VK_EXT_full_screen_exclusive
-- VK_KHR_multiview
 - VK_EXT_present_mode_fifo_latest_ready
 - VK_KHR_present_wait
 - VK_KHR_present_id
 - VK_KHR_swapchain_maintenance1
+- VK_EXT_descriptor_buffer
+- VK_KHR_unified_image_layouts
 
 Physical Device Requirements:
 - alphaToOne
+- sampleRateShading
 - fillModeNonSolid
 - shaderImageGatherExtended
 - sparseBinding
@@ -218,6 +223,7 @@ Physical Device Requirements:
 - multiDrawIndirect
 - shaderStorageImageReadWithoutFormat
 - shaderStorageImageWriteWithoutFormat
+- depthClamp
 - storageBuffer16BitAccess
 - uniformAndStorageBuffer16BitAccess
 - storagePushConstant16
@@ -241,8 +247,8 @@ Physical Device Requirements:
 - dynamicRendering
 - dynamicRenderingLocalRead
 - smoothLines
-- accelerationStructure.accelerationStructure
-- rayTracingPipeline.rayTracingPipeline
+- accelerationStructure
+- rayTracingPipeline
 - rayQuery
 - shaderSharedFloat32AtomicAdd
 - rayTracingPositionFetch
@@ -254,6 +260,14 @@ Physical Device Requirements:
 - pipelineFragmentShadingRate
 - presentModeFifoLatestReady
 - swapchainMaintenance1
+- presentId
+- presentWait
+- shaderMaximalReconvergence
+- shaderQuadControl
+- descriptorBuffer
+- descriptorBufferImageLayoutIgnored
+- meshShaderQueries
+- pushDescriptor
 ```
 
 </details>

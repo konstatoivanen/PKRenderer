@@ -119,7 +119,8 @@ namespace PK
                 features.maximalReconvergence.shaderMaximalReconvergence = VK_TRUE;
                 features.quadControl.shaderQuadControl = VK_TRUE;
                 features.descriptorBuffer.descriptorBuffer = VK_TRUE;
-               // features.descriptorBuffer.descriptorBufferImageLayoutIgnored
+                features.descriptorBuffer.descriptorBufferImageLayoutIgnored = VK_TRUE;
+                features.unifiedLayout.unifiedImageLayouts = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 // Nsight uses push descriptors but they fail to set this flag
@@ -148,13 +149,14 @@ namespace PK
                     VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME,
                     VK_KHR_SHADER_QUAD_CONTROL_EXTENSION_NAME,
                     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
+                    VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
                     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
                     VK_KHR_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME,
-                    VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
                     VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
                     VK_KHR_PRESENT_ID_EXTENSION_NAME,
                     VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME,
-                    VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+                    VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
+                    VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanDriverDescriptor

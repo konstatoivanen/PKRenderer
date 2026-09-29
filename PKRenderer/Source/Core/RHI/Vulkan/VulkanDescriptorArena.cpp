@@ -124,28 +124,24 @@ namespace PK
                     {
                         imageInfo.sampler = handle->image.sampler;
                         imageInfo.imageView = handle->image.view;
-                        imageInfo.imageLayout = handle->image.layout;
                         data.pCombinedImageSampler = &imageInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
                     {
                         imageInfo.imageView = handle->image.view;
-                        imageInfo.imageLayout = handle->image.layout;
                         data.pSampledImage = &imageInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
                     {
                         imageInfo.imageView = handle->image.view;
-                        imageInfo.imageLayout = handle->image.layout;
                         data.pStorageImage = &imageInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
                     {
                         imageInfo.imageView = handle->image.view;
-                        imageInfo.imageLayout = handle->image.layout;
                         data.pInputAttachmentImage = &imageInfo;
                         break;
                     }

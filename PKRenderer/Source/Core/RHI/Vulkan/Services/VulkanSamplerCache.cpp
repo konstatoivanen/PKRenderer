@@ -53,7 +53,6 @@ namespace PK
             sampler->handle.image.alias = VK_NULL_HANDLE;
             sampler->handle.image.view = VK_NULL_HANDLE;
             sampler->handle.image.sampler = sampler->sampler;
-            sampler->handle.image.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             sampler->handle.image.format = VK_FORMAT_UNDEFINED;
             sampler->handle.image.extent = { 0u, 0u, 0u };
             sampler->handle.image.range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };

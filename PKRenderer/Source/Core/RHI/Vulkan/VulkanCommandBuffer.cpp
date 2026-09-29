@@ -316,12 +316,12 @@ namespace PK
         region.imageExtent = vksrc->image.extent;
         region.bufferOffset = dst->GetOffset();
 
-        m_state->RecordImage(m_barrierHandler, vksrc, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        m_state->RecordImage(m_barrierHandler, vksrc, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT);
 
         EndRenderPass();
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdCopyImageToBuffer(m_commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkdst, 1, &region);
+        vkCmdCopyImageToBuffer(m_commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_GENERAL, vkdst, 1, &region);
         ResolveSwapchainAccess(src, false);
     }
 
@@ -347,9 +347,9 @@ namespace PK
 
     void VulkanCommandBuffer::Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter)
     {
-        m_state->RecordImage(m_barrierHandler, src, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        m_state->RecordImage(m_barrierHandler, src, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT);
         m_state->RecordImage(m_barrierHandler, dst, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
-        m_state->RecordImage(m_barrierHandler, dst, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        m_state->RecordImage(m_barrierHandler, dst, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
 
         EndRenderPass();
         ResolveBarriers();
@@ -370,7 +370,7 @@ namespace PK
             resolveRegion.srcSubresource = { (uint32_t)src->image.range.aspectMask, blitRegion.srcSubresource.mipLevel, blitRegion.srcSubresource.baseArrayLayer, blitRegion.srcSubresource.layerCount };
             resolveRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, blitRegion.dstSubresource.mipLevel, blitRegion.dstSubresource.baseArrayLayer, blitRegion.dstSubresource.layerCount };
             resolveRegion.extent = src->image.extent;
-            vkCmdResolveImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
+            vkCmdResolveImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_GENERAL, dst->image.image, VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
         }
         else if (useCopy)
         {
@@ -382,12 +382,12 @@ namespace PK
             copyRegion.extent.width = (uint32_t)blitRegion.dstOffsets[1].x - (uint32_t)blitRegion.dstOffsets[0].x;
             copyRegion.extent.height = (uint32_t)blitRegion.dstOffsets[1].y - (uint32_t)blitRegion.dstOffsets[0].y;
             copyRegion.extent.depth = (uint32_t)blitRegion.dstOffsets[1].z - (uint32_t)blitRegion.dstOffsets[0].z;
-            vkCmdCopyImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+            vkCmdCopyImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_GENERAL, dst->image.image, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
         }
         else
         {
             auto vkFilter = VulkanEnumConvert::GetFilterMode(filter);
-            vkCmdBlitImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blitRegion, vkFilter);
+            vkCmdBlitImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_GENERAL, dst->image.image, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion, vkFilter);
         }
     }
 
@@ -407,7 +407,7 @@ namespace PK
         VkClearColorValue clearColorValue{};
         memcpy(clearColorValue.uint32, &value.uint32.x, sizeof(clearColorValue.uint32));
 
-        m_state->RecordImage(m_barrierHandler, handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
+        m_state->RecordImage(m_barrierHandler, handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT);
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
 
@@ -449,13 +449,13 @@ namespace PK
 
     void VulkanCommandBuffer::CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount)
     {
+        EndRenderPass();
+        
         PK_DEBUG_FATAL_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture upload is only supported for sampled | upload | readonly textures!");
 
         auto vkTexture = static_cast<VulkanTexture*>(texture);
-        auto layout = vkTexture->GetImageLayout();
         auto vkBuffer = buffer->GetNativeHandle<VkBuffer>();
         auto vkImage = texture->GetNativeHandle<VkImage>();
-
         auto resourceRange = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS, 0 };
         auto copyRegions = PK_STACK_ALLOC(VkBufferImageCopy, regionCount);
 
@@ -484,10 +484,31 @@ namespace PK
         resourceRange.levelCount = resourceRange.levelCount - resourceRange.baseMipLevel;
         resourceRange.layerCount = resourceRange.layerCount - resourceRange.baseArrayLayer;
 
-        TransitionImageLayout(vkImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, resourceRange);
+        VkImageMemoryBarrier imageBarrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+        imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageBarrier.image = vkImage;
+        imageBarrier.subresourceRange = resourceRange;
+        imageBarrier.srcAccessMask = 0;
+        imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        VulkanBarrierInfo barrier;
+        barrier.imageMemoryBarrierCount = 1u;
+        barrier.pImageMemoryBarriers = &imageBarrier;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        
+        PipelineBarrier(barrier);
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdCopyBufferToImage(m_commandBuffer, vkBuffer, vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regionCount, copyRegions);
-        TransitionImageLayout(vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, resourceRange);
+        vkCmdCopyBufferToImage(m_commandBuffer, vkBuffer, vkImage, VK_IMAGE_LAYOUT_GENERAL, regionCount, copyRegions);
+
+        imageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+        imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageBarrier.dstAccessMask = 0;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        PipelineBarrier(barrier);
     }
 
 
@@ -495,10 +516,22 @@ namespace PK
     {
         PK_DEBUG_FATAL_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture invalidation is only supported for sampled | upload | readonly textures!");
         auto vkTexture = static_cast<VulkanTexture*>(texture);
-        auto layout = vkTexture->GetImageLayout();
-        auto vkImage = texture->GetNativeHandle<VkImage>();
-        auto resourceRange = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS };
-        TransitionImageLayout(vkImage, VK_IMAGE_LAYOUT_UNDEFINED, layout, resourceRange);
+        VkImageMemoryBarrier imageBarrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+        imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageBarrier.image = texture->GetNativeHandle<VkImage>();
+        imageBarrier.subresourceRange = { (uint32_t)vkTexture->GetAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS };
+        imageBarrier.srcAccessMask = 0;
+        imageBarrier.dstAccessMask = 0;
+        VulkanBarrierInfo barrier;
+        barrier.imageMemoryBarrierCount = 1u;
+        barrier.pImageMemoryBarriers = &imageBarrier;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        EndRenderPass();
+        PipelineBarrier(barrier);
     }
 
 
@@ -562,54 +595,6 @@ namespace PK
         vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, (uint32_t)query);
     }
 
-    void VulkanCommandBuffer::TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range)
-    {
-        if (srcLayout != dstLayout)
-        {
-            VkImageMemoryBarrier imageBarrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
-            imageBarrier.oldLayout = srcLayout;
-            imageBarrier.newLayout = dstLayout;
-            imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageBarrier.image = image;
-            imageBarrier.subresourceRange = range;
-
-            VulkanBarrierInfo barrier;
-            barrier.imageMemoryBarrierCount = 1u;
-            barrier.pImageMemoryBarriers = &imageBarrier;
-
-            switch (dstLayout)
-            {
-                case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-                    imageBarrier.srcAccessMask = 0;
-                    imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                    barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                    barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                    break;
-
-                case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-                    imageBarrier.srcAccessMask = 0;
-                    imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                    barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                    barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                    break;
-
-                case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-                case VK_IMAGE_LAYOUT_GENERAL:
-                    imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                    imageBarrier.dstAccessMask = 0u;
-                    barrier.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                    barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-                    break;
-                default:
-                    PK_FATAL_ERROR("Unsupported layout transition!");
-            }
-
-            EndRenderPass();
-            PipelineBarrier(barrier);
-        }
-    }
-
     void VulkanCommandBuffer::PipelineBarrier(const VulkanBarrierInfo& barrier)
     {
         auto excludeMask = ~(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
@@ -655,7 +640,7 @@ namespace PK
         if (forceTransition)
         {
             const auto& bindHandle = vkdst->GetBindHandle();
-            m_state->RecordImage(m_barrierHandler, bindHandle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_NONE);
+            m_state->RecordImage(m_barrierHandler, bindHandle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
             ResolveBarriers();
         }
     }

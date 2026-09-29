@@ -290,7 +290,6 @@ namespace PK
             info.viewType = VK_IMAGE_VIEW_TYPE_2D;
             info.format = m_format.format;
             info.formatAlias = m_format.format;
-            info.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             info.samples = VK_SAMPLE_COUNT_1_BIT;
             info.components = VkComponentMapping{};
             info.extent = { m_extent.width, m_extent.height, 1 };

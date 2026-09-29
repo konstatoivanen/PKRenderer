@@ -70,6 +70,7 @@ namespace PK
         presentWait.pNext = &maximalReconvergence;
         maximalReconvergence.pNext = &quadControl;
         quadControl.pNext = &descriptorBuffer;
+        descriptorBuffer.pNext = &unifiedLayout;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -279,6 +280,8 @@ namespace PK
             PK_TEST_FEATURE(descriptorBuffer.descriptorBufferCaptureReplay)
             PK_TEST_FEATURE(descriptorBuffer.descriptorBufferImageLayoutIgnored)
             PK_TEST_FEATURE(descriptorBuffer.descriptorBufferPushDescriptors)
+            PK_TEST_FEATURE(unifiedLayout.unifiedImageLayouts)
+            PK_TEST_FEATURE(unifiedLayout.unifiedImageLayoutsVideo)
         }
         
         #undef PK_TEST_FEATURE
@@ -315,7 +318,6 @@ namespace PK
         bindHandle.image.view = view;
         bindHandle.image.image = createInfo.image;
         bindHandle.image.alias = createInfo.imageAlias;
-        bindHandle.image.layout = createInfo.layout;
         bindHandle.image.format = info.format;
         bindHandle.image.extent = createInfo.extent;
         bindHandle.image.range = createInfo.subresourceRange;
@@ -1536,16 +1538,6 @@ namespace PK
                 case TextureType::CubemapArray: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
                 default: return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
             }
-        }
-
-        VkImageLayout GetImageLayout(TextureUsage usage)
-        {
-            if ((usage & (TextureUsage::RTDepth | TextureUsage::RTColor | TextureUsage::Storage)) != 0)
-            {
-                return VK_IMAGE_LAYOUT_GENERAL;
-            }
-
-            return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
 
         VkAttachmentLoadOp GetLoadOp(LoadOp loadOp)

@@ -23,6 +23,7 @@ namespace PK
         m_descriptor(descriptor)
     {
         auto& families = m_driver->queues->GetSelectedFamilies();
+        const auto isConcurrent = (descriptor.usage & TextureUsage::Concurrent) != 0;
 
         VkImageCreateInfo imageCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         imageCreateInfo.flags = 0u;
@@ -35,9 +36,9 @@ namespace PK
         imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCreateInfo.usage = 0;
         imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageCreateInfo.sharingMode = (descriptor.usage & TextureUsage::Concurrent) != 0 ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
-        imageCreateInfo.pQueueFamilyIndices = families.indices;
-        imageCreateInfo.queueFamilyIndexCount = families.count;
+        imageCreateInfo.sharingMode = isConcurrent != 0 ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
+        imageCreateInfo.pQueueFamilyIndices = isConcurrent ? families.indices : nullptr;
+        imageCreateInfo.queueFamilyIndexCount = isConcurrent ? families.count : 0u;
 
         VmaAllocationCreateInfo allocationCreateInfo{};
         allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -206,7 +207,6 @@ namespace PK
         handle->image.view = VK_NULL_HANDLE;
         handle->image.image = m_image;
         handle->image.alias = m_imageAlias;
-        handle->image.layout = GetImageLayout();
         handle->image.format = m_format;
         handle->image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
         handle->image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
@@ -235,7 +235,6 @@ namespace PK
             info.viewType = viewType;
             info.format = m_format;
             info.formatAlias = m_formatAlias;
-            info.layout = GetImageLayout();
             info.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
             info.components = mode == TextureBindMode::SampledTexture ? swizzle : (VkComponentMapping{});
             info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };

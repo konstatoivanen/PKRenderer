@@ -18,7 +18,6 @@ namespace PK
         memset(m_scissors, 0, sizeof(m_scissors));
 
         m_renderTarget.layers = 1;
-        m_depthStencilLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         m_indexBuffer = nullptr;
         m_indexType = VK_INDEX_TYPE_UINT16;
         m_pipelineKey.fixed = VulkanPipelineCache::FixedFunctionState();
@@ -51,10 +50,10 @@ namespace PK
             dst.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             dst.pNext = nullptr;
             dst.imageView = src.target->image.view;
-            dst.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            dst.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
             dst.resolveMode = src.resolveMode;
             dst.resolveImageView = src.resolve ? src.resolve->image.view : nullptr;
-            dst.resolveImageLayout = src.resolve ? dst.imageLayout : VK_IMAGE_LAYOUT_UNDEFINED;
+            dst.resolveImageLayout = src.resolve ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED;
             dst.loadOp = VulkanEnumConvert::GetLoadOp(src.loadOp);
             dst.storeOp = VulkanEnumConvert::GetStoreOp(src.storeOp);
             dst.clearValue = VulkanEnumConvert::GetClearValue(src.clearValue);
@@ -64,10 +63,10 @@ namespace PK
         {
             auto& src = m_renderTarget.depth;
             s_depthStencil.imageView = src.target->image.view;
-            s_depthStencil.imageLayout = m_depthStencilLayout;
+            s_depthStencil.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
             s_depthStencil.resolveMode = src.resolveMode;
             s_depthStencil.resolveImageView = src.resolve ? src.resolve->image.view : nullptr;
-            s_depthStencil.resolveImageLayout = src.resolve ? s_depthStencil.imageLayout : VK_IMAGE_LAYOUT_UNDEFINED;
+            s_depthStencil.resolveImageLayout = src.resolve ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED;
             s_depthStencil.loadOp = VulkanEnumConvert::GetLoadOp(src.loadOp);
             s_depthStencil.storeOp = VulkanEnumConvert::GetStoreOp(src.storeOp);
             s_depthStencil.clearValue = VulkanEnumConvert::GetClearValue(src.clearValue);
@@ -296,7 +295,7 @@ namespace PK
             record.access = access;
             record.imageRange = VulkanConvertRange(handle->image.range);
             record.aspect = (uint16_t)handle->image.range.aspectMask;
-            record.layout = overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM ? overrideLayout : handle->image.layout;
+            record.layout = overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM ? overrideLayout : VK_IMAGE_LAYOUT_GENERAL;
             record.queueFamily = handle->isConcurrent ? PK_VK_QUEUE_FAMILY_IGNORED : (uint16_t)handler->GetQueueFamily();
             handler->Record(handle->image.image, record, options);
 
@@ -312,7 +311,6 @@ namespace PK
         const VulkanBindHandle* handle,
         VkPipelineStageFlags stage,
         VkAccessFlags access,
-        VkImageLayout layout,
         uint8_t options)
     {
         VulkanBarrierHandler::AccessRecord record{};
@@ -320,7 +318,7 @@ namespace PK
         record.access = access;
         record.imageRange = VulkanConvertRange(handle->image.range);
         record.aspect = (uint16_t)handle->image.range.aspectMask;
-        record.layout = layout;
+        record.layout = VK_IMAGE_LAYOUT_GENERAL;
         record.queueFamily = handle->isConcurrent ? PK_VK_QUEUE_FAMILY_IGNORED : (uint16_t)handler->GetQueueFamily();
 
         if (handle->isTracked)
@@ -485,13 +483,12 @@ namespace PK
                     auto previousLayout = RecordRenderTarget(handler, 
                         color.target,
                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
-                        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 
-                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                         PK_RHI_ACCESS_OPT_BARRIER);
 
                     if (color.resolve && color.resolve->image.image)
                     {
-                        RecordImage(handler, color.target, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, PK_RHI_ACCESS_OPT_BARRIER);
+                        RecordImage(handler, color.resolve, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL, PK_RHI_ACCESS_OPT_BARRIER);
                     }
                  
                     if (color.loadOp == LoadOp::Load && previousLayout == VK_IMAGE_LAYOUT_UNDEFINED)
@@ -512,14 +509,6 @@ namespace PK
                 const auto isStencil = VulkanEnumConvert::IsDepthStencilFormat(depth.target->image.format);
                 const auto isReadOnly = !m_pipelineKey.fixed.depthStencil.depthWriteEnable && (!isStencil || m_pipelineKey.fixed.depthStencil.stencilTestEnable);
 
-                const VkImageLayout layouts[2][2] =
-                {
-                    { VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL },
-                    { VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL }
-                };
-
-                m_depthStencilLayout = layouts[isStencil][isReadOnly];
-                
                 if (m_pipelineKey.fixed.sampleCountFlags != depth.target->image.samples)
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
@@ -536,7 +525,6 @@ namespace PK
                     depth.target,
                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | (!isReadOnly ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0u),
-                    m_depthStencilLayout,
                     PK_RHI_ACCESS_OPT_BARRIER);
 
                 if (depth.loadOp == LoadOp::Load && previousLayout == VK_IMAGE_LAYOUT_UNDEFINED)

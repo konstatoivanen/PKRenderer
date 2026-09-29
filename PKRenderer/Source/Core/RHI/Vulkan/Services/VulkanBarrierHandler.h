@@ -29,9 +29,9 @@ namespace PK
                 bufferRange;
             };
 
+            AccessRecord* next = nullptr;
             VkPipelineStageFlags stage = 0u;
             VkAccessFlags access = 0u;
-            AccessRecord* next = nullptr;
             uint16_t queueFamily = 0u;
 
             // Image only values

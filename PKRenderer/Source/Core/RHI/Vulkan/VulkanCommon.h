@@ -229,6 +229,7 @@ namespace PK
         VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR maximalReconvergence { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR };
         VkPhysicalDeviceShaderQuadControlFeaturesKHR quadControl{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR };
         VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBuffer { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT };
+        VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR unifiedLayout { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };
@@ -259,7 +260,6 @@ namespace PK
         VkImageViewType  viewType;
         VkFormat format;
         VkFormat formatAlias;
-        VkImageLayout layout;
         VkSampleCountFlagBits samples;
         VkComponentMapping components;
         VkExtent3D extent;
@@ -279,7 +279,6 @@ namespace PK
                 VkImage alias = VK_NULL_HANDLE;
                 VkImageView view = VK_NULL_HANDLE;
                 VkSampler sampler = VK_NULL_HANDLE;
-                VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
                 VkFormat format = VK_FORMAT_UNDEFINED;
                 VkExtent3D extent = { 0u, 0u, 0u };
                 VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
@@ -459,7 +458,6 @@ namespace PK
         VkClearValue GetClearValue(const TextureClearValue& clearValue);
         VkComponentMapping GetSwizzle(VkFormat format);
         VkImageViewType GetViewType(TextureType type);
-        VkImageLayout GetImageLayout(TextureUsage usage);
         VkAttachmentLoadOp GetLoadOp(LoadOp loadOp);
         VkAttachmentStoreOp GetStoreOp(StoreOp storeOp);
         VkCompareOp GetCompareOp(Comparison comparison);
