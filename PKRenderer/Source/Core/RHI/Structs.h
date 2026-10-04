@@ -49,6 +49,14 @@ namespace PK
         EnumCount
     };
 
+    enum class TextureViewMode
+    {
+        RAW,
+        SRV,
+        UAV,
+        RTV
+    };
+
     enum class PolygonMode : uint8_t
     {
         Fill,

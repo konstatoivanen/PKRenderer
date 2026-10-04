@@ -479,13 +479,18 @@ namespace PK
         VkConservativeRasterizationModeEXT GetRasterMode(RasterMode mode, bool allowUnderEstimation);
         VkPrimitiveTopology GetTopology(Topology topology);
         VkFrontFace GetFrontFace(FrontFace face);
-        VkPipelineStageFlags GetQueueFlagsStageCapabilities(VkQueueFlags flags);
-        VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags);
         VkRayTracingShaderGroupTypeKHR GetRayTracingStageGroupType(ShaderStage stage);
         VkImageAspectFlagBits GetFormatAspect(VkFormat format);
+        
+        VkPipelineStageFlags GetQueueFlagsStageCapabilities(VkQueueFlags flags);
+        VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags);
+
+        VkPipelineStageFlags2 GetQueueFlagsStageCapabilities2(VkQueueFlags flags);
+        VkPipelineStageFlags2 GetPipelineStageFlags2(VkShaderStageFlags flags);
+        
         bool IsReadAccess(VkAccessFlags flags);
         bool IsWriteAccess(VkAccessFlags flags);
-        bool IsReadAccess(VkAccessFlags2 flags);
-        bool IsWriteAccess(VkAccessFlags2 access);
+        bool IsReadAccess2(VkAccessFlags2 flags);
+        bool IsWriteAccess2(VkAccessFlags2 access);
     }
 }

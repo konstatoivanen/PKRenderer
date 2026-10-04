@@ -186,8 +186,8 @@ namespace PK
         m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags)),
         m_barrierHandler(queueFamily),
         m_timerArena(driver->device, driver->physicalDeviceProperties.core.limits.timestampPeriod),
-        m_stagingArena(driver->device, driver->allocator, stagingArenaSize),
-        m_descriptorArena(driver->device, driver->allocator, driver->physicalDeviceProperties, descriptorArenaSize)
+        m_stagingArena(driver, stagingArenaSize),
+        m_descriptorArena(driver, driver->physicalDeviceProperties, descriptorArenaSize)
     {
         vkGetDeviceQueue(m_driver->device, m_family, m_queueIndex, &m_queue);
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_QUEUE, (uint64_t)m_queue, FixedString32("PK_Queue_%s", name).c_str());

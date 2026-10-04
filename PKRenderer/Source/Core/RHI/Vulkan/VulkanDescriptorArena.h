@@ -15,7 +15,7 @@ namespace PK
             VkDeviceSize size;
         };
     
-        VulkanDescriptorArena(VkDevice device, VmaAllocator allocator, const VulkanPhysicalDeviceProperties& properties, uint32_t size);
+        VulkanDescriptorArena(const VulkanDriver* driver, const VulkanPhysicalDeviceProperties& properties, uint32_t size);
         ~VulkanDescriptorArena();
     
         VkDeviceSize AllocateDescriptorSet(const VulkanDescriptorSetLayout* layout, const VulkanDescriptorBinding* bindings, const uint32_t bindingCount);

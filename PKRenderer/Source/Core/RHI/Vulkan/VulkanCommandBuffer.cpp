@@ -42,8 +42,8 @@ namespace PK
         for (auto i = 0u; i < count; ++i)
         {
             auto binding = &bindings[i];
-            auto target = static_cast<VulkanTexture*>(binding->target)->GetBindHandle(binding->targetRange, VulkanTextureBind_RTV);
-            auto resolve = binding->resolve ? static_cast<VulkanTexture*>(binding->resolve)->GetBindHandle(binding->resolveRange, VulkanTextureBind_RTV) : nullptr;
+            auto target = binding->target->GetNativeView<VulkanBindHandle>(binding->targetRange, TextureViewMode::RTV);
+            auto resolve = binding->resolve ? binding->resolve->GetNativeView<VulkanBindHandle>(binding->resolveRange, TextureViewMode::RTV) : nullptr;
             auto isDepth = VulkanEnumConvert::IsDepthFormat(target->image.format);
             auto attachment = isDepth ? &state.depth : (state.colors + state.colorCount++);
             attachment->target = target;
@@ -87,7 +87,7 @@ namespace PK
 
         for (auto i = 0u; i < count; ++i)
         {
-            pHandles[i] = static_cast<const VulkanBuffer*>(buffers[i])->GetBindHandle();
+            pHandles[i] = buffers[i]->GetNativeView<VulkanBindHandle>();
         }
 
         m_state->SetVertexBuffers(pHandles, count);
@@ -100,7 +100,7 @@ namespace PK
 
     void VulkanCommandBuffer::SetIndexBuffer(const RHIBuffer* buffer, size_t indexSize)
     {
-        auto handle = static_cast<const VulkanBuffer*>(buffer)->GetBindHandle();
+        auto handle = buffer->GetNativeView<VulkanBindHandle>();
         m_state->SetIndexBuffer(handle, VulkanEnumConvert::GetIndexType(indexSize));
     }
 
@@ -145,20 +145,19 @@ namespace PK
 
     void VulkanCommandBuffer::DrawIndirect(const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
-        auto vkBuffer = indirectArguments->GetNativeHandle<VkBuffer>();
-        offset += indirectArguments->GetOffset();
+        auto handleIndirect = indirectArguments->GetNativeView<VulkanBindHandle>();
 
         VulkanBarrierHandler::AccessRecord record{};
-        record.bufferRange.offset = (uint32_t)offset;
+        record.bufferRange.offset = (uint32_t)(offset + handleIndirect->buffer.offset);
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
-        m_barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(handleIndirect->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
         MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-        vkCmdDrawIndirect(m_commandBuffer, vkBuffer, offset, drawCount, stride);
+        vkCmdDrawIndirect(m_commandBuffer, handleIndirect->buffer.buffer, handleIndirect->buffer.offset + offset, drawCount, stride);
     }
 
     void VulkanCommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
@@ -170,20 +169,19 @@ namespace PK
 
     void VulkanCommandBuffer::DrawIndexedIndirect(const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
-        auto vkBuffer = indirectArguments->GetNativeHandle<VkBuffer>();
-        offset += indirectArguments->GetOffset();
+        auto handleIndirect = indirectArguments->GetNativeView<VulkanBindHandle>();
 
         VulkanBarrierHandler::AccessRecord record{};
-        record.bufferRange.offset = (uint32_t)offset;
+        record.bufferRange.offset = (uint32_t)(offset + handleIndirect->buffer.offset);
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
-        m_barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(handleIndirect->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
         MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-        vkCmdDrawIndexedIndirect(m_commandBuffer, vkBuffer, offset, drawCount, stride);
+        vkCmdDrawIndexedIndirect(m_commandBuffer, handleIndirect->buffer.buffer, handleIndirect->buffer.offset + offset, drawCount, stride);
     }
 
     void VulkanCommandBuffer::DrawMeshTasks(const uint3& dimensions)
@@ -195,20 +193,18 @@ namespace PK
 
     void VulkanCommandBuffer::DrawMeshTasksIndirect(const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
-        auto vkBuffer = indirectArguments->GetNativeHandle<VkBuffer>();
-        offset += indirectArguments->GetOffset();
-        
+        auto handleIndirect = indirectArguments->GetNativeView<VulkanBindHandle>();
         VulkanBarrierHandler::AccessRecord record{};
-        record.bufferRange.offset = (uint32_t)offset;
+        record.bufferRange.offset = (uint32_t)(offset + handleIndirect->buffer.offset);
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
-        m_barrierHandler->Record(vkBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(handleIndirect->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
         MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-        vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer, vkBuffer, offset, drawCount, stride);
+        vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer, handleIndirect->buffer.buffer, handleIndirect->buffer.offset + offset, drawCount, stride);
     }
 
     void VulkanCommandBuffer::DrawMeshTasksIndirectCount(const RHIBuffer* indirectArguments,
@@ -219,29 +215,25 @@ namespace PK
         uint32_t stride)
     {
         VulkanBarrierHandler::AccessRecord record{};
-
-        offset += indirectArguments->GetOffset();
-        countOffset += countBuffer->GetOffset();
-
-        auto vkbufferIndirect = indirectArguments->GetNativeHandle<VkBuffer>();
-        record.bufferRange.offset = (uint32_t)offset;
+        auto handleIndirect = indirectArguments->GetNativeView<VulkanBindHandle>(); 
+        record.bufferRange.offset = (uint32_t)(offset + handleIndirect->buffer.offset);
         record.bufferRange.size = maxDrawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
-        m_barrierHandler->Record(vkbufferIndirect, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(handleIndirect->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
-        auto vkbufferCount = countBuffer->GetNativeHandle<VkBuffer>();
-        record.bufferRange.offset = (uint32_t)countOffset;
+        auto handleCount = countBuffer->GetNativeView<VulkanBindHandle>();
+        record.bufferRange.offset = (uint32_t)(countOffset + handleCount->buffer.offset);
         record.bufferRange.size = sizeof(uint32_t);
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
-        m_barrierHandler->Record(vkbufferCount, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(handleCount->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
         MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-        vkCmdDrawMeshTasksIndirectCountEXT(m_commandBuffer, vkbufferIndirect, offset, vkbufferCount, countOffset, maxDrawCount, stride);
+        vkCmdDrawMeshTasksIndirectCountEXT(m_commandBuffer, handleIndirect->buffer.buffer, handleIndirect->buffer.offset + offset, handleCount->buffer.buffer, handleCount->buffer.offset + countOffset, maxDrawCount, stride);
     }
 
     void VulkanCommandBuffer::Dispatch(const uint3& dimensions)
@@ -276,9 +268,8 @@ namespace PK
 
     void VulkanCommandBuffer::Blit(RHITexture* src, RHISwapchain* dst, FilterMode filter)
     {
-        auto vksrc = static_cast<VulkanTexture*>(src);
         auto vkdst = static_cast<VulkanSwapchain*>(dst);
-        const auto& srcHandle = vksrc->GetBindHandle(VulkanTextureBind_RTV);
+        const auto& srcHandle = src->GetNativeView<VulkanBindHandle>({}, TextureViewMode::RTV);
         const auto& dstHandle = vkdst->GetBindHandle();
 
         auto srcRes = src->GetResolution();
@@ -305,7 +296,7 @@ namespace PK
     void VulkanCommandBuffer::Blit(RHISwapchain* src, RHIBuffer* dst)
     {
         auto vksrc = static_cast<VulkanSwapchain*>(src)->GetBindHandle();
-        auto vkdst = dst->GetNativeHandle<VkBuffer>();
+        auto vkdst = dst->GetNativeView<VulkanBindHandle>();
 
         VkBufferImageCopy region{};
         region.imageSubresource.aspectMask = vksrc->image.range.aspectMask;
@@ -314,34 +305,32 @@ namespace PK
         region.imageSubresource.layerCount = 1u;
         region.imageOffset = { 0,0,0 };
         region.imageExtent = vksrc->image.extent;
-        region.bufferOffset = dst->GetOffset();
+        region.bufferOffset = vkdst->buffer.offset;
 
         m_state->RecordImage(m_barrierHandler, vksrc, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT);
 
         EndRenderPass();
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdCopyImageToBuffer(m_commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_GENERAL, vkdst, 1, &region);
+        vkCmdCopyImageToBuffer(m_commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_GENERAL, vkdst->buffer.buffer, 1, &region);
         ResolveSwapchainAccess(src, false);
     }
 
     void VulkanCommandBuffer::Blit(RHITexture* src, RHITexture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter)
     {
-        VulkanBindHandle srcHandle;
-        VulkanBindHandle dstHandle;
-        static_cast<VulkanTexture*>(src)->FillBindHandle(&srcHandle, srcRange, VulkanTextureBind_RTV);
-        static_cast<VulkanTexture*>(dst)->FillBindHandle(&dstHandle, dstRange, VulkanTextureBind_RTV);
-        auto srcLayers = math::min(srcHandle.image.range.layerCount, src->GetLayers());
-        auto dstLayers = math::min(dstHandle.image.range.layerCount, dst->GetLayers());
+        auto srcHandle = src->GetNativeView<VulkanBindHandle>(srcRange, TextureViewMode::RAW);
+        auto dstHandle = dst->GetNativeView<VulkanBindHandle>(dstRange, TextureViewMode::RAW);
+        auto srcLayers = math::min(srcHandle->image.range.layerCount, src->GetLayers());
+        auto dstLayers = math::min(dstHandle->image.range.layerCount, dst->GetLayers());
 
         VkImageBlit blitRegion{};
-        blitRegion.srcSubresource = { (uint32_t)srcHandle.image.range.aspectMask, srcHandle.image.range.baseMipLevel, srcHandle.image.range.baseArrayLayer, 0u };
-        blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, dstHandle.image.range.baseMipLevel, dstHandle.image.range.baseArrayLayer, 0u };
-        blitRegion.srcOffsets[1] = { (int)srcHandle.image.extent.width, (int)srcHandle.image.extent.height, (int)srcHandle.image.extent.depth };
-        blitRegion.dstOffsets[1] = { (int)dstHandle.image.extent.width, (int)dstHandle.image.extent.height, (int)dstHandle.image.extent.depth };
+        blitRegion.srcSubresource = { (uint32_t)srcHandle->image.range.aspectMask, srcHandle->image.range.baseMipLevel, srcHandle->image.range.baseArrayLayer, 0u };
+        blitRegion.dstSubresource = { (uint32_t)srcHandle->image.range.aspectMask, dstHandle->image.range.baseMipLevel, dstHandle->image.range.baseArrayLayer, 0u };
+        blitRegion.srcOffsets[1] = { (int)srcHandle->image.extent.width, (int)srcHandle->image.extent.height, (int)srcHandle->image.extent.depth };
+        blitRegion.dstOffsets[1] = { (int)dstHandle->image.extent.width, (int)dstHandle->image.extent.height, (int)dstHandle->image.extent.depth };
         blitRegion.dstSubresource.layerCount = blitRegion.srcSubresource.layerCount = math::min(srcLayers, dstLayers);
         BeginDebugScope("Blit Image", PK_COLOR_RED);
-        Blit(&srcHandle, &dstHandle, blitRegion, filter);
+        Blit(srcHandle, dstHandle, blitRegion, filter);
         EndDebugScope();
     }
 
@@ -396,12 +385,13 @@ namespace PK
     {
         EndRenderPass();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdFillBuffer(m_commandBuffer, dst->GetNativeHandle<VkBuffer>(), dst->GetOffset() + offset, size, value);
+        auto handle = dst->GetNativeView<VulkanBindHandle>();
+        vkCmdFillBuffer(m_commandBuffer, handle->buffer.buffer, handle->buffer.offset + offset, size, value);
     }
 
     void VulkanCommandBuffer::Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value)
     {
-        auto handle = static_cast<VulkanTexture*>(dst)->GetBindHandle(range, VulkanTextureBind_UAV);
+        auto handle = dst->GetNativeView<VulkanBindHandle>(range, TextureViewMode::UAV);
         auto clearValue = VulkanEnumConvert::GetClearValue(value);
 
         VkClearColorValue clearColorValue{};
@@ -426,17 +416,19 @@ namespace PK
     {
         EndRenderPass();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdUpdateBuffer(m_commandBuffer, dst->GetNativeHandle<VkBuffer>(), dst->GetOffset() + offset, size, data);
+        auto handle = dst->GetNativeView<VulkanBindHandle>();
+        vkCmdUpdateBuffer(m_commandBuffer, handle->buffer.buffer, handle->buffer.offset + offset, size, data);
     }
 
     void VulkanCommandBuffer::CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size)
     {
-        VkBufferCopy copyRegion{ src->GetOffset() + srcOffset, dst->GetOffset() + dstOffset, size };
-        auto vksrcBuffer = src->GetNativeHandle<VkBuffer>();
-        auto vkdstBuffer = dst->GetNativeHandle<VkBuffer>();
+        auto srcHandle = src->GetNativeView<VulkanBindHandle>();
+        auto dstHandle = dst->GetNativeView<VulkanBindHandle>();
+        
+        VkBufferCopy copyRegion{ srcHandle->buffer.offset + srcOffset, dstHandle->buffer.offset + dstOffset, size };
 
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdCopyBuffer(m_commandBuffer, vksrcBuffer, vkdstBuffer, 1, &copyRegion);
+        vkCmdCopyBuffer(m_commandBuffer, srcHandle->buffer.buffer, dstHandle->buffer.buffer, 1, &copyRegion);
 
         VulkanBarrierHandler::AccessRecord record{};
         record.bufferRange.offset = (uint32_t)copyRegion.dstOffset;
@@ -444,7 +436,7 @@ namespace PK
         record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
         record.queueFamily = PK_VK_QUEUE_FAMILY_IGNORED;
-        m_barrierHandler->Record(vkdstBuffer, record, PK_RHI_ACCESS_OPT_BARRIER);
+        m_barrierHandler->Record(dstHandle->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
     }
 
     void VulkanCommandBuffer::CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount)
@@ -453,16 +445,15 @@ namespace PK
         
         PK_DEBUG_FATAL_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture upload is only supported for sampled | upload | readonly textures!");
 
-        auto vkTexture = static_cast<VulkanTexture*>(texture);
-        auto vkBuffer = buffer->GetNativeHandle<VkBuffer>();
-        auto vkImage = texture->GetNativeHandle<VkImage>();
-        auto resourceRange = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS, 0 };
+        auto srcHandle = buffer->GetNativeView<VulkanBindHandle>();
+        auto dstHandle = texture->GetNativeView<VulkanBindHandle>({}, TextureViewMode::RAW);
+        auto resourceRange = VkImageSubresourceRange{ (uint32_t)dstHandle->image.range.aspectMask, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS, 0 };
         auto copyRegions = PK_STACK_ALLOC(VkBufferImageCopy, regionCount);
 
         for (auto i = 0u; i < regionCount; ++i)
         {
             auto& region = regions[i];
-            copyRegions[i].bufferOffset = buffer->GetOffset() + region.bufferOffset;
+            copyRegions[i].bufferOffset = region.bufferOffset + srcHandle->buffer.offset;
             copyRegions[i].bufferRowLength = 0u;
             copyRegions[i].bufferImageHeight = 0u;
             copyRegions[i].imageSubresource.aspectMask = resourceRange.aspectMask;
@@ -489,7 +480,7 @@ namespace PK
         imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
         imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageBarrier.image = vkImage;
+        imageBarrier.image = dstHandle->image.image;
         imageBarrier.subresourceRange = resourceRange;
         imageBarrier.srcAccessMask = 0;
         imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -501,7 +492,7 @@ namespace PK
         
         PipelineBarrier(barrier);
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdCopyBufferToImage(m_commandBuffer, vkBuffer, vkImage, VK_IMAGE_LAYOUT_GENERAL, regionCount, copyRegions);
+        vkCmdCopyBufferToImage(m_commandBuffer, srcHandle->buffer.buffer, dstHandle->image.image, VK_IMAGE_LAYOUT_GENERAL, regionCount, copyRegions);
 
         imageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
         imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -515,14 +506,14 @@ namespace PK
     void VulkanCommandBuffer::InvalidateTexture(RHITexture* texture)
     {
         PK_DEBUG_FATAL_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture invalidation is only supported for sampled | upload | readonly textures!");
-        auto vkTexture = static_cast<VulkanTexture*>(texture);
+        auto handle = texture->GetNativeView<VulkanBindHandle>({}, TextureViewMode::RAW);
         VkImageMemoryBarrier imageBarrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
         imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
         imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageBarrier.image = texture->GetNativeHandle<VkImage>();
-        imageBarrier.subresourceRange = { (uint32_t)vkTexture->GetAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS };
+        imageBarrier.image = handle->image.image;
+        imageBarrier.subresourceRange = { (uint32_t)handle->image.range.aspectMask, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS };
         imageBarrier.srcAccessMask = 0;
         imageBarrier.dstAccessMask = 0;
         VulkanBarrierInfo barrier;

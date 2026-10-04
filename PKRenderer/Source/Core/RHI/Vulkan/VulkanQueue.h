@@ -46,7 +46,6 @@ namespace PK
         inline ConstBufferView<RHITimerScope> GetTimers() const { return m_timerArena.GetResults(); }
         constexpr VkQueue GetNative() const { return m_queue; }
         constexpr uint32_t GetFamily() const { return m_family; }
-        constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
         inline VulkanBarrierHandler* GetBarrierHandler() { return &m_barrierHandler; }
         FenceRef GetFenceRef(int32_t timelineOffset = 0) const;
 

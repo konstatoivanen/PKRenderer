@@ -1,16 +1,19 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
+#include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanDescriptorArena.h"
 
 namespace PK
 {
-    VulkanDescriptorArena::VulkanDescriptorArena(VkDevice device, VmaAllocator allocator, const VulkanPhysicalDeviceProperties& properties, uint32_t size) :
-        m_device(device),
-        m_allocator(allocator),
+    VulkanDescriptorArena::VulkanDescriptorArena(const VulkanDriver* driver, const VulkanPhysicalDeviceProperties& properties, uint32_t size) :
+        m_device(driver->device),
+        m_allocator(driver->allocator),
         m_size(size)
     {
         if (m_size)
         {
+            const auto& queueFamilies = driver->queues->GetSelectedFamilies();
+
             m_descriptorBufferOffsetAlignment = properties.descriptorBuffer.descriptorBufferOffsetAlignment;
             m_descriptorSizes[(uint32_t)ShaderResourceType::Invalid] = 0ull;
             m_descriptorSizes[(uint32_t)ShaderResourceType::Sampler] = properties.descriptorBuffer.samplerDescriptorSize;
@@ -22,10 +25,11 @@ namespace PK
             m_descriptorSizes[(uint32_t)ShaderResourceType::InputAttachment] = properties.descriptorBuffer.inputAttachmentDescriptorSize;
             m_descriptorSizes[(uint32_t)ShaderResourceType::AccelerationStructure] = properties.descriptorBuffer.accelerationStructureDescriptorSize;
 
-
             VkBufferCreateInfo bufferCreateInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
             bufferCreateInfo.size = m_size;
-            bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            bufferCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+            bufferCreateInfo.queueFamilyIndexCount = queueFamilies.count;
+            bufferCreateInfo.pQueueFamilyIndices = queueFamilies.indices;
             bufferCreateInfo.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
                                VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
                                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -38,7 +42,7 @@ namespace PK
             VK_ASSERT_RESULT(vmaCreateBuffer(m_allocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_memory, &allocationInfo));
             m_mappedData = allocationInfo.pMappedData;
 
-            VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanDescriptorArena");
+            VulkanSetObjectDebugName(driver->device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanDescriptorArena");
 
             VkBufferDeviceAddressInfo addrInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
             addrInfo.buffer = m_buffer;

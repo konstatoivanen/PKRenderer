@@ -3,12 +3,6 @@
 #include "Core/Base/Types/NameID.h"
 #include "Core/Math/Forward.h"
 
-namespace std
-{
-    template <class _Fty>
-    class function;
-}
-
 namespace PKAssets
 {
     enum class PKElementType : uint16_t;
@@ -54,6 +48,7 @@ namespace PK
     struct SwapchainDescriptor;
     struct SamplerDescriptor;
     struct TextureDescriptor;
+    struct TextureClearValue;
 
     struct ShaderPushConstant;
     struct ShaderPushConstantLayout;
@@ -82,6 +77,7 @@ namespace PK
 
     enum class RHIAPI;
     enum class QueueType;
+    enum class TextureViewMode;
     enum class SamplerType : uint8_t;
     enum class PolygonMode : uint8_t;
     enum class Topology : uint8_t;

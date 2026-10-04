@@ -1,19 +1,24 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
+#include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanStagingArena.h"
 
 namespace PK
 {
-    VulkanStagingArena::VulkanStagingArena(VkDevice device, VmaAllocator allocator, uint64_t stagingSize) :
-        m_allocator(allocator),
+    VulkanStagingArena::VulkanStagingArena(const VulkanDriver* driver, uint64_t stagingSize) :
+        m_allocator(driver->allocator),
         m_size(math::align(stagingSize, 512ull))
     {
         if (m_size)
         {
+            const auto& queueFamilies = driver->queues->GetSelectedFamilies();
+
             // @TODO unify with VulkanRawBuffer once that has been updated.
             VkBufferCreateInfo bufferCreateInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
             bufferCreateInfo.size = m_size;
-            bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            bufferCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+            bufferCreateInfo.queueFamilyIndexCount = queueFamilies.count;
+            bufferCreateInfo.pQueueFamilyIndices = queueFamilies.indices;
             bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | 
                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | 
                 VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -26,11 +31,11 @@ namespace PK
             VK_ASSERT_RESULT(vmaCreateBuffer(m_allocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_memory, &allocationInfo));
             m_mappedData = allocationInfo.pMappedData;
             
-            VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanStagingArena");
+            VulkanSetObjectDebugName(driver->device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanStagingArena");
 
             VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
             addressInfo.buffer = m_buffer;
-            m_deviceAddress = vkGetBufferDeviceAddress(device, &addressInfo);
+            m_deviceAddress = vkGetBufferDeviceAddress(driver->device, &addressInfo);
         }
     }
 
@@ -62,11 +67,11 @@ namespace PK
 
         auto buffer = &m_buffers[index];
         m_bufferMask[index] = true;
-        buffer->buffer = m_buffer;
-        buffer->deviceAddress = m_deviceAddress;
+        buffer->handle.buffer.buffer = m_buffer;
+        buffer->handle.buffer.deviceAddress = m_deviceAddress + allocationOffset;
+        buffer->handle.buffer.offset = allocationOffset;
+        buffer->handle.buffer.range = size;
         buffer->mappedData = static_cast<uint8_t*>(m_mappedData) + allocationOffset;
-        buffer->srcOffset = allocationOffset;
-        buffer->size = size;
         return buffer;
     }
 

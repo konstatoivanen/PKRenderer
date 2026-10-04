@@ -4,7 +4,7 @@
 
 namespace PK
 {
-    constexpr static uint64_t GetViewKey(const TextureViewRange& range, VulkanTextureBindMode mode)
+    constexpr static uint64_t GetViewKey(const TextureViewRange& range, TextureViewMode mode)
     {
         uint64_t h = 0ull;
         h |= range.level & 0xFFull;
@@ -147,6 +147,66 @@ namespace PK
         }
     }
 
+    const void* VulkanTexture::GetNativeView(const TextureViewRange& range, TextureViewMode mode)
+    {
+        auto normalizedRange = NormalizeViewRange(range);
+
+        if (mode == TextureViewMode::RAW)
+        {
+            m_rawHandle.isConcurrent = IsConcurrent();
+            m_rawHandle.isTracked = IsTracked();
+            m_rawHandle.image.view = VK_NULL_HANDLE;
+            m_rawHandle.image.image = m_image;
+            m_rawHandle.image.alias = m_imageAlias;
+            m_rawHandle.image.format = m_format;
+            m_rawHandle.image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
+            m_rawHandle.image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
+            m_rawHandle.image.range = VulkanConvertRange(normalizedRange, m_rawHandle.image.format);
+
+            if (mode == TextureViewMode::SRV)
+            {
+                m_rawHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
+            }
+
+            return &m_rawHandle;
+        }
+        else
+        {
+            auto key = GetViewKey(normalizedRange, mode);
+
+            if (!m_firstView.FindAndSwapFirst(key))
+            {
+                auto useAlias = mode == TextureViewMode::UAV && m_imageAlias != VK_NULL_HANDLE;
+                auto viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
+                auto swizzle = VulkanEnumConvert::GetSwizzle(m_format);
+
+                VulkanImageViewCreateInfo info;
+                info.image = m_image;
+                info.imageAlias = m_imageAlias;
+                info.viewType = viewType;
+                info.format = m_format;
+                info.formatAlias = m_formatAlias;
+                info.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
+                info.components = mode == TextureViewMode::SRV ? swizzle : (VkComponentMapping{});
+                info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
+                info.isConcurrent = IsConcurrent();
+                info.isTracked = IsTracked();
+                info.isAlias = useAlias;
+                info.subresourceRange = VulkanConvertRange(normalizedRange, info.format);
+                auto newView = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, m_name.c_str());
+
+                if (mode == TextureViewMode::SRV)
+                {
+                    newView->bindHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
+                }
+
+                m_firstView.Insert(newView, key);
+            }
+
+            return &m_firstView->bindHandle;
+        }
+    }
+
     TextureViewRange VulkanTexture::NormalizeViewRange(const TextureViewRange& range) const
     {
         auto out = range;
@@ -178,61 +238,5 @@ namespace PK
         }
 
         return out;
-    }
-
-    void VulkanTexture::FillBindHandle(VulkanBindHandle* handle, const TextureViewRange& range, VulkanTextureBindMode bindMode) const
-    {
-        auto normalizedRange = NormalizeViewRange(range);
-        handle->isConcurrent = IsConcurrent();
-        handle->isTracked = IsTracked();
-        handle->image.view = VK_NULL_HANDLE;
-        handle->image.image = m_image;
-        handle->image.alias = m_imageAlias;
-        handle->image.format = m_format;
-        handle->image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
-        handle->image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
-        handle->image.range = VulkanConvertRange(normalizedRange, handle->image.format);
- 
-        if (bindMode == VulkanTextureBind_SRV)
-        {
-            handle->image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
-        }
-    }
-
-    const VulkanImageView* VulkanTexture::GetView(const TextureViewRange& range, VulkanTextureBindMode mode)
-    {
-        auto normalizedRange = NormalizeViewRange(range);
-        auto key = GetViewKey(normalizedRange, mode);
-
-        if (!m_firstView.FindAndSwapFirst(key))
-        {
-            auto useAlias = mode == VulkanTextureBind_UAV && m_imageAlias != VK_NULL_HANDLE;
-            auto viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
-            auto swizzle = VulkanEnumConvert::GetSwizzle(m_format);
-
-            VulkanImageViewCreateInfo info;
-            info.image = m_image;
-            info.imageAlias = m_imageAlias;
-            info.viewType = viewType;
-            info.format = m_format;
-            info.formatAlias = m_formatAlias;
-            info.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
-            info.components = mode == VulkanTextureBind_SRV ? swizzle : (VkComponentMapping{});
-            info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
-            info.isConcurrent = IsConcurrent();
-            info.isTracked = IsTracked();
-            info.isAlias = useAlias;
-            info.subresourceRange = VulkanConvertRange(normalizedRange, info.format);
-            auto newView = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, m_name.c_str());
-
-            if (mode == VulkanTextureBind_SRV)
-            {
-                newView->bindHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
-            }
-
-            m_firstView.Insert(newView, key);
-        }
-
-        return m_firstView;
     }
 }

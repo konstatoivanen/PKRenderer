@@ -68,7 +68,7 @@ namespace PK
         // only vram resident buffers can be bound.
         if ((m_usage & BufferUsage::TypeBits) == BufferUsage::Vram)
         {
-            GetBindHandle({ 0, GetSize() });
+            GetNativeView({ 0, GetSize() });
             m_defaultView = m_firstView;
         }
     }
@@ -126,9 +126,9 @@ namespace PK
         }
     }
 
-    const VulkanBindHandle* VulkanBuffer::GetBindHandle(const BufferIndexRange& range)
+    const void* VulkanBuffer::GetNativeView(const BufferIndexRange& range)
     {
-        PK_DEBUG_FATAL_ASSERT(range.offset + range.count <= GetSize(), "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
+        PK_DEBUG_FATAL_ASSERT(range.offset + range.count <= GetSize() && range.count != VK_WHOLE_SIZE, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
 
         if (m_firstView.FindAndSwapFirst(range))
         {

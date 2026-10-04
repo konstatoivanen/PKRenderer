@@ -7,21 +7,20 @@
 
 namespace PK
 {
+    struct VulkanDriver;
+
     struct VulkanStagingBuffer : public RHIBuffer
     {
-        size_t GetOffset() const final { return srcOffset; }
-        size_t GetSize() const final { return size; }
+        size_t GetSize() const final { return handle.buffer.range; }
         BufferUsage GetUsage() const final { return BufferUsage::DefaultStaging | BufferUsage::InstanceInput; }
         const char* GetDebugName() const final { return "VulkanStagingArena"; }
-        void* GetNativeHandle() const final { return buffer; }
-        uint64_t GetDeviceAddress() const final { return deviceAddress + srcOffset; }
+        uint64_t GetDeviceAddress() const final { return handle.buffer.deviceAddress; }
+        const void* GetNativeView() const final { return &handle; }
+        const void* GetNativeView([[maybe_unused]] const BufferIndexRange& range) final { return &handle; }
         virtual void* BeginMap([[maybe_unused]] size_t offset, [[maybe_unused]] size_t readsize) const final { return mappedData; }
         virtual void EndMap([[maybe_unused]] size_t offset, [[maybe_unused]] size_t writeSize) const final {};
 
-        VkBuffer buffer;
-        VkDeviceAddress deviceAddress;
-        VkDeviceSize srcOffset;
-        VkDeviceSize size;
+        VulkanBindHandle handle;
         void* mappedData;
     };
 
@@ -36,7 +35,7 @@ namespace PK
             VkDeviceSize size;
         };
 
-        VulkanStagingArena(VkDevice device, VmaAllocator allocator, uint64_t stagingSize);
+        VulkanStagingArena(const VulkanDriver* driver, uint64_t stagingSize);
         ~VulkanStagingArena();
 
         VulkanStagingBuffer* BeginWrite(VkDeviceSize size);

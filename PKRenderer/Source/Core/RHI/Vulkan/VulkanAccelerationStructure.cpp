@@ -51,7 +51,7 @@ namespace PK
     VkAccelerationStructureKHR VulkanAccelerationStructure::CreateVkAccelerationStructureKHR(const Structure* structure, VkAccelerationStructureTypeKHR type, const char* name) const
     {
         VkAccelerationStructureCreateInfoKHR createInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
-        createInfo.buffer = m_structureBuffer->GetNativeHandle<VkBuffer>();
+        createInfo.buffer = m_structureBuffer->GetNativeView<VulkanBindHandle>()->buffer.buffer;
         createInfo.offset = structure->bufferOffset;
         createInfo.size = structure->size.accelerationStructureSize;
         createInfo.type = type;

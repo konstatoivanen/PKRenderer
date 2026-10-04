@@ -36,7 +36,7 @@ namespace PK
         virtual void SetSampler(const SamplerDescriptor& sampler) = 0;
         virtual const TextureDescriptor& GetDescriptor() const = 0;
         virtual const char* GetDebugName() const = 0;
-        virtual void* GetNativeHandle() const = 0;
+        virtual const void* GetNativeView(const TextureViewRange& range, TextureViewMode viewMode) = 0;
 
         inline TextureFormat GetFormat() const { return GetDescriptor().format; }
         inline TextureUsage GetUsage() const { return GetDescriptor().usage; }
@@ -49,27 +49,28 @@ namespace PK
         inline uint32_t GetLevels() const { return GetDescriptor().levels; }
         inline uint32_t GetLayers() const { return GetDescriptor().layers; }
 
-        template<typename T>
-        constexpr T GetNativeHandle() const { return static_cast<T>(GetNativeHandle()); }
+        template<typename T> 
+        inline const T* GetNativeView(const TextureViewRange& range, TextureViewMode viewMode) { return static_cast<const T*>(GetNativeView(range, viewMode)); }
     };
 
     struct RHIBuffer : public NoCopy
     {
         virtual ~RHIBuffer() = 0;
-        virtual size_t GetOffset() const = 0;
         virtual size_t GetSize() const = 0;
         virtual BufferUsage GetUsage() const = 0;
         virtual const char* GetDebugName() const = 0;
-        virtual void* GetNativeHandle() const = 0;
         virtual uint64_t GetDeviceAddress() const = 0;
+        virtual const void* GetNativeView() const = 0;
+        virtual const void* GetNativeView(const BufferIndexRange& range) = 0;
 
         virtual void* BeginMap(size_t offset, [[maybe_unused]] size_t readsize) const = 0;
         virtual void EndMap(size_t offset, [[maybe_unused]] size_t writeSize) const = 0;
 
-        inline BufferIndexRange GetFullRange() const { return { GetOffset(), GetSize()}; }
-
-        template<typename T>
-        inline T GetNativeHandle() const { return static_cast<T>(GetNativeHandle()); }
+        inline BufferIndexRange GetFullRange() const { return { 0ull, GetSize()}; }
+        template<typename T> 
+        inline const T* GetNativeView() const { return static_cast<const T*>(GetNativeView()); }
+        template<typename T> 
+        inline const T* GetNativeView(const BufferIndexRange& range) { return static_cast<const T*>(GetNativeView(range)); }
     };
 
     struct RHIAccelerationStructure : public NoCopy
@@ -112,6 +113,7 @@ namespace PK
         virtual ShaderBindingTableInfo GetShaderBindingTableInfo() const = 0;
 
         inline bool IsGraphics() const { return (GetStageFlags() & ShaderStageFlags::StagesGraphics) != 0; }
+
         inline bool HasRayTracingShaderGroup(RayTracingShaderGroup group) const 
         {
             return (PK_RHI_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)group] & GetStageFlags()) != 0; 
@@ -122,21 +124,21 @@ namespace PK
     {
         virtual ~RHICommandBuffer() = 0;
         virtual FenceRef GetFenceRef() const = 0;
-        virtual void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) = 0;
 
         virtual RHIBuffer* AcquireStagingBuffer(size_t size) = 0;
         virtual void ReleaseStagingBuffer(RHIBuffer* buffer) = 0;
 
         virtual void SetViewPorts(const uint4* rects, uint32_t count) = 0;
         virtual void SetScissors(const uint4* rects, uint32_t count) = 0;
+        virtual void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) = 0;
 
         virtual void SetStageExcludeMask(const ShaderStageFlags mask) = 0;
         virtual void SetBlending(const BlendParameters& blend) = 0;
         virtual void SetRasterization(const RasterizationParameters& rasterization) = 0;
         virtual void SetDepthStencil(const DepthStencilParameters& depthStencil) = 0;
         virtual void SetMultisampling(const MultisamplingParameters& multisampling) = 0;
-
         virtual void SetShader(const RHIShader* shader) = 0;
+
         virtual void SetVertexBuffers(const RHIBuffer** buffers, uint32_t count) = 0;
         virtual void SetVertexStreams(const VertexStreamElement* elements, uint32_t count) = 0;
         virtual void SetIndexBuffer(const RHIBuffer* buffer, size_t indexSize) = 0;

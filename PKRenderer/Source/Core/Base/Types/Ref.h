@@ -138,8 +138,8 @@ namespace PK
         {
             if (!m_isCreated)
             {
-                Memory::Construct(&value, PK::Forward<Args>(args)...);
                 m_isCreated = true;
+                Memory::Construct(&value, PK::Forward<Args>(args)...);
             }
         }
 
