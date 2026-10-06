@@ -633,6 +633,12 @@ namespace PK
         return accelerationStructureBuildSizesInfo;
     }
 
+    VkDeviceAddress VulkanGetAccelerationStructureDeviceAddress(VkDevice device, VkAccelerationStructureKHR handle)
+    {
+        VkAccelerationStructureDeviceAddressInfoKHR info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR, nullptr, handle };
+        return vkGetAccelerationStructureDeviceAddressKHR(device, &info);
+    }
+
     VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkFormat format)
     {
         return

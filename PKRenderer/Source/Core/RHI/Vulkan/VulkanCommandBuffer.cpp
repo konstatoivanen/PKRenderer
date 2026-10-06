@@ -525,6 +525,254 @@ namespace PK
         PipelineBarrier(barrier);
     }
 
+    RHIAccelerationStructureBuilder* VulkanCommandBuffer::BeginAccelerationStructureWrite(RHIAccelerationStructure* structure, uint32_t instanceLimit)
+    {
+        auto vkStructure = static_cast<VulkanAccelerationStructure*>(structure);
+        auto writer = m_driver->arena.New<VulkanAccelerationStructureBuilder>();
+        auto inputBufferSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceLimit;
+        writer->structure = vkStructure;
+        writer->stagingBuffer = AcquireStagingBuffer(inputBufferSize);
+        writer->instances = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(writer->stagingBuffer->BeginMap(0ull, 0ull));
+        writer->instanceIndices = m_driver->arena.Allocate<uint32_t>(instanceLimit);
+        writer->instanceCount = 0u;
+        writer->instanceLimit = instanceLimit;
+        writer->topologyHash = 0ull;
+        return writer;
+    }
+
+    void VulkanCommandBuffer::EndAccelerationStructureWrite(RHIAccelerationStructureBuilder* builder)
+    {
+        // Temp test to debug graph builder execution before actually implementing it.
+        struct VulkanWriteAccelerationStructureCmd
+        {
+            VkQueryPool queryPool = VK_NULL_HANDLE;
+            VkAccelerationStructureKHR* queryHandles = nullptr;
+            uint32_t queryStart = 0u;
+            uint32_t queryCount = 0u;
+
+            VkCopyAccelerationStructureInfoKHR* copyInfos = nullptr;
+            uint32_t copyCount = 0u;
+
+            VkAccelerationStructureBuildGeometryInfoKHR* BLASBuildInfos = nullptr;
+            VkAccelerationStructureBuildRangeInfoKHR** BLASRangeInfos = nullptr;
+            uint32_t BLASBuildCount = 0u;
+
+            VkAccelerationStructureBuildGeometryInfoKHR TLASBuildInfo{};
+            VkAccelerationStructureBuildRangeInfoKHR TLASRangeInfo{};
+            bool TLASBuild = false;
+        };
+
+        auto vkBuilder = static_cast<VulkanAccelerationStructureBuilder*>(builder);
+        auto vkStructure = vkBuilder->structure;
+        auto queryPool = vkStructure->queryPool.get();
+
+        PK_DEBUG_WARNING_ASSERT(vkBuilder->instanceCount, "VulkanAccelerationStructure.EndWrite: write has 0 instances!");
+
+        const bool hasCompactedResults = vkStructure->queryCount && queryPool->WaitResults(0ull);
+
+        if (hasCompactedResults)
+        {
+            PK_LOG_RHI("Bottom Level Compaction Update: %s", vkStructure->name.c_str());
+            PK_LOG_INDENT(PK_LOG_LVL_RHI);
+
+            for (auto i = 0u; i < vkStructure->substructures.GetCount(); ++i)
+            {
+                auto structure = &vkStructure->substructures[i].value;
+                if (structure->handle && structure->compactionId && structure->compactionId != VulkanAccelerationStructure::COMPACTED_ID)
+                {
+                    const auto size0 = structure->size;
+                    const auto size1 = queryPool->GetResult<VkDeviceSize>(structure->compactionId - 1u, VK_QUERY_RESULT_64_BIT);
+                    structure->size = size1;
+                    PK_LOG_RHI("BLAS Compacted from %i to %i bytes", size0, size1);
+                }
+            }
+
+            queryPool->ResetQuery(0u, vkStructure->queryCount);
+            vkStructure->queryCount = 0u;
+        }
+
+        VkDeviceSize bufferSize = 0ull;
+        VkDeviceSize scratchSize = 0ull;
+        VkDeviceSize buildCount = 0ull;
+
+        for (auto i = 0u; i < vkStructure->substructures.GetCount(); ++i)
+        {
+            auto structure = &vkStructure->substructures[i].value;
+            structure->bufferOffset = bufferSize;
+            bufferSize += math::align(structure->size, 256ull);
+
+            if (!structure->handle)
+            {
+                structure->scratchOffset = scratchSize;
+                scratchSize += math::align(structure->buildScratchSize, 256ull);
+                ++buildCount;
+            }
+        }
+
+        auto* tlasGeometry = m_driver->arena.Allocate<VkAccelerationStructureGeometryKHR>(1);
+        auto buildInfo = VulkanAccelerationStructure::GetTLASBuildInfo(vkBuilder->stagingBuffer->GetDeviceAddress(), tlasGeometry);
+        const auto sizeInfo = VulkanGetAccelerationBuildSizesInfo(m_driver->device, buildInfo, vkBuilder->instanceCount);
+
+        const auto prevSize = vkStructure->structure.size;
+        vkStructure->structure.size = sizeInfo.accelerationStructureSize;
+        vkStructure->structure.buildScratchSize = sizeInfo.buildScratchSize;
+        vkStructure->structure.bufferOffset = bufferSize;
+        vkStructure->structure.scratchOffset = scratchSize;
+        bufferSize += math::align(sizeInfo.accelerationStructureSize, 256ull);
+        scratchSize += math::align(sizeInfo.buildScratchSize, 256ull);
+
+        const auto rebuildBLAS = buildCount || 
+            hasCompactedResults || 
+            prevSize < sizeInfo.accelerationStructureSize ||
+            vkStructure->buffer == nullptr || 
+            vkStructure->buffer->GetSize() < bufferSize;
+
+        const auto rebuildTLAS = rebuildBLAS || vkStructure->topologyHash != vkBuilder->topologyHash;
+
+        auto needsScratch = (buildCount || rebuildTLAS) && scratchSize;
+        auto scratchBuffer = needsScratch ? AcquireStagingBuffer(scratchSize) : nullptr;
+
+        VulkanWriteAccelerationStructureCmd cmd{};
+        const auto substructureCount = vkStructure->substructures.GetCount();
+
+        if (rebuildBLAS)
+        {
+            PK_LOG_RHI_SCOPE("Acceleration Structure Update: %s", vkStructure->name.c_str());
+
+            FixedString128 name({ vkStructure->name.c_str(), ".StructureBuffer" });
+            vkStructure->buffer = RHI::CreateBuffer(bufferSize, BufferUsage::DefaultAccelerationStructure, name.c_str());
+
+            cmd.BLASBuildInfos = m_driver->arena.Allocate<VkAccelerationStructureBuildGeometryInfoKHR>(buildCount);
+            cmd.BLASRangeInfos = m_driver->arena.Allocate<VkAccelerationStructureBuildRangeInfoKHR*>(buildCount);
+            cmd.copyInfos = m_driver->arena.Allocate<VkCopyAccelerationStructureInfoKHR>(substructureCount);
+
+            for (auto i = 0u; i < substructureCount; ++i)
+            {
+                auto structure = &vkStructure->substructures[i].value;
+                auto newHandle = vkStructure->CreateStructure(structure, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, FixedString128({ structure->name.c_str(), ".BLAS" }));
+
+                if (structure->handle == VK_NULL_HANDLE)
+                {
+                    auto* geometry = m_driver->arena.Allocate<VkAccelerationStructureGeometryKHR>(1);
+                    auto* rangeInfo = m_driver->arena.Allocate<VkAccelerationStructureBuildRangeInfoKHR>(1);
+                    cmd.BLASBuildInfos[cmd.BLASBuildCount] = VulkanAccelerationStructure::GetBLASBuildInfo(structure->geometry, geometry, rangeInfo);
+                    cmd.BLASBuildInfos[cmd.BLASBuildCount].dstAccelerationStructure = newHandle;
+                    cmd.BLASBuildInfos[cmd.BLASBuildCount].scratchData.deviceAddress = scratchBuffer->GetDeviceAddress() + structure->scratchOffset;
+                    cmd.BLASRangeInfos[cmd.BLASBuildCount++] = rangeInfo;
+                }
+                else
+                {
+                    auto& copyInfo = cmd.copyInfos[cmd.copyCount++];
+                    copyInfo = VkCopyAccelerationStructureInfoKHR{ VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR };
+                    copyInfo.src = structure->handle;
+                    copyInfo.dst = newHandle;
+                    copyInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+
+                    if (hasCompactedResults && structure->compactionId && structure->compactionId != VulkanAccelerationStructure::COMPACTED_ID)
+                    {
+                        structure->compactionId = VulkanAccelerationStructure::COMPACTED_ID;
+                        copyInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR;
+                    }
+
+                    vkStructure->DisposeStructure(structure->handle, GetFenceRef());
+                }
+
+                structure->deviceAddress = VulkanGetAccelerationStructureDeviceAddress(m_driver->device, newHandle);
+                structure->handle = newHandle;
+            }
+
+            vkStructure->DisposeStructure(vkStructure->structure.handle, GetFenceRef());
+            vkStructure->structure.handle = vkStructure->CreateStructure(&vkStructure->structure, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, FixedString128({ vkStructure->name.c_str(), ".TLAS" }));
+            vkStructure->structure.deviceAddress = VulkanGetAccelerationStructureDeviceAddress(m_driver->device, vkStructure->structure.handle);
+            vkStructure->bindHandle.acceleration.deviceAddress = vkStructure->structure.deviceAddress;
+            vkStructure->bindHandle.IncrementVersion();
+        }
+
+        cmd.queryPool = queryPool->pool;
+        cmd.queryHandles = m_driver->arena.Allocate<VkAccelerationStructureKHR>(substructureCount);
+        cmd.queryStart = vkStructure->queryCount;
+
+        for (auto i = 0u; i < substructureCount && vkStructure->queryCount < PK_VK_MAX_AS_COMPACTIONS; ++i)
+        {
+            auto structure = &vkStructure->substructures[i].value;
+
+            if (structure->handle && !structure->compactionId)
+            {
+                queryPool->SetFence(GetFenceRef());
+                cmd.queryHandles[cmd.queryCount++] = structure->handle;
+                structure->compactionId = ++vkStructure->queryCount;
+            }
+        }
+
+        if (rebuildTLAS)
+        {
+            for (auto i = 0u; i < vkBuilder->instanceCount; ++i)
+            {
+                auto index = vkBuilder->instanceIndices[i];
+                vkBuilder->instances[i].accelerationStructureReference = vkStructure->substructures[index].value.deviceAddress;
+            }
+
+            cmd.TLASBuildInfo = buildInfo;
+            cmd.TLASBuildInfo.dstAccelerationStructure = vkStructure->structure.handle;
+            cmd.TLASBuildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress() + vkStructure->structure.scratchOffset;
+            cmd.TLASRangeInfo = VkAccelerationStructureBuildRangeInfoKHR{ vkBuilder->instanceCount, 0u, 0u, 0u };
+            cmd.TLASBuild = true;
+        }
+
+        if (scratchBuffer)
+        {
+            ReleaseStagingBuffer(scratchBuffer);
+        }
+
+        ReleaseStagingBuffer(vkBuilder->stagingBuffer);
+        vkStructure->topologyHash = vkBuilder->topologyHash;
+        vkStructure->instanceCount = vkBuilder->instanceCount;
+
+        // Hypothetical execute step
+        for (auto i = 0u; i < cmd.copyCount; ++i)
+        {
+            vkCmdCopyAccelerationStructureKHR(m_commandBuffer, &cmd.copyInfos[i]);
+        }
+
+        if (cmd.copyCount)
+        {
+            MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        }
+
+        if (cmd.BLASBuildCount)
+        {
+            vkCmdBuildAccelerationStructuresKHR(m_commandBuffer, cmd.BLASBuildCount, cmd.BLASBuildInfos, cmd.BLASRangeInfos);
+            MarkLastCommandStage(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+        }
+
+        if (cmd.BLASBuildCount || cmd.copyCount)
+        {
+            VkMemoryBarrier memoryBarrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
+                VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
+                VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR };
+
+            VulkanBarrierInfo barrier;
+            barrier.srcStageMask = VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+            barrier.dstStageMask = VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+            barrier.memoryBarrierCount = 1u;
+            barrier.pMemoryBarriers = &memoryBarrier;
+            PipelineBarrier(barrier);
+        }
+
+        if (cmd.queryCount)
+        {
+            vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, cmd.queryCount, cmd.queryHandles, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, cmd.queryPool, cmd.queryStart);
+        }
+
+        if (cmd.TLASBuild)
+        {
+            const auto* pRangeInfo = &cmd.TLASRangeInfo;
+            vkCmdBuildAccelerationStructuresKHR(m_commandBuffer, 1u, &cmd.TLASBuildInfo, &pRangeInfo);
+            MarkLastCommandStage(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+            vkStructure->lastBuildFenceRef = GetFenceRef();
+        }
+    }
+
 
     void VulkanCommandBuffer::BeginDebugScope(const char* name, const color& color)
     {
@@ -566,25 +814,6 @@ namespace PK
         }
     }
 
-
-    void VulkanCommandBuffer::BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
-    {
-        MarkLastCommandStage(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
-        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
-    }
-
-    void VulkanCommandBuffer::CopyAccelerationStructure(const VkCopyAccelerationStructureInfoKHR* pInfo)
-    {
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdCopyAccelerationStructureKHR(m_commandBuffer, pInfo);
-    }
-
-    void VulkanCommandBuffer::QueryAccelerationStructureCompactSize(const VkAccelerationStructureKHR structure, VulkanQueryPool* pool, uint32_t query)
-    {
-        PK_DEBUG_FATAL_ASSERT(pool->type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "Invalid query pool type");
-        pool->SetFence(GetFenceRef());
-        vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, (uint32_t)query);
-    }
 
     void VulkanCommandBuffer::PipelineBarrier(const VulkanBarrierInfo& barrier)
     {

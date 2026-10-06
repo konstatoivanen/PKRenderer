@@ -55,4 +55,6 @@ namespace PK
     constexpr static const uint64_t PK_VK_MAX_ACCESS_RECORDS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_BUFFER_BARRIERS = 256ull;
     constexpr static const uint64_t PK_VK_MAX_IMAGE_BARRIERS = 256ull;
+
+    constexpr static const uint32_t PK_VK_MAX_AS_COMPACTIONS = 512u;
 }

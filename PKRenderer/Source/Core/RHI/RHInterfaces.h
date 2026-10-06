@@ -76,12 +76,14 @@ namespace PK
     struct RHIAccelerationStructure : public NoCopy
     {
         virtual ~RHIAccelerationStructure() = 0;
-        virtual void BeginWrite(QueueType queue, uint32_t instanceLimit) = 0;
-        virtual void AddInstance(const RayTracingGeometryInfo& geometry, const float3x4& matrix) = 0;
-        virtual void EndWrite() = 0;
         virtual uint32_t GetInstanceCount() const = 0;
         virtual uint32_t GetSubStructureCount() const = 0;
         virtual FenceRef GetLastBuildFenceRef() const = 0;
+    };
+
+    struct RHIAccelerationStructureBuilder : public NoCopy
+    {
+        virtual void AddInstance(const RayTracingGeometryInfo& geometry, const float3x4& matrix) = 0;
     };
 
     template<typename T>
@@ -166,6 +168,9 @@ namespace PK
         virtual void CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount) = 0;
         
         virtual void InvalidateTexture(RHITexture* texture) = 0;
+
+        virtual RHIAccelerationStructureBuilder* BeginAccelerationStructureWrite(RHIAccelerationStructure* structure, uint32_t instanceLimit) = 0;
+        virtual void EndAccelerationStructureWrite(RHIAccelerationStructureBuilder* builder) = 0;
 
         virtual void BeginDebugScope(const char* name, const color& color) = 0;
         virtual void EndDebugScope() = 0;

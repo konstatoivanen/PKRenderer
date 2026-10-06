@@ -60,6 +60,9 @@ namespace PK
 
         void InvalidateTexture(RHITexture* texture) final;
 
+        RHIAccelerationStructureBuilder* BeginAccelerationStructureWrite(RHIAccelerationStructure* structure, uint32_t instanceLimit) final;
+        void EndAccelerationStructureWrite(RHIAccelerationStructureBuilder* builder) final;
+
         void BeginDebugScope(const char* name, const color& color) final;
         void EndDebugScope() final;
 
@@ -67,9 +70,6 @@ namespace PK
         void EndTimer() final;
 
         // Vulkan specific interface
-        void BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
-        void CopyAccelerationStructure(const VkCopyAccelerationStructureInfoKHR* pInfo);
-        void QueryAccelerationStructureCompactSize(const VkAccelerationStructureKHR structure, VulkanQueryPool* pool, uint32_t query);
         void PipelineBarrier(const VulkanBarrierInfo& barrier);
         
         // Blits might leave swapchain images in non presentable layouts.

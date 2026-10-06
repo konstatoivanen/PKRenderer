@@ -37,7 +37,8 @@ namespace PK::App
             }
         }
 
-        structure->BeginWrite(request->queue, instanceCount);
+        auto cmd = RHI::GetCommandBuffer(request->queue);
+        auto builder = cmd->BeginAccelerationStructureWrite(structure, instanceCount);
 
         RayTracingGeometryInfo geometry{};
         geometry.customIndex = 0u;
@@ -54,12 +55,12 @@ namespace PK::App
                 {
                     if (view.staticMesh->sharedMesh->GatherRayTracingGeometry(material.submesh, &geometry))
                     {
-                        structure->AddInstance(geometry, view.transform->localToWorld);
+                        builder->AddInstance(geometry, view.transform->localToWorld);
                     }
                 }
             }
         }
 
-        structure->EndWrite();
+        cmd->EndAccelerationStructureWrite(builder);
     }
 }

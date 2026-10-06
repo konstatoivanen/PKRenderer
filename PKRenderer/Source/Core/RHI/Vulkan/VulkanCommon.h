@@ -416,6 +416,7 @@ namespace PK
     VkResult VulkanCreateSurfaceKHR(VkInstance instance, void* nativeWindow, VkSurfaceKHR* surface);
 
     VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount);
+    VkDeviceAddress VulkanGetAccelerationStructureDeviceAddress(VkDevice device, VkAccelerationStructureKHR handle);
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
     VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
     VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkFormat format);

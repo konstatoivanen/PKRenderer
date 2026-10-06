@@ -20,17 +20,23 @@ namespace PK
             bufferCreateInfo.queueFamilyIndexCount = queueFamilies.count;
             bufferCreateInfo.pQueueFamilyIndices = queueFamilies.indices;
             bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | 
+                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | 
                 VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
             VmaAllocationCreateInfo allocationCreateInfo{};
             allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+            allocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
             allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
             
             VmaAllocationInfo allocationInfo{};
             VK_ASSERT_RESULT(vmaCreateBuffer(m_allocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_memory, &allocationInfo));
             m_mappedData = allocationInfo.pMappedData;
             
+            VkMemoryPropertyFlags memFlags = 0;
+            vmaGetAllocationMemoryProperties(m_allocator, m_memory, &memFlags);
+            PK_FATAL_ASSERT(memFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "VulkanStagingArena failed to allocate in ReBAR (DEVICE_LOCAL) memory!");
+
             VulkanSetObjectDebugName(driver->device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanStagingArena");
 
             VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
