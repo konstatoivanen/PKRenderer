@@ -309,7 +309,7 @@ namespace PK
         m_currentCommandBuffer->EndRecord(++m_timeline.counter);
         auto lastStage = m_currentCommandBuffer->GetLastCommandStage();
         auto imageSignal = m_currentCommandBuffer->GetImageSignal();
-        auto commandBuffer = m_currentCommandBuffer->GetCommandBuffer();
+        auto commandBuffer = m_currentCommandBuffer->GetHandle();
         m_currentCommandBuffer = nullptr;
 
         m_timeline.waitFlags = lastStage;
@@ -318,10 +318,6 @@ namespace PK
         VkSemaphore waits[MAX_DEPENDENCIES]{};
         uint64_t waitValues[MAX_DEPENDENCIES]{};
         uint32_t waitCount = 0u;
-
-        VkSemaphore signals[2]{ m_timeline.semaphore, VK_NULL_HANDLE };
-        uint64_t signalValues[2]{ m_timeline.counter, 0ull };
-        uint32_t signalCount = inSignal ? 2u : 1u;
 
         if (imageSignal != VK_NULL_HANDLE)
         {
@@ -341,6 +337,10 @@ namespace PK
                 waitCount++;
             }
         }
+
+        VkSemaphore signals[2]{ m_timeline.semaphore, VK_NULL_HANDLE };
+        uint64_t signalValues[2]{ m_timeline.counter, 0ull };
+        uint32_t signalCount = inSignal ? 2u : 1u;
 
         if (inSignal)
         {
@@ -403,7 +403,7 @@ namespace PK
         }
     }
 
-    void VulkanQueue::QueueWait(VulkanQueue* other, int32_t timelineOffset)
+    void VulkanQueue::QueueWait(VulkanQueue* other, VkPipelineStageFlags flags, int32_t timelineOffset)
     {
         if (other != this)
         {
@@ -413,8 +413,7 @@ namespace PK
                 {
                     timeline = other->m_timeline;
                     timeline.counter = math::uadd(timeline.counter, timelineOffset);
-                    // Wait at top of pipe as we dont know what the first op will be.
-                    timeline.waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                    timeline.waitFlags = flags;
                     break;
                 }
             }
@@ -480,7 +479,7 @@ namespace PK
 
     void VulkanQueueSet::Wait(QueueType to, QueueType from, int32_t submitOffset)
     {
-        GetQueue(to)->QueueWait(GetQueue(from), submitOffset);
+        GetQueue(to)->QueueWait(GetQueue(from), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, submitOffset);
     }
 
 

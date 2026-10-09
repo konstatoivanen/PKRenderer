@@ -53,7 +53,7 @@ namespace PK
         VkResult Submit(VkSemaphore* inSignal = nullptr);
         VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal);
         void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);
-        void QueueWait(VulkanQueue* other, int32_t timelineOffset = 0);
+        void QueueWait(VulkanQueue* other, VkPipelineStageFlags flags, int32_t timelineOffset);
         void WaitCommandBuffers(bool waitAll);
         void Prune();
 
@@ -93,6 +93,7 @@ namespace PK
         inline uint32_t GetQueueIndex(QueueType type) const { return m_queueIndices[(uint32_t)type]; }
         inline VulkanQueue* GetQueue(QueueType type) { return m_queues[GetQueueIndex(type)].get(); }
         inline const VulkanQueue* GetQueue(QueueType type) const { return m_queues[GetQueueIndex(type)].get(); }
+        inline VulkanQueue* GetQueueAt(uint32_t index) { return m_queues[index].get(); }
         constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
         VkResult SubmitCurrent(QueueType type, VkSemaphore* outSignal = nullptr);
         void Prune();

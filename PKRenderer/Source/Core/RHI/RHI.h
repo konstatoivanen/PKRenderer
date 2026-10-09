@@ -95,6 +95,7 @@ namespace PK
     struct RHIDriver;
     struct RHISwapchain;
     struct RHIAccelerationStructure;
+    struct RHIAccelerationStructureBuilder;
     template <typename>
     struct RHIBindSet;
     struct RHIBuffer;

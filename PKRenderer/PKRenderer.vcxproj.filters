@@ -780,6 +780,15 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDescriptorArena.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\RHI\RHIGraph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanGraph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanResourceState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Models\MDL_Cloth.mdl" />
@@ -1288,6 +1297,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDescriptorArena.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanGraph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanResourceState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

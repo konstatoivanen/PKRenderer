@@ -336,4 +336,57 @@ namespace PK
         m_imageSignal = VK_NULL_HANDLE;
         return signal;
     }
+
+
+    VkSemaphore VulkanSwapchain::GraphGetPresentSignal()
+    {
+        return m_semaphoresPresent[m_imageIndex];
+    }
+
+    void VulkanSwapchain::GraphPresent(VkSemaphore presentSignal)
+    {
+        auto queueGraphics = m_driver->queues->GetQueue(QueueType::Graphics);
+        auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);
+
+        // Frame synchronization for this frame is handled externally.
+        // @TODO this is a bad implicit fence as we dont necessarily do last transition on the graphics queue?!?
+        if (!m_hasExternalFrameFence)
+        {
+            m_frameFences[m_frameIndex] = queueGraphics->GetFenceRef();
+        }
+
+        m_imageSignal = VK_NULL_HANDLE;
+        m_hasExternalFrameFence = false;
+        m_frameIndex = (m_frameIndex + 1) % PK_RHI_MAX_FRAMES_IN_FLIGHT;
+        m_presentId++;
+
+        VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, m_presentId, m_presentMode, presentSignal));
+    }
+
+    void VulkanSwapchain::GraphValidate()
+    {
+        if (m_outofdate)
+        {
+            Rebuild(m_descriptor);
+        }
+    }
+
+    void VulkanSwapchain::GraphAcquireNextImage()
+    {
+        if (m_imageSignal == VK_NULL_HANDLE)
+        {
+            // Partially works in fixing the bellow issue. but causes issues with 60hz monitors.
+            WaitForPresent(m_imageCount - 1u, UINT64_MAX);
+
+            // This is not strictly necesssary when not using double buffering for staging buffers.
+            // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
+            // @TODO NV by default uses DXGI layered swapchain. the present of which is not visible to the application
+            // In this mode the imaqe acquire fence only waits for the vk submit usage and not the full present.
+            // This causes the frame time to accumulate unevenly and an eventual long wait when the dxgi swapchain has to actually wait for images.
+            PK_FATAL_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
+
+            m_imageSignal = m_semaphoresAcquire[m_presentId % m_imageCount];
+            VK_ASSERT_RESULT(vkAcquireNextImageKHR(m_driver->device, m_swapchain, UINT64_MAX, m_imageSignal, VK_NULL_HANDLE, &m_imageIndex));
+        }
+    }
 }

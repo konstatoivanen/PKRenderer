@@ -94,7 +94,7 @@ namespace PK
 
         inline void MarkLastCommandStage(VkPipelineStageFlags stage) { m_lastCommandStage = stage; }
         inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
-        inline VkCommandBuffer& GetCommandBuffer() { return m_commandBuffer; }
+        inline VkCommandBuffer& GetHandle() { return m_commandBuffer; }
         inline VkPipelineStageFlags GetLastCommandStage() { return m_lastCommandStage; }
         inline VkSemaphore GetImageSignal() { return m_imageSignal; }
 

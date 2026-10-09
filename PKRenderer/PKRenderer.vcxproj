@@ -319,7 +319,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Rendering\Font.h" />
     <ClInclude Include="Source\Core\Rendering\IESProfile.h" />
     <ClInclude Include="Source\Core\Rendering\Window.h" />
+    <ClInclude Include="Source\Core\RHI\RHIGraph.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDescriptorArena.h" />
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanGraph.h" />
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanResourceState.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanTimerArena.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanLimits.h" />
     <ClInclude Include="Source\Core\Serialization\Serializers\SerializeArrayList.h" />
@@ -706,6 +709,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Rendering\IESProfile.cpp" />
     <ClCompile Include="Source\Core\Rendering\Window.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDescriptorArena.cpp" />
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanGraph.cpp" />
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanResourceState.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanTimerArena.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp" />

@@ -33,6 +33,11 @@ namespace PK
         const VulkanImageView* GetImageView() const { return m_imageViews[m_imageIndex]; }
         VkSemaphore ConsumeImageSignal();
 
+        VkSemaphore GraphGetPresentSignal();
+        void GraphPresent(VkSemaphore presentSignal);
+        void GraphValidate();
+        void GraphAcquireNextImage();
+
     private:
         const VulkanDriver* m_driver = nullptr;
 
