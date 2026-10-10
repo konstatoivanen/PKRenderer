@@ -183,7 +183,7 @@ namespace PK
         m_driver(driver),
         m_family(queueFamily),
         m_queueIndex(queueIndex),
-        m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags)),
+        m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities2(flags)),
         m_barrierHandler(queueFamily),
         m_timerArena(driver->device, driver->physicalDeviceProperties.core.limits.timestampPeriod),
         m_stagingArena(driver, stagingArenaSize),
@@ -314,16 +314,17 @@ namespace PK
 
         m_timeline.waitFlags = lastStage;
 
-        VkPipelineStageFlags waitFlags[MAX_DEPENDENCIES]{};
-        VkSemaphore waits[MAX_DEPENDENCIES]{};
-        uint64_t waitValues[MAX_DEPENDENCIES]{};
-        uint32_t waitCount = 0u;
+        VkSemaphoreSubmitInfo waits[MAX_DEPENDENCIES]{};
+        VkSemaphoreSubmitInfo signals[2]{};
+        auto waitCount = 0u;
+        auto signalCount = inSignal ? 2u : 1u;
 
         if (imageSignal != VK_NULL_HANDLE)
         {
-            waits[0] = imageSignal;
-            waitValues[0] = 0;
-            waitFlags[0] = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            waits[waitCount].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+            waits[waitCount].semaphore = imageSignal;
+            waits[waitCount].value = 0;
+            waits[waitCount].stageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
             waitCount++;
         }
 
@@ -331,40 +332,41 @@ namespace PK
         {
             if (timeline.semaphore != VK_NULL_HANDLE)
             {
-                waits[waitCount] = timeline.semaphore;
-                waitValues[waitCount] = timeline.counter;
-                waitFlags[waitCount] = timeline.waitFlags & m_capabilityFlags;
+                waits[waitCount].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+                waits[waitCount].semaphore = timeline.semaphore;
+                waits[waitCount].value = timeline.counter;
+                waits[waitCount].stageMask = timeline.waitFlags & m_capabilityFlags;
                 waitCount++;
             }
         }
 
-        VkSemaphore signals[2]{ m_timeline.semaphore, VK_NULL_HANDLE };
-        uint64_t signalValues[2]{ m_timeline.counter, 0ull };
-        uint32_t signalCount = inSignal ? 2u : 1u;
+        signals[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+        signals[0].semaphore = m_timeline.semaphore;
+        signals[0].value = m_timeline.counter;
+        signals[0].stageMask = m_timeline.waitFlags;
 
         if (inSignal)
         {
-            signals[1] = *inSignal;
+            signals[1].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+            signals[1].semaphore = *inSignal;
+            signals[1].value = 0; 
+            signals[1].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         }
 
         memset(m_waitTimelines, 0, sizeof(m_waitTimelines));
 
-        VkTimelineSemaphoreSubmitInfo timelineInfo{ VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO };
-        timelineInfo.waitSemaphoreValueCount = waitCount;
-        timelineInfo.pWaitSemaphoreValues = waitValues;
-        timelineInfo.signalSemaphoreValueCount = signalCount;
-        timelineInfo.pSignalSemaphoreValues = signalValues;
+        VkCommandBufferSubmitInfo cmdInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO };
+        cmdInfo.commandBuffer = commandBuffer;
+        cmdInfo.deviceMask = 0;
 
-        VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-        submitInfo.pNext = &timelineInfo;
-        submitInfo.waitSemaphoreCount = waitCount;
-        submitInfo.pWaitSemaphores = waits;
-        submitInfo.pWaitDstStageMask = waitFlags;
-        submitInfo.signalSemaphoreCount = signalCount;
-        submitInfo.pSignalSemaphores = signals;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-        return vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+        VkSubmitInfo2 submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO_2 };
+        submitInfo.waitSemaphoreInfoCount = waitCount;
+        submitInfo.pWaitSemaphoreInfos = waits;
+        submitInfo.signalSemaphoreInfoCount = signalCount;
+        submitInfo.pSignalSemaphoreInfos = signals;
+        submitInfo.commandBufferInfoCount = 1;
+        submitInfo.pCommandBufferInfos = &cmdInfo;
+        return vkQueueSubmit2(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
     VkResult VulkanQueue::Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal)
@@ -385,11 +387,11 @@ namespace PK
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &swapchain;
         presentInfo.pImageIndices = &imageIndex;
-        presentInfo.pResults = nullptr; // Optional
+        presentInfo.pResults = nullptr; 
         return vkQueuePresentKHR(m_queue, &presentInfo);
     }
 
-    void VulkanQueue::QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags)
+    void VulkanQueue::QueueWait(VkSemaphore semaphore, VkPipelineStageFlags2 flags)
     {
         for (auto& timeline : m_waitTimelines)
         {
@@ -403,7 +405,7 @@ namespace PK
         }
     }
 
-    void VulkanQueue::QueueWait(VulkanQueue* other, VkPipelineStageFlags flags, int32_t timelineOffset)
+    void VulkanQueue::QueueWait(VulkanQueue* other, VkPipelineStageFlags2 flags, int32_t timelineOffset)
     {
         if (other != this)
         {
@@ -479,7 +481,7 @@ namespace PK
 
     void VulkanQueueSet::Wait(QueueType to, QueueType from, int32_t submitOffset)
     {
-        GetQueue(to)->QueueWait(GetQueue(from), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, submitOffset);
+        GetQueue(to)->QueueWait(GetQueue(from), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, submitOffset);
     }
 
 

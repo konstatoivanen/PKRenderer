@@ -320,7 +320,7 @@ namespace PK
     struct VulkanTimelineSemaphore
     {
         VkSemaphore semaphore = VK_NULL_HANDLE;
-        VkPipelineStageFlags waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags2 waitFlags = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
         uint64_t counter = 0ull;
     };
 

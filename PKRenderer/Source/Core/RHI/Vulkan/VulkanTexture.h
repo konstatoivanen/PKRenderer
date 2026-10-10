@@ -24,7 +24,6 @@ namespace PK
         const VkFormat m_format;
         const VkFormat m_formatAlias;
         TextureDescriptor m_descriptor;
-        VkDeviceAddress m_deviceAddress;
         VmaAllocation m_memory;
         VkImage m_image;
         VkImage m_imageAlias;

@@ -139,7 +139,7 @@ namespace PK
     void VulkanCommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
     {
         ValidatePipeline();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT);
         vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
@@ -156,14 +156,14 @@ namespace PK
         m_barrierHandler->Record(handleIndirect->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT);
         vkCmdDrawIndirect(m_commandBuffer, handleIndirect->buffer.buffer, handleIndirect->buffer.offset + offset, drawCount, stride);
     }
 
     void VulkanCommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
     {
         ValidatePipeline();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT);
         vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
@@ -180,14 +180,14 @@ namespace PK
         m_barrierHandler->Record(handleIndirect->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT);
         vkCmdDrawIndexedIndirect(m_commandBuffer, handleIndirect->buffer.buffer, handleIndirect->buffer.offset + offset, drawCount, stride);
     }
 
     void VulkanCommandBuffer::DrawMeshTasks(const uint3& dimensions)
     {
         ValidatePipeline();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT);
         vkCmdDrawMeshTasksEXT(m_commandBuffer, dimensions.x, dimensions.y, dimensions.z);
     }
 
@@ -203,7 +203,7 @@ namespace PK
         m_barrierHandler->Record(handleIndirect->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT);
         vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer, handleIndirect->buffer.buffer, handleIndirect->buffer.offset + offset, drawCount, stride);
     }
 
@@ -232,13 +232,13 @@ namespace PK
         m_barrierHandler->Record(handleCount->buffer.buffer, record, PK_RHI_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT);
         vkCmdDrawMeshTasksIndirectCountEXT(m_commandBuffer, handleIndirect->buffer.buffer, handleIndirect->buffer.offset + offset, handleCount->buffer.buffer, handleCount->buffer.offset + countOffset, maxDrawCount, stride);
     }
 
     void VulkanCommandBuffer::Dispatch(const uint3& dimensions)
     {
-        MarkLastCommandStage(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT);
         EndRenderPass();
         ValidatePipeline();
 
@@ -251,7 +251,7 @@ namespace PK
 
     void VulkanCommandBuffer::DispatchRays(const uint3& dimensions)
     {
-        MarkLastCommandStage(VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR);
         EndRenderPass();
         ValidatePipeline();
         auto addresses = m_state->GetShaderBindingTableAddresses();
@@ -311,7 +311,7 @@ namespace PK
 
         EndRenderPass();
         ResolveBarriers();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
         vkCmdCopyImageToBuffer(m_commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_GENERAL, vkdst->buffer.buffer, 1, &region);
         ResolveSwapchainAccess(src, false);
     }
@@ -342,7 +342,7 @@ namespace PK
 
         EndRenderPass();
         ResolveBarriers();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
 
         auto srcBlockSize = VulkanEnumConvert::GetFormatBlockSize(src->image.format);
         auto dstBlockSize = VulkanEnumConvert::GetFormatBlockSize(dst->image.format);
@@ -384,7 +384,7 @@ namespace PK
     void VulkanCommandBuffer::Clear(RHIBuffer* dst, size_t offset, size_t size, uint32_t value)
     {
         EndRenderPass();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
         auto handle = dst->GetNativeView<VulkanBindHandle>();
         vkCmdFillBuffer(m_commandBuffer, handle->buffer.buffer, handle->buffer.offset + offset, size, value);
     }
@@ -399,7 +399,7 @@ namespace PK
 
         m_state->RecordImage(m_barrierHandler, handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT);
         ResolveBarriers();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
 
         if (VulkanEnumConvert::IsDepthFormat(handle->image.format) || VulkanEnumConvert::IsDepthStencilFormat(handle->image.format))
         {
@@ -415,7 +415,7 @@ namespace PK
     void VulkanCommandBuffer::UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, const void* data)
     {
         EndRenderPass();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
         auto handle = dst->GetNativeView<VulkanBindHandle>();
         vkCmdUpdateBuffer(m_commandBuffer, handle->buffer.buffer, handle->buffer.offset + offset, size, data);
     }
@@ -427,7 +427,7 @@ namespace PK
         
         VkBufferCopy copyRegion{ srcHandle->buffer.offset + srcOffset, dstHandle->buffer.offset + dstOffset, size };
 
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
         vkCmdCopyBuffer(m_commandBuffer, srcHandle->buffer.buffer, dstHandle->buffer.buffer, 1, &copyRegion);
 
         VulkanBarrierHandler::AccessRecord record{};
@@ -491,7 +491,7 @@ namespace PK
         barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
         
         PipelineBarrier(barrier);
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
         vkCmdCopyBufferToImage(m_commandBuffer, srcHandle->buffer.buffer, dstHandle->image.image, VK_IMAGE_LAYOUT_GENERAL, regionCount, copyRegions);
 
         imageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -736,13 +736,13 @@ namespace PK
 
         if (cmd.copyCount)
         {
-            MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+            MarkLastCommandStage(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
         }
 
         if (cmd.BLASBuildCount)
         {
             vkCmdBuildAccelerationStructuresKHR(m_commandBuffer, cmd.BLASBuildCount, cmd.BLASBuildInfos, cmd.BLASRangeInfos);
-            MarkLastCommandStage(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+            MarkLastCommandStage(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
         }
 
         if (cmd.BLASBuildCount || cmd.copyCount)
@@ -768,7 +768,7 @@ namespace PK
         {
             const auto* pRangeInfo = &cmd.TLASRangeInfo;
             vkCmdBuildAccelerationStructuresKHR(m_commandBuffer, 1u, &cmd.TLASBuildInfo, &pRangeInfo);
-            MarkLastCommandStage(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+            MarkLastCommandStage(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
             vkStructure->lastBuildFenceRef = GetFenceRef();
         }
     }

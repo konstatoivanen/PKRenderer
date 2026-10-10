@@ -92,10 +92,10 @@ namespace PK
         void EndRecord(uint64_t queueTimelineIndex);
         bool Complete(uint64_t currentQueueTimelineIndex);
 
-        inline void MarkLastCommandStage(VkPipelineStageFlags stage) { m_lastCommandStage = stage; }
+        inline void MarkLastCommandStage(VkPipelineStageFlags2 stage) { m_lastCommandStage = stage; }
         inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
         inline VkCommandBuffer& GetHandle() { return m_commandBuffer; }
-        inline VkPipelineStageFlags GetLastCommandStage() { return m_lastCommandStage; }
+        inline VkPipelineStageFlags2 GetLastCommandStage() { return m_lastCommandStage; }
         inline VkSemaphore GetImageSignal() { return m_imageSignal; }
 
     private:
@@ -115,7 +115,7 @@ namespace PK
         uint64_t m_descriptorIndex = 0ull;
         uint64_t m_invocationIndex = 0ull;
         uint64_t m_queueTimelineIndex = ~0ull;
-        VkPipelineStageFlags m_lastCommandStage = 0u;
+        VkPipelineStageFlags2 m_lastCommandStage = 0u;
         bool m_isInActiveRenderPass = false;
     };
 }

@@ -52,8 +52,8 @@ namespace PK
         VulkanCommandBuffer* GetCommandBuffer();
         VkResult Submit(VkSemaphore* inSignal = nullptr);
         VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal);
-        void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);
-        void QueueWait(VulkanQueue* other, VkPipelineStageFlags flags, int32_t timelineOffset);
+        void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags2 flags);
+        void QueueWait(VulkanQueue* other, VkPipelineStageFlags2 flags, int32_t timelineOffset);
         void WaitCommandBuffers(bool waitAll);
         void Prune();
 
@@ -61,7 +61,7 @@ namespace PK
         const VulkanDriver* m_driver;
         const uint32_t m_family;
         const uint32_t m_queueIndex;
-        const VkPipelineStageFlags m_capabilityFlags;
+        const VkPipelineStageFlags2 m_capabilityFlags;
 
         VulkanBarrierHandler m_barrierHandler;
         VulkanTimerArena m_timerArena;

@@ -104,23 +104,20 @@ namespace PK
                 &cmd->bufferBarrierCount,
                 &cmd->bufferBarriers,
                 &imageBarrierCount,
-                &imageBarriers
-            );
+                &imageBarriers);
 
             auto transferCount = 0u;
 
             for (auto i = 0u; i < imageBarrierCount; ++i)
             {
                 const auto& barrier = imageBarriers[i];
-                if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex &&
-                    barrier.srcQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED &&
-                    barrier.dstQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED)
+                if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex)
                 {
                     transferCount++;
                 }
             }
 
-            if (transferCount == 0u)
+            if (!transferCount)
             {
                 cmd->imageBarriers = imageBarriers;
                 cmd->imageBarrierCount = imageBarrierCount;
@@ -135,9 +132,7 @@ namespace PK
                 {
                     const auto& barrier = imageBarriers[i];
 
-                    if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex &&
-                        barrier.srcQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED &&
-                        barrier.dstQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED)
+                    if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex)
                     {
                         const auto srcQueueIndex = GetQueueIndexFromFamily(barrier.srcQueueFamilyIndex);
                         auto& batch = activeBatches[srcQueueIndex][dstQueueIndex];
@@ -1433,7 +1428,7 @@ namespace PK
         {
             const auto& element = resourceLayout[index];
             const auto access = element.writeMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
-            const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags(descriptorLayout->stageFlags);
+            const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags2(descriptorLayout->stageFlags);
             const auto isVariableSize = element.count == PK_RHI_MAX_UNBOUNDED_SIZE;
 
             auto& descriptor = state->descriptors[index];
