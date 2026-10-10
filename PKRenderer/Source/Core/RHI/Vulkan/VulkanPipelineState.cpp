@@ -545,7 +545,7 @@ namespace PK
             {
                 const auto& element = resourceLayout[index];
                 const auto access = element.writeMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
-                const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags(descriptorLayout->stageFlags);
+                const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags2(descriptorLayout->stageFlags);
                 const auto isVariableSize = element.count == PK_RHI_MAX_UNBOUNDED_SIZE;
              
                 auto& binding = m_descritorState.bindings[index];

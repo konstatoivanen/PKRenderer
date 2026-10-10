@@ -1929,107 +1929,6 @@ namespace PK
         }
 
 
-        VkPipelineStageFlags GetQueueFlagsStageCapabilities(VkQueueFlags flags)
-        {
-            VkPipelineStageFlags outflags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT |
-                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT |
-                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-
-            if (flags & VK_QUEUE_GRAPHICS_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
-                    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
-                    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                    VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                    VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT |
-                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
-                    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
-                // Requires optional features
-                //VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-                //VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-                //VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | 
-                //VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | 
-                //VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT |
-                //VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT |
-                //VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
-            }
-
-            if (flags & VK_QUEUE_COMPUTE_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR |
-                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-            }
-
-            if (flags & VK_QUEUE_TRANSFER_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_HOST_BIT;
-            }
-
-            return outflags;
-        }
-
-        VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags)
-        {
-            VkPipelineStageFlags outflags = 0u;
-
-            if (flags & VK_SHADER_STAGE_VERTEX_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_GEOMETRY_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_FRAGMENT_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_COMPUTE_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_TASK_BIT_EXT)
-            {
-                outflags |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
-            }
-
-            if (flags & VK_SHADER_STAGE_MESH_BIT_EXT)
-            {
-                outflags |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
-            }
-
-            if (flags &
-                (VK_SHADER_STAGE_RAYGEN_BIT_KHR |
-                    VK_SHADER_STAGE_ANY_HIT_BIT_KHR |
-                    VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
-                    VK_SHADER_STAGE_MISS_BIT_KHR |
-                    VK_SHADER_STAGE_INTERSECTION_BIT_KHR |
-                    VK_SHADER_STAGE_CALLABLE_BIT_KHR))
-            {
-                outflags |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
-            }
-
-            return outflags;
-        }
-
         bool IsReadAccess(VkAccessFlags flags)
         {
             const VkAccessFlags readMask =
@@ -2156,7 +2055,7 @@ namespace PK
 
         VkPipelineStageFlags2 GetPipelineStageFlags2(VkShaderStageFlags flags)
         {
-            VkPipelineStageFlags outflags = 0u;
+            VkPipelineStageFlags2 outflags = 0u;
 
             if (flags & VK_SHADER_STAGE_VERTEX_BIT)
             {
@@ -2210,61 +2109,6 @@ namespace PK
             }
 
             return outflags;
-        }
-
-        bool IsReadAccess2(VkAccessFlags2 flags)
-        {
-            const VkAccessFlags2 readMask =
-                VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT |
-                VK_ACCESS_2_INDEX_READ_BIT |
-                VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT |
-                VK_ACCESS_2_UNIFORM_READ_BIT |
-                VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT |
-                VK_ACCESS_2_SHADER_READ_BIT |
-                VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT |
-                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                VK_ACCESS_2_TRANSFER_READ_BIT |
-                VK_ACCESS_2_HOST_READ_BIT |
-                VK_ACCESS_2_MEMORY_READ_BIT |
-                VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |
-                VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                VK_ACCESS_2_VIDEO_DECODE_READ_BIT_KHR |
-                VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT |
-                VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT |
-                VK_ACCESS_2_VIDEO_ENCODE_READ_BIT_KHR |
-                VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM |
-                VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT_KHR |
-                VK_ACCESS_2_INDEX_READ_BIT_KHR |
-                VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR |
-                VK_ACCESS_2_UNIFORM_READ_BIT_KHR |
-                VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT_KHR |
-                VK_ACCESS_2_SHADER_READ_BIT_KHR |
-                VK_ACCESS_2_SHADER_WRITE_BIT_KHR |
-                VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR |
-                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR |
-                VK_ACCESS_2_TRANSFER_READ_BIT_KHR |
-                VK_ACCESS_2_HOST_READ_BIT_KHR |
-                VK_ACCESS_2_MEMORY_READ_BIT_KHR |
-                VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR |
-                VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR |
-                VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT |
-                VK_ACCESS_2_CONDITIONAL_RENDERING_READ_BIT_EXT |
-                VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_NV |
-                VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_EXT |
-                VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR |
-                VK_ACCESS_2_SHADING_RATE_IMAGE_READ_BIT_NV |
-                VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR |
-                VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_NV |
-                VK_ACCESS_2_FRAGMENT_DENSITY_MAP_READ_BIT_EXT |
-                VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT |
-                VK_ACCESS_2_DESCRIPTOR_BUFFER_READ_BIT_EXT |
-                VK_ACCESS_2_INVOCATION_MASK_READ_BIT_HUAWEI |
-                VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR |
-                VK_ACCESS_2_MICROMAP_READ_BIT_EXT |
-                VK_ACCESS_2_OPTICAL_FLOW_READ_BIT_NV |
-                VK_ACCESS_2_DATA_GRAPH_READ_BIT_ARM |
-                VK_ACCESS_2_MEMORY_DECOMPRESSION_READ_BIT_EXT;
-            return (flags & readMask) != 0u;
         }
 
         bool IsWriteAccess2(VkAccessFlags2 flags)

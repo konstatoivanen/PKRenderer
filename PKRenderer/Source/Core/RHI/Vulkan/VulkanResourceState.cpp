@@ -33,8 +33,8 @@ namespace PK
 
         return a.hasLayout != b.hasLayout ||
                IsTransfer(a.queue, b.queue) ||
-               VulkanEnumConvert::IsWriteAccess(a.access) ||
-               VulkanEnumConvert::IsWriteAccess(b.access);
+               VulkanEnumConvert::IsWriteAccess2(a.access) ||
+               VulkanEnumConvert::IsWriteAccess2(b.access);
     }
     
     inline static bool CanMerge(const VulkanResourceState::State& a, const VulkanResourceState::State& b)
@@ -44,7 +44,7 @@ namespace PK
             return false;
         }
 
-        if (VulkanEnumConvert::IsWriteAccess(a.access) || VulkanEnumConvert::IsWriteAccess(b.access))
+        if (VulkanEnumConvert::IsWriteAccess2(a.access) || VulkanEnumConvert::IsWriteAccess2(b.access))
         {
             return a.access == b.access && a.stage == b.stage;
         }
