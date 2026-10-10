@@ -1,3 +1,4 @@
+#pragma once
 #include "Core/Base/Containers/Mask.h"
 #include "Core/Base/Containers/HashMap.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
@@ -92,7 +93,7 @@ namespace PK
         
         void RegisterBuffer(VkBuffer buffer);
         void RegisterImage(VkImage image, VkImageAspectFlags aspectMask);
-        void UnregisterResource(uint64_t resource);
+        void UnregisterResource(void* resource);
 
         void RecordBufferAccess(VkBuffer buffer, const VulkanAccessRecord& record);
         bool RecordImageAccess(VkImage image, const VulkanAccessRecord& record);

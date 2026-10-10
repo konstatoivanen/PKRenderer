@@ -71,6 +71,8 @@ namespace PK
             GetNativeView({ 0, GetSize() });
             m_defaultView = m_firstView;
         }
+
+        m_driver->resourceState->RegisterBuffer(m_buffer);
     }
 
     VulkanBuffer::~VulkanBuffer()
@@ -94,6 +96,7 @@ namespace PK
         },
         fence);
 
+        m_driver->resourceState->UnregisterResource(m_buffer);
         m_mappedData = nullptr;
         m_memory = nullptr;
         m_buffer = nullptr;

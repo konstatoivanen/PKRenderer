@@ -1928,49 +1928,7 @@ namespace PK
             }
         }
 
-
-        bool IsReadAccess(VkAccessFlags flags)
-        {
-            const VkAccessFlags readMask =
-                VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
-                VK_ACCESS_INDEX_READ_BIT |
-                VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
-                VK_ACCESS_UNIFORM_READ_BIT |
-                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
-                VK_ACCESS_SHADER_READ_BIT |
-                VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                VK_ACCESS_TRANSFER_READ_BIT |
-                VK_ACCESS_HOST_READ_BIT |
-                VK_ACCESS_MEMORY_READ_BIT |
-                VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT |
-                VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT |
-                VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT |
-                VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR |
-                VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT |
-                VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR |
-                VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV;
-                return (flags & readMask) != 0u;
-        }
-
-        bool IsWriteAccess(VkAccessFlags flags)
-        {
-            const VkAccessFlags writeMask =
-                VK_ACCESS_SHADER_WRITE_BIT |
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-                VK_ACCESS_TRANSFER_WRITE_BIT |
-                VK_ACCESS_HOST_WRITE_BIT |
-                VK_ACCESS_MEMORY_WRITE_BIT |
-                VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT |
-                VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT |
-                VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR |
-                VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV;
-                return (flags & writeMask) != 0u;
-        }
-
-
-        VkPipelineStageFlags2 GetQueueFlagsStageCapabilities2(VkQueueFlags flags)
+        VkPipelineStageFlags2 GetQueueFlagsStageCapabilities(VkQueueFlags flags)
         {
             VkPipelineStageFlags2 supported =
                 VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
@@ -2053,7 +2011,7 @@ namespace PK
             return supported;
         }
 
-        VkPipelineStageFlags2 GetPipelineStageFlags2(VkShaderStageFlags flags)
+        VkPipelineStageFlags2 GetPipelineStageFlags(VkShaderStageFlags flags)
         {
             VkPipelineStageFlags2 outflags = 0u;
 
@@ -2111,7 +2069,7 @@ namespace PK
             return outflags;
         }
 
-        bool IsWriteAccess2(VkAccessFlags2 flags)
+        bool IsWriteAccess(VkAccessFlags2 flags)
         {
             constexpr VkAccessFlags2 writeMask =
                 VK_ACCESS_2_SHADER_WRITE_BIT |

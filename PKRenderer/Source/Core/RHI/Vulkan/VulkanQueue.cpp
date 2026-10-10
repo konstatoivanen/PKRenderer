@@ -183,7 +183,7 @@ namespace PK
         m_driver(driver),
         m_family(queueFamily),
         m_queueIndex(queueIndex),
-        m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities2(flags)),
+        m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags)),
         m_barrierHandler(queueFamily),
         m_timerArena(driver->device, driver->physicalDeviceProperties.core.limits.timestampPeriod),
         m_stagingArena(driver, stagingArenaSize),

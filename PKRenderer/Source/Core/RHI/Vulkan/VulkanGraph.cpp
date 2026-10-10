@@ -40,6 +40,7 @@ namespace PK
         if (cmd->dirtyFlags & VulkanGraph::STATE_DIRTY_INDEXBUFFER) vkCmdBindIndexBuffer(commandBuffer, cmd->indexBuffer, cmd->indexBufferOffset, cmd->indexType);
     }
 
+
     VulkanGraph::VulkanGraph(const VulkanDriver* driver) : 
         m_driver(driver),
         m_resourceState(),
@@ -67,11 +68,24 @@ namespace PK
         // @TODO do we have any destruction dependencies?!?
     }
 
+    FenceRef VulkanGraph::GetFenceRef() const
+    {
+        return FenceRef(this, [](const void* ctx, uint64_t userdata, [[maybe_unused]] uint64_t timeout)
+        {
+            auto graph = static_cast<const VulkanGraph*>(ctx);
+            return graph->m_scopes[userdata % MAX_SCOPES].fence.IsComplete();
+        },
+        m_invocationCounter);
+    }
+
     void VulkanGraph::Execute()
     {
-        m_stagingRangeIndex = m_stagingArena.EndRange();
-        m_descriptorRangeIndex = m_descriptorArena.EndRange();
-        m_timerTimelineIndex = m_timerArena.EndTimeline();
+        auto& scope = m_scopes[m_invocationCounter % MAX_SCOPES];
+        scope.fence.Invalidate();
+        scope.stagingRangeIndex = m_stagingArena.EndRange();
+        scope.descriptorRangeIndex = m_descriptorArena.EndRange();
+        scope.timerTimelineIndex = m_timerArena.EndTimeline();
+        scope.invocationIndex = m_invocationCounter;
 
         VulkanTransferBatch* activeBatches[(uint32_t)QueueType::EnumCount][(uint32_t)QueueType::EnumCount] = {};
         auto maxTransfers = 0u;
@@ -220,6 +234,7 @@ namespace PK
 
                 queueSrc->Submit();
                 queueDst->QueueWait(queueSrc, transfers->dstStageMask, 0);
+                scope.fence = queueSrc->GetFenceRef();
 
                 dirtyFlags[srcIdx] = ~0ull;
                 isRecording[srcIdx] = false;
@@ -286,6 +301,7 @@ namespace PK
                     
                     queue->Submit(&ctx.presentSignal);
                     ctx.swapchain->GraphPresent(ctx.presentSignal);
+                    scope.fence = m_driver->queues->GetQueue(QueueType::Present)->GetFenceRef();
                     dirtyFlags[queueIndex] = ~0ull;
                     isRecording[queueIndex] = false;
                 }
@@ -304,9 +320,22 @@ namespace PK
                 }
 
                 queue->Submit();
+                scope.fence = queue->GetFenceRef();
             }
         }
-        
+
+        for (auto i = 0u; i < MAX_SCOPES; ++i)
+        {
+            if (m_scopes[i].fence.IsValid() && m_scopes[i].fence.IsComplete())
+            {
+                m_timerArena.FlushTimeline(m_scopes[i].timerTimelineIndex);
+                m_stagingArena.FreeRange(m_scopes[i].stagingRangeIndex);
+                m_descriptorArena.FreeRange(m_scopes[i].descriptorRangeIndex);
+                m_scopes[i].fence.Invalidate();
+            }
+        }
+
+        m_invocationCounter++;
         m_stagingArena.BeginRange();
         m_descriptorArena.BeginRange();
         m_timerArena.BeginTimeline();
@@ -1371,7 +1400,7 @@ namespace PK
 
     uint32_t VulkanGraph::GetQueueIndexFromFamily(uint32_t familyIndex) const
     {
-        for (auto i = 0u; i < (uint32_t)QueueType::EnumCount; ++i)
+        for (auto i = 0u; i < m_queueCount; ++i)
         {
             if (m_queueFamilies[i] == familyIndex)
             {
@@ -1408,7 +1437,15 @@ namespace PK
         record.access = access;
         record.hasLayout = hasLayout;
         record.queue = GetQueueFamily(queue);
-        return m_resourceState->RecordImageAccess(handle->image.image, record);
+        auto hadLayout = m_resourceState->RecordImageAccess(handle->image.image, record);
+    
+        // Track alias as well so that layout stays consistent
+        if (handle->image.alias)
+        {
+            m_resourceState->RecordImageAccess(handle->image.alias, record);
+        }
+
+        return hadLayout;
     }
 
     void VulkanGraph::RecordShaderCmd(QueueType queue, VulkanShaderCmd* cmd)
@@ -1428,7 +1465,7 @@ namespace PK
         {
             const auto& element = resourceLayout[index];
             const auto access = element.writeMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
-            const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags2(descriptorLayout->stageFlags);
+            const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags(descriptorLayout->stageFlags);
             const auto isVariableSize = element.count == PK_RHI_MAX_UNBOUNDED_SIZE;
 
             auto& descriptor = state->descriptors[index];

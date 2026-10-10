@@ -11,6 +11,7 @@
 #include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanLayoutCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
+#include "Core/RHI/Vulkan/VulkanResourceState.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanQueue.h"
@@ -122,7 +123,8 @@ namespace PK
         mutable FixedUnique<VulkanLayoutCache> layoutCache;
         mutable FixedUnique<Disposer> disposer;
         mutable FixedArena<PK_VK_FRAME_ARENA_SIZE> arena;
-        
+        mutable FixedUnique<VulkanResourceState> resourceState;
+
         FixedUnique<BuiltInResources> builtInResources;
         
         PropertyBlock globalResources;

@@ -95,6 +95,8 @@ namespace PK
         }
 
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)m_image, name);
+        m_driver->resourceState->RegisterImage(m_image, VulkanEnumConvert::GetFormatAspect(m_format));
+        m_driver->resourceState->RegisterImage(m_imageAlias, VulkanEnumConvert::GetFormatAspect(m_formatAlias));
     }
 
     VulkanTexture::~VulkanTexture()
@@ -128,6 +130,8 @@ namespace PK
         fence);
 
         m_firstView = nullptr;
+        m_driver->resourceState->UnregisterResource(m_image);
+        m_driver->resourceState->UnregisterResource(m_imageAlias);
     }
 
     void VulkanTexture::SetSampler(const SamplerDescriptor& sampler)

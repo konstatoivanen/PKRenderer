@@ -33,8 +33,8 @@ namespace PK
 
         return a.hasLayout != b.hasLayout ||
                IsTransfer(a.queue, b.queue) ||
-               VulkanEnumConvert::IsWriteAccess2(a.access) ||
-               VulkanEnumConvert::IsWriteAccess2(b.access);
+               VulkanEnumConvert::IsWriteAccess(a.access) ||
+               VulkanEnumConvert::IsWriteAccess(b.access);
     }
     
     inline static bool CanMerge(const VulkanResourceState::State& a, const VulkanResourceState::State& b)
@@ -44,7 +44,7 @@ namespace PK
             return false;
         }
 
-        if (VulkanEnumConvert::IsWriteAccess2(a.access) || VulkanEnumConvert::IsWriteAccess2(b.access))
+        if (VulkanEnumConvert::IsWriteAccess(a.access) || VulkanEnumConvert::IsWriteAccess(b.access))
         {
             return a.access == b.access && a.stage == b.stage;
         }
@@ -161,7 +161,7 @@ namespace PK
     void VulkanResourceState::RegisterBuffer(VkBuffer buffer)
     {
         auto index = 0u;
-        if (m_resources.AddKey((uint64_t)buffer, &index))
+        if (buffer != VK_NULL_HANDLE && m_resources.AddKey((uint64_t)buffer, &index))
         {
             m_resources[index].value.aspectMask = 0u;
             const auto node = AllocNode();
@@ -186,7 +186,7 @@ namespace PK
     void VulkanResourceState::RegisterImage(VkImage image, VkImageAspectFlags aspectMask)
     {
         auto index = 0u;
-        if (m_resources.AddKey((uint64_t)image, &index))
+        if (image != VK_NULL_HANDLE && m_resources.AddKey((uint64_t)image, &index))
         {
             m_resources[index].value.aspectMask = aspectMask;
             const auto node = AllocNode();
@@ -210,9 +210,10 @@ namespace PK
         }
     }
 
-    void VulkanResourceState::UnregisterResource(uint64_t resource)
+    void VulkanResourceState::UnregisterResource(void* resource)
     {
-        auto index = m_resources.GetIndex(resource);
+        auto handle = (uint64_t)resource;
+        auto index = m_resources.GetIndex(handle);
 
         if (index != -1)
         {
@@ -358,14 +359,9 @@ namespace PK
 
     void VulkanResourceState::RecordBufferAccess(VkBuffer buffer, const VulkanAccessRecord& record)
     {
-        PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanResourceState::RecordBufferAccess called before calling VulkanResourceState::AddPass!");
-
         auto* state = m_resources.GetValuePtr((uint64_t)buffer);
-        
-        if (state == nullptr)
-        {
-            return;
-        }
+        PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanResourceState::RecordBufferAccess called before calling VulkanResourceState::AddPass!");
+        PK_DEBUG_FATAL_ASSERT(state != nullptr, "VulkanResourceState::RecordBufferAccess called for an untracked resource!");
 
         const auto new_beg = record.buffer.offset;
         const auto new_end = AddU64(record.buffer.offset, record.buffer.size);
@@ -461,14 +457,9 @@ namespace PK
 
     bool VulkanResourceState::RecordImageAccess(VkImage image, const VulkanAccessRecord& record)
     {
-        PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanResourceState::RecordImageAccess called before calling VulkanResourceState::AddPass!");
-
         auto* state = m_resources.GetValuePtr((uint64_t)image);
-
-        if (state == nullptr)
-        {
-            return false;
-        }
+        PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanResourceState::RecordImageAccess called before calling VulkanResourceState::AddPass!");
+        PK_DEBUG_FATAL_ASSERT(state != nullptr, "VulkanResourceState::RecordImageAccess called for an untracked resource!");
 
         const auto new_layer_beg = record.image.baseArrayLayer;
         const auto new_layer_end = AddU32(record.image.baseArrayLayer, record.image.layerCount);

@@ -483,10 +483,8 @@ namespace PK
         VkRayTracingShaderGroupTypeKHR GetRayTracingStageGroupType(ShaderStage stage);
         VkImageAspectFlagBits GetFormatAspect(VkFormat format);
         
-        bool IsWriteAccess(VkAccessFlags flags);
-
-        VkPipelineStageFlags2 GetQueueFlagsStageCapabilities2(VkQueueFlags flags);
-        VkPipelineStageFlags2 GetPipelineStageFlags2(VkShaderStageFlags flags);
-        bool IsWriteAccess2(VkAccessFlags2 access);
+        VkPipelineStageFlags2 GetQueueFlagsStageCapabilities(VkQueueFlags flags);
+        VkPipelineStageFlags2 GetPipelineStageFlags(VkShaderStageFlags flags);
+        bool IsWriteAccess(VkAccessFlags2 access);
     }
 }

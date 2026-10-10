@@ -14,6 +14,15 @@ namespace PK
     struct VulkanResourceState;
     struct VulkanSwapchain;
 
+    struct VulkanGraphScope
+    {
+        FenceRef fence;
+        uint64_t stagingRangeIndex = 0ull;
+        uint64_t descriptorRangeIndex = 0ull;
+        uint64_t timerTimelineIndex = 0ull;
+        uint64_t invocationIndex = 0ull;
+    };
+
     struct VulkanCmdContext
     {
         VkCommandBuffer cmb;
@@ -313,6 +322,8 @@ namespace PK
 
     struct VulkanGraph : public RHIGraph
     {
+        constexpr const static uint32_t MAX_SCOPES = 4u;
+
         enum DirtyFlags : uint64_t
         {
             STATE_DIRTY_RENDERTARGET = 1ull << 0ull,
@@ -329,7 +340,7 @@ namespace PK
         VulkanGraph(const VulkanDriver* driver);
         ~VulkanGraph();
 
-        FenceRef GetFenceRef() const final { return m_latestSubmitFence; }
+        FenceRef GetFenceRef() const final;
         void Execute() final;
 
         void SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) final;
@@ -413,14 +424,11 @@ namespace PK
         VulkanDescriptorArena m_descriptorArena;
         VulkanTimerArena m_timerArena;
         PropertyBlock m_globalResources;
+        VulkanGraphScope m_scopes[MAX_SCOPES]{};
         VulkanGraphQueueState m_queueStates[(uint32_t)QueueType::EnumCount]{};
         uint32_t m_queueFamilies[(uint32_t)QueueType::EnumCount]{};
         uint32_t m_queueIndices[(uint32_t)QueueType::EnumCount]{};
         uint32_t m_queueCount = 0ull;
-        uint64_t m_stagingRangeIndex = 0ull;
-        uint64_t m_descriptorRangeIndex = 0ull;
-        uint64_t m_timerTimelineIndex = 0ull;
-        uint64_t m_invocationIndex = 0ull;
-        FenceRef m_latestSubmitFence;
+        uint64_t m_invocationCounter = 0ull;
     };
 }

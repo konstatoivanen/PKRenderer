@@ -146,6 +146,7 @@ namespace PK
         pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.enablePipelineCache, properties.gcPruneDelay);
         samplerCache.New(device);
         layoutCache.New(device);
+        resourceState.New();
 
         queues.New(this, queueInitializer);
 
