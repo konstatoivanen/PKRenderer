@@ -15,8 +15,8 @@ namespace PK::App
 
             PassDepthOfField(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void ComputeAutoFocus(CommandBufferExt cmd, struct RenderPipelineContext* context);
-            void Render(CommandBufferExt cmd, RenderPipelineContext* context, RHITexture* destination);
+            void ComputeAutoFocus(RenderGraphExt graph, QueueType queue, struct RenderPipelineContext* context);
+            void Render(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context, RHITexture* destination);
 
         private:
             ShaderAsset* m_computeDepthOfField = nullptr;

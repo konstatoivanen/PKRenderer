@@ -25,7 +25,7 @@ namespace PK
     struct IESProfileAtlas;
     struct IESProfile;
     struct ConstantBuffer;
-    struct CommandBufferExt;
+    struct RenderGraphExt;
     struct ShaderBindingTable;
     struct ShaderProperty;
     struct ShaderPropertyLayout;

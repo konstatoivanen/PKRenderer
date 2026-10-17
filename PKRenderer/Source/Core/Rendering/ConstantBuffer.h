@@ -10,7 +10,7 @@ namespace PK
         ConstantBuffer(ShaderProperty* elements, uint32_t count, const char* name);
         ConstantBuffer(initializer_list<ShaderProperty> elements, const char* name);
 
-        void FlushBuffer(RHICommandBuffer* cmd);
+        void FlushBuffer(RHIGraph* graph, QueueType queue);
 
         const RHIBuffer* GetRHI() const;
         RHIBuffer* GetRHI();
@@ -25,7 +25,7 @@ namespace PK
     {
         ConstantBufferTransient();
         void BeginWrite(const ShaderPropertyLayout* layout, void* memory, const char* name);
-        void EndWrite(RHICommandBuffer* cmd);
+        void EndWrite(RHIGraph* graph, QueueType queue);
         constexpr uint64_t GetHash() const { return m_layoutHash; }
         const RHIBuffer* GetRHI() const;
         RHIBuffer* GetRHI();

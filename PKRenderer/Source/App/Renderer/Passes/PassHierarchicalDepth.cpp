@@ -3,7 +3,7 @@
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderPipelineBase.h"
@@ -22,10 +22,10 @@ namespace PK::App
 
     void PassHierarchicalDepth::SetViewConstants([[maybe_unused]] RenderView* view)
     {
-        RHI::GetQueues()->GetCommandBuffer(QueueType::Transfer)->Clear(m_worgroupCounter.get(), 0, sizeof(uint32_t), 0u);
+        RHI::GetGraph()->Clear(QueueType::Transfer, m_worgroupCounter.get(), 0, sizeof(uint32_t), 0u);
     }
 
-    void PassHierarchicalDepth::Compute(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassHierarchicalDepth::Compute(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
         auto view = context->views[0];
@@ -64,6 +64,6 @@ namespace PK::App
 
         RHI::SetImageArray(hash->pk_ImageArray, images, ranges, 13ull);
         RHI::SetImage(hash->pk_Image6, resources->hierarchicalDepth.get(), { 6, 0, 1, 2 });
-        cmd.Dispatch(m_computeHierachicalDepth, 0u, uint3(256u * groupCountX, groupCountY, 1));
+        graph.Dispatch(queue, m_computeHierachicalDepth, 0u, uint3(256u * groupCountX, groupCountY, 1));
     }
 }

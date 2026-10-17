@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/MeshUtilities.h"
 #include "Core/Math/Extended.h"
 #include "Core/CLI/Log.h"
@@ -127,22 +127,22 @@ namespace PK
             desc.meshlets.pMeshlets[i].triangleFirst += meshletTriangleFirst;
         }
 
-        auto commandBuffer = CommandBufferExt(RHI::GetCommandBuffer(QueueType::Transfer));
-        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pSubmeshes, offsetMeshletSubmesh,   sizeMeshletSubmeshes);
-        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pMeshlets,  offsetMeshlet,          sizeMeshlets);
-        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pVertices,  offsetMeshletVertex,    sizeMeshletVertices);
-        commandBuffer.UploadBufferData(m_meshletBuffer.get(), desc.meshlets.pIndices,   offsetMeshletIndex,     sizeMeshletIndices);
+        auto graph = RenderGraphExt(RHI::GetGraph());
+        graph.UploadBufferData(QueueType::Transfer, m_meshletBuffer.get(), desc.meshlets.pSubmeshes, offsetMeshletSubmesh, sizeMeshletSubmeshes);
+        graph.UploadBufferData(QueueType::Transfer, m_meshletBuffer.get(), desc.meshlets.pMeshlets, offsetMeshlet, sizeMeshlets);
+        graph.UploadBufferData(QueueType::Transfer, m_meshletBuffer.get(), desc.meshlets.pVertices, offsetMeshletVertex, sizeMeshletVertices);
+        graph.UploadBufferData(QueueType::Transfer, m_meshletBuffer.get(), desc.meshlets.pIndices,   offsetMeshletIndex,     sizeMeshletIndices);
 
-        auto indexView = commandBuffer.BeginBufferWrite<uint8_t>(m_indexBuffer.get(), offsetIndices, sizeIndices);
+        auto indexView = graph.BeginBufferWrite<uint8_t>(m_indexBuffer.get(), offsetIndices, sizeIndices);
         MeshUtilities::CopyIndexBuffer(indexView.data, desc.regular.pIndices, desc.regular.indexCount, desc.regular.indexSize, strideIndex);
-        commandBuffer.EndBufferWrite(m_indexBuffer.get(), indexView);
+        graph.EndBufferWrite(QueueType::Transfer, m_indexBuffer.get(), indexView);
 
         // Align vertices into split layout if necessary
         MeshUtilities::AlignVertexStreams(desc.regular.pVertices, desc.regular.vertexCount, desc.regular.streamLayout, m_streamLayout);
-        commandBuffer.UploadBufferData(m_vertexBuffers[0].get(), (char*)desc.regular.pVertices + 0ull,           offsetAttributes, sizeAttributes);
-        commandBuffer.UploadBufferData(m_vertexBuffers[1].get(), (char*)desc.regular.pVertices + sizeAttributes, offsetPositions,  sizePositions);
+        graph.UploadBufferData(QueueType::Transfer, m_vertexBuffers[0].get(), (char*)desc.regular.pVertices + 0ull, offsetAttributes, sizeAttributes);
+        graph.UploadBufferData(QueueType::Transfer, m_vertexBuffers[1].get(), (char*)desc.regular.pVertices + sizeAttributes, offsetPositions,  sizePositions);
 
-        m_uploadFence = commandBuffer->GetFenceRef();
+        m_uploadFence = graph->GetFenceRef();
 
         return allocation;
     }
@@ -363,7 +363,7 @@ namespace PK
         FixedString128 vertexBufferName({ name, ".VertexBuffer" });
         FixedString128 indexBufferName({ name, ".IndexBuffer" });
 
-        auto commandBuffer = CommandBufferExt(RHI::GetCommandBuffer(QueueType::Transfer));
+        auto graph = RenderGraphExt(RHI::GetGraph());
         
         auto pVertices = (char*)desc.pVertices;
         auto bufferCount = 0u;
@@ -378,16 +378,16 @@ namespace PK
         {
             auto size = desc.streamLayout.GetStride(bufferCount) * desc.vertexCount;
             vertexBuffers[bufferCount] = RHI::CreateBuffer(size, BufferUsage::DefaultVertex, FixedString128({ vertexBufferName.c_str(), bufferNames[bufferCount].c_str() }));
-            commandBuffer.UploadBufferData(vertexBuffers[bufferCount].get(), pVertices);
+            graph.UploadBufferData(QueueType::Transfer, vertexBuffers[bufferCount].get(), pVertices);
             pVertices += size;
         }
 
         auto indexBuffer = RHI::CreateBuffer(desc.indexSize * desc.indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str());
-        commandBuffer.UploadBufferData(indexBuffer.get(), desc.pIndices);
+        graph.UploadBufferData(QueueType::Transfer, indexBuffer.get(), desc.pIndices);
 
         SetResources(indexBuffer, desc.indexSize, desc.streamLayout, vertexBuffers, bufferCount, desc.pSubmeshes, desc.submeshCount);
 
-        m_uploadFence = commandBuffer->GetFenceRef();
+        m_uploadFence = graph->GetFenceRef();
     }
 
     void Mesh::SetResources(const RHIBufferRef& indexBuffer,

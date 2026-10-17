@@ -10,9 +10,7 @@
 
 namespace PK
 {
-    VulkanDriver::VulkanDriver(const VulkanDriverDescriptor& properties) : 
-        properties(properties),
-        globalResources(PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE, PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT)
+    VulkanDriver::VulkanDriver(const VulkanDriverDescriptor& properties) : properties(properties)
     {
         // Disable potential random overlay crap.
         #if PK_PLATFORM_WINDOWS
@@ -109,7 +107,7 @@ namespace PK
         VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
         physicalDeviceProperties = VulkanGetPhysicalDeviceProperties(physicalDevice);
 
-        VulkanQueueSetInitializer queueInitializer(physicalDevice, temporarySurface, properties);
+        VulkanQueueSetInitializer queueInitializer(physicalDevice, temporarySurface);
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
@@ -146,19 +144,24 @@ namespace PK
         pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.enablePipelineCache, properties.gcPruneDelay);
         samplerCache.New(device);
         layoutCache.New(device);
-        resourceState.New();
-
-        queues.New(this, queueInitializer);
-
+        stagingArena.New(device, allocator, queueInitializer.selectedAll, properties.stagingArenaSize);
+        descriptorArena.New(device, allocator, queueInitializer.selectedAll, physicalDeviceProperties, properties.descriptorArenaSize);
+        timerArena.New(device, physicalDeviceProperties.core.limits.timestampPeriod);
+        queues.New(device, descriptorArena->GetDeviceAddress(), queueInitializer);
+        graph.New(this);
         builtInResources.New();
     }
 
     VulkanDriver::~VulkanDriver()
     {
         builtInResources.Delete();
+        graph.Delete();
 
         vkDeviceWaitIdle(device);
 
+        timerArena.Delete();
+        descriptorArena.Delete();
+        stagingArena.Delete();
         samplerCache.Delete();
         pipelineCache.Delete();
         layoutCache.Delete();
@@ -240,30 +243,12 @@ namespace PK
     RHIShaderRef VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return shaderPool.CreateRef(this, base, pVariant, name); }
     RHISwapchainScope VulkanDriver::CreateSwapchain(const SwapchainDescriptor& descriptor) { return CreateUnique<VulkanSwapchain>(this, descriptor); }
 
-    #define PK_VK_BIND_HANDLES(name, assigner, count)\
-        auto handles = PK_STACK_ALLOC(const VulkanBindHandle*, count);\
-        for (auto i = 0u; i < (uint32_t)count; ++i) handles[i] = assigner;\
-        globalResources.Set(name, handles, (uint32_t)count)                   
-
-    void VulkanDriver::SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, buffers[i]->GetNativeView<VulkanBindHandle>(ranges[i]), count); }
-    void VulkanDriver::SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) { globalResources.Set(name, static_cast<const VulkanBindSet*>(bufferArray)); }
-    void VulkanDriver::SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, textures[i]->GetNativeView<VulkanBindHandle>(ranges[i], TextureViewMode::SRV), count); }
-    void VulkanDriver::SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureArray) { globalResources.Set(name, static_cast<const VulkanBindSet*>(textureArray)); }
-    void VulkanDriver::SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_HANDLES(name, images[i]->GetNativeView<VulkanBindHandle>(ranges[i], TextureViewMode::UAV), count); }
-    void VulkanDriver::SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) { PK_VK_BIND_HANDLES(name, samplerCache->GetBindHandle(samplers[i]), count); }
-    void VulkanDriver::SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) { PK_VK_BIND_HANDLES(name, static_cast<VulkanAccelerationStructure*>(structures[i])->GetBindHandle(), count); }
-    void VulkanDriver::SetConstant(NameID name, const void* data, uint32_t size) { globalResources.Set<char>(name, static_cast<const char*>(data), size); }
-    void VulkanDriver::SetKeyword(NameID name, bool value) { globalResources.Set<bool>(name, value); }
-
-    #undef PK_VK_BIND_HANDLES
-
     void VulkanDriver::GC()
     {
         pipelineCache->Prune();
         disposer->Prune();
         queues->Prune();
         layoutCache->Prune();
-        arena.Clear();
     }
 
 

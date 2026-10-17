@@ -18,7 +18,7 @@ PFN_vkCreateDebugUtilsMessengerEXT pkfn_vkCreateDebugUtilsMessengerEXT = nullptr
 PFN_vkDestroyDebugUtilsMessengerEXT pkfn_vkDestroyDebugUtilsMessengerEXT = nullptr;
 PFN_vkSubmitDebugUtilsMessageEXT pkfn_vkSubmitDebugUtilsMessageEXT = nullptr;
 
-PFN_vkCreateAccelerationStructureKHR pkfn_vkCreateAccelerationStructureKHR = nullptr;
+PFN_vkCreateAccelerationStructure2KHR pkfn_vkCreateAccelerationStructure2KHR = nullptr;
 PFN_vkDestroyAccelerationStructureKHR pkfn_vkDestroyAccelerationStructureKHR = nullptr;
 PFN_vkCmdSetRayTracingPipelineStackSizeKHR pkfn_vkCmdSetRayTracingPipelineStackSizeKHR = nullptr;
 PFN_vkCmdTraceRaysIndirectKHR pkfn_vkCmdTraceRaysIndirectKHR = nullptr;
@@ -71,6 +71,7 @@ namespace PK
         maximalReconvergence.pNext = &quadControl;
         quadControl.pNext = &descriptorBuffer;
         descriptorBuffer.pNext = &unifiedLayout;
+        unifiedLayout.pNext = &deviceAddressCommands;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -282,6 +283,7 @@ namespace PK
             PK_TEST_FEATURE(descriptorBuffer.descriptorBufferPushDescriptors)
             PK_TEST_FEATURE(unifiedLayout.unifiedImageLayouts)
             PK_TEST_FEATURE(unifiedLayout.unifiedImageLayoutsVideo)
+            PK_TEST_FEATURE(deviceAddressCommands.deviceAddressCommands)
         }
         
         #undef PK_TEST_FEATURE
@@ -323,8 +325,6 @@ namespace PK
         bindHandle.image.range = createInfo.subresourceRange;
         bindHandle.image.samples = (uint16_t)createInfo.samples;
         bindHandle.image.sampler = VK_NULL_HANDLE;
-        bindHandle.isConcurrent = createInfo.isConcurrent;
-        bindHandle.isTracked = createInfo.isTracked;
     }
 
     VulkanImageView::~VulkanImageView()
@@ -332,19 +332,25 @@ namespace PK
         vkDestroyImageView(device, view, nullptr);
     }
 
-    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name) : device(device)
+    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name) : 
+        device(device),
+        bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)
     {
         VK_ASSERT_RESULT_CTX(vkCreateGraphicsPipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, name);
     }
 
-    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo, const char* name) : device(device)
+    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo, const char* name) : 
+        device(device),
+        bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE)
     {
         VK_ASSERT_RESULT_CTX(vkCreateComputePipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, name);
     }
 
-    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkRayTracingPipelineCreateInfoKHR& createInfo, const char* name) : device(device)
+    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkRayTracingPipelineCreateInfoKHR& createInfo, const char* name) : 
+        device(device),
+        bindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
     {
         VK_ASSERT_RESULT_CTX(vkCreateRayTracingPipelinesKHR(device, VK_NULL_HANDLE, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, name);
@@ -358,7 +364,8 @@ namespace PK
 
     VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo, const char* name) :
         device(device),
-        pushConstantStageFlags(createInfo.pPushConstantRanges->stageFlags)
+        pushConstantStageFlags(createInfo.pPushConstantRanges->stageFlags),
+        pushConstantSize(createInfo.pPushConstantRanges->size)
     {
         VK_ASSERT_RESULT_CTX(vkCreatePipelineLayout(device, &createInfo, nullptr, &layout), "Failed to create a pipeline layout!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)layout, name);
@@ -448,7 +455,7 @@ namespace PK
         pkfn_vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
         pkfn_vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 
-        pkfn_vkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkCreateAccelerationStructureKHR");
+        pkfn_vkCreateAccelerationStructure2KHR = (PFN_vkCreateAccelerationStructure2KHR)vkGetInstanceProcAddr(instance, "vkCreateAccelerationStructure2KHR");
         pkfn_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkDestroyAccelerationStructureKHR");
         pkfn_vkCmdSetRayTracingPipelineStackSizeKHR = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR)vkGetInstanceProcAddr(instance, "vkCmdSetRayTracingPipelineStackSizeKHR");
         pkfn_vkCmdTraceRaysIndirectKHR = (PFN_vkCmdTraceRaysIndirectKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysIndirectKHR");
@@ -2009,6 +2016,48 @@ namespace PK
             }
 
             return supported;
+        }
+
+        VkAccessFlags2 GetQueueFlagsAccessCapabilities(VkQueueFlags flags)
+        {
+            VkAccessFlags2 capabilities = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT;
+
+            if (flags & (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT))
+            {
+                capabilities |= VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT;
+            }
+
+            if (flags & (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT))
+            {
+                capabilities |=
+                    VK_ACCESS_2_SHADER_READ_BIT |
+                    VK_ACCESS_2_SHADER_WRITE_BIT |
+                    VK_ACCESS_2_UNIFORM_READ_BIT |
+                    VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |
+                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
+                    VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT |
+                    VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT |
+                    VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR |
+                    VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+            }
+
+            if (flags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                capabilities |=
+                    VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT |
+                    VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
+                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                    VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT |
+                    VK_ACCESS_2_INDEX_READ_BIT |
+                    VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT |
+                    VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT |
+                    VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT |
+                    VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT |
+                    VK_ACCESS_2_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
+            }
+
+            return capabilities;
         }
 
         VkPipelineStageFlags2 GetPipelineStageFlags(VkShaderStageFlags flags)

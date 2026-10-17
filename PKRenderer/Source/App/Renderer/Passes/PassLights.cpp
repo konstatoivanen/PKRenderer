@@ -6,7 +6,7 @@
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/TextureAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
@@ -153,7 +153,7 @@ namespace PK::App
         const auto shadowCascadeZSplits = math::cascadeDepths4<float>(view->znear, view->zfar, m_cascadeDistribution, tileZParams);
         view->constants.Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
         view->constants.Set<float4>(hash->pk_LightTileZParams, float4(tileZParams, 0.0f));
-        RHI::GetQueues()->GetCommandBuffer(QueueType::Transfer)->Clear(m_lightsCounter.get(), 0, sizeof(uint32_t), 0u);
+        RHI::GetGraph()->Clear(QueueType::Transfer, m_lightsCounter.get(), 0, sizeof(uint32_t), 0u);
     }
 
     void PassLights::BuildLights(RenderPipelineContext* context)
@@ -202,9 +202,9 @@ namespace PK::App
         RHI::ValidateBuffer<PackedLight>(m_lightsBuffer, lightCount + 1u);
         RHI::ValidateBuffer<float4x4>(m_lightMatricesBuffer, matrixCount);
 
-        CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-        auto packedLights = cmd.BeginBufferWrite<PackedLight>(m_lightsBuffer.get(), 0u, lightCount + 1u);
-        auto matricesView = matrixCount > 0u ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : StagingBufferView<float4x4>();
+        RenderGraphExt graph = RHI::GetGraph();
+        auto packedLights = graph.BeginBufferWrite<PackedLight>(m_lightsBuffer.get(), 0u, lightCount + 1u);
+        auto matricesView = matrixCount > 0u ? graph.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : StagingBufferView<float4x4>();
 
         for (auto lightIndex = 0u; lightIndex < lightCount; ++lightIndex)
         {
@@ -326,8 +326,8 @@ namespace PK::App
         // Empty last one for clustering
         packedLights[lightCount] = PackedLight();
 
-        cmd.EndBufferWrite(m_lightsBuffer.get(), packedLights);
-        cmd.EndBufferWrite(m_lightMatricesBuffer.get(), matricesView);
+        graph.EndBufferWrite(QueueType::Transfer, m_lightsBuffer.get(), packedLights);
+        graph.EndBufferWrite(QueueType::Transfer, m_lightMatricesBuffer.get(), matricesView);
         RHI::ValidateTexture(m_shadowmaps, 1u, math::max(m_shadowmaps->GetLayers(), shadowCount + ShadowCascadeCount));
 
         auto hash = HashCache::Get();
@@ -337,7 +337,7 @@ namespace PK::App
         RHI::SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
     }
 
-    void PassLights::RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassLights::RenderShadows(RenderGraphExt graph, RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
         auto renderView = context->views[0];
@@ -360,7 +360,7 @@ namespace PK::App
             auto tileCount = shadow.TileCount * batch.count;
             auto keyword = passKeywords[(uint32_t)batch.type];
 
-            cmd->BeginDebugScope("ShadowBatch", PK_COLOR_RED);
+            graph->BeginDebugScope("ShadowBatch", PK_COLOR_RED);
 
             auto range0 = TextureViewRange(0, 0, 0, shadow.LayerStride * batch.count);
             auto range1 = TextureViewRange(0u, atlasIndex, 1u, tileCount);
@@ -369,28 +369,28 @@ namespace PK::App
             {
                 auto targetDepth = RenderTargetBinding(m_depthTargetCube.get(), range0, LoadOp::Clear, StoreOp::Discard, { PK_CLIPZ_FAR, 0u });
                 auto targetDist = RenderTargetBinding(m_shadowTargetCube.get(), range0, LoadOp::Clear, StoreOp::Store, float4(PK_HALF_MAX) );
-                cmd.SetRenderTarget({ targetDepth, targetDist }, true);
-                context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
+                graph.SetRenderTarget({ targetDepth, targetDist }, true);
+                context->batcher->RenderGroup(graph, batch.batchGroup, nullptr, keyword);
 
                 RHI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
                 RHI::SetImage(hash->pk_Image, m_shadowmaps.get(), range1);
-                cmd.Dispatch(m_computeCopyCubeShadow, 0, { m_shadowmaps->GetResolution().xy, tileCount });
+                graph.Dispatch(QueueType::Graphics, m_computeCopyCubeShadow, 0, { m_shadowmaps->GetResolution().xy, tileCount });
             }
             else
             {
                 auto targetDepth = RenderTargetBinding(m_depthTarget2D.get(), range0, LoadOp::Clear, StoreOp::Discard, { PK_CLIPZ_FAR, 0u });
                 auto targetDist = RenderTargetBinding(m_shadowmaps.get(), range1, LoadOp::Clear, StoreOp::Store, float4(PK_HALF_MAX));
-                cmd.SetRenderTarget({ targetDepth, targetDist }, true);
-                context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
+                graph.SetRenderTarget({ targetDepth, targetDist }, true);
+                context->batcher->RenderGroup(graph, batch.batchGroup, nullptr, keyword);
             }
 
-            cmd->EndDebugScope();
+            graph->EndDebugScope();
 
             atlasIndex += tileCount;
         }
     }
 
-    void PassLights::RenderScreenSpaceShadows(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassLights::RenderScreenSpaceShadows(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto renderView = context->views[0];
         auto resources = renderView->GetResource<ViewResources>();
@@ -405,7 +405,7 @@ namespace PK::App
         auto resolution = renderView->GetResolution();
         auto quarterResolution = uint3(resolution.x >> 1u, resolution.y >> 1u, 1u);
 
-        cmd->BeginDebugScope("ScreenSpaceShadows", PK_COLOR_RED);
+        graph->BeginDebugScope("ScreenSpaceShadows", PK_COLOR_RED);
 
         {
             TextureDescriptor screenSpaceDesc;
@@ -428,11 +428,11 @@ namespace PK::App
         RHI::SetTexture(hash->pk_ShadowmapScreenSpace, resources->screenSpaceShadowmap.get());
 
         RHI::SetImage(hash->pk_Image, resources->screenSpaceShadowmapDownsampled.get());
-        cmd.Dispatch(m_computeScreenSpaceShadow, 0, quarterResolution);
+        graph.Dispatch(queue, m_computeScreenSpaceShadow, 0, quarterResolution);
 
         RHI::SetTexture(hash->pk_Texture, resources->screenSpaceShadowmapDownsampled.get());
         RHI::SetImage(hash->pk_Image, resources->screenSpaceShadowmap.get());
-        cmd.Dispatch(m_computeScreenSpaceShadow, 1, resolution);
+        graph.Dispatch(queue, m_computeScreenSpaceShadow, 1, resolution);
 
         // Bend screen space shadows.
         // https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/
@@ -459,13 +459,13 @@ namespace PK::App
             dim.x = 64 * dispatch.WaveCount[0];
             dim.y = 1 * dispatch.WaveCount[1];
             dim.z = 1 * dispatch.WaveCount[2];
-            cmd.Dispatch(m_computeScreenSpaceShadow, 2, dim);
+            graph.Dispatch(queue, m_computeScreenSpaceShadow, 2, dim);
         }
 
-        cmd->EndDebugScope();
+        graph->EndDebugScope();
     }
 
-    void PassLights::ComputeClusters(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassLights::ComputeClusters(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
         auto renderView = context->views[0];
@@ -483,7 +483,7 @@ namespace PK::App
         TextureDescriptor imageDescriptor;
         imageDescriptor.type = TextureType::Texture3D;
         imageDescriptor.format = TextureFormat::R32_Uint;
-        imageDescriptor.usage = TextureUsage::Storage | TextureUsage::Concurrent;
+        imageDescriptor.usage = TextureUsage::Storage;
         imageDescriptor.resolution = resolution;
         imageDescriptor.sampler.filterMin = FilterMode::Point;
         imageDescriptor.sampler.filterMag = FilterMode::Point;
@@ -501,7 +501,7 @@ namespace PK::App
             RHI::SetBuffer(hash->pk_LightLists, resources->lightsLists.get());
         }
 
-        cmd.Dispatch(m_computeLightAssignment, resolution);
+        graph.Dispatch(queue, m_computeLightAssignment, resolution);
     }
 
     void PassLights::BuildShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices)

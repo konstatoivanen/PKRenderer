@@ -9,7 +9,7 @@ namespace PK::App
     {
         virtual ~IBatcher() = default;
         virtual void BeginCollectDrawCalls() = 0;
-        virtual void EndCollectDrawCalls(CommandBufferExt cmd) = 0;
+        virtual void EndCollectDrawCalls(RenderGraphExt graph) = 0;
         virtual uint32_t BeginNewGroup() = 0;
         virtual void SubmitMeshStaticDraw(ComponentTransform* transform,
             ShaderAsset* shader,
@@ -19,7 +19,7 @@ namespace PK::App
             uint32_t userdata,
             uint16_t sortDepth) = 0;
 
-        virtual bool RenderGroup(CommandBufferExt cmd,
+        virtual bool RenderGroup(RenderGraphExt graph,
             uint32_t group,
             FixedFunctionShaderAttributes* overrideAttributes = nullptr,
             uint32_t requireKeyword = 0u) = 0;

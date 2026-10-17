@@ -118,8 +118,7 @@ namespace PK::App
 
             RHI::SetImage(hash->pk_Image, m_integratedDFG.get());
             RHI::SetTexture(hash->pk_PreIntegratedDFG, m_integratedDFG.get());
-            CommandBufferExt(RHI::GetCommandBuffer(QueueType::Graphics)).Dispatch(integrateDFGShader, { 128, 128, 1 });
-            RHI::GetQueues()->Submit(QueueType::Graphics);
+            RenderGraphExt(RHI::GetGraph()).Dispatch(QueueType::Graphics, integrateDFGShader, { 128, 128, 1 });
         }
     }
 
@@ -135,7 +134,7 @@ namespace PK::App
 
         for (auto& entityView : entityViews)
         {
-            uint4 viewrect = entityView.renderView->desiredRect;
+            auto viewrect = entityView.renderView->desiredRect;
 
             if (entityView.renderView->isWindowTarget)
             {
@@ -213,17 +212,14 @@ namespace PK::App
 
         Render(&context);
 
-        auto* cmdgraphics = RHI::GetCommandBuffer(QueueType::Graphics);
-
         // @TODO composite multiple views to an intermediate window target
-
         for (auto i = 0u; i < m_renderViewCount; ++i)
         {
             auto view = &m_renderViews[i];
 
             if (view->isWindowTarget && view->gbuffers.current.color)
             {
-                cmdgraphics->Blit(view->gbuffers.current.color.get(), window->GetSwapchain(), FilterMode::Bilinear);
+                RHI::GetGraph()->Blit(QueueType::Graphics, view->gbuffers.current.color.get(), window->GetSwapchain(), FilterMode::Bilinear);
             }
         }
     }
@@ -250,7 +246,7 @@ namespace PK::App
         }
     }
 
-    void RenderPipelineBase::DispatchRenderPipelineEvent(RHICommandBuffer* cmd, RenderPipelineContext* context, RenderPipelineEvent::Type type)
+    void RenderPipelineBase::DispatchRenderPipelineEvent(RHIGraph* graph, RenderPipelineContext* context, RenderPipelineEvent::Type type)
     {
         // all active views should be of the same type
         auto view = context->views[0];
@@ -258,19 +254,19 @@ namespace PK::App
         if (type != RenderPipelineEvent::CollectDraws)
         {
             FixedString64 name({ "RenderViewEvt.", view->name, ".", String::To(type)});
-            cmd->BeginDebugScope(name, PK_COLOR_GREEN);
+            graph->BeginDebugScope(name, PK_COLOR_GREEN);
         }
 
         RenderPipelineEvent event;
         event.type = type;
-        event.cmd = cmd;
+        event.graph = graph;
         event.context = context;
 
         context->sequencer->Next<RenderPipelineEvent*>(this, &event);
 
         if (type != RenderPipelineEvent::CollectDraws)
         {
-            cmd->EndDebugScope();
+            graph->EndDebugScope();
         }
     }
 }

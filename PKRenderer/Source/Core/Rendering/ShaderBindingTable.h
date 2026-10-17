@@ -13,6 +13,6 @@ namespace PK
         ShaderBindingTableInfo tableInfo{};
         uint64_t pipelineHash = 0ull;
         uint32_t currentVariantIndex = 0u;
-        void Validate(CommandBufferExt cmd, ShaderAsset* shader, int32_t variantIndex = -1);
+        void Validate(RenderGraphExt graph, QueueType queue, ShaderAsset* shader, int32_t variantIndex = -1);
     };
 }

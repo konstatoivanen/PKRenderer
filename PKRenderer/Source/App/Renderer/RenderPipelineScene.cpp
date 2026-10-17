@@ -159,10 +159,7 @@ namespace PK::App
     void RenderPipelineScene::Render(RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
-        auto queues = RHI::GetQueues();
-        auto* cmdtransfer = queues->GetCommandBuffer(QueueType::Transfer);
-        auto* cmdcompute = queues->GetCommandBuffer(QueueType::Compute);
-        CommandBufferExt cmdgraphics = queues->GetCommandBuffer(QueueType::Graphics);
+        RenderGraphExt graph = RHI::GetGraph();
         
         for (auto i = 0u; i < context->viewCount; ++i)
         {
@@ -260,7 +257,7 @@ namespace PK::App
             m_passFilmGrain.SetViewConstants(view);
             m_temporalAntialiasing.SetViewConstants(view);
             m_passPostEffectsComposite.SetViewConstants(view);
-            constants->EndWrite(cmdtransfer);
+            constants->EndWrite(graph, QueueType::Transfer);
         }
 
         // @TODO add multi view support
@@ -278,122 +275,92 @@ namespace PK::App
         // Clear 'previous' targets if they've been reallocated 
         if (primaryView->IsResizeFrame())
         {
-            cmdgraphics->Clear(gbuffers.previous.color, {}, PK_FLOAT4_ZERO);
-            cmdgraphics->Clear(gbuffers.previous.normals, {}, float4(0.5f, 0.5f, 0.0f, 0.0f));
-            cmdgraphics->Clear(gbuffers.previous.depth, {}, TextureClearValue(PK_CLIPZ_FAR, 0u));
-            cmdgraphics->Clear(gbuffers.previous.depthBiased, {}, float4(PK_CLIPZ_FAR));
-            queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
-            queues->Wait(QueueType::Transfer, QueueType::Graphics);
-            queues->Wait(QueueType::Compute, QueueType::Graphics);
+            graph->Clear(QueueType::Graphics, gbuffers.previous.color, {}, PK_FLOAT4_ZERO);
+            graph->Clear(QueueType::Graphics, gbuffers.previous.normals, {}, float4(0.5f, 0.5f, 0.0f, 0.0f));
+            graph->Clear(QueueType::Graphics, gbuffers.previous.depth, {}, TextureClearValue(PK_CLIPZ_FAR, 0u));
+            graph->Clear(QueueType::Graphics, gbuffers.previous.depthBiased, {}, float4(PK_CLIPZ_FAR));
         }
 
         context->batcher->BeginCollectDrawCalls();
         {
-            DispatchRenderPipelineEvent(cmdtransfer, context, RenderPipelineEvent::CollectDraws);
+            DispatchRenderPipelineEvent(graph, context, RenderPipelineEvent::CollectDraws);
             m_passLights.BuildLights(context);
         }
-        context->batcher->EndCollectDrawCalls(cmdtransfer);
-
-        // End transfer operations
-        // Transfer needs to wait for last frames async rt geometry builds which is submitted next funnily enough.
-        queues->Wait(QueueType::Transfer, QueueType::Compute, 1);
-        queues->Submit(QueueType::Transfer);
-        
-        // Only buffering needs to wait for previous results.
-        // Eliminate redundant rendering waits by waiting for transfer instead.
-        context->window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
+        context->batcher->EndCollectDrawCalls(graph);
 
         // Prune voxels & build AS.
         // These can happen before the end of last frame. 
-        m_passSceneGI.PruneVoxels(cmdcompute);
+        m_passSceneGI.PruneVoxels(graph, QueueType::Compute);
         context->cullingProxy->CullRayTracingGeometry(ScenePrimitiveFlags::DefaultMesh, AABB<float3>(), false, QueueType::Compute, m_sceneStructure.get());
         RHI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
-        queues->Submit(QueueType::Compute, &cmdcompute);
 
         // Async compute during last present.
-        m_passFilmGrain.Compute(cmdcompute);
-        m_passLights.ComputeClusters(cmdcompute, context);
-        m_autoExposure.Render(cmdcompute, context);
-        m_depthOfField.ComputeAutoFocus(cmdcompute, context);
-        m_passSceneEnv.PreCompute(cmdcompute, context);
-        m_passSceneGI.VoxelMips(cmdcompute);
-        m_passSceneGI.ValidateReservoirs(cmdcompute, context);
-        queues->Wait(QueueType::Compute, QueueType::Transfer);
-        queues->Submit(QueueType::Compute, &cmdcompute);
+        m_passFilmGrain.Compute(graph, QueueType::Compute);
+        m_passLights.ComputeClusters(graph, QueueType::Compute, context);
+        m_autoExposure.Render(graph, QueueType::Compute, context);
+        m_depthOfField.ComputeAutoFocus(graph, QueueType::Compute, context);
+        m_passSceneEnv.PreCompute(graph, QueueType::Compute, context);
+        m_passSceneGI.VoxelMips(graph, QueueType::Compute);
+        m_passSceneGI.ValidateReservoirs(graph, QueueType::Compute, context);
 
         // Depth pre pass. Meshlet cull based on prev frame hizb
-        cmdgraphics.SetRenderTarget({ gbuffers.current.depth, LoadOp::Clear, StoreOp::Store, { PK_CLIPZ_FAR, 0 } }, true);
-        cmdgraphics->SetStageExcludeMask(ShaderStageFlags::Fragment);
-        DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::Depth);
-        cmdgraphics->SetStageExcludeMask(ShaderStageFlags::None);
+        graph.SetRenderTarget({ gbuffers.current.depth, LoadOp::Clear, StoreOp::Store, { PK_CLIPZ_FAR, 0 } }, true);
+        graph->SetStageExcludeMask(ShaderStageFlags::Fragment);
+        DispatchRenderPipelineEvent(graph, context, RenderPipelineEvent::Depth);
+        graph->SetStageExcludeMask(ShaderStageFlags::None);
 
         // Gbuffer pass & possible depth writes from invalid z culls.
         {
             auto targetDepth = RenderTargetBinding(gbuffers.current.depth, LoadOp::Load, StoreOp::None);
             auto targetNormals = RenderTargetBinding(gbuffers.current.normals, LoadOp::Clear, StoreOp::Store, float4(0.5f, 0.5f, 0.0f, 0.0f));
             auto targetDepthBiased = RenderTargetBinding(gbuffers.current.depthBiased, LoadOp::Clear, StoreOp::Store, PK_COLOR_CLEAR);
-            cmdgraphics.SetRenderTarget({ targetDepth, targetNormals, targetDepthBiased }, true);
-            DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::GBuffer);
+            graph.SetRenderTarget({ targetDepth, targetNormals, targetDepthBiased }, true);
+            DispatchRenderPipelineEvent(graph, context, RenderPipelineEvent::GBuffer);
         }
 
-        m_passHierarchicalDepth.Compute(cmdgraphics, context);
-        m_passVolumetricFog.ComputeDensity(cmdgraphics, context);
-        queues->Wait(QueueType::Graphics, QueueType::Transfer);
-        queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
-
+        m_passHierarchicalDepth.Compute(graph, QueueType::Graphics, context);
+        m_passVolumetricFog.ComputeDensity(graph, QueueType::Graphics, context);
         // Indirect GI ray tracing
-        m_passSceneGI.DispatchRays(cmdcompute, context);
-        queues->Wait(QueueType::Compute, QueueType::Graphics);
-        // Queue graphics wait for misc async compute
-        queues->Wait(QueueType::Graphics, QueueType::Compute);
-        queues->Submit(QueueType::Compute, &cmdcompute);
+        m_passSceneGI.DispatchRays(graph, QueueType::Compute, context);
 
         // Shadows, Voxelize scene & reproject gi
-        m_passLights.RenderShadows(cmdgraphics, context);
-        m_passSceneGI.Voxelize(cmdgraphics, context);
-        m_passLights.RenderScreenSpaceShadows(cmdgraphics, context);
-        m_passSceneGI.ReprojectGI(cmdgraphics, context);
-        m_passVolumetricFog.Compute(cmdgraphics, context);
-        queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
-
-        m_passSceneGI.RenderGI(cmdgraphics, context);
+        m_passLights.RenderShadows(graph, context);
+        m_passSceneGI.Voxelize(graph, context);
+        m_passLights.RenderScreenSpaceShadows(graph, QueueType::Graphics, context);
+        m_passSceneGI.ReprojectGI(graph, QueueType::Graphics, context);
+        m_passVolumetricFog.Compute(graph, QueueType::Graphics, context);
+        m_passSceneGI.RenderGI(graph, QueueType::Graphics, context);
 
         // Forward Opaque on graphics queue
         {
             auto targetDepth = RenderTargetBinding(gbuffers.current.depth, LoadOp::Load, StoreOp::None);
             auto targetColor = RenderTargetBinding(gbuffers.current.color, LoadOp::Clear, StoreOp::Store, PK_COLOR_CLEAR);
-            cmdgraphics.SetRenderTarget({ targetDepth, targetColor }, true);
-            DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardOpaque);
+            graph.SetRenderTarget({ targetDepth, targetColor }, true);
+            DispatchRenderPipelineEvent(graph, context, RenderPipelineEvent::ForwardOpaque);
 
-            m_passSceneEnv.RenderBackground(cmdgraphics, context);
-            m_passVolumetricFog.Render(cmdgraphics, gbuffers.current.color);
+            m_passSceneEnv.RenderBackground(graph, context);
+            m_passVolumetricFog.Render(graph, QueueType::Graphics, gbuffers.current.color);
 
-            DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardTransparent);
+            DispatchRenderPipelineEvent(graph, context, RenderPipelineEvent::ForwardTransparent);
         }
 
         // Cache forward output of current frame
-        cmdgraphics->Blit(gbuffers.current.color, gbuffers.previous.color, {}, {}, FilterMode::Point);
+        graph->Blit(QueueType::Graphics, gbuffers.current.color, gbuffers.previous.color, {}, {}, FilterMode::Point);
 
         // Post Effects
-        cmdgraphics.BeginStatScope(hash->STAT_POSTFX, PK_COLOR_YELLOW);
+        graph.BeginStatScope(hash->STAT_POSTFX, PK_COLOR_YELLOW);
         {
             // Previous color has been updated. leverage that and do taa without extra blit.
-            m_temporalAntialiasing.Render(cmdgraphics, context->views[0], gbuffers.previous.color, gbuffers.current.color);
-            m_depthOfField.Render(cmdgraphics, context, gbuffers.current.color);
-            m_distort.Render(cmdgraphics, context);
-            m_bloom.Render(cmdgraphics, context);
-            m_passPostEffectsComposite.Render(cmdgraphics, gbuffers.current.color);
+            m_temporalAntialiasing.Render(graph, QueueType::Graphics, context->views[0], gbuffers.previous.color, gbuffers.current.color);
+            m_depthOfField.Render(graph, QueueType::Graphics, context, gbuffers.current.color);
+            m_distort.Render(graph, QueueType::Graphics, context);
+            m_bloom.Render(graph, QueueType::Graphics, context);
+            m_passPostEffectsComposite.Render(graph, QueueType::Graphics, gbuffers.current.color);
         }
-        cmdgraphics.EndStatScope();
+        graph.EndStatScope();
 
-        DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::AfterPostEffects);
+        DispatchRenderPipelineEvent(graph, context, RenderPipelineEvent::AfterPostEffects);
 
         primaryView->gbuffers.SwapBuffers();
-
-        queues->Wait(QueueType::Graphics, QueueType::Compute);
-        queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
-        
-        // Sync next frames transfer ops to end of rendering above.
-        queues->Wait(QueueType::Transfer, QueueType::Graphics);
     }
 }

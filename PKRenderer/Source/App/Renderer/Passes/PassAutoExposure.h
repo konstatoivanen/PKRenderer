@@ -15,7 +15,7 @@ namespace PK::App
 
             PassAutoExposure(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void Render(CommandBufferExt cmd, struct RenderPipelineContext* context);
+            void Render(RenderGraphExt graph, QueueType queue, struct RenderPipelineContext* context);
 
         private:
             ShaderAsset* m_compute = nullptr;

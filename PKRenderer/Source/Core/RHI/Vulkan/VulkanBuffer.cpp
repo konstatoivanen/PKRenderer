@@ -12,7 +12,7 @@ namespace PK
         m_size(size),
         m_usage(usage)
     {
-        const auto& queueFamilies = m_driver->queues->GetSelectedFamilies();
+        const auto& queueFamilies = m_driver->queues->GetFamiliesAll();
 
         // All buffers are concurrent. 
         // this doesn't carry penalties on modern hardware, unlike for images which will lose DCC if concurrent.
@@ -72,12 +72,14 @@ namespace PK
             m_defaultView = m_firstView;
         }
 
-        m_driver->resourceState->RegisterBuffer(m_buffer);
+        m_driver->graph->RegisterBuffer(m_buffer);
     }
 
     VulkanBuffer::~VulkanBuffer()
     {
-        auto fence = m_driver->GetQueues()->GetLastSubmitFenceRef();
+        // @TODO LAST SUBMIT FENCE IS NOT SAFE TO USE WITH GRAPH BUILDER
+        // there might be queued resource access that doesn't actually match with whatever command buffer this was used on after delete.
+        auto fence = m_driver->graph->GetFenceRef();
 
         for (auto view : m_firstView)
         {
@@ -96,7 +98,7 @@ namespace PK
         },
         fence);
 
-        m_driver->resourceState->UnregisterResource(m_buffer);
+        m_driver->graph->UnregisterResource(m_buffer);
         m_mappedData = nullptr;
         m_memory = nullptr;
         m_buffer = nullptr;
@@ -143,7 +145,6 @@ namespace PK
         view->buffer.deviceAddress = m_deviceAddress;
         view->buffer.range = range.count;
         view->buffer.offset = range.offset;
-        view->isConcurrent = true;
         m_firstView.Insert(view, range);
         return m_firstView;
     }

@@ -15,7 +15,7 @@ namespace PK::App
 
         PassDistort(AssetDatabase* assetDatabase);
         void SetViewConstants(struct RenderView* view);
-        void Render(CommandBufferExt cmd, struct RenderPipelineContext* ctx);
+        void Render(RenderGraphExt graph, QueueType queue, struct RenderPipelineContext* ctx);
 
     private:
         ShaderAsset* m_computeDistort = nullptr;

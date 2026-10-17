@@ -330,13 +330,7 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanQueue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanPipelineState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanShader.h">
@@ -346,9 +340,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanTexture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.h">
@@ -432,7 +423,7 @@
     <ClInclude Include="Source\Core\Rendering\ShaderAsset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Rendering\CommandBufferExt.h">
+    <ClInclude Include="Source\Core\Rendering\RenderGraphExt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Forward.h">
@@ -786,7 +777,10 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanGraph.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanResourceState.h">
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanAccessRecorder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1062,7 +1056,7 @@
     <ClCompile Include="Source\App\Renderer\Passes\PassVolumetricFog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Rendering\CommandBufferExt.cpp">
+    <ClCompile Include="Source\Core\Rendering\RenderGraphExt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Rendering\ShaderAsset.cpp">
@@ -1077,13 +1071,7 @@
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanQueue.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanPipelineState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanShader.cpp">
@@ -1093,9 +1081,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanTexture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.cpp">
@@ -1302,7 +1287,10 @@
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanGraph.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanResourceState.cpp">
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanAccessRecorder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

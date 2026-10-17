@@ -5,7 +5,7 @@
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Structs.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "IESProfile.h"
 
 namespace PK
@@ -21,7 +21,7 @@ namespace PK
         {
             TextureDescriptor desc{};
             desc.format = PKAssets::PK_IES_PROFILE_FORMAT;
-            desc.usage = TextureUsage::DefaultDisk;
+            desc.usage = TextureUsage::Default;
             desc.type = TextureType::Texture2DArray;
             desc.resolution = { PKAssets::PK_IES_PROFILE_WIDTH, PKAssets::PK_IES_PROFILE_HEIGHT, 1u };
             desc.levels = 1u;
@@ -30,14 +30,11 @@ namespace PK
             desc.sampler.filterMin = FilterMode::Bilinear;
             desc.sampler.filterMag = FilterMode::Bilinear;
             auto newTexture = RHI::CreateTexture(desc, "IESProfile.Atlas");
-            auto cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-
-            // Mark entire resource as readable 
-            cmd->InvalidateTexture(newTexture.get());
+            auto graph = RHI::GetGraph();
 
             if (m_texture != nullptr)
             {
-                cmd->Blit(m_texture.get(), newTexture.get(), {}, {}, FilterMode::Point);
+                graph->Blit(QueueType::Transfer, m_texture.get(), newTexture.get(), {}, {}, FilterMode::Point);
             }
 
             m_texture = newTexture;
@@ -69,8 +66,8 @@ namespace PK
         region.offset = PK_UINT3_ZERO;
         region.extent = m_texture->GetResolution();
 
-        CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-        cmd.UploadTexture(m_texture.get(), profile->data.Get(asset.rawData), PKAssets::PK_IES_PROFILE_DATA_SIZE, &region, 1u);
+        RenderGraphExt graph = RHI::GetGraph();
+        graph.UploadTexture(QueueType::Transfer, m_texture.get(), profile->data.Get(asset.rawData), PKAssets::PK_IES_PROFILE_DATA_SIZE, &region, 1u);
 
         Memory::Construct(memory, this, static_cast<uint32_t>(index) + 1u, profile->lumens, profile->candelaMax, profile->candelaAverage);
         PKAssets::CloseAsset(&asset);

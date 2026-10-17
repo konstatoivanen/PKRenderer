@@ -5,7 +5,7 @@
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/TextureAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
@@ -37,9 +37,9 @@ namespace PK::App
         RHI::SetTexture(HashCache::Get()->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
     }
 
-    void PassBloom::Render(CommandBufferExt cmd, RenderPipelineContext* ctx)
+    void PassBloom::Render(RenderGraphExt graph, QueueType queue, RenderPipelineContext* ctx)
     {
-        cmd->BeginDebugScope("Bloom", PK_COLOR_MAGENTA);
+        graph->BeginDebugScope("Bloom", PK_COLOR_MAGENTA);
 
         auto view = ctx->views[0];
         auto& settings = view->settings.BloomSettings;
@@ -76,13 +76,13 @@ namespace PK::App
         RHI::SetImage(hash->pk_Image, bloom, 0, 0);
         RHI::SetTexture(hash->pk_Bloom_Texture, bloom);
 
-        cmd.Dispatch(m_computeBloom, m_passDownsample0, { resolution.x, resolution.y, 1u });
+        graph.Dispatch(queue, m_computeBloom, m_passDownsample0, { resolution.x, resolution.y, 1u });
 
         for (auto i = 1u; i < levelCount; ++i)
         {
             RHI::SetTexture(hash->pk_Texture, bloom, i - 1u, 0);
             RHI::SetImage(hash->pk_Image, bloom, i, 0);
-            cmd.Dispatch(m_computeBloom, m_passDownsample, { resolution.x >> i, resolution.y >> i, 1u });
+            graph.Dispatch(queue, m_computeBloom, m_passDownsample, { resolution.x >> i, resolution.y >> i, 1u });
         }
 
         for (auto i = int(levelCount) - 2; i >= 0; --i)
@@ -90,9 +90,9 @@ namespace PK::App
             RHI::SetConstant(hash->pk_Bloom_UpsampleWeight, (float(levelCount) - (i + 1.0f)) * settings.Diffusion);
             RHI::SetTexture(hash->pk_Texture, bloom, i + 1u, 0u);
             RHI::SetImage(hash->pk_Image, bloom, i, 0u);
-            cmd.Dispatch(m_computeBloom, m_passUpsample, { resolution.x >> i, resolution.y >> i, 1u });
+            graph.Dispatch(queue, m_computeBloom, m_passUpsample, { resolution.x >> i, resolution.y >> i, 1u });
         }
 
-        cmd->EndDebugScope();
+        graph->EndDebugScope();
     }
 }

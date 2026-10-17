@@ -24,8 +24,8 @@ namespace PK::App
 
             PassSceneEnv(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void PreCompute(CommandBufferExt cmd, struct RenderPipelineContext* context);
-            void RenderBackground(CommandBufferExt cmd, RenderPipelineContext* context);
+            void PreCompute(RenderGraphExt graph, QueueType queue, struct RenderPipelineContext* context);
+            void RenderBackground(RenderGraphExt graph, RenderPipelineContext* context);
 
         private:
             ShaderAsset* m_backgroundShader = nullptr;

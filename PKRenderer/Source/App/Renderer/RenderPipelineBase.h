@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/ControlFlow/IStep.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
 #include "App/Renderer/IBatcher.h"
@@ -45,7 +45,7 @@ namespace PK::App
         } Type;
 
         Type type;
-        CommandBufferExt cmd;
+        RenderGraphExt graph;
         RenderPipelineContext* context;
     };
 
@@ -66,7 +66,7 @@ namespace PK::App
 
             void ValidateViewGBuffers(RenderView* view, const GBuffersFullDescriptor& descriptors);
             void BeginWriteViewConstantBuffer(RenderView* view, IArena* arena, const ShaderPropertyLayout& layout);
-            void DispatchRenderPipelineEvent(RHICommandBuffer* cmd, RenderPipelineContext* context, RenderPipelineEvent::Type type);
+            void DispatchRenderPipelineEvent(RHIGraph* graph, RenderPipelineContext* context, RenderPipelineEvent::Type type);
     
         private:
             Sequencer* m_sequencer = nullptr;

@@ -5,7 +5,7 @@
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/TextureAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
@@ -47,7 +47,7 @@ namespace PK::App
         view->constants.Set<float>(hash->pk_Chromatic_Aberration_Power, settings.ChromaticAberrationPower);
     }
 
-    void PassDistort::Render(CommandBufferExt cmd, RenderPipelineContext* ctx)
+    void PassDistort::Render(RenderGraphExt graph, QueueType queue, RenderPipelineContext* ctx)
     {
         auto view = ctx->views[0];
         auto source = view->gbuffers.GetView().current.color;
@@ -62,7 +62,7 @@ namespace PK::App
             return;
         }
         
-        cmd->BeginDebugScope("Distort", PK_COLOR_MAGENTA);
+        graph->BeginDebugScope("Distort", PK_COLOR_MAGENTA);
 
         {
             TextureDescriptor descriptor{};
@@ -87,12 +87,12 @@ namespace PK::App
 
         RHI::SetTexture(hash->pk_Texture, source, 0, 0);
         RHI::SetImage(hash->pk_Image, distort, 0, 0);
-        cmd.Dispatch(m_computeDistort, 0, { resolution.x, resolution.y, 1u });
+        graph.Dispatch(queue, m_computeDistort, 0, { resolution.x, resolution.y, 1u });
         
         RHI::SetTexture(hash->pk_Texture, distort, 0, 0);
         RHI::SetImage(hash->pk_Image, source, 0, 0);
-        cmd.Dispatch(m_computeDistort, 1, { resolution.x, resolution.y, 1u });
+        graph.Dispatch(queue, m_computeDistort, 1, { resolution.x, resolution.y, 1u });
 
-        cmd->EndDebugScope();
+        graph->EndDebugScope();
     }
 }

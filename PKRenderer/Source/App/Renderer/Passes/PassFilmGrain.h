@@ -9,7 +9,7 @@ namespace PK::App
         public:
             PassFilmGrain(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void Compute(CommandBufferExt cmd);
+            void Compute(RenderGraphExt graph, QueueType queue);
 
         private:
             ShaderAsset* m_computeFilmGrain = nullptr;

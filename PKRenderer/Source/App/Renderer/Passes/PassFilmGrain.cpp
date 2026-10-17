@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
@@ -25,7 +25,7 @@ namespace PK::App
         descriptor.sampler.wrap[0] = WrapMode::Repeat;
         descriptor.sampler.wrap[1] = WrapMode::Repeat;
         descriptor.sampler.wrap[2] = WrapMode::Repeat;
-        descriptor.usage = TextureUsage::DefaultStorage | TextureUsage::Concurrent;
+        descriptor.usage = TextureUsage::DefaultStorage;
         m_filmGrainTexture = RHI::CreateTexture(descriptor, "FilmGrain.Texture");
         RHI::SetTexture(HashCache::Get()->pk_FilmGrain_Texture, m_filmGrainTexture.get());
     }
@@ -39,12 +39,12 @@ namespace PK::App
         view->constants.Set<float>(hash->pk_FilmGrain_ExposureSensitivity, settings.ExposureSensitivity);
     }
 
-    void PassFilmGrain::Compute(CommandBufferExt cmd)
+    void PassFilmGrain::Compute(RenderGraphExt graph, QueueType queue)
     {
         auto hash = HashCache::Get();
-        cmd->BeginDebugScope("Noise Compute", float4(PK_COLOR32_BLUE));
+        graph->BeginDebugScope("Noise Compute", float4(PK_COLOR32_BLUE));
         RHI::SetImage(hash->pk_Image, m_filmGrainTexture.get(), 0, 0);
-        cmd.Dispatch(m_computeFilmGrain, { 256, 256, 1 });
-        cmd->EndDebugScope();
+        graph.Dispatch(queue, m_computeFilmGrain, { 256, 256, 1 });
+        graph->EndDebugScope();
     }
 }

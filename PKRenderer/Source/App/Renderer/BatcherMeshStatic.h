@@ -104,7 +104,7 @@ namespace PK::App
 
         void BeginCollectDrawCalls() final;
 
-        void EndCollectDrawCalls(CommandBufferExt cmd) final;
+        void EndCollectDrawCalls(RenderGraphExt graph) final;
 
         uint32_t BeginNewGroup() final { return m_groupIndex++; }
 
@@ -116,15 +116,15 @@ namespace PK::App
             uint32_t userdata,
             uint16_t sortDepth) final;
 
-        bool RenderGroup(CommandBufferExt cmd,
+        bool RenderGroup(RenderGraphExt graph,
             uint32_t group,
             FixedFunctionShaderAttributes* overrideAttributes = nullptr,
             uint32_t requireKeyword = 0u) final;
 
     private:
-        void UploadTransforms(CommandBufferExt cmd);
-        void UploadMaterials(CommandBufferExt cmd);
-        void UploadDrawIndices(CommandBufferExt cmd);
+        void UploadTransforms(RenderGraphExt graph);
+        void UploadMaterials(RenderGraphExt graph);
+        void UploadDrawIndices(RenderGraphExt graph);
 
         MeshStaticAllocator m_meshAllocator;
         FixedSet16<ShaderReference, MAX_SHADERS, ShaderReferenceHash> m_shaders;

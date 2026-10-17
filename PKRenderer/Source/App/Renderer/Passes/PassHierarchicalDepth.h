@@ -17,7 +17,7 @@ namespace PK::App
 
             PassHierarchicalDepth(AssetDatabase* assetDatabase);
             void SetViewConstants(RenderView* view);
-            void Compute(CommandBufferExt cmd, struct RenderPipelineContext* context);
+            void Compute(RenderGraphExt graph, QueueType queue, struct RenderPipelineContext* context);
 
         private:
             ShaderAsset* m_computeHierachicalDepth = nullptr;

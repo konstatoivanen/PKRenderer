@@ -2,7 +2,7 @@
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
@@ -31,7 +31,7 @@ namespace PK::App
         RHI::SetConstant(hash->pk_DoF_FocusSpeed, settings.FocusSpeed);
     }
 
-    void PassDepthOfField::ComputeAutoFocus(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassDepthOfField::ComputeAutoFocus(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
@@ -44,12 +44,12 @@ namespace PK::App
         }
 
         RHI::SetConstant(hash->pk_DoF_MaximumCoC, math::min(0.05f, 10.0f / screenHeight));
-        cmd.Dispatch(m_computeAutoFocus, 0, { 1u, 1u, 1u });
+        graph.Dispatch(queue, m_computeAutoFocus, 0, { 1u, 1u, 1u });
     }
 
-    void PassDepthOfField::Render(CommandBufferExt cmd, RenderPipelineContext* context, RHITexture* destination)
+    void PassDepthOfField::Render(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context, RHITexture* destination)
     {
-        cmd->BeginDebugScope("DepthOfField", PK_COLOR_MAGENTA);
+        graph->BeginDebugScope("DepthOfField", PK_COLOR_MAGENTA);
 
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
@@ -86,10 +86,10 @@ namespace PK::App
         RHI::SetTexture(hash->pk_Texture, destination); // Prefilter Source
         RHI::SetImage(hash->pk_Image, destination); // Upsample Dest
 
-        cmd.Dispatch(m_computeDepthOfField, m_passPrefilter, quarterres);
-        cmd.Dispatch(m_computeDepthOfField, m_passDiskblur, quarterres);
-        cmd.Dispatch(m_computeDepthOfField, m_passUpsample, fullres);
+        graph.Dispatch(queue, m_computeDepthOfField, m_passPrefilter, quarterres);
+        graph.Dispatch(queue, m_computeDepthOfField, m_passDiskblur, quarterres);
+        graph.Dispatch(queue, m_computeDepthOfField, m_passUpsample, fullres);
 
-        cmd->EndDebugScope();
+        graph->EndDebugScope();
     }
 }

@@ -2,7 +2,7 @@
 #include "Core/Base/Sort.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Material.h"
 #include "App/ECS/ComponentTransform.h"
@@ -46,20 +46,20 @@ namespace PK::App
         m_drawInfos = m_drawArena.GetHead<DrawInfo>();
     }
 
-    void BatcherMeshStatic::UploadTransforms(CommandBufferExt cmd)
+    void BatcherMeshStatic::UploadTransforms(RenderGraphExt graph)
     {
         RHI::ValidateBuffer<float3x4>(m_matrices, m_transforms.GetCapacity());
-        auto matrixView = cmd.BeginBufferWrite<float3x4>(m_matrices.get(), 0u, m_transforms.GetCount());
+        auto matrixView = graph.BeginBufferWrite<float3x4>(m_matrices.get(), 0u, m_transforms.GetCount());
 
         for (auto index = 0u; index < m_transforms.GetCount(); ++index) 
         {
             matrixView[index] = m_transforms[index]->localToWorld;
         }
 
-        cmd.EndBufferWrite(m_matrices.get(), matrixView);
+        graph.EndBufferWrite(QueueType::Transfer, m_matrices.get(), matrixView);
     }
 
-    void BatcherMeshStatic::UploadMaterials(CommandBufferExt cmd)
+    void BatcherMeshStatic::UploadMaterials(RenderGraphExt graph)
     {
         auto buffsize = 0ull;
 
@@ -78,7 +78,7 @@ namespace PK::App
         if (buffsize > 0)
         {
             RHI::ValidateBuffer(m_properties, buffsize);
-            auto propertyView = cmd.BeginBufferWrite<char>(m_properties.get(), 0ull, buffsize);
+            auto propertyView = graph.BeginBufferWrite<char>(m_properties.get(), 0ull, buffsize);
 
             for (auto i = 0u; i < m_materials.GetCount(); ++i)
             {
@@ -92,19 +92,19 @@ namespace PK::App
                 }
             }
 
-            cmd.EndBufferWrite(m_properties.get(), propertyView);
+            graph.EndBufferWrite(QueueType::Transfer, m_properties.get(), propertyView);
         }
     }
 
-    void BatcherMeshStatic::UploadDrawIndices(CommandBufferExt cmd)
+    void BatcherMeshStatic::UploadDrawIndices(RenderGraphExt graph)
     {
         m_resolvedGroups = m_drawArena.Allocate<PassGroup>(m_groupIndex);
 
         RHI::ValidateBuffer<PKAssets::PKDrawInfo>(m_indices, math::max(1024u, m_drawInfoCount));
         RHI::ValidateBuffer<uint2>(m_tasklets, m_taskletCount);
 
-        auto taskletView = cmd.BeginBufferWrite<uint2>(m_tasklets.get(), 0u, m_taskletCount);
-        auto indexView = cmd.BeginBufferWrite<PKAssets::PKDrawInfo>(m_indices.get(), 0u, m_drawInfoCount);
+        auto taskletView = graph.BeginBufferWrite<uint2>(m_tasklets.get(), 0u, m_taskletCount);
+        auto indexView = graph.BeginBufferWrite<PKAssets::PKDrawInfo>(m_indices.get(), 0u, m_drawInfoCount);
         const auto* lastInfo = &m_drawInfos[0];
         auto passDrawCalls = m_drawArena.GetHead<DrawCall>();
 
@@ -161,11 +161,11 @@ namespace PK::App
         m_drawArena.New<DrawCall>(DrawCall({ m_shaders[lastInfo->shader].reference, { taskletDrawStart, taskletCount - taskletDrawStart } }));
         m_resolvedGroups[m_groupCount++] = { passDrawCalls, m_drawArena.GetHeadDelta(passDrawCalls) };
 
-        cmd.EndBufferWrite(m_indices.get(), indexView);
-        cmd.EndBufferWrite(m_tasklets.get(), taskletView);
+        graph.EndBufferWrite(QueueType::Transfer, m_indices.get(), indexView);
+        graph.EndBufferWrite(QueueType::Transfer, m_tasklets.get(), taskletView);
     }
 
-    void BatcherMeshStatic::EndCollectDrawCalls(CommandBufferExt cmd)
+    void BatcherMeshStatic::EndCollectDrawCalls(RenderGraphExt graph)
     {
         if (m_drawInfoCount == 0u)
         {
@@ -176,9 +176,9 @@ namespace PK::App
         auto drawInfoEnd = m_drawInfos + m_drawInfoCount;
         PK::IntroSort(drawInfoBeg, drawInfoEnd);
 
-        UploadTransforms(cmd);
-        UploadMaterials(cmd);
-        UploadDrawIndices(cmd);
+        UploadTransforms(graph);
+        UploadMaterials(graph);
+        UploadDrawIndices(graph);
 
         auto hash = HashCache::Get();
         RHI::SetBuffer(hash->pk_Meshlet_Tasklets, m_tasklets.get());
@@ -231,7 +231,7 @@ namespace PK::App
         m_drawInfoCount++;
     }
 
-    bool BatcherMeshStatic::RenderGroup(CommandBufferExt cmd, uint32_t group, FixedFunctionShaderAttributes* overrideAttributes, uint32_t requireKeyword)
+    bool BatcherMeshStatic::RenderGroup(RenderGraphExt graph, uint32_t group, FixedFunctionShaderAttributes* overrideAttributes, uint32_t requireKeyword)
     {
         if (group >= m_groupCount)
         {
@@ -259,9 +259,9 @@ namespace PK::App
             if (requireKeyword == 0u || shader->SupportsKeyword(requireKeyword))
             {
                 RHI::SetConstant<uint>(hash->pk_Meshlet_DispatchOffset, (uint32_t)dc.indices.offset);
-                cmd.SetShader(shader);
-                cmd.SetFixedStateAttributes(overrideAttributes);
-                cmd->DrawMeshTasks({ (uint32_t)dc.indices.count, 1u, 1u });
+                graph.SetShader(shader);
+                graph.SetFixedStateAttributes(overrideAttributes);
+                graph->DrawMeshTasks({ (uint32_t)dc.indices.count, 1u, 1u });
             }
         }
 

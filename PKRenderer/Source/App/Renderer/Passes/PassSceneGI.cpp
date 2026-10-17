@@ -3,7 +3,7 @@
 #include "Core/Math/Random.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
@@ -99,9 +99,8 @@ namespace PK::App
         RHI::SetKeyword("PK_GI_SSRT_PRETRACE", m_settings.screenSpacePretrace);
         RHI::SetKeyword("PK_GI_RESTIR", m_settings.ReSTIR);
 
-        auto* cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-        m_sbtRaytrace.Validate(cmd, m_rayTraceGatherGI);
-        m_sbtValidate.Validate(cmd, m_rayTraceValidate);
+        m_sbtRaytrace.Validate(RHI::GetGraph(), QueueType::Transfer, m_rayTraceGatherGI);
+        m_sbtValidate.Validate(RHI::GetGraph(), QueueType::Transfer, m_rayTraceValidate);
 
         resources->hasResisedTargets = false;
         {
@@ -153,46 +152,45 @@ namespace PK::App
         RHI::SetTexture(hash->pk_GI_ResolvedRead, resources->resolvedGI.get());
     }
 
-    void PassSceneGI::PruneVoxels(CommandBufferExt cmd)
+    void PassSceneGI::PruneVoxels(RenderGraphExt graph, QueueType queue)
     {
         // Clear transparencies at the end of every axis cycle
         if (m_rasterAxis == 2)
         {
-            cmd->BeginDebugScope("SceneGI.PruneVoxels", PK_COLOR_GREEN);
+            graph->BeginDebugScope("SceneGI.PruneVoxels", PK_COLOR_GREEN);
             RHI::SetImage(HashCache::Get()->pk_Image, m_voxels.get(), 0, 0);
-            cmd.Dispatch(m_computeVolume, 1u, m_voxels->GetResolution());
-            cmd->EndDebugScope();
+            graph.Dispatch(queue, m_computeVolume, 1u, m_voxels->GetResolution());
+            graph->EndDebugScope();
         }
     }
 
-    void PassSceneGI::DispatchRays(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassSceneGI::DispatchRays(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         DECLARE_HASH(STAT_GI_RT)
         DECLARE_HASH(STAT_GI_VOXELIZE)
         DECLARE_HASH(STAT_GI_FILTER)
 
-
         auto hash = HashCache::Get();
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
-        cmd.BeginStatScope(hash->STAT_GI_RT, PK_COLOR_GREEN);
-        cmd.SetShaderBindingTable(&m_sbtRaytrace);
-        cmd.DispatchRays(m_rayTraceGatherGI, resources->rayhits->GetResolution());
-        cmd.EndStatScope();
+        graph.BeginStatScope(hash->STAT_GI_RT, PK_COLOR_GREEN);
+        graph.SetShaderBindingTable(&m_sbtRaytrace);
+        graph.DispatchRays(queue, m_rayTraceGatherGI, resources->rayhits->GetResolution());
+        graph.EndStatScope();
     }
 
-    void PassSceneGI::ReprojectGI(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassSceneGI::ReprojectGI(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
         auto resolution = resources->packedGIDiff->GetResolution();
-        cmd.BeginStatScope(hash->STAT_GI_REPROJECT, PK_COLOR_GREEN);
-        cmd.Dispatch(m_computeReproject, { resolution.x, resolution.y, 1u });
-        cmd.EndStatScope();
+        graph.BeginStatScope(hash->STAT_GI_REPROJECT, PK_COLOR_GREEN);
+        graph.Dispatch(queue, m_computeReproject, { resolution.x, resolution.y, 1u });
+        graph.EndStatScope();
     }
 
-    void PassSceneGI::Voxelize(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassSceneGI::Voxelize(RenderGraphExt graph, RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
         auto view = context->views[0];
@@ -203,7 +201,7 @@ namespace PK::App
         // Targets contain garbage data. skip this frame.
         if (!resources->hasResisedTargets)
         {
-            cmd.BeginStatScope(hash->STAT_GI_VOXELIZE, PK_COLOR_GREEN);
+            graph.BeginStatScope(hash->STAT_GI_VOXELIZE, PK_COLOR_GREEN);
 
             auto volumesize = m_voxels->GetResolution();
 
@@ -215,16 +213,16 @@ namespace PK::App
             };
 
             // Voxelize raster
-            cmd.SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w }, 1 );
-            cmd.SetViewPort(viewports[m_rasterAxis]);
-            cmd.SetScissor(viewports[m_rasterAxis]);
-            batcher->RenderGroup(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
+            graph.SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w }, 1 );
+            graph.SetViewPort(viewports[m_rasterAxis]);
+            graph.SetScissor(viewports[m_rasterAxis]);
+            batcher->RenderGroup(graph, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
 
-            cmd.EndStatScope();
+            graph.EndStatScope();
         }
     }
 
-    void PassSceneGI::RenderGI(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassSceneGI::RenderGI(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
         auto view = context->views[0];
@@ -232,14 +230,14 @@ namespace PK::App
         auto resolution = resources->packedGIDiff->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
         uint3 chbdimension = GetCheckerboardResolution(dimension, m_settings.checkerboardTrace);
-        cmd.BeginStatScope(hash->STAT_GI_FILTER, PK_COLOR_GREEN);
-        cmd.Dispatch(m_computeShadeHits, chbdimension);
-        cmd.Dispatch(m_computeAccumulate, chbdimension);
-        cmd.Dispatch(m_computePostFilter, m_settings.checkerboardTrace ? 1 : 0, chbdimension);
-        cmd.EndStatScope();
+        graph.BeginStatScope(hash->STAT_GI_FILTER, PK_COLOR_GREEN);
+        graph.Dispatch(queue, m_computeShadeHits, chbdimension);
+        graph.Dispatch(queue, m_computeAccumulate, chbdimension);
+        graph.Dispatch(queue, m_computePostFilter, m_settings.checkerboardTrace ? 1 : 0, chbdimension);
+        graph.EndStatScope();
     }
 
-    void PassSceneGI::VoxelMips(CommandBufferExt cmd)
+    void PassSceneGI::VoxelMips(RenderGraphExt graph, QueueType queue)
     {
         // Voxel mips
         auto hash = HashCache::Get();
@@ -248,24 +246,24 @@ namespace PK::App
         RHI::SetImage(hash->pk_Image, m_voxels.get(), 1, 0);
         RHI::SetImage(hash->pk_Image1, m_voxels.get(), 2, 0);
         RHI::SetImage(hash->pk_Image2, m_voxels.get(), 3, 0);
-        cmd.Dispatch(m_computeVolume, 0, volumesize >> 1u);
+        graph.Dispatch(queue, m_computeVolume, 0, volumesize >> 1u);
         RHI::SetImage(hash->pk_Image, m_voxels.get(), 4, 0);
         RHI::SetImage(hash->pk_Image1, m_voxels.get(), 5, 0);
         RHI::SetImage(hash->pk_Image2, m_voxels.get(), 6, 0);
-        cmd.Dispatch(m_computeVolume, 0, volumesize >> 4u);
+        graph.Dispatch(queue, m_computeVolume, 0, volumesize >> 4u);
     }
 
-    void PassSceneGI::ValidateReservoirs(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassSceneGI::ValidateReservoirs(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         if (m_settings.ReSTIR)
         {
             auto view = context->views[0];
             auto resources = view->GetResource<ViewResources>();
             auto resolution = resources->reservoirs0->GetResolution();
-            cmd->BeginDebugScope("SceneGI.ValidateReservoirs", PK_COLOR_GREEN);
-            cmd.SetShaderBindingTable(&m_sbtValidate);
-            cmd.DispatchRays(m_rayTraceValidate, { resolution.x, resolution.y / 2, 1 });
-            cmd->EndDebugScope();
+            graph->BeginDebugScope("SceneGI.ValidateReservoirs", PK_COLOR_GREEN);
+            graph.SetShaderBindingTable(&m_sbtValidate);
+            graph.DispatchRays(queue, m_rayTraceValidate, { resolution.x, resolution.y / 2, 1 });
+            graph->EndDebugScope();
         }
     }
 }

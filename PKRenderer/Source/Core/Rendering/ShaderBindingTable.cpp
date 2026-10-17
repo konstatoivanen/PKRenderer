@@ -1,16 +1,16 @@
 #include "PrecompiledHeader.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "ShaderBindingTable.h"
 
 namespace PK
 {
-    void ShaderBindingTable::Validate(CommandBufferExt cmd, ShaderAsset* shader, int32_t variantIndex)
+    void ShaderBindingTable::Validate(RenderGraphExt graph, QueueType queue, ShaderAsset* shader, int32_t variantIndex)
     {
         if (variantIndex == -1)
         {
-            variantIndex = shader->GetRHIIndex(RHI::GetDriver()->GetResourceState());
+            variantIndex = shader->GetRHIIndex(graph->GetResourceState());
         }
 
         auto newHash = shader->GetAssetHash();
@@ -21,7 +21,7 @@ namespace PK
             currentVariantIndex = (uint32_t)variantIndex;
             tableInfo = shader->GetRHI(currentVariantIndex)->GetShaderBindingTableInfo();
             RHI::ValidateBuffer(buffer, tableInfo.totalTableSize, BufferUsage::DefaultShaderBindingTable, "ShaderBindingTable");
-            cmd.UploadBufferData(buffer.get(), tableInfo.handleData);
+            graph.UploadBufferData(queue, buffer.get(), tableInfo.handleData);
         }
     }
 }

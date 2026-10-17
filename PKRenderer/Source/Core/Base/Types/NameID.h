@@ -11,7 +11,7 @@ namespace PK
 
         constexpr NameID() = default;
         inline NameID(const char* name) : identifier(NameIDProvider_StringToID(name)) {}
-        constexpr NameID(const NameID& name) : identifier(name.identifier) {}
+        constexpr NameID(const NameID& name) = default;
         constexpr NameID(uint32_t identifier) : identifier(identifier) {}
         
         constexpr NameID& operator=(const NameID&) = default;

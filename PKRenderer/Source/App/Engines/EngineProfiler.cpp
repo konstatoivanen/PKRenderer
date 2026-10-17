@@ -155,18 +155,24 @@ namespace PK::App
 
     void EngineProfiler::DrawGPUProfiler(GUI* gui)
     {
-        m_rhiTimers.ClearFast();
+        m_rhiTimers.Clear();
+        auto timers = RHI::GetTimers();
 
-        for (auto queue = 0u; queue < (uint32_t)QueueType::EnumCount; ++queue)
+        for (auto i = 0u; i < timers.count; ++i)
         {
-            auto timers = RHI::GetQueues()->GetTimers((QueueType)queue);
+            auto index = 0u;
+            auto isNew = m_rhiTimers.AddKey(timers[i].name, &index);
+            auto isValid = m_rhiTimers[index].value.tickIndex <= timers[i].timerIndex;
+            auto isAdd = m_rhiTimers[index].value.tickIndex == timers[i].timerIndex;
 
-            for (auto i = 0u; i < timers.count; ++i)
+            if (isNew || isValid)
             {
-                auto index = 0u;
-                auto isNew = m_rhiTimers.AddKey(timers[i].name, &index);
-
-                if (isNew || m_rhiTimers[index].value.tickIndex < timers[i].timerIndex)
+                if (isAdd)
+                {
+                    m_rhiTimers[index].value.tickIndex += timers[i].timerIndex;
+                    m_rhiTimers[index].value.elapsed += timers[i].elapsedSeconds;
+                }
+                else
                 {
                     m_rhiTimers[index].value.tickIndex = timers[i].timerIndex;
                     m_rhiTimers[index].value.elapsed = timers[i].elapsedSeconds;

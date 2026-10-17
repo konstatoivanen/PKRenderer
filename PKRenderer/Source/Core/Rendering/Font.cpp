@@ -3,8 +3,7 @@
 #include <PKAssets/PKAssetLoader.h>
 #include "Core/Math/Rect.h"
 #include "Core/CLI/Log.h"
-#include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Font.h"
 
 namespace PK
@@ -58,7 +57,7 @@ namespace PK
         m_alignBottom = m_lineHeight - maxy;
 
         TextureDescriptor descriptor{};
-        descriptor.usage = TextureUsage::DefaultDisk;
+        descriptor.usage = TextureUsage::Default;
         descriptor.resolution = { font->atlasResolution[0], font->atlasResolution[1], 1 };
         descriptor.layers = 1u;
         descriptor.levels = 1u;
@@ -69,8 +68,8 @@ namespace PK
 
         m_texture = RHI::CreateTexture(descriptor, String::ToFilePathStem<64>(filepath));
 
-        CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-        cmd.UploadTexture(m_texture.get(), font->atlasData.Get(base), font->atlasDataSize, 0u, 0u, 1u);
+        RenderGraphExt graph = RHI::GetGraph();
+        graph.UploadTexture(QueueType::Transfer, m_texture.get(), font->atlasData.Get(base), font->atlasDataSize, 0u, 0u, 1u);
  
         PKAssets::CloseAsset(&asset);
     }

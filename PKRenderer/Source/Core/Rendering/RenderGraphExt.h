@@ -31,15 +31,15 @@ namespace PK
     };
 
     // Extended wrapper class with utility functions beyond the pure virtual interface
-    struct CommandBufferExt
+    struct RenderGraphExt
     {
-        RHICommandBuffer* commandBuffer;
+        RHIGraph* graph;
         
-        CommandBufferExt() : commandBuffer(nullptr) {}
-        CommandBufferExt(RHICommandBuffer* commandBuffer) : commandBuffer(commandBuffer) {}
+        RenderGraphExt() : graph(nullptr) {}
+        RenderGraphExt(RHIGraph* graph) : graph(graph) {}
 
-        operator RHICommandBuffer* () const { return commandBuffer; }
-        RHICommandBuffer* operator->() { return commandBuffer; }
+        operator RHIGraph* () const { return graph; }
+        RHIGraph* operator->() { return graph; }
 
         void SetViewPort(const uint4& rect);
         void SetScissor(const uint4& rect);
@@ -58,12 +58,12 @@ namespace PK
 
         void Blit(const ShaderAsset* shader, int32_t variantIndex = -1);
         void Blit(const ShaderAsset* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex = -1);
-        void Dispatch(const ShaderAsset* shader, uint3 dimensions);
-        void Dispatch(const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions);
-        void DispatchRays(const ShaderAsset* shader, uint3 dimensions);
-        void DispatchRays(const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions);
+        void Dispatch(QueueType queue, const ShaderAsset* shader, uint3 dimensions);
+        void Dispatch(QueueType queue, const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions);
+        void DispatchRays(QueueType queue, const ShaderAsset* shader, uint3 dimensions);
+        void DispatchRays(QueueType queue, const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions);
 
-        void UploadBufferData(RHIBuffer* buffer, const void* data, size_t offset = 0ull, size_t size = 0ull);
+        void UploadBufferData(QueueType queue, RHIBuffer* buffer, const void* data, size_t offset = 0ull, size_t size = 0ull);
 
         template<typename T>
         StagingBufferView<T> BeginBufferWrite([[maybe_unused]] RHIBuffer* buffer, size_t offset = 0ull, size_t count = 0ull)
@@ -72,23 +72,23 @@ namespace PK
             view.offset = offset * sizeof(T);
             view.count = count ? count : (buffer->GetSize() / sizeof(T));
             view.size = view.count * sizeof(T);
-            view.stage = commandBuffer->AcquireStagingBuffer(view.size);
+            view.stage = graph->AcquireStagingBuffer(view.size);
             view.data = reinterpret_cast<T*>(view.stage->BeginMap(0ull, 0ull));
             return view;
         }
 
         template<typename T>
-        void EndBufferWrite(RHIBuffer* buffer, const StagingBufferView<T>& view)
+        void EndBufferWrite(QueueType queue, RHIBuffer* buffer, const StagingBufferView<T>& view)
         {
             if (view.stage && view.size)
             {
-                commandBuffer->CopyBuffer(buffer, view.stage, 0ull, view.offset, view.size);
-                commandBuffer->ReleaseStagingBuffer(view.stage);
+                graph->CopyBuffer(queue, buffer, view.stage, 0ull, view.offset, view.size);
+                graph->ReleaseStagingBuffer(view.stage);
             }
         }
 
-        void UploadTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount);
-        void UploadTexture(RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer, uint32_t layers);
+        void UploadTexture(QueueType queue, RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount);
+        void UploadTexture(QueueType queue, RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer, uint32_t layers);
 
         void SetMesh(const IMesh* mesh);
         void DrawMesh(const IMesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance);

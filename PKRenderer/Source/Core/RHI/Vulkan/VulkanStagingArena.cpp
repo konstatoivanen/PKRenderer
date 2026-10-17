@@ -1,18 +1,15 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
-#include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanStagingArena.h"
 
 namespace PK
 {
-    VulkanStagingArena::VulkanStagingArena(const VulkanDriver* driver, uint64_t stagingSize) :
-        m_allocator(driver->allocator),
+    VulkanStagingArena::VulkanStagingArena(const VkDevice device, const VmaAllocator allocator, const VulkanQueueFamilies& queueFamilies, uint64_t stagingSize) :
+        m_allocator(allocator),
         m_size(math::align(stagingSize, 512ull))
     {
         if (m_size)
         {
-            const auto& queueFamilies = driver->queues->GetSelectedFamilies();
-
             // @TODO unify with VulkanRawBuffer once that has been updated.
             VkBufferCreateInfo bufferCreateInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
             bufferCreateInfo.size = m_size;
@@ -37,11 +34,11 @@ namespace PK
             vmaGetAllocationMemoryProperties(m_allocator, m_memory, &memFlags);
             PK_FATAL_ASSERT(memFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "VulkanStagingArena failed to allocate in ReBAR (DEVICE_LOCAL) memory!");
 
-            VulkanSetObjectDebugName(driver->device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanStagingArena");
+            VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanStagingArena");
 
             VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
             addressInfo.buffer = m_buffer;
-            m_deviceAddress = vkGetBufferDeviceAddress(driver->device, &addressInfo);
+            m_deviceAddress = vkGetBufferDeviceAddress(device, &addressInfo);
         }
     }
 

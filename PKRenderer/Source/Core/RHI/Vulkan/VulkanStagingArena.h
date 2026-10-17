@@ -7,8 +7,6 @@
 
 namespace PK
 {
-    struct VulkanDriver;
-
     struct VulkanStagingBuffer : public RHIBuffer
     {
         size_t GetSize() const final { return handle.buffer.range; }
@@ -35,7 +33,7 @@ namespace PK
             VkDeviceSize size;
         };
 
-        VulkanStagingArena(const VulkanDriver* driver, uint64_t stagingSize);
+        VulkanStagingArena(const VkDevice device, const VmaAllocator allocator, const VulkanQueueFamilies& queueFamilies, uint64_t stagingSize);
         ~VulkanStagingArena();
 
         VulkanStagingBuffer* BeginWrite(VkDeviceSize size);

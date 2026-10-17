@@ -1,19 +1,16 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
-#include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanDescriptorArena.h"
 
 namespace PK
 {
-    VulkanDescriptorArena::VulkanDescriptorArena(const VulkanDriver* driver, const VulkanPhysicalDeviceProperties& properties, uint32_t size) :
-        m_device(driver->device),
-        m_allocator(driver->allocator),
+    VulkanDescriptorArena::VulkanDescriptorArena(const VkDevice device, const VmaAllocator allocator, const VulkanQueueFamilies& queueFamilies, const VulkanPhysicalDeviceProperties& properties, uint32_t size) :
+        m_device(device),
+        m_allocator(allocator),
         m_size(size)
     {
         if (m_size)
         {
-            const auto& queueFamilies = driver->queues->GetSelectedFamilies();
-
             m_descriptorBufferOffsetAlignment = properties.descriptorBuffer.descriptorBufferOffsetAlignment;
             m_descriptorSizes[(uint32_t)ShaderResourceType::Invalid] = 0ull;
             m_descriptorSizes[(uint32_t)ShaderResourceType::Sampler] = properties.descriptorBuffer.samplerDescriptorSize;
@@ -39,14 +36,14 @@ namespace PK
             allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
             VmaAllocationInfo allocationInfo{};
-            VK_ASSERT_RESULT(vmaCreateBuffer(m_allocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_memory, &allocationInfo));
+            VK_ASSERT_RESULT(vmaCreateBuffer(allocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_memory, &allocationInfo));
             m_mappedData = allocationInfo.pMappedData;
 
-            VulkanSetObjectDebugName(driver->device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanDescriptorArena");
+            VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanDescriptorArena");
 
             VkBufferDeviceAddressInfo addrInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
             addrInfo.buffer = m_buffer;
-            m_deviceAddress = vkGetBufferDeviceAddress(m_device, &addrInfo);
+            m_deviceAddress = vkGetBufferDeviceAddress(device, &addrInfo);
         }
     }
 

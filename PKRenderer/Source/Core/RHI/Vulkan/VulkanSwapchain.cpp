@@ -11,11 +11,8 @@ namespace PK
         VK_ASSERT_RESULT_CTX(VulkanCreateSurfaceKHR(driver->instance, descriptor.nativeWindowHandle, &m_surface), "Failed to create window surface!");
 
         auto presentFamily = m_driver->queues->GetQueue(QueueType::Present)->GetFamily();
-
-        VkBool32 presentSupported;
-        VK_ASSERT_RESULT_CTX(vkGetPhysicalDeviceSurfaceSupportKHR(driver->physicalDevice, presentFamily, m_surface, &presentSupported), "Surface support query failure!");
-        PK_FATAL_ASSERT(presentSupported, "Surface present not supported on selected physical device!");
-
+        PK_FATAL_ASSERT(VulkanIsPresentSupported(driver->physicalDevice, presentFamily, m_surface), "Surface present not supported on selected physical device!");
+        
         Rebuild(descriptor);
     }
 
@@ -76,20 +73,6 @@ namespace PK
         }
     }
 
-    void VulkanSwapchain::SetFrameFence(const FenceRef& fence)
-    {
-        m_frameFences[m_frameIndex] = fence;
-        m_hasExternalFrameFence = true;
-    }
-
-    void VulkanSwapchain::WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos)
-    {
-        if (m_presentId > historyOffset && m_swapchain != VK_NULL_HANDLE)
-        {
-            vkWaitForPresentKHR(m_driver->device, m_swapchain, m_presentId - historyOffset, timeoutNanos);
-        }
-    }
-
     bool VulkanSwapchain::AcquireFullScreen(const void* nativeMonitor)
     {
         // Has exclusive full screen for the monitor
@@ -118,59 +101,14 @@ namespace PK
         return m_descriptor.nativeMonitorHandle != nullptr;
     }
 
-    void VulkanSwapchain::AcquireNextImage()
+
+    void VulkanSwapchain::WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos)
     {
-        if (m_outofdate)
+        if (m_presentId > historyOffset && m_swapchain != VK_NULL_HANDLE)
         {
-            Rebuild(m_descriptor);
-        }
-
-        if (m_imageSignal == VK_NULL_HANDLE)
-        {
-            // Partially works in fixing the bellow issue. but causes issues with 60hz monitors.
-            WaitForPresent(m_imageCount - 1u, UINT64_MAX);
-
-            // This is not strictly necesssary when not using double buffering for staging buffers.
-            // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
-            // @TODO NV by default uses DXGI layered swapchain. the present of which is not visible to the application
-            // In this mode the imaqe acquire fence only waits for the vk submit usage and not the full present.
-            // This causes the frame time to accumulate unevenly and an eventual long wait when the dxgi swapchain has to actually wait for images.
-            PK_FATAL_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
-
-            m_imageSignal = m_semaphoresAcquire[m_presentId % m_imageCount];
-            VK_ASSERT_RESULT(vkAcquireNextImageKHR(m_driver->device, m_swapchain, UINT64_MAX, m_imageSignal, VK_NULL_HANDLE, &m_imageIndex));
+            vkWaitForPresentKHR(m_driver->device, m_swapchain, m_presentId - historyOffset, timeoutNanos);
         }
     }
-
-    void VulkanSwapchain::Present()
-    {
-        auto queueGraphics = m_driver->queues->GetQueue(QueueType::Graphics);
-        auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);
-
-        // Tied to frame index due to presentation being an os op that will hold this signal until complete.
-        // Tied to image index unlike due to presentation b
-        auto presentSignal = m_semaphoresPresent[m_imageIndex];
-
-        // Force transition image and consume image acquire signal if not already consumed.
-        queueGraphics->GetCommandBuffer()->ResolveSwapchainAccess(this, true);
-        
-        // submit and signal imaqe acquired and transitioned. 
-        m_driver->queues->SubmitCurrent(QueueType::Graphics, &presentSignal);
-
-        // Frame synchronization for this frame is handled externally.
-        if (!m_hasExternalFrameFence)
-        {
-            m_frameFences[m_frameIndex] = queueGraphics->GetFenceRef();
-        }
-
-        m_imageSignal = VK_NULL_HANDLE;
-        m_hasExternalFrameFence = false;
-        m_frameIndex = (m_frameIndex + 1) % PK_RHI_MAX_FRAMES_IN_FLIGHT;
-        m_presentId++;
-
-        VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, m_presentId, m_presentMode, presentSignal));
-    }
-
 
     void VulkanSwapchain::Release()
     {
@@ -298,8 +236,6 @@ namespace PK
             info.subresourceRange.levelCount = 1;
             info.subresourceRange.baseArrayLayer = 0;
             info.subresourceRange.layerCount = 1;
-            info.isConcurrent = false;
-            info.isTracked = true;
             info.isAlias = false;
 
             FixedString64 name("Swapchain.Image%u", i);
@@ -312,11 +248,6 @@ namespace PK
             VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_semaphoresAcquire[i], "PK_Swapchain_Acquire_Semaphore");
         }
 
-        for (auto& fence : m_frameFences)
-        {
-            fence.Invalidate();
-        }
-
         m_descriptor = descriptor;
 
         // Failed to acquire full screen set monitor to null.
@@ -327,43 +258,26 @@ namespace PK
 
         m_outofdate = false;
         m_presentId = 0ull;
-        m_imageSignal = VK_NULL_HANDLE;
+        m_acquireSignal = VK_NULL_HANDLE;
+        m_presentSignal = VK_NULL_HANDLE;
     }
     
-    VkSemaphore VulkanSwapchain::ConsumeImageSignal()
+
+    VkSemaphore VulkanSwapchain::ConsumeAcquireSignal()
     {
-        auto signal = m_imageSignal;
-        m_imageSignal = VK_NULL_HANDLE;
+        auto signal = m_acquireSignal;
+        m_acquireSignal = VK_NULL_HANDLE;
         return signal;
     }
 
-
-    VkSemaphore VulkanSwapchain::GraphGetPresentSignal()
+    VkSemaphore VulkanSwapchain::ConsumePresentSignal()
     {
-        return m_semaphoresPresent[m_imageIndex];
+        auto signal = m_presentSignal;
+        m_presentSignal = VK_NULL_HANDLE; 
+        return signal;
     }
 
-    void VulkanSwapchain::GraphPresent(VkSemaphore presentSignal)
-    {
-        auto queueGraphics = m_driver->queues->GetQueue(QueueType::Graphics);
-        auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);
-
-        // Frame synchronization for this frame is handled externally.
-        // @TODO this is a bad implicit fence as we dont necessarily do last transition on the graphics queue?!?
-        if (!m_hasExternalFrameFence)
-        {
-            m_frameFences[m_frameIndex] = queueGraphics->GetFenceRef();
-        }
-
-        m_imageSignal = VK_NULL_HANDLE;
-        m_hasExternalFrameFence = false;
-        m_frameIndex = (m_frameIndex + 1) % PK_RHI_MAX_FRAMES_IN_FLIGHT;
-        m_presentId++;
-
-        VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, m_presentId, m_presentMode, presentSignal));
-    }
-
-    void VulkanSwapchain::GraphValidate()
+    void VulkanSwapchain::Validate()
     {
         if (m_outofdate)
         {
@@ -371,22 +285,29 @@ namespace PK
         }
     }
 
-    void VulkanSwapchain::GraphAcquireNextImage()
+    void VulkanSwapchain::AcquireNextImage()
     {
-        if (m_imageSignal == VK_NULL_HANDLE)
+        if (m_acquireSignal == VK_NULL_HANDLE)
         {
             // Partially works in fixing the bellow issue. but causes issues with 60hz monitors.
             WaitForPresent(m_imageCount - 1u, UINT64_MAX);
 
-            // This is not strictly necesssary when not using double buffering for staging buffers.
-            // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
             // @TODO NV by default uses DXGI layered swapchain. the present of which is not visible to the application
-            // In this mode the imaqe acquire fence only waits for the vk submit usage and not the full present.
+            // In this mode the imaqe acquire signal only waits for the vk submit usage and not the full present.
             // This causes the frame time to accumulate unevenly and an eventual long wait when the dxgi swapchain has to actually wait for images.
-            PK_FATAL_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
-
-            m_imageSignal = m_semaphoresAcquire[m_presentId % m_imageCount];
-            VK_ASSERT_RESULT(vkAcquireNextImageKHR(m_driver->device, m_swapchain, UINT64_MAX, m_imageSignal, VK_NULL_HANDLE, &m_imageIndex));
+            m_acquireSignal = m_semaphoresAcquire[m_presentId % m_imageCount];
+            VK_ASSERT_RESULT(vkAcquireNextImageKHR(m_driver->device, m_swapchain, UINT64_MAX, m_acquireSignal, VK_NULL_HANDLE, &m_imageIndex));
+            m_presentSignal = m_semaphoresPresent[m_imageIndex];
         }
+    }
+
+    void VulkanSwapchain::Present(VulkanQueue* queue, VkSemaphore presentSignal)
+    {
+        m_acquireSignal = VK_NULL_HANDLE;
+        m_presentSignal = VK_NULL_HANDLE;
+        m_hasExternalFrameFence = false;
+        m_frameIndex = (m_frameIndex + 1) % PK_RHI_MAX_FRAMES_IN_FLIGHT;
+        m_presentId++;
+        queue->Present(m_swapchain, m_imageIndex, m_presentId, m_presentMode, presentSignal);
     }
 }

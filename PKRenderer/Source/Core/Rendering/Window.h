@@ -45,7 +45,6 @@ namespace PK
         
         uint3 GetResolution() const;
         float GetAspectRatio() const;
-        void SetFrameFence(const FenceRef& fence);
         void SetVSync(VSyncMode value);
 
         void AcquireImage();

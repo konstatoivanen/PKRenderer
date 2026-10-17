@@ -3,11 +3,10 @@
 #include "Core/Base/NoCopy.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
-#include "Core/RHI/Vulkan/VulkanCommandBuffer.h"
 #include "Core/RHI/Vulkan/VulkanTimerArena.h"
 #include "Core/RHI/Vulkan/VulkanStagingArena.h"
 #include "Core/RHI/Vulkan/VulkanDescriptorArena.h"
-#include "Core/RHI/Vulkan/VulkanPipelineState.h"
+#include "Core/RHI/Vulkan/VulkanCommandBuffer.h"
 
 namespace PK
 {
@@ -20,88 +19,84 @@ namespace PK
         float priorities[MAX_QUEUES] = { 1.0f, 1.0f, 1.0f, 1.0f };
         uint32_t queueFamilies[MAX_QUEUES]{};
         uint32_t typeIndices[MAX_QUEUES]{};
-        VkDeviceSize stagingArenaSizes[MAX_QUEUES]{};
-        VkDeviceSize descriptorArenaSizes[MAX_QUEUES]{};
         const char* names[MAX_QUEUES]{};
         VkDeviceQueueCreateInfo createInfos[MAX_QUEUES]{};
         VkQueueFamilyProperties familyProperties[MAX_QUEUES]{};
         uint32_t queueCount = 0u;
+        VulkanQueueFamilies selectedAll;
+        VulkanQueueFamilies selectedRender;
 
-        VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const RHIDriverDescriptor& descriptor);
+        VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     };
 
     struct VulkanQueue : public NoCopy
     {
+        friend struct VulkanQueueSet;
         constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::EnumCount + 1u;
 
-        VulkanQueue(const VulkanDriver* driver, 
-            VkQueueFlags flags, 
-            uint32_t queueFamily, 
-            uint32_t queueIndex,
-            VkDeviceSize stagingArenaSize,
-            VkDeviceSize descriptorArenaSize,
-            const char* name);
+        VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, VkDeviceAddress descriptorHeapAddress, const char* name);
         ~VulkanQueue();
 
-        inline ConstBufferView<RHITimerScope> GetTimers() const { return m_timerArena.GetResults(); }
-        constexpr VkQueue GetNative() const { return m_queue; }
         constexpr uint32_t GetFamily() const { return m_family; }
-        inline VulkanBarrierHandler* GetBarrierHandler() { return &m_barrierHandler; }
-        FenceRef GetFenceRef(int32_t timelineOffset = 0) const;
+        constexpr bool IsRecording() const { return m_currentWrapper != nullptr && m_currentWrapper->IsRecording(); }
+        FenceRef GetFenceRef(uint32_t timelineOffset) const;
 
         VulkanCommandBuffer* GetCommandBuffer();
-        VkResult Submit(VkSemaphore* inSignal = nullptr);
-        VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal);
-        void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags2 flags);
-        void QueueWait(VulkanQueue* other, VkPipelineStageFlags2 flags, int32_t timelineOffset);
+        void Submit(VkSemaphore inSignal);
+        void Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkPresentModeKHR mode, VkSemaphore waitSignal);
+        void AddWait(VkSemaphore semaphore, VkPipelineStageFlags2 flags, uint64_t counter);
+        void AddWait(VulkanQueue* other, VkPipelineStageFlags2 flags);
         void WaitCommandBuffers(bool waitAll);
-        void Prune();
 
     private:
-        const VulkanDriver* m_driver;
+        const VkDevice m_device;
         const uint32_t m_family;
         const uint32_t m_queueIndex;
-        const VkPipelineStageFlags2 m_capabilityFlags;
-
-        VulkanBarrierHandler m_barrierHandler;
-        VulkanTimerArena m_timerArena;
-        VulkanStagingArena m_stagingArena;
-        VulkanDescriptorArena m_descriptorArena;
-        VulkanPipelineState m_pipelineState;
+        const VkQueueFlags m_queueFlags;
+        const VkAccessFlags2 m_accessFlags;
+        const VkPipelineStageFlags2 m_stageFlags;
+        const VkDeviceAddress m_descriptorHeapAddress;
 
         VkQueue m_queue = VK_NULL_HANDLE;
         VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
-        VulkanTimelineSemaphore m_timeline{};
-        VulkanTimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
+        VulkanTimelineSemaphore m_signal{};
+        VulkanTimelineSemaphore m_waits[MAX_DEPENDENCIES]{};
         VkCommandBuffer m_commandBuffers[PK_VK_MAX_COMMAND_BUFFERS]{};
         VulkanCommandBuffer m_commandWrappers[PK_VK_MAX_COMMAND_BUFFERS]{};
-        VulkanCommandBuffer* m_currentCommandBuffer = nullptr;
+        VulkanCommandBuffer* m_currentWrapper = nullptr;
     };
 
-    struct VulkanQueueSet : public RHIQueueSet
+    struct VulkanQueueSet : public NoCopy
     {
-        VulkanQueueSet(const VulkanDriver* driver, const VulkanQueueSetInitializer& initializer);
-        
-        ConstBufferView<RHITimerScope> GetTimers(QueueType type) const final;
-        RHICommandBuffer* GetCommandBuffer(QueueType type) final;
-        FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) final;
-        FenceRef GetLastSubmitFenceRef() final;
-        RHICommandBuffer* Submit(QueueType type) final;
-        void Wait(QueueType to, QueueType from, int32_t submitOffset = 0) final;
+        struct FenceSnapshot
+        {
+            uint64_t values[(uint32_t)QueueType::EnumCount]{};
+            uint64_t index = 0ull;
+        };
 
-        inline uint32_t GetQueueIndex(QueueType type) const { return m_queueIndices[(uint32_t)type]; }
+        constexpr static const uint32_t MAX_FENCE_SNAPSHOTS = PK_VK_MAX_GRAPH_SCOPES * 4u;
+
+        VulkanQueueSet(const VkDevice device, VkDeviceAddress descriptorHeapAddress, const VulkanQueueSetInitializer& initializer);
+        constexpr uint32_t GetQueueCount() const { return m_queueCount; }
+        constexpr const VulkanQueueFamilies& GetFamiliesAll() const { return m_familiesAll; }
+        constexpr const VulkanQueueFamilies& GetFamiliesRender() const { return m_familiesRender; }
+        constexpr uint32_t GetQueueIndex(QueueType type) const { return m_indices[(uint32_t)type]; }
         inline VulkanQueue* GetQueue(QueueType type) { return m_queues[GetQueueIndex(type)].get(); }
-        inline const VulkanQueue* GetQueue(QueueType type) const { return m_queues[GetQueueIndex(type)].get(); }
+        inline VulkanQueue* GetQueueAt(uint32_t index) const { return m_queues[index].get(); }
         inline VulkanQueue* GetQueueAt(uint32_t index) { return m_queues[index].get(); }
-        constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
-        VkResult SubmitCurrent(QueueType type, VkSemaphore* outSignal = nullptr);
+        FenceRef GetFenceRef() const;
         void Prune();
 
-    private:
+    protected:
+        const VkDevice m_device;
+        const uint32_t m_queueCount;
+        const VulkanQueueFamilies m_familiesAll;
+        const VulkanQueueFamilies m_familiesRender;
+        uint32_t m_indices[(uint32_t)QueueType::EnumCount]{};
         Unique<VulkanQueue> m_queues[(uint32_t)QueueType::EnumCount]{};
-        uint32_t m_queueIndices[(uint32_t)QueueType::EnumCount]{};
-        VulkanQueueFamilies m_selectedFamilies{};
-        FenceRef m_lastSubmitFence;
+
+        mutable FenceSnapshot m_fenceSnapshots[MAX_FENCE_SNAPSHOTS]{};
+        mutable uint64_t m_fenceCounter = 0ull;
     };
 }

@@ -99,8 +99,8 @@ extern PFN_vkDestroyDebugUtilsMessengerEXT pkfn_vkDestroyDebugUtilsMessengerEXT;
 extern PFN_vkSubmitDebugUtilsMessageEXT pkfn_vkSubmitDebugUtilsMessageEXT;
 #define vkSubmitDebugUtilsMessageEXT pkfn_vkSubmitDebugUtilsMessageEXT
 
-extern PFN_vkCreateAccelerationStructureKHR pkfn_vkCreateAccelerationStructureKHR;
-#define vkCreateAccelerationStructureKHR pkfn_vkCreateAccelerationStructureKHR
+extern PFN_vkCreateAccelerationStructure2KHR pkfn_vkCreateAccelerationStructure2KHR;
+#define vkCreateAccelerationStructure2KHR pkfn_vkCreateAccelerationStructure2KHR
 
 extern PFN_vkDestroyAccelerationStructureKHR pkfn_vkDestroyAccelerationStructureKHR;
 #define vkDestroyAccelerationStructureKHR pkfn_vkDestroyAccelerationStructureKHR
@@ -182,21 +182,6 @@ namespace PK
         uint32_t count;
     };
 
-    struct VulkanBarrierInfo
-    {
-        uint16_t srcQueueFamily = 0u;
-        uint16_t dstQueueFamily = 0u;
-        VkPipelineStageFlags srcStageMask = 0u;
-        VkPipelineStageFlags dstStageMask = 0u;
-        VkDependencyFlags dependencyFlags = 0u;
-        uint32_t memoryBarrierCount = 0u;
-        const VkMemoryBarrier* pMemoryBarriers = nullptr;
-        uint32_t bufferMemoryBarrierCount = 0u;
-        const VkBufferMemoryBarrier* pBufferMemoryBarriers = nullptr;
-        uint32_t imageMemoryBarrierCount = 0u;
-        const VkImageMemoryBarrier* pImageMemoryBarriers = nullptr;
-    };
-
     struct VulkanPhysicalDeviceProperties
     {
         VkPhysicalDeviceProperties core;
@@ -230,6 +215,7 @@ namespace PK
         VkPhysicalDeviceShaderQuadControlFeaturesKHR quadControl{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR };
         VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBuffer { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT };
         VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR unifiedLayout { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR };
+        VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR deviceAddressCommands { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };
@@ -264,8 +250,6 @@ namespace PK
         VkComponentMapping components;
         VkExtent3D extent;
         VkImageSubresourceRange subresourceRange;
-        bool isConcurrent;
-        bool isTracked;
         bool isAlias;
     };
 
@@ -302,9 +286,6 @@ namespace PK
             acceleration;
         };
 
-        bool isConcurrent = false;
-        bool isTracked = true;
-
         VulkanBindHandle() : image{}{};
     };
 
@@ -320,7 +301,7 @@ namespace PK
     struct VulkanTimelineSemaphore
     {
         VkSemaphore semaphore = VK_NULL_HANDLE;
-        VkPipelineStageFlags2 waitFlags = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags2 stageFlags = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
         uint64_t counter = 0ull;
     };
 
@@ -347,6 +328,7 @@ namespace PK
 
         const VkDevice device;
         VkPipeline pipeline;
+        VkPipelineBindPoint bindPoint;
     };
 
     struct VulkanPipelineLayout : public NoCopy
@@ -357,6 +339,7 @@ namespace PK
         const VkDevice device;
         VkPipelineLayout layout;
         VkShaderStageFlags pushConstantStageFlags;
+        uint32_t pushConstantSize;
         FenceRef releaseFence;
         uint32_t referenceCount;
     };
@@ -484,6 +467,7 @@ namespace PK
         VkImageAspectFlagBits GetFormatAspect(VkFormat format);
         
         VkPipelineStageFlags2 GetQueueFlagsStageCapabilities(VkQueueFlags flags);
+        VkAccessFlags2 GetQueueFlagsAccessCapabilities(VkQueueFlags flags);
         VkPipelineStageFlags2 GetPipelineStageFlags(VkShaderStageFlags flags);
         bool IsWriteAccess(VkAccessFlags2 access);
     }

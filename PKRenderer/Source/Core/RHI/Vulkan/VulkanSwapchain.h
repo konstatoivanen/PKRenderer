@@ -8,35 +8,31 @@ namespace PK
     struct VulkanSwapchain : public RHISwapchain
     {
         VulkanSwapchain(VulkanDriver* driver, const SwapchainDescriptor& descriptor);
-
         ~VulkanSwapchain();
 
         void SetDesiredResolution(const uint2& resolution) final;
         void SetDesiredFormat(TextureFormat format) final;
         void SetDesiredColorSpace(ColorSpace colorSpace) final;
         void SetDesiredVSyncMode(VSyncMode vsyncMode) final;
-        void SetFrameFence(const FenceRef& fence) final;
-        void WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos) final;
         bool AcquireFullScreen(const void* nativeMonitor) final;
-        void AcquireNextImage() final;
-        void Present() final;
         bool IsFullScreen() const final { return m_descriptor.nativeMonitorHandle != nullptr; }
         uint3 GetResolution() const final { return { m_extent.width, m_extent.height, 1 }; }
         TextureFormat GetFormat() const final { return VulkanEnumConvert::GetTextureFormat(m_format.format); }
         ColorSpace GetColorSpace() const final { return VulkanEnumConvert::GetColorSpace(m_format.colorSpace); }
         VSyncMode GetVSyncMode() const final { return VulkanEnumConvert::GetVSyncMode(m_presentMode); }
 
+        void WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos);
         void Release();
         void Rebuild(const SwapchainDescriptor& createInfo);
 
         const VulkanBindHandle* GetBindHandle() const { return &m_imageViews[m_imageIndex]->bindHandle; }
         const VulkanImageView* GetImageView() const { return m_imageViews[m_imageIndex]; }
-        VkSemaphore ConsumeImageSignal();
+        VkSemaphore ConsumeAcquireSignal();
+        VkSemaphore ConsumePresentSignal();
 
-        VkSemaphore GraphGetPresentSignal();
-        void GraphPresent(VkSemaphore presentSignal);
-        void GraphValidate();
-        void GraphAcquireNextImage();
+        void Validate();
+        void AcquireNextImage();
+        void Present(VulkanQueue* queue, VkSemaphore presentSignal);
 
     private:
         const VulkanDriver* m_driver = nullptr;
@@ -46,7 +42,6 @@ namespace PK
         VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
         VkImage m_images[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VulkanImageView* m_imageViews[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
-        FenceRef m_frameFences[PK_RHI_MAX_FRAMES_IN_FLIGHT]{};
         VkSemaphore m_semaphoresAcquire[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VkSemaphore m_semaphoresPresent[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VkPresentModeKHR m_presentModes[(uint32_t)VSyncMode::EnumCount]{};
@@ -56,7 +51,9 @@ namespace PK
         uint32_t m_presentModeCount;
         uint32_t m_imageCount;
 
-        VkSemaphore m_imageSignal = VK_NULL_HANDLE;
+        VkSemaphore m_acquireSignal = VK_NULL_HANDLE;
+        VkSemaphore m_presentSignal = VK_NULL_HANDLE;
+
         uint32_t m_frameIndex = 0u;
         uint32_t m_imageIndex = 0u;
         uint64_t m_presentId = 0ull;

@@ -61,17 +61,17 @@ namespace PK::App
             return;
             case RenderPipelineEvent::Depth:
             {
-                renderEvent->context->batcher->RenderGroup(renderEvent->cmd, view->primaryPassGroup, &m_gbufferAttribs, HashCache::Get()->PK_META_PASS_GBUFFER);
+                renderEvent->context->batcher->RenderGroup(renderEvent->graph, view->primaryPassGroup, &m_gbufferAttribs, HashCache::Get()->PK_META_PASS_GBUFFER);
             }
             return;
             case RenderPipelineEvent::GBuffer:
             {
-                renderEvent->context->batcher->RenderGroup(renderEvent->cmd, view->primaryPassGroup, nullptr, HashCache::Get()->PK_META_PASS_GBUFFER);
+                renderEvent->context->batcher->RenderGroup(renderEvent->graph, view->primaryPassGroup, nullptr, HashCache::Get()->PK_META_PASS_GBUFFER);
             }
             return;
             case RenderPipelineEvent::ForwardOpaque:
             {
-                renderEvent->context->batcher->RenderGroup(renderEvent->cmd, view->primaryPassGroup);
+                renderEvent->context->batcher->RenderGroup(renderEvent->graph, view->primaryPassGroup);
             }
             return;
             default: return;

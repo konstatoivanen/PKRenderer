@@ -47,8 +47,6 @@ namespace PK
             VK_ASSERT_RESULT_CTX(vkCreateSampler(m_device, &info, nullptr, &sampler->sampler), "Failed to create a sampler!");
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler->sampler, FixedString64("Sampler%u", index).c_str());
 
-            sampler->handle.isConcurrent = false;
-            sampler->handle.isTracked = false;
             sampler->handle.image.image = VK_NULL_HANDLE;
             sampler->handle.image.alias = VK_NULL_HANDLE;
             sampler->handle.image.view = VK_NULL_HANDLE;

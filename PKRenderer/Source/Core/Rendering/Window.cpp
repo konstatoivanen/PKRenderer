@@ -81,11 +81,6 @@ namespace PK
         return m_swapchain->GetAspectRatio(); 
     }
 
-    void Window::SetFrameFence(const FenceRef& fence) 
-    { 
-        m_swapchain->SetFrameFence(fence); 
-    }
-
     void Window::SetVSync(VSyncMode value) 
     {
         m_vsync = value; 
@@ -100,14 +95,14 @@ namespace PK
             m_native->SetFullScreen(m_isFullScreen);
         }
 
-        m_swapchain->AcquireNextImage();
+        RHI::GetGraph()->AcquireNextImage(m_swapchain.get());
         m_inWindowScope = true;
     }
 
     void Window::PresentImage()
     {
         PK_FATAL_ASSERT(m_inWindowScope, "Trying to end a frame that outside of a frame scope!")
-        m_swapchain->Present();
+        RHI::GetGraph()->Present(m_swapchain.get());
         m_inWindowScope = false;
     }
 

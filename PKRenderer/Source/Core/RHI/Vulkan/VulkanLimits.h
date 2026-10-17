@@ -3,16 +3,9 @@
 
 namespace PK
 {
-    // Modify these if running into limits or resizes.
-    constexpr static const uint16_t PK_VK_QUEUE_FAMILY_IGNORED = 65535u;
-
-    constexpr static const uint64_t PK_VK_FRAME_ARENA_SIZE = 16384ull;
-
     constexpr static const uint64_t PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE = 16384ull;
     constexpr static const uint64_t PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT = 128ull;
 
-    constexpr static const uint64_t PK_VK_QUEUE_SEMAPHORE_COUNT = 16ull;
- 
     constexpr static const uint64_t PK_VK_MAX_BUFFER_VIEWS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_IMAGE_VIEWS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_BUFFERS = 1024ull;
@@ -34,11 +27,6 @@ namespace PK
     constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_SET_POOLS = 8ull;
     constexpr static const uint64_t PK_VK_DESCRIPTOR_WRITE_ARENA_SIZE = 8192ull;
 
-    constexpr static const uint64_t PK_VK_MAX_SPARSE_PAGES = 1024ull;
-    constexpr static const uint64_t PK_VK_MAX_SPARSE_RANGES = 1024ull;
-    
-    constexpr static const uint64_t PK_VK_MAX_STAGING_BUFFERS = 512ull;
-    
     constexpr static const uint64_t PK_VK_MAX_SAMPLERS = 32ull;
     
     constexpr static const uint64_t PK_VK_MAX_PIPELINES = 2048ull;
@@ -51,10 +39,18 @@ namespace PK
 
     constexpr static const uint64_t PK_VK_MAX_COMMAND_BUFFERS = 24ull;
 
-    constexpr static const uint64_t PK_VK_MAX_ACCESS_HEADERS = 1024ull;
-    constexpr static const uint64_t PK_VK_MAX_ACCESS_RECORDS = 1024ull;
-    constexpr static const uint64_t PK_VK_MAX_BUFFER_BARRIERS = 256ull;
-    constexpr static const uint64_t PK_VK_MAX_IMAGE_BARRIERS = 256ull;
+    constexpr static const uint64_t PK_VK_MAX_ACCESS_RESOURCES = 8192ull;
+    constexpr static const uint64_t PK_VK_MAX_ACCESS_NODES = 8192ull;
+    constexpr static const uint64_t PK_VK_MAX_ACCESS_PASSES = 512ull;
+    constexpr static const uint64_t PK_VK_MAX_ACCESS_IMAGE_BARRIERS = 2048ull;
 
     constexpr static const uint32_t PK_VK_MAX_AS_COMPACTIONS = 512u;
+
+    constexpr const static uint32_t PK_VK_MAX_GRAPH_SCOPES = 4u;
+
+    constexpr const static uint32_t PK_VK_MAX_TIMERS = 4096u;
+    constexpr const static uint32_t PK_VK_MAX_TIMER_QUERIES = PK_VK_MAX_TIMERS * 2ull;
+    constexpr const static uint32_t PK_VK_MAX_TIMER_SCOPES = 64u;
+    constexpr const static uint32_t PK_VK_MAX_TIMER_STACK = 32u;
+    constexpr const static uint32_t PK_VK_MAX_DEBUG_STACK = 32u;
 }

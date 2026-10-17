@@ -10,11 +10,6 @@ namespace PK
 {
     struct VulkanTimerArena : public NoCopy
     {
-        constexpr const static uint32_t MAX_TIMERS = 4096u;
-        constexpr const static uint32_t MAX_QUERIES = MAX_TIMERS * 2ull;
-        constexpr const static uint32_t MAX_TIMELINES = 64u;
-        constexpr const static uint32_t MAX_STACK = 32u;
-
         struct TimelineScope
         {
             uint64_t first;
@@ -29,8 +24,7 @@ namespace PK
 
         VulkanTimerArena(VkDevice device, float nanosecondsPerTick);
 
-        bool Push(NameID name, uint32_t* outIndex);
-        bool Pop(uint32_t* outIndex);
+        uint32_t AddTimer(NameID name);
         void BeginTimeline();
         uint64_t EndTimeline();
         void FlushTimeline(uint64_t timelineIndex);
@@ -41,16 +35,14 @@ namespace PK
         const double m_ticksToSeconds;
         VulkanQueryPool m_pool;
 
-        FixedMask<MAX_TIMELINES> m_timelineMask;
-        TimelineScope m_timelines[MAX_TIMELINES];
-        NameID m_scopeNames[MAX_TIMERS];
-        RHITimerScope m_resolved[MAX_TIMERS];
-        VkDeviceSize m_results[MAX_QUERIES];
-        NameID* m_stack[MAX_STACK];
+        FixedMask<PK_VK_MAX_TIMER_SCOPES> m_timelineMask;
+        TimelineScope m_timelines[PK_VK_MAX_TIMER_SCOPES];
+        NameID m_scopeNames[PK_VK_MAX_TIMERS];
+        RHITimerScope m_resolved[PK_VK_MAX_TIMERS];
+        VkDeviceSize m_results[PK_VK_MAX_TIMER_QUERIES];
         
         uint64_t m_timelineHead = 0ull;
         uint64_t m_timerHead = 0ull;
-        uint64_t m_stackHead = 0ull;
 
         uint64_t m_timerFlushHead = 0ull;
         uint64_t m_timelineFlushHead = 0ull;

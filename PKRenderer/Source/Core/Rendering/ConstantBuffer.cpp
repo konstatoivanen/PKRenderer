@@ -22,9 +22,9 @@ namespace PK
     {
     }
 
-    void ConstantBuffer::FlushBuffer(RHICommandBuffer* cmd)
+    void ConstantBuffer::FlushBuffer(RHIGraph* graph, QueueType queue)
     {
-        cmd->UpdateBuffer(m_rhiBuffer.get(), 0ull, m_rhiBuffer->GetSize(), GetData());
+        graph->UpdateBuffer(queue, m_rhiBuffer.get(), 0ull, m_rhiBuffer->GetSize(), GetData());
     }
 
     const RHIBuffer* ConstantBuffer::GetRHI() const { return m_rhiBuffer.get(); }
@@ -42,9 +42,9 @@ namespace PK
         RHI::ValidateBuffer(m_rhiBuffer, layout->GetStride(), BufferUsage::DefaultConstant, name);
     }
 
-    void ConstantBufferTransient::EndWrite(RHICommandBuffer* cmd)
+    void ConstantBufferTransient::EndWrite(RHIGraph* graph, QueueType queue)
     {
-        cmd->UpdateBuffer(m_rhiBuffer.get(), 0ull, m_rhiBuffer->GetSize(), ShaderPropertyWriter::EndWrite());
+        graph->UpdateBuffer(queue, m_rhiBuffer.get(), 0ull, m_rhiBuffer->GetSize(), ShaderPropertyWriter::EndWrite());
     }
 
     const RHIBuffer* ConstantBufferTransient::GetRHI() const { return m_rhiBuffer.get(); }

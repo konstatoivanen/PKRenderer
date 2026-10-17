@@ -10,7 +10,7 @@ namespace PK::App
         public:
             PassPostEffectsComposite(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void Render(CommandBufferExt cmd, RHITexture* destination);
+            void Render(RenderGraphExt graph, QueueType queue, RHITexture* destination);
 
         private:
             ShaderAsset* m_computeComposite = nullptr;

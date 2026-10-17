@@ -4,7 +4,7 @@
 #include "Core/Math/Extended.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/TextureAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
@@ -92,7 +92,7 @@ namespace PK::App
         }
     }
 
-    void PassSceneEnv::PreCompute(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassSceneEnv::PreCompute(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
@@ -106,19 +106,19 @@ namespace PK::App
 
             RHI::SetTexture(hash->pk_SceneEnv, resources->sourceTexture);
             RHI::SetTexture(hash->pk_SceneEnv_ISL, resources->sceneEnvISL.get());
-            cmd.Dispatch(m_integrateSHShader, 0, { 1u, 1u, 1u });
+            graph.Dispatch(queue, m_integrateSHShader, 0, { 1u, 1u, 1u });
 
             RHI::SetImage(hash->pk_Image, resources->sceneEnvISL.get(), 0, 0);
             RHI::SetImage(hash->pk_Image1, resources->sceneEnvISL.get(), 1, 0);
             RHI::SetImage(hash->pk_Image2, resources->sceneEnvISL.get(), 2, 0);
             RHI::SetImage(hash->pk_Image3, resources->sceneEnvISL.get(), 3, 0);
-            cmd.Dispatch(m_integrateISLShader, 0, { 128, 128, 1u });
+            graph.Dispatch(queue, m_integrateISLShader, 0, { 128, 128, 1u });
 
             RHI::SetImage(hash->pk_Image, resources->sceneEnvISL.get(), 4, 0);
             RHI::SetImage(hash->pk_Image1, resources->sceneEnvISL.get(), 5, 0);
             RHI::SetImage(hash->pk_Image2, resources->sceneEnvISL.get(), 6, 0);
             RHI::SetImage(hash->pk_Image3, resources->sceneEnvISL.get(), 7, 0);
-            cmd.Dispatch(m_integrateISLShader, 1, { 8u, 8u, 1u });
+            graph.Dispatch(queue, m_integrateISLShader, 1, { 8u, 8u, 1u });
 
             RHI::SetImage(hash->pk_Image, resources->sceneEnvIBL.get(), 0, 0);
             RHI::SetImage(hash->pk_Image1, resources->sceneEnvIBL.get(), 1, 0);
@@ -126,7 +126,7 @@ namespace PK::App
             RHI::SetImage(hash->pk_Image3, resources->sceneEnvIBL.get(), 3, 0);
             RHI::SetImage(hash->pk_Image4, resources->sceneEnvIBL.get(), 4, 0);
             RHI::SetConstant(hash->pk_SceneEnv_Origin, float4(resources->captureOrigin, 0.0f));
-            cmd.Dispatch(m_integrateIBLShader, 0, { resolution.x >> 1u, resolution.y >> 1u, 1u });
+            graph.Dispatch(queue, m_integrateIBLShader, 0, { resolution.x >> 1u, resolution.y >> 1u, 1u });
             RHI::SetTexture(hash->pk_SceneEnv, resources->sceneEnvIBL.get());
             resources->captureIsDirty = false;
             resources->captureCounter = 0;
@@ -134,8 +134,8 @@ namespace PK::App
         }
     }
 
-    void PassSceneEnv::RenderBackground(CommandBufferExt cmd, [[maybe_unused]] RenderPipelineContext* context)
+    void PassSceneEnv::RenderBackground(RenderGraphExt graph, [[maybe_unused]] RenderPipelineContext* context)
     {
-        cmd.Blit(m_backgroundShader);
+        graph.Blit(m_backgroundShader);
     }
 }

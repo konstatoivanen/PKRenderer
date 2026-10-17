@@ -3,7 +3,7 @@
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "Core/Rendering/TextureAsset.h"
@@ -111,12 +111,12 @@ namespace PK::App
         m_passIndex = useDebugPass ? 2u : m_passIndex;
     }
 
-    void PassPostEffectsComposite::Render(CommandBufferExt cmd, RHITexture* destination)
+    void PassPostEffectsComposite::Render(RenderGraphExt graph, QueueType queue, RHITexture* destination)
     {
         auto resolution = destination->GetResolution();
-        cmd->BeginDebugScope("PostEffects.Composite", PK_COLOR_YELLOW);
+        graph->BeginDebugScope("PostEffects.Composite", PK_COLOR_YELLOW);
         RHI::SetImage(HashCache::Get()->pk_Image, destination, 0, 0);
-        cmd.Dispatch(m_computeComposite, m_passIndex, { resolution.x, resolution.y, 1u });
-        cmd->EndDebugScope();
+        graph.Dispatch(queue, m_computeComposite, m_passIndex, { resolution.x, resolution.y, 1u });
+        graph->EndDebugScope();
     }
 }

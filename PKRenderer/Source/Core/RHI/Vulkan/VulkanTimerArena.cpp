@@ -5,44 +5,29 @@ namespace PK
 {
     VulkanTimerArena::VulkanTimerArena(VkDevice device, float nanosecondsPerTick) :
         m_ticksToSeconds(static_cast<double>(nanosecondsPerTick) * 1e-9),
-        m_pool(device, VK_QUERY_TYPE_TIMESTAMP, MAX_QUERIES)
+        m_pool(device, VK_QUERY_TYPE_TIMESTAMP, PK_VK_MAX_TIMER_QUERIES)
     {
     }
 
-    bool VulkanTimerArena::Push(NameID name, uint32_t* outIndex)
+    uint32_t VulkanTimerArena::AddTimer(NameID name)
     {
-        if (m_inTimeline && m_stackHead < MAX_STACK && 
-            m_timerHead - m_timerFlushHead < MAX_TIMERS)
+        if (m_inTimeline && m_timerHead - m_timerFlushHead < PK_VK_MAX_TIMERS)
         {
-            const auto index = static_cast<uint32_t>(m_timerHead % MAX_TIMERS);
+            const auto index = static_cast<uint32_t>(m_timerHead % PK_VK_MAX_TIMERS);
             m_scopeNames[index] = name;
-            m_stack[m_stackHead++] = &m_scopeNames[index];
             ++m_timerHead;
-
-            *outIndex = index * 2u + 0u;
-            return true;
+            return index * 2u;
         }
-
-        return false;
-    }
-
-    bool VulkanTimerArena::Pop(uint32_t* outIndex)
-    {
-        if (m_inTimeline && m_stackHead)
-        {
-            *outIndex = static_cast<uint32_t>(m_stack[--m_stackHead] - &m_scopeNames[0]) * 2u + 1u;
-            return true;
-        }
-
-        return false;
+        
+        return ~0u;
     }
 
     void VulkanTimerArena::BeginTimeline()
     {
-        if (!m_inTimeline && m_timelineHead - m_timelineFlushHead < MAX_TIMELINES)
+        if (!m_inTimeline && m_timelineHead - m_timelineFlushHead < PK_VK_MAX_TIMER_SCOPES)
         {
             m_inTimeline = true;
-            auto& timeline = m_timelines[m_timelineHead % MAX_TIMELINES];
+            auto& timeline = m_timelines[m_timelineHead % PK_VK_MAX_TIMER_SCOPES];
             timeline.first = m_timerHead;
             timeline.count = 0ull;
         }
@@ -54,7 +39,7 @@ namespace PK
 
         if (m_inTimeline)
         {
-            auto& timeline = m_timelines[m_timelineHead % MAX_TIMELINES];
+            auto& timeline = m_timelines[m_timelineHead % PK_VK_MAX_TIMER_SCOPES];
             timeline.count = m_timerHead - timeline.first;
             m_inTimeline = false;
             ++m_timelineHead;
@@ -67,14 +52,14 @@ namespace PK
     {
         if (timelineIndex >= m_timelineFlushHead)
         {
-            const auto& timeline = m_timelines[timelineIndex % MAX_TIMELINES];
+            const auto& timeline = m_timelines[timelineIndex % PK_VK_MAX_TIMER_SCOPES];
 
             if (timeline.count)
             {
-                const auto queryFirst = static_cast<uint32_t>(timeline.first % MAX_TIMERS) * 2u;
+                const auto queryFirst = static_cast<uint32_t>(timeline.first % PK_VK_MAX_TIMERS) * 2u;
                 const auto queryCount = static_cast<uint32_t>(timeline.count) * 2u;
 
-                const auto queryCount0 = queryFirst + queryCount > MAX_QUERIES ? MAX_QUERIES - queryFirst : queryCount;
+                const auto queryCount0 = queryFirst + queryCount > PK_VK_MAX_TIMER_QUERIES ? PK_VK_MAX_TIMER_QUERIES - queryFirst : queryCount;
                 const auto queryCount1 = queryCount - queryCount0;
 
                 if (queryCount0)
@@ -91,7 +76,7 @@ namespace PK
 
                 for (auto i = 0u; i < timeline.count; ++i)
                 {
-                    const auto index = static_cast<uint32_t>((timeline.first + i) % MAX_TIMERS);
+                    const auto index = static_cast<uint32_t>((timeline.first + i) % PK_VK_MAX_TIMERS);
                     const auto tickBeg = m_results[i * 2u + 0u];
                     const auto tickEnd = m_results[i * 2u + 1u];
                     const auto elapsed = tickEnd >= tickBeg ? tickEnd - tickBeg : 0ull;
@@ -101,15 +86,15 @@ namespace PK
                 }
             }
 
-            m_timelineMask[timelineIndex % MAX_TIMELINES] = true;
+            m_timelineMask[timelineIndex % PK_VK_MAX_TIMER_SCOPES] = true;
 
             // Increment out of order counters
             if (timelineIndex == m_timelineFlushHead)
             {
-                while (m_timelineMask[m_timelineFlushHead % MAX_TIMELINES])
+                while (m_timelineMask[m_timelineFlushHead % PK_VK_MAX_TIMER_SCOPES])
                 {
-                    m_timelineMask[m_timelineFlushHead % MAX_TIMELINES] = false;
-                    m_timerFlushHead += m_timelines[m_timelineFlushHead % MAX_TIMELINES].count;
+                    m_timelineMask[m_timelineFlushHead % PK_VK_MAX_TIMER_SCOPES] = false;
+                    m_timerFlushHead += m_timelines[m_timelineFlushHead % PK_VK_MAX_TIMER_SCOPES].count;
                     ++m_timelineFlushHead;
                 }
             }
@@ -118,6 +103,6 @@ namespace PK
 
     ConstBufferView<RHITimerScope> VulkanTimerArena::GetResults() const
     {
-        return { m_resolved, m_timerFlushHead > MAX_TIMERS ? MAX_TIMERS : m_timerFlushHead };
+        return { m_resolved, m_timerFlushHead > PK_VK_MAX_TIMERS ? PK_VK_MAX_TIMERS : m_timerFlushHead };
     }
 }

@@ -10,8 +10,8 @@
 #include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanLayoutCache.h"
-#include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
-#include "Core/RHI/Vulkan/VulkanResourceState.h"
+#include "Core/RHI/Vulkan/VulkanGraph.h"
+#include "Core/RHI/Vulkan/VulkanAccessRecorder.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanQueue.h"
@@ -51,12 +51,11 @@ namespace PK
         ~VulkanDriver();
 
         RHIAPI GetAPI() const final { return RHIAPI::Vulkan; }
-        RHIQueueSet* GetQueues() const final { return queues.get(); }
+        RHIGraph* GetGraph() const final { return graph.get(); }
         FixedString32 GetDriverHeader() const final;
         RHIDriverMemoryInfo GetMemoryInfo() const final;
         size_t GetBufferOffsetAlignment(BufferUsage usage) const final;
         BuiltInResources* GetBuiltInResources() final { return builtInResources; }
-        PropertyBlock* GetResourceState() final { return &globalResources; }
 
         RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) final;
         RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) final;
@@ -65,16 +64,6 @@ namespace PK
         RHIBufferBindSetRef CreateBufferBindSet(size_t capacity) final;
         RHIShaderRef CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) final;
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) final;
-
-        void SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) final;
-        void SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) final;
-        void SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) final;
-        void SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureArray) final;
-        void SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) final;
-        void SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) final;
-        void SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) final;
-        void SetConstant(NameID name, const void* data, uint32_t size) final;
-        void SetKeyword(NameID name, bool value) final;
 
         void WaitForIdle() const final { vkDeviceWaitIdle(device); }
         void GC() final;
@@ -117,17 +106,16 @@ namespace PK
         VulkanPhysicalDeviceProperties physicalDeviceProperties;
         uint32_t apiVersion;
 
-        mutable FixedUnique<VulkanQueueSet> queues;
+        mutable FixedUnique<Disposer> disposer;
         mutable FixedUnique<VulkanPipelineCache> pipelineCache;
         mutable FixedUnique<VulkanSamplerCache> samplerCache;
         mutable FixedUnique<VulkanLayoutCache> layoutCache;
-        mutable FixedUnique<Disposer> disposer;
-        mutable FixedArena<PK_VK_FRAME_ARENA_SIZE> arena;
-        mutable FixedUnique<VulkanResourceState> resourceState;
-
-        FixedUnique<BuiltInResources> builtInResources;
-        
-        PropertyBlock globalResources;
+        mutable FixedUnique<VulkanQueueSet> queues;
+        mutable FixedUnique<VulkanStagingArena> stagingArena;
+        mutable FixedUnique<VulkanDescriptorArena> descriptorArena;
+        mutable FixedUnique<VulkanTimerArena> timerArena;
+        mutable FixedUnique<VulkanGraph> graph;
+        mutable FixedUnique<BuiltInResources> builtInResources;
 
         FixedRefPool<VulkanTexture, PK_VK_MAX_IMAGES> texturePool;
         FixedRefPool<VulkanShader, PK_VK_MAX_SHADERS> shaderPool;

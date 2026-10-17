@@ -3,7 +3,7 @@
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
@@ -43,7 +43,7 @@ namespace PK::App
         view->constants.Set<float4>(hash->pk_Fog_Density_ExpParams1, Memory::BitCast<float, float4>(&settings.Exponential1.Constant));
     }
 
-    void PassVolumetricFog::ComputeDensity(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassVolumetricFog::ComputeDensity(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
@@ -52,7 +52,7 @@ namespace PK::App
         const auto index_cur = (view->timeRender.frameIndex + 0ull) & 0x1ull;
         const auto index_pre = (view->timeRender.frameIndex + 1ull) & 0x1ull;
 
-        cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
+        graph->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
 
         auto hasResized = false;
         {
@@ -84,17 +84,17 @@ namespace PK::App
         {
             RHI::SetImage(hash->pk_Fog_Inject_Write, resources->volumeInject[index_pre].get());
             RHI::SetImage(hash->pk_Fog_Density_Write, resources->volumeDensity[index_pre].get());
-            cmd.Dispatch(m_compute, PASS_CLEAR, resolution);
+            graph.Dispatch(queue, m_compute, PASS_CLEAR, resolution);
         }
 
         RHI::SetImage(hash->pk_Fog_Density_Write, resources->volumeDensity[index_cur].get());
         RHI::SetTexture(hash->pk_Fog_Density_Read, resources->volumeDensity[index_pre].get());
-        cmd.Dispatch(m_compute, PASS_DENSITY, resolution);
+        graph.Dispatch(queue, m_compute, PASS_DENSITY, resolution);
 
-        cmd->EndDebugScope();
+        graph->EndDebugScope();
     }
 
-    void PassVolumetricFog::Compute(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassVolumetricFog::Compute(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
@@ -103,26 +103,26 @@ namespace PK::App
         const auto index_cur = (view->timeRender.frameIndex + 0ull) & 0x1ull;
         const auto index_pre = (view->timeRender.frameIndex + 1ull) & 0x1ull;
 
-        cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
+        graph->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
        
         RHI::SetImage(hash->pk_Fog_Inject_Write, resources->volumeInject[index_cur].get());
         RHI::SetTexture(hash->pk_Fog_Inject_Read, resources->volumeInject[index_pre].get());
-        cmd.Dispatch(m_compute, PASS_INJECT, resolution);
+        graph.Dispatch(queue, m_compute, PASS_INJECT, resolution);
 
         RHI::SetTexture(hash->pk_Fog_Inject_Read, resources->volumeInject[index_cur].get());
         RHI::SetImage(hash->pk_Fog_Scatter_Write, resources->volumeScatter.get());
-        cmd.Dispatch(m_compute, PASS_INTEGRATE, { resolution.x, resolution.y, 1u });
+        graph.Dispatch(queue, m_compute, PASS_INTEGRATE, { resolution.x, resolution.y, 1u });
 
         RHI::SetTexture(hash->pk_Fog_Scatter_Read, resources->volumeScatter.get());
 
-        cmd->EndDebugScope();
+        graph->EndDebugScope();
     }
 
-    void PassVolumetricFog::Render(CommandBufferExt cmd, RHITexture* destination)
+    void PassVolumetricFog::Render(RenderGraphExt graph, QueueType queue, RHITexture* destination)
     {
-        cmd->BeginDebugScope("Fog.Composite", PK_COLOR_MAGENTA);
+        graph->BeginDebugScope("Fog.Composite", PK_COLOR_MAGENTA);
         RHI::SetImage(HashCache::Get()->pk_Image, destination);
-        cmd.Dispatch(m_compute, PASS_COMPOSITE, destination->GetResolution());
-        cmd->EndDebugScope();
+        graph.Dispatch(queue, m_compute, PASS_COMPOSITE, destination->GetResolution());
+        graph->EndDebugScope();
     }
 }

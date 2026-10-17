@@ -22,8 +22,9 @@ namespace PK
         m_formatAlias(VulkanEnumConvert::GetFormat(descriptor.formatAlias)),
         m_descriptor(descriptor)
     {
-        auto& families = m_driver->queues->GetSelectedFamilies();
-        const auto isConcurrent = (descriptor.usage & TextureUsage::Concurrent) != 0;
+        auto& familiesAll = m_driver->queues->GetFamiliesAll();
+        auto& familiesRender = m_driver->queues->GetFamiliesRender();
+        const auto requiresTransfer = (descriptor.usage & TextureUsage::Upload) != 0;
 
         VkImageCreateInfo imageCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         imageCreateInfo.flags = 0u;
@@ -36,11 +37,9 @@ namespace PK
         imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCreateInfo.usage = 0;
         imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageCreateInfo.sharingMode = isConcurrent != 0 ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
-        imageCreateInfo.pQueueFamilyIndices = families.indices;
-        //imageCreateInfo.pQueueFamilyIndices = isConcurrent ? families.indices : nullptr;
-        imageCreateInfo.queueFamilyIndexCount = families.count;
-        //imageCreateInfo.queueFamilyIndexCount = isConcurrent ? families.count : 0u;
+        imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+        imageCreateInfo.pQueueFamilyIndices = requiresTransfer ? familiesAll.indices : familiesRender.indices;
+        imageCreateInfo.queueFamilyIndexCount = requiresTransfer ? familiesAll.count : familiesRender.count;
 
         VmaAllocationCreateInfo allocationCreateInfo{};
         allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
@@ -95,13 +94,13 @@ namespace PK
         }
 
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)m_image, name);
-        m_driver->resourceState->RegisterImage(m_image, VulkanEnumConvert::GetFormatAspect(m_format));
-        m_driver->resourceState->RegisterImage(m_imageAlias, VulkanEnumConvert::GetFormatAspect(m_formatAlias));
+        m_driver->graph->RegisterImage(m_image, VulkanEnumConvert::GetFormatAspect(m_format));
+        m_driver->graph->RegisterImage(m_imageAlias, VulkanEnumConvert::GetFormatAspect(m_formatAlias));
     }
 
     VulkanTexture::~VulkanTexture()
     {
-        auto fence = m_driver->GetQueues()->GetLastSubmitFenceRef();
+        auto fence = m_driver->graph->GetFenceRef();
 
         for (auto view : m_firstView)
         {
@@ -129,9 +128,9 @@ namespace PK
         },
         fence);
 
+        m_driver->graph->UnregisterResource(m_image);
+        m_driver->graph->UnregisterResource(m_imageAlias);
         m_firstView = nullptr;
-        m_driver->resourceState->UnregisterResource(m_image);
-        m_driver->resourceState->UnregisterResource(m_imageAlias);
     }
 
     void VulkanTexture::SetSampler(const SamplerDescriptor& sampler)
@@ -157,8 +156,6 @@ namespace PK
 
         if (mode == TextureViewMode::RAW)
         {
-            m_rawHandle.isConcurrent = IsConcurrent();
-            m_rawHandle.isTracked = IsTracked();
             m_rawHandle.image.view = VK_NULL_HANDLE;
             m_rawHandle.image.image = m_image;
             m_rawHandle.image.alias = m_imageAlias;
@@ -193,8 +190,6 @@ namespace PK
                 info.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
                 info.components = mode == TextureViewMode::SRV ? swizzle : (VkComponentMapping{});
                 info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
-                info.isConcurrent = IsConcurrent();
-                info.isTracked = IsTracked();
                 info.isAlias = useAlias;
                 info.subresourceRange = VulkanConvertRange(normalizedRange, info.format);
                 auto newView = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, m_name.c_str());

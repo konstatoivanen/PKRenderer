@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
@@ -30,7 +30,7 @@ namespace PK::App
         view->constants.Set<float>(hash->pk_AutoExposure_Speed, settings.ExposureSpeed);
     }
 
-    void PassAutoExposure::Render(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassAutoExposure::Render(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
     {
         auto view = context->views[0];
         auto resources = view->GetResource<ViewResources>();
@@ -42,12 +42,12 @@ namespace PK::App
             RHI::SetBuffer(HashCache::Get()->pk_AutoExposure_Histogram, resources->histogram.get());
         }
 
-        cmd->BeginDebugScope("AutoExposure", PK_COLOR_MAGENTA);
+        graph->BeginDebugScope("AutoExposure", PK_COLOR_MAGENTA);
 
         RHI::SetTexture(HashCache::Get()->pk_Texture, target, 0, 0);
 
-        cmd.Dispatch(m_compute, m_passHistogramBins, { resolution.x >> 1u, resolution.y >> 1u, 1u });
-        cmd.Dispatch(m_compute, m_passHistogramAvg, { 1u, 1u, 1u });
-        cmd->EndDebugScope();
+        graph.Dispatch(queue, m_compute, m_passHistogramBins, { resolution.x >> 1u, resolution.y >> 1u, 1u });
+        graph.Dispatch(queue, m_compute, m_passHistogramAvg, { 1u, 1u, 1u });
+        graph->EndDebugScope();
     }
 }

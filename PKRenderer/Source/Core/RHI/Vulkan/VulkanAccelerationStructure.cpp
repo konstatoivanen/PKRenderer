@@ -20,7 +20,7 @@ namespace PK
 
     VulkanAccelerationStructure::~VulkanAccelerationStructure()
     {
-        auto fence = driver->GetQueues()->GetLastSubmitFenceRef();
+        auto fence = driver->graph->GetFenceRef();
 
         queryPool.Delete();
         DisposeStructure(structure.handle, fence);
@@ -132,13 +132,14 @@ namespace PK
 
     VkAccelerationStructureKHR VulkanAccelerationStructure::CreateStructure(const Structure* structure, VkAccelerationStructureTypeKHR type, const char* name) const
     {
-        VkAccelerationStructureCreateInfoKHR createInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
-        createInfo.buffer = buffer->GetNativeView<VulkanBindHandle>()->buffer.buffer;
-        createInfo.offset = structure->bufferOffset;
-        createInfo.size = structure->size;
+        VkAccelerationStructureCreateInfo2KHR createInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_2_KHR };
+        createInfo.addressRange.address = buffer->GetDeviceAddress() + structure->bufferOffset;
+        createInfo.addressRange.size = structure->size;
         createInfo.type = type;
+        createInfo.createFlags = 0;
+        createInfo.addressFlags = VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR;
         VkAccelerationStructureKHR handle = VK_NULL_HANDLE;
-        VK_ASSERT_RESULT_CTX(vkCreateAccelerationStructureKHR(driver->device, &createInfo, nullptr, &handle), "Failed to create acceleration structure!");
+        VK_ASSERT_RESULT_CTX(vkCreateAccelerationStructure2KHR(driver->device, &createInfo, nullptr, &handle), "Failed to create acceleration structure!");
         VulkanSetObjectDebugName(driver->device, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, (uint64_t)handle, name);
         return handle;
     }

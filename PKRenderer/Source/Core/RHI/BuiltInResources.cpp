@@ -10,7 +10,7 @@ PK::BuiltInResources::BuiltInResources()
 
     TextureDescriptor textureDesc{};
     textureDesc.resolution = { 2u, 2u, 1u };
-    textureDesc.usage = TextureUsage::DefaultDisk;
+    textureDesc.usage = TextureUsage::Default;
 
     BlackTexture2D = RHI::CreateTexture(textureDesc, "PKBuiltIn.Texture2D.Black");
     WhiteTexture2D = RHI::CreateTexture(textureDesc, "PKBuiltIn.Texture2D.White");
@@ -28,8 +28,8 @@ PK::BuiltInResources::BuiltInResources()
     const uint32_t transparentData[4] = { 0x00FFFFFFu, 0x00FFFFFFu, 0x00FFFFFFu, 0x00FFFFFFu };
     const uint32_t stageSize = sizeof(blackData) + sizeof(blackArrayData) + sizeof(whiteData) + sizeof(errorData) + sizeof(transparentData);
 
-    auto commandBuffer = RHI::GetCommandBuffer(QueueType::Transfer);
-    auto stage = commandBuffer->AcquireStagingBuffer(stageSize);
+    auto graph = RHI::GetGraph();
+    auto stage = graph->AcquireStagingBuffer(stageSize);
     {
         TextureDataRegion region;
         region.bufferOffset = 0ull;
@@ -42,27 +42,27 @@ PK::BuiltInResources::BuiltInResources()
         auto pMapped = static_cast<uint8_t*>(stage->BeginMap(0, 0));
 
         memcpy(pMapped + region.bufferOffset, blackData, sizeof(blackData)); 
-        commandBuffer->CopyToTexture(BlackTexture2D.get(), stage, &region, 1u);
+        graph->CopyToTexture(QueueType::Transfer, BlackTexture2D.get(), stage, &region, 1u);
         region.bufferOffset += sizeof(blackData);
 
         memcpy(pMapped + region.bufferOffset, whiteData, sizeof(whiteData));
-        commandBuffer->CopyToTexture(WhiteTexture2D.get(), stage, &region, 1u);
+        graph->CopyToTexture(QueueType::Transfer, WhiteTexture2D.get(), stage, &region, 1u);
         region.bufferOffset += sizeof(whiteData);
 
         memcpy(pMapped + region.bufferOffset, errorData, sizeof(errorData));
-        commandBuffer->CopyToTexture(ErrorTexture2D.get(), stage, &region, 1u);
+        graph->CopyToTexture(QueueType::Transfer, ErrorTexture2D.get(), stage, &region, 1u);
         region.bufferOffset += sizeof(errorData);
 
         memcpy(pMapped + region.bufferOffset, transparentData, sizeof(transparentData));
-        commandBuffer->CopyToTexture(TransparentTexture2D.get(), stage, &region, 1u);
+        graph->CopyToTexture(QueueType::Transfer, TransparentTexture2D.get(), stage, &region, 1u);
         region.bufferOffset += sizeof(transparentData);
 
         region.layers = 2u;
         memcpy(pMapped + region.bufferOffset, blackArrayData, sizeof(blackArrayData));
-        commandBuffer->CopyToTexture(BlackTexture2DArray.get(), stage, &region, 1u);
+        graph->CopyToTexture(QueueType::Transfer, BlackTexture2DArray.get(), stage, &region, 1u);
         region.bufferOffset += sizeof(blackArrayData);
 
         stage->EndMap(0, stageSize);
     }
-    commandBuffer->ReleaseStagingBuffer(stage);
+    graph->ReleaseStagingBuffer(stage);
 }

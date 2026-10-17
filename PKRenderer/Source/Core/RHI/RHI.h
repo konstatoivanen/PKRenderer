@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Base/Types/Ref.h"
 #include "Core/Base/Types/NameID.h"
+#include "Core/Base/Containers/BufferView.h"
 #include "Core/Math/Forward.h"
 
 namespace PKAssets
@@ -43,6 +44,7 @@ namespace PK
     struct FixedFunctionState;
     struct RenderTargetBinding;
     struct RayTracingGeometryInfo;
+    struct RHITimerScope;
     struct RHIDriverMemoryInfo;
     struct RHIDriverDescriptor;
     struct SwapchainDescriptor;
@@ -99,8 +101,7 @@ namespace PK
     template <typename>
     struct RHIBindSet;
     struct RHIBuffer;
-    struct RHICommandBuffer;
-    struct RHIQueueSet;
+    struct RHIGraph;
     struct RHIShader;
     struct RHITexture;
     template<typename T>
@@ -123,8 +124,7 @@ namespace PK
     {
         RHIDriver* GetDriver();
         RHIAPI GetActiveAPI();
-        RHIQueueSet* GetQueues();
-        RHICommandBuffer* GetCommandBuffer(QueueType queue);
+        RHIGraph* GetGraph();
         RHIDriverMemoryInfo GetMemoryInfo();
         size_t GetBufferOffsetAlignment(BufferUsage usage);
         const BuiltInResources* GetBuiltInResources();
@@ -183,5 +183,10 @@ namespace PK
 
         template<typename T>
         void SetConstant(NameID name, const T& value) { SetConstant(name, &value, (uint32_t)sizeof(T)); }
+
+        ConstBufferView<RHITimerScope> GetTimers();
+        PropertyBlock* GetResourceState();
+        FenceRef GetFenceRef();
+        void ExecuteGraph();
     }
 }

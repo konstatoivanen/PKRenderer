@@ -4,7 +4,7 @@
 #include "Core/RHI/Layout.h"
 #include "Core/Rendering/Font.h"
 #include "Core/Rendering/RenderingFwd.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/GUI/GUI.h"
 #include "App/Renderer/IGizmosRenderer.h"
 #include "App/FrameStep.h"
@@ -39,8 +39,8 @@ namespace PK::App
         inline void SetGizmosEnabledGPU(bool value) { m_gizmos_enabledGPU = value; }
         inline void SetGizmosEnabledCPU(bool value) { m_gizmos_enabledCPU = value; }
 
-        void GUICollectDraws(const uint4& renderArea, const uint3& resolution, CommandBufferExt& cmd);
-        void GUIDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
+        void GUICollectDraws(const uint4& renderArea, const uint3& resolution, RenderGraphExt& graph);
+        void GUIDispatchDraws(RenderGraphExt& graph, RHITexture* target);
         bool GUIValidateDraw();
         
         uint16_t GUIGetTextureIndex(RHITexture* texture) final;
@@ -48,8 +48,8 @@ namespace PK::App
         bool GUIAllocate(uint32_t layer, uint32_t vertexCount, uint32_t indexCount, GUIAllocation* allocation) final;
         void* GUIAllocateState(uint64_t uuid, size_t size) final;
 
-        void GizmosCollectDraws(const uint4& renderArea, const float4x4& worldToClip, CommandBufferExt& cmd);
-        void GizmosDispatchDraws(CommandBufferExt& cmd, RHITexture* target);
+        void GizmosCollectDraws(const uint4& renderArea, const float4x4& worldToClip, RenderGraphExt& graph);
+        void GizmosDispatchDraws(RenderGraphExt& graph, RHITexture* target);
         void GizmosDrawBounds(const AABB<float3>& aabb) final;
         void GizmosDrawBox(const float3& origin, const float3& size) final;
         void GizmosDrawLine(const float3& start, const float3& end) final;
@@ -68,7 +68,7 @@ namespace PK::App
         Sequencer* m_sequencer = nullptr;
         AssetDatabase* m_assetDatabase = nullptr;
 
-        CommandBufferExt* m_gui_commandBuffer = nullptr;
+        RenderGraphExt* m_gui_graph = nullptr;
         RHITextureRef m_gui_msaa_target = nullptr;
         RHITextureBindSetRef m_gui_textures;
         HeapHashArena m_gui_stateCache;

@@ -166,10 +166,7 @@ namespace PK
         Sample = 0x10,
         Input = 0x20,
         Storage = 0x40,
-        Concurrent = 0x80,
-        ReadOnly = 0x100,
-        Transient = 0x200,
-        DefaultDisk = Upload | Sample | ReadOnly,
+        Transient = 0x80,
         Default = Upload | Sample,
         DefaultStorage = Upload | Sample | Storage,
         RTColorSample = RTColor | Sample,
@@ -490,14 +487,8 @@ namespace PK
         uint32_t apiVersionMajor;
         uint32_t apiVersionMinor;
         uint32_t gcPruneDelay;
-        uint32_t stagingSizeTransfer;
-        uint32_t stagingSizeGraphics;
-        uint32_t stagingSizeCompute;
-        uint32_t stagingSizePresent;
-        uint32_t descriptorSizeTransfer; // @TODO Will be replace by descriptor heap size.
-        uint32_t descriptorSizeGraphics; // @TODO Will be replace by descriptor heap size.
-        uint32_t descriptorSizeCompute;  // @TODO Will be replace by descriptor heap size.
-        uint32_t descriptorSizePresent;  // @TODO Will be replace by descriptor heap size.
+        uint32_t stagingArenaSize;
+        uint32_t descriptorArenaSize; // @TODO Will be replace by descriptor heap size.
         bool enableValidation;
         bool enableDebugNames;
         bool enableDebugLabels;

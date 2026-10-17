@@ -1,121 +1,58 @@
 #pragma once
-#include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK
 {
-    struct VulkanDriver;
-    struct VulkanTimerArena;
-    struct VulkanStagingArena;
-    struct VulkanDescriptorArena;
-    struct VulkanBarrierHandler;
-    struct VulkanPipelineState;
-
-    struct VulkanCommandBuffer : public RHICommandBuffer
+    struct VulkanCommandBuffer
     {
-        VulkanCommandBuffer() {}
+        inline operator VkCommandBuffer() const { return m_commandBuffer; }
+        inline bool IsRecording() const { return m_isRecording; }
+        inline bool IsExecuting() const { return m_commandBuffer != VK_NULL_HANDLE; }
 
-        FenceRef GetFenceRef() const final;
+        void SetPipelineState(const VulkanPipeline* pipeline, const VulkanPipelineLayout* pipelineLayout, VkDeviceSize descriptorSetOffset, const void* pushConstants);
+        void SetRasterState(const VkRenderingInfo* renderingInfo, VkViewport* viewports, uint32_t viewportCount, VkRect2D* scissors, uint32_t scissorCount);
+        void SetVertexBuffers(const VkBuffer* buffers, const VkDeviceSize* offsets, uint32_t count);
+        void SetIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType type);
 
-        RHIBuffer* AcquireStagingBuffer(size_t size) final;
-        void ReleaseStagingBuffer(RHIBuffer* buffer) final;
-
-        void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) final;
-        void SetViewPorts(const uint4* rects, uint32_t count) final;
-        void SetScissors(const uint4* rects, uint32_t count) final;
-
-        void SetShader(const RHIShader* shader) final;
-        void SetVertexBuffers(const RHIBuffer** buffers, uint32_t count) final;
-        void SetVertexStreams(const VertexStreamElement* elements, uint32_t count) final;
-        void SetIndexBuffer(const RHIBuffer* buffer, size_t indexSize) final;
-        void SetShaderBindingTable(RayTracingShaderGroup group, const RHIBuffer* buffer, size_t offset, size_t stride, size_t size) final;
-
-        void SetStageExcludeMask(const ShaderStageFlags mask) final;
-        void SetBlending(const BlendParameters& blend) final;
-        void SetRasterization(const RasterizationParameters& rasterization) final;
-        void SetDepthStencil(const DepthStencilParameters& depthStencil) final;
-        void SetMultisampling(const MultisamplingParameters& multisampling) final;
-
-        void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) final;
-        void DrawIndirect(const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) final;
-        void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) final;
-        void DrawIndexedIndirect(const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) final;
-        void DrawMeshTasks(const uint3& dimensions) final;
-        void DrawMeshTasksIndirect(const RHIBuffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) final;
-        void DrawMeshTasksIndirectCount(const RHIBuffer* indirectArguments, size_t offset, const RHIBuffer* countBuffer, size_t countOffset, uint32_t maxDrawCount, uint32_t stride) final;
-        void Dispatch(const uint3& dimensions) final;
-        void DispatchRays(const uint3& dimensions) final;
-        
-        void Blit(RHITexture* src, RHISwapchain* dst, FilterMode filter) final;
-        void Blit(RHISwapchain* src, RHIBuffer* dst) final;
-        void Blit(RHITexture* src, RHITexture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter) final;
-        void Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter);
-
-        void Clear(RHIBuffer* dst, size_t offset, size_t size, uint32_t value) final;
-        void Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value) final;
-
-        void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, const void* data) final;
-        void CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size) final;
-        void CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount) final;
-
-        void InvalidateTexture(RHITexture* texture) final;
-
-        RHIAccelerationStructureBuilder* BeginAccelerationStructureWrite(RHIAccelerationStructure* structure, uint32_t instanceLimit) final;
-        void EndAccelerationStructureWrite(RHIAccelerationStructureBuilder* builder) final;
-
-        void BeginDebugScope(const char* name, const color& color) final;
-        void EndDebugScope() final;
-
-        void BeginTimer(NameID name) final;
-        void EndTimer() final;
-
-        // Vulkan specific interface
-        void PipelineBarrier(const VulkanBarrierInfo& barrier);
-        
-        // Blits might leave swapchain images in non presentable layouts.
-        // This validates swapchain image layout & should be called for the last cmd before present.
-        void ResolveSwapchainAccess(RHISwapchain* swapchain, bool forceTransition);
-        bool ResolveBarriers();
-        void ValidatePipeline();
+        void PrepareForCommands();
+        void BeginRenderPass();
         void EndRenderPass();
+        void Barrier(const VkMemoryBarrier2* pMemoryBarrier, const VkImageMemoryBarrier2* pImageTransitions, uint32_t imageTransitionCount);
+        void Barrier(const VkImageMemoryBarrier2* imageBarrier);
 
-        void BeginRecord(
-            const VulkanDriver* driver,
-            VulkanBarrierHandler* barrierHandler,
-            VulkanTimerArena* timerArena,
-            VulkanStagingArena* stagingArena,
-            VulkanDescriptorArena* descriptorArena,
-            VulkanPipelineState* state,
-            VkCommandBuffer commandBuffer, 
-            uint16_t queueFamily);
-
-        void EndRecord(uint64_t queueTimelineIndex);
-        bool Complete(uint64_t currentQueueTimelineIndex);
-
-        inline void MarkLastCommandStage(VkPipelineStageFlags2 stage) { m_lastCommandStage = stage; }
-        inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
-        inline VkCommandBuffer& GetHandle() { return m_commandBuffer; }
-        inline VkPipelineStageFlags2 GetLastCommandStage() { return m_lastCommandStage; }
-        inline VkSemaphore GetImageSignal() { return m_imageSignal; }
+        void QueueInitialize(VkCommandBuffer commandBuffer, VkQueueFlags queueFlags, VkPipelineStageFlags2 queueStageFlags, VkAccessFlags2 queueAccessFlags, VkDeviceAddress descriptorHeapAddress);
+        bool QueueSubmit(uint64_t timelineIndex);
+        bool QueueFinalize(uint64_t resolvedTimelineIndex);
 
     private:
-        const VulkanDriver* m_driver = nullptr;
-        VulkanBarrierHandler* m_barrierHandler = nullptr;
-        VulkanTimerArena* m_timerArena = nullptr;
-        VulkanStagingArena* m_stagingArena = nullptr;
-        VulkanDescriptorArena* m_descriptorArena = nullptr;
-        VulkanPipelineState* m_state = nullptr;
-
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
-        VkSemaphore m_imageSignal = VK_NULL_HANDLE;
-        uint16_t m_queueFamily = 0u;
+        VkDeviceAddress m_descriptorHeapAddress = 0ull;
+        VkPipelineStageFlags2 m_queueStageFlags = 0ull;
+        VkAccessFlags2 m_queueAccessFlags = 0ull;
+        VkQueueFlags m_queueFlags = 0ull;
+        uint64_t m_timelineIndex = ~0ull;
 
-        uint64_t m_timerIndex = 0ull;
-        uint64_t m_stageIndex = 0ull;
-        uint64_t m_descriptorIndex = 0ull;
-        uint64_t m_invocationIndex = 0ull;
-        uint64_t m_queueTimelineIndex = ~0ull;
-        VkPipelineStageFlags2 m_lastCommandStage = 0u;
-        bool m_isInActiveRenderPass = false;
+        // Shader cmd state
+        const VulkanPipeline* m_pipeline = nullptr;
+        VkDeviceSize m_descriptorSetOffset = ~0ull;
+        const void* m_pushConstants = nullptr;
+
+        // Raster cmd state
+        const VkRenderingInfo* m_renderingInfo = nullptr;
+        const VkViewport* m_viewports = nullptr;
+        const VkRect2D* m_scissors = nullptr;
+        uint32_t m_viewportCount = 0u;
+        uint32_t m_scissorCount = 0u;
+
+        // Vertex cmd state
+        const VkBuffer* m_vertexBuffers = nullptr;
+        const VkDeviceSize* m_vertexBufferOffsets = nullptr;
+        uint32_t m_vertexBufferCount = 0u;
+        VkBuffer m_indexBuffer = VK_NULL_HANDLE;
+        VkDeviceSize m_indexOffset = 0ull;
+        VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;
+
+        bool m_isRecording = false;
+        bool m_isInRenderPass = false;
     };
 }

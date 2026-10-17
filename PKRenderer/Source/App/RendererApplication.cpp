@@ -255,9 +255,10 @@ namespace PK::App
 
             m_window->PresentImage();
 
-            sequencer->NextRoot(FrameStep::Finalize(), &ctx);
-
+            RHI::ExecuteGraph();
             RHI::GC();
+            
+            sequencer->NextRoot(FrameStep::Finalize(), &ctx);
 
             if (m_inactiveFrameInterval > 0 && !Platform::GetHasFocus())
             {

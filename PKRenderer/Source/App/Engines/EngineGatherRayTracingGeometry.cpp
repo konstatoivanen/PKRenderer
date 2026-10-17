@@ -37,8 +37,8 @@ namespace PK::App
             }
         }
 
-        auto cmd = RHI::GetCommandBuffer(request->queue);
-        auto builder = cmd->BeginAccelerationStructureWrite(structure, instanceCount);
+        auto graph = RHI::GetGraph();
+        auto builder = graph->BeginAccelerationStructureWrite(structure, instanceCount);
 
         RayTracingGeometryInfo geometry{};
         geometry.customIndex = 0u;
@@ -61,6 +61,6 @@ namespace PK::App
             }
         }
 
-        cmd->EndAccelerationStructureWrite(builder);
+        graph->EndAccelerationStructureWrite(request->queue, builder);
     }
 }

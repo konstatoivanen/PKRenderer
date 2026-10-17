@@ -24,13 +24,13 @@ namespace PK::App
 
             PassSceneGI(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void PruneVoxels(CommandBufferExt cmd);
-            void DispatchRays(CommandBufferExt cmd, RenderPipelineContext* context);
-            void ReprojectGI(CommandBufferExt cmd, RenderPipelineContext* context);
-            void Voxelize(CommandBufferExt cmd, RenderPipelineContext* context);
-            void RenderGI(CommandBufferExt cmd, RenderPipelineContext* context);
-            void VoxelMips(CommandBufferExt cmd);
-            void ValidateReservoirs(CommandBufferExt cmd, RenderPipelineContext* context);
+            void PruneVoxels(RenderGraphExt graph, QueueType queue);
+            void DispatchRays(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context);
+            void ReprojectGI(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context);
+            void Voxelize(RenderGraphExt graph, RenderPipelineContext* context);
+            void RenderGI(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context);
+            void VoxelMips(RenderGraphExt graph, QueueType queue);
+            void ValidateReservoirs(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context);
 
         private:
             FixedFunctionShaderAttributes m_voxelizeAttribs{};

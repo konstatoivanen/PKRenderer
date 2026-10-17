@@ -2,7 +2,7 @@
 #include "Core/Math/Random.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/Rendering/CommandBufferExt.h"
+#include "Core/Rendering/RenderGraphExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "Core/Rendering/TextureAsset.h"
@@ -28,9 +28,9 @@ namespace PK::App
         view->constants.Set<float>(hash->pk_TAA_MotionAmplification, settings.MotionAmplification);
     }
 
-    void PassTemporalAntialiasing::Render(CommandBufferExt cmd, RenderView* view, RHITexture* source, RHITexture* destination)
+    void PassTemporalAntialiasing::Render(RenderGraphExt graph, QueueType queue, RenderView* view, RHITexture* source, RHITexture* destination)
     {
-        cmd->BeginDebugScope("TemporalAntialiasing", PK_COLOR_MAGENTA);
+        graph->BeginDebugScope("TemporalAntialiasing", PK_COLOR_MAGENTA);
 
         auto hash = HashCache::Get();
         auto resources = view->GetResource<ViewResources>();
@@ -60,8 +60,8 @@ namespace PK::App
         RHI::SetTexture(hash->pk_Texture1, resources->historyTexture.get(), { 0, historyRead, 1u, 1u });
         RHI::SetImage(hash->pk_Image, resources->historyTexture.get(), { 0, historyWrite, 1u, 1u });
         RHI::SetImage(hash->pk_Image1, destination, { 0, 0, 1u, 1u });
-        cmd.Dispatch(m_computeTAA, 0, { resolution.x, resolution.y, 1u });
-        cmd->EndDebugScope();
+        graph.Dispatch(queue, m_computeTAA, 0, { resolution.x, resolution.y, 1u });
+        graph->EndDebugScope();
 
         m_jitter.zw = m_jitter.xy;
         m_jitter.xy = math::halton((m_jitterSampleIndex & 1023) + 1, uint2(2,3)) - 0.5f;

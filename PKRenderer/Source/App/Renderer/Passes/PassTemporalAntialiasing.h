@@ -13,7 +13,7 @@ namespace PK::App
 
             PassTemporalAntialiasing(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void Render(CommandBufferExt cmd, RenderView* view, RHITexture* source, RHITexture* destination);
+            void Render(RenderGraphExt graph, QueueType queue, RenderView* view, RHITexture* source, RHITexture* destination);
             constexpr float4 GetJitter() const { return m_jitter; };
 
         private:

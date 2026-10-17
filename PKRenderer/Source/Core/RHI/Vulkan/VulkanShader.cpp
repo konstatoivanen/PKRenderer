@@ -95,7 +95,7 @@ namespace PK
 
     VulkanShader::~VulkanShader()
     {
-        auto fence = m_driver->GetQueues()->GetLastSubmitFenceRef();
+        auto fence = m_driver->graph->GetFenceRef();
 
         m_driver->layoutCache->ReleasePipelineLayout(m_pipelineLayout, fence);
         m_driver->layoutCache->ReleaseSetLayout(m_descriptorSetLayout, fence);

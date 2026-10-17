@@ -37,7 +37,7 @@ namespace PK::App
         const auto width = (int32_t)m_captureResolution.x;
         const auto height = (int32_t)m_captureResolution.y;
 
-        auto cmd = RHI::GetCommandBuffer(QueueType::Graphics);
+        auto graph = RHI::GetGraph();
 
         if (m_copyFence.IsValid() && m_copyFence.IsComplete())
         {
@@ -56,8 +56,8 @@ namespace PK::App
 
         if (m_captureCounter > 0u)
         {
-            cmd->Blit(window->GetSwapchain(), m_copyBuffer.get());
-            m_copyFence = cmd->GetFenceRef();
+            graph->Blit(QueueType::Graphics, window->GetSwapchain(), m_copyBuffer.get());
+            m_copyFence = graph->GetFenceRef();
             return;
         }
 

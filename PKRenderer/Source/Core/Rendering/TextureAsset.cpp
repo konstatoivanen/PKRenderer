@@ -18,9 +18,9 @@ namespace PK
         PKAssets::PKTexture texture;
         PKAssets::StreamAsTexture(&asset, &texture);
 
-        auto cmd = RHI::GetCommandBuffer(QueueType::Transfer);
+        auto graph = RHI::GetGraph();
 
-        auto stage = cmd->AcquireStagingBuffer(texture.dataSize);
+        auto stage = graph->AcquireStagingBuffer(texture.dataSize);
         {
             auto pMapped = stage->BeginMap(0, 0);
             PKAssets::StreamData(&asset, pMapped, texture.data.offset, texture.dataSize);
@@ -28,7 +28,7 @@ namespace PK
         }
 
         TextureDescriptor descriptor{};
-        descriptor.usage = TextureUsage::DefaultDisk;
+        descriptor.usage = TextureUsage::Default;
         descriptor.resolution[0] = texture.resolution[0];
         descriptor.resolution[1] = texture.resolution[1];
         descriptor.resolution[2] = texture.resolution[2];
@@ -70,8 +70,8 @@ namespace PK
             }
         }
 
-        cmd->CopyToTexture(m_texture.get(), stage, regions, descriptor.levels);
-        cmd->ReleaseStagingBuffer(stage);
+        graph->CopyToTexture(QueueType::Transfer, m_texture.get(), stage, regions, descriptor.levels);
+        graph->ReleaseStagingBuffer(stage);
 
         PKAssets::CloseAssetStream(&asset);
     }

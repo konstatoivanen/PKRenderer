@@ -59,9 +59,9 @@ namespace PK::App
             PassLights(AssetDatabase* assetDatabase);
             void SetViewConstants(RenderView* view);
             void BuildLights(RenderPipelineContext* context);
-            void RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context);
-            void RenderScreenSpaceShadows(CommandBufferExt cmd, RenderPipelineContext* context);
-            void ComputeClusters(CommandBufferExt cmd, RenderPipelineContext* context);
+            void RenderShadows(RenderGraphExt graph, RenderPipelineContext* context);
+            void RenderScreenSpaceShadows(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context);
+            void ComputeClusters(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context);
 
             static void BuildShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices);
 

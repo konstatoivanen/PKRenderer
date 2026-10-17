@@ -15,9 +15,9 @@ namespace PK::App
 
             PassVolumetricFog(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void ComputeDensity(CommandBufferExt cmd, struct RenderPipelineContext* context);
-            void Compute(CommandBufferExt cmd, RenderPipelineContext* context);
-            void Render(CommandBufferExt cmd, RHITexture* destination);
+            void ComputeDensity(RenderGraphExt graph, QueueType queue, struct RenderPipelineContext* context);
+            void Compute(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context);
+            void Render(RenderGraphExt graph, QueueType queue, RHITexture* destination);
 
         private:
             ShaderAsset* m_compute = nullptr;
