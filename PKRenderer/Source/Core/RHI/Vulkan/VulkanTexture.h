@@ -16,6 +16,9 @@ namespace PK
         const char* GetDebugName() const final { return m_name.c_str(); }
         const void* GetNativeView(const TextureViewRange& range, TextureViewMode viewMode);
         
+        inline VkFormat GetNativeFormat() const { return m_format; }
+        inline VkSampleCountFlagBits GetNativeSamples() const { return VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples); }
+
     private:
         TextureViewRange NormalizeViewRange(const TextureViewRange& range) const;
 
@@ -26,7 +29,7 @@ namespace PK
         TextureDescriptor m_descriptor;
         VmaAllocation m_memory;
         VkImage m_image;
-        VulkanBindHandle m_rawHandle;
+        VulkanResourceView m_rawView;
         LinkedList<VulkanImageView, uint64_t> m_firstView = nullptr;
     };
 }

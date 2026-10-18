@@ -70,8 +70,9 @@ namespace PK
 
         auto buffer = &m_buffers[index];
         m_bufferMask[index] = true;
-        buffer->handle.memory.address = m_deviceAddress + allocationOffset;
-        buffer->handle.memory.size = size;
+        buffer->view.memory.address = m_deviceAddress + allocationOffset;
+        buffer->view.memory.size = size;
+        buffer->view.UpdateHashMemory();
         buffer->mappedData = static_cast<uint8_t*>(m_mappedData) + allocationOffset;
         return buffer;
     }

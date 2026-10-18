@@ -3,7 +3,7 @@
 
 namespace PK
 {
-    void VulkanCommandBuffer::SetPipelineState(const VulkanPipeline* pipeline, const VulkanPipelineLayout* pipelineLayout, VkDeviceSize descriptorSetOffset, const void* pushConstants)
+    void VulkanCommandBuffer::SetPipelineState(const VulkanPipeline* pipeline, VkPipelineLayout pipelineLayout, VkDeviceSize descriptorSetOffset, const void* pushConstants, uint32_t pushConstantSize)
     {
         auto bufferIndex = 0u;
 
@@ -17,13 +17,13 @@ namespace PK
 
         if (m_descriptorSetOffset != descriptorSetOffset)
         {
-            vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer, pipeline->bindPoint, pipelineLayout->layout, 0, 1, &bufferIndex, &descriptorSetOffset);
+            vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer, pipeline->bindPoint, pipelineLayout, 0, 1, &bufferIndex, &descriptorSetOffset);
             m_descriptorSetOffset = descriptorSetOffset;
         }
 
-        if (m_pushConstants != pushConstants)
+        if (m_pushConstants != pushConstants && pushConstantSize)
         {
-            vkCmdPushConstants(m_commandBuffer, pipelineLayout->layout, VK_SHADER_STAGE_ALL, 0u, pipelineLayout->pushConstantSize, pushConstants);
+            vkCmdPushConstants(m_commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0u, pushConstantSize, pushConstants);
             m_pushConstants = pushConstants;
         }
     }

@@ -122,7 +122,7 @@ namespace PK
         {
             if (m_imageViews[i] != nullptr)
             {
-                m_driver->DeletePooled(m_imageViews[i]);
+                m_driver->imageViewPool.Delete(m_imageViews[i]);
                 m_imageViews[i] = nullptr;
 
                 vkDestroySemaphore(m_driver->device, m_semaphoresPresent[i], nullptr);
@@ -227,7 +227,6 @@ namespace PK
             info.viewType = VK_IMAGE_VIEW_TYPE_2D;
             info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             info.format = m_format.format;
-            info.samples = VK_SAMPLE_COUNT_1_BIT;
             info.components = VkComponentMapping{};
             info.extent = { m_extent.width, m_extent.height, 1 };
             info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -236,12 +235,12 @@ namespace PK
             info.subresourceRange.baseArrayLayer = 0;
             info.subresourceRange.layerCount = 1;
             FixedString64 name("Swapchain.Image%u", i);
-            m_imageViews[i] = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, name.c_str());
+            m_imageViews[i] = m_driver->imageViewPool.New(m_driver->device, info, name.c_str());
 
             VkSemaphoreCreateInfo semaphoreCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, };
             vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_semaphoresPresent[i]);
-            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_semaphoresPresent[i], "PK_Swapchain_Present_Semaphore");
             vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_semaphoresAcquire[i]);
+            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_semaphoresPresent[i], "PK_Swapchain_Present_Semaphore");
             VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_semaphoresAcquire[i], "PK_Swapchain_Acquire_Semaphore");
         }
 

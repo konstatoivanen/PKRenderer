@@ -50,7 +50,7 @@ namespace PK
         uint32_t GetInstanceCount() const final { return instanceCount; }
         uint32_t GetSubStructureCount() const final { return substructures.GetCount(); };
         FenceRef GetLastBuildFenceRef() const final { return lastBuildFenceRef; }
-        inline const VulkanBindHandle* GetBindHandle() const { return &bindHandle; };
+        inline const VulkanResourceView GetResourceView() const { return view; };
 
         uint32_t RegisterGeometry(const RayTracingGeometryInfo& geometry);
 
@@ -67,7 +67,7 @@ namespace PK
         FixedUnique<VulkanQueryPool> queryPool;
         HashMap<StructureKey, Structure> substructures;
         Structure structure{};
-        VulkanBindHandle bindHandle{};
+        VulkanResourceView view{};
         
         uint32_t queryCount = 0u;
         uint32_t instanceCount = 0u;

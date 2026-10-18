@@ -9,7 +9,7 @@ namespace PK
     {
     }
 
-    const VulkanBindHandle* const* VulkanBindSet::GetHandles(uint32_t* version, uint32_t* count) const
+    const VulkanResourceView* VulkanBindSet::GetViews(uint64_t* version, uint32_t* count) const
     {
         if (m_set.GetCount() != m_previousCount)
         {
@@ -32,7 +32,7 @@ namespace PK
     {
         if (bindInfo)
         {
-            return Add(value->GetNativeView<VulkanBindHandle>(*static_cast<TextureViewRange*>(bindInfo), TextureViewMode::SRV));
+            return Add(*value->GetNativeView<VulkanResourceView>(*static_cast<TextureViewRange*>(bindInfo), TextureViewMode::SRV));
         }
 
         return Add(value);
@@ -40,14 +40,15 @@ namespace PK
 
     int32_t VulkanBindSet::Add(RHITexture* value)
     {
-        return Add(value->GetNativeView<VulkanBindHandle>({}, TextureViewMode::SRV));
+        return Add(*value->GetNativeView<VulkanResourceView>({}, TextureViewMode::SRV));
     }
 
     int32_t VulkanBindSet::Add(RHIBuffer* value, void* bindInfo)
     {
         if (bindInfo)
         {
-            return Add(value->GetNativeView<VulkanBindHandle>(*static_cast<BufferIndexRange*>(bindInfo)));
+            auto vkBuffer = static_cast<VulkanBuffer*>(value);
+            return Add(vkBuffer->GetResourceView(*static_cast<BufferIndexRange*>(bindInfo)));
         }
 
         return Add(value);
@@ -55,29 +56,29 @@ namespace PK
 
     int32_t VulkanBindSet::Add(RHIBuffer* value)
     {
-        return Add(value->GetNativeView<VulkanBindHandle>());
+        return Add(*value->GetNativeView<VulkanResourceView>());
     }
 
     uint3 VulkanBindSet::GetBoundTextureSize(uint32_t index) const
     {
         if (index < m_set.GetCount())
         {
-            auto& extent = m_set[index]->image.extent;
+            auto& extent = m_set[index].image.extent;
             return { extent.width, extent.height, extent.depth };
         }
 
         return PK_UINT3_ZERO;
     }
 
-    int32_t VulkanBindSet::Add(const VulkanBindHandle* handle)
+    int32_t VulkanBindSet::Add(const VulkanResourceView& handle)
     {
-        if (handle == nullptr || m_set.GetCount() >= m_set.GetCapacity())
+        if (handle.hash == 0ull || m_set.GetCount() >= m_set.GetCapacity())
         {
             return -1;
         }
 
         const auto& previous = m_set[m_set.GetCount()];
-        const auto hasChanged = previous != handle || previous->Version() != handle->Version();
+        const auto hasChanged = previous != handle;
 
         uint32_t index = 0u;
         if (m_set.Add(handle, &index))

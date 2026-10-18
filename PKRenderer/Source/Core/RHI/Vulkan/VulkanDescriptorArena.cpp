@@ -88,7 +88,7 @@ namespace PK
         for (auto bindIndex = 0u; bindIndex < bindingCount; ++bindIndex)
         {
             const auto* bind = &bindings[bindIndex];
-            const auto handles = bind->handles;
+            const auto views = bind->views;
             const auto type = VulkanEnumConvert::GetDescriptorType(bind->type);
             const auto descriptorSize = m_descriptorSizes[(uint32_t)bind->type];
             auto bindingOffset = 0ull;
@@ -96,7 +96,7 @@ namespace PK
 
             for (auto arrayIndex = 0u; arrayIndex < bind->count; ++arrayIndex)
             {
-                auto* handle = handles[arrayIndex];
+                auto& view = views[arrayIndex];
                 auto* pDescriptor = pSet + bindingOffset + (arrayIndex * descriptorSize);
 
                 VkDescriptorDataEXT data{};
@@ -107,51 +107,51 @@ namespace PK
                 {
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
                     {
-                        bufferInfo.address = handle->memory.address;
-                        bufferInfo.range = handle->memory.size;
+                        bufferInfo.address = view.memory.address;
+                        bufferInfo.range = view.memory.size;
                         data.pUniformBuffer = &bufferInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
                     {
-                        bufferInfo.address = handle->memory.address;
-                        bufferInfo.range = handle->memory.size;
+                        bufferInfo.address = view.memory.address;
+                        bufferInfo.range = view.memory.size;
                         data.pStorageBuffer = &bufferInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
                     {
-                        imageInfo.sampler = handle->image.sampler;
-                        imageInfo.imageView = handle->image.view;
+                        imageInfo.sampler = view.image.sampler;
+                        imageInfo.imageView = view.image.view;
                         data.pCombinedImageSampler = &imageInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
                     {
-                        imageInfo.imageView = handle->image.view;
+                        imageInfo.imageView = view.image.view;
                         data.pSampledImage = &imageInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
                     {
-                        imageInfo.imageView = handle->image.view;
+                        imageInfo.imageView = view.image.view;
                         data.pStorageImage = &imageInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
                     {
-                        imageInfo.imageView = handle->image.view;
+                        imageInfo.imageView = view.image.view;
                         data.pInputAttachmentImage = &imageInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_SAMPLER:
                     {
-                        data.pSampler = &handle->image.sampler;
+                        data.pSampler = &view.image.sampler;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                     {
-                        data.accelerationStructure = handle->memory.address;
+                        data.accelerationStructure = view.memory.address;
                         break;
                     }
                     default:

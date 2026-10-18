@@ -73,29 +73,6 @@ namespace PK
                                                                   const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                                   void* pUserData);
 
-        template<typename T, typename ... Args>
-        T* CreatePooled(Args&& ... args) const
-        {
-            auto pool = objectPools.GetInstance<IPool<T>>();
-            return pool->New(PK::Forward<Args>(args)...);
-        }
-
-        template<typename T>
-        void DisposePooled(T* object, const FenceRef& fence) const
-        {
-            disposer->Dispose(objectPools.GetInstance<IPool<T>>(), object, [](void* c, void* v)
-            {
-                static_cast<IPool<T>*>(c)->Delete(static_cast<T*>(v));
-            }, 
-            fence);
-        }
-
-        template<typename T>
-        void DeletePooled(T* object) const
-        {
-            objectPools.GetInstance<IPool<T>>()->Delete(object);
-        }
-
         void* vkHandle;
         VkInstance instance = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
@@ -120,9 +97,6 @@ namespace PK
         FixedRefPool<VulkanTexture, PK_VK_MAX_IMAGES> texturePool;
         FixedRefPool<VulkanShader, PK_VK_MAX_SHADERS> shaderPool;
         FixedRefPool<VulkanBuffer, PK_VK_MAX_BUFFERS> bufferPool;
-
-        mutable FixedTypeSet<
-            FixedPool<VulkanBufferView, PK_VK_MAX_BUFFER_VIEWS>,
-            FixedPool<VulkanImageView, PK_VK_MAX_IMAGE_VIEWS>> objectPools;
+        mutable FixedPool<VulkanImageView, PK_VK_MAX_IMAGE_VIEWS> imageViewPool;
     };
 }

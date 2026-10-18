@@ -14,7 +14,7 @@ namespace PK
         ~VulkanSamplerCache();
 
         inline VkSampler GetSampler(const SamplerDescriptor& descriptor) { return GetPooledSampler(descriptor)->sampler; }
-        inline const VulkanBindHandle* GetBindHandle(const SamplerDescriptor& descriptor) { return &GetPooledSampler(descriptor)->handle; }
+        inline VulkanResourceView GetResourceView(const SamplerDescriptor& descriptor) { return GetPooledSampler(descriptor)->view; }
         
     private:
         using SampelerHash = Hash::TMurmurHash<SamplerDescriptor>;
@@ -22,7 +22,7 @@ namespace PK
         struct Sampler
         {
             VkSampler sampler;
-            VulkanBindHandle handle;
+            VulkanResourceView view;
         };
         
         Sampler* GetPooledSampler(const SamplerDescriptor& descriptor);

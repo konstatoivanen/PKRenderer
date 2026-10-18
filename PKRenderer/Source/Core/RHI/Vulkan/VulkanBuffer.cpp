@@ -64,7 +64,9 @@ namespace PK
 
         VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
         addressInfo.buffer = m_buffer;
-        m_deviceAddress = vkGetBufferDeviceAddress(driver->device, &addressInfo);
+        m_defaultView.memory.address = vkGetBufferDeviceAddress(driver->device, &addressInfo);
+        m_defaultView.memory.size = m_size;
+        m_defaultView.UpdateHashMemory();
 
         if ((m_usage & BufferUsage::TypeBits) != BufferUsage::Vram)
         {
@@ -72,9 +74,6 @@ namespace PK
             vmaGetAllocationInfo(driver->allocator, m_memory, &allocationInfo);
             m_mappedData = allocationInfo.pMappedData;
         }
-
-        GetNativeView({ 0, m_size });
-        m_defaultView = m_firstView;
     }
 
     VulkanBuffer::~VulkanBuffer()
@@ -82,11 +81,6 @@ namespace PK
         // @TODO LAST SUBMIT FENCE IS NOT SAFE TO USE WITH GRAPH BUILDER
         // there might be queued resource access that doesn't actually match with whatever command buffer this was used on after delete.
         auto fence = m_driver->graph->GetFenceRef();
-
-        for (auto view : m_firstView)
-        {
-            m_driver->DisposePooled(view, fence);
-        }
 
         m_driver->disposer->Dispose(m_driver->device, m_buffer, [](void* c, void* v)
         {
@@ -103,9 +97,7 @@ namespace PK
         m_mappedData = nullptr;
         m_memory = nullptr;
         m_buffer = nullptr;
-        m_deviceAddress = 0ull;
-        m_firstView = nullptr;
-        m_defaultView = nullptr;
+        m_defaultView = {};
     }
 
     void* VulkanBuffer::GetMappedPtr() const
@@ -115,19 +107,19 @@ namespace PK
         return m_mappedData;
     }
 
-    const void* VulkanBuffer::GetNativeView(const BufferIndexRange& range)
+    VulkanResourceView VulkanBuffer::GetResourceView(const BufferIndexRange& range) const
     {
-        PK_DEBUG_FATAL_ASSERT(range.offset + range.count <= m_size && range.count != VK_WHOLE_SIZE, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
+        PK_DEBUG_FATAL_ASSERT(range.offset + range.count <= GetSize(), "Trying to get a buffer resource view for a range that is outside of buffer bounds");
 
-        if (m_firstView.FindAndSwapFirst(range))
+        if (range.offset == 0ull && (range.count == 0ull || range.count == m_size))
         {
-            return m_firstView;
+            return m_defaultView;
         }
 
-        auto view = m_driver->CreatePooled<VulkanBufferView>();
-        view->memory.address = m_deviceAddress + range.offset;
-        view->memory.size = range.count ? range.count : (m_size - range.offset);
-        m_firstView.Insert(view, range);
-        return m_firstView;
+        VulkanResourceView view{};
+        view.memory.address = m_defaultView.memory.address + range.offset;
+        view.memory.size = range.count ? range.count : (m_size - range.offset);
+        view.UpdateHashMemory();
+        return view;
     }
 }

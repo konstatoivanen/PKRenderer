@@ -276,9 +276,10 @@ namespace PK
         void* swapchainPNext = nullptr;
     };
 
-
-    struct VulkanBindHandle : VersionedObject
+    struct VulkanResourceView
     {
+        uint64_t hash = 0ull;
+
         union
         {
             struct
@@ -286,30 +287,38 @@ namespace PK
                 VkImage image = VK_NULL_HANDLE;
                 VkImageView view = VK_NULL_HANDLE;
                 VkSampler sampler = VK_NULL_HANDLE;
-                VkFormat format = VK_FORMAT_UNDEFINED;
                 VkExtent3D extent = { 0u, 0u, 0u };
                 VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
-                uint16_t samples = (uint16_t)VK_SAMPLE_COUNT_1_BIT;
-            } 
+            }
             image;
 
             VkDeviceAddressRangeKHR memory;
         };
 
-        VulkanBindHandle() : image{}{};
+        VulkanResourceView() : image{} {}
+
+        constexpr bool operator == (const VulkanResourceView& r) const noexcept { return hash == r.hash; }
+        constexpr bool operator != (const VulkanResourceView& r) const noexcept { return hash != r.hash; }
+        
+        inline void UpdateHashMemory() { hash = Hash::Mix(memory.address, memory.size); }
+        inline void UpdateHashImage(uint64_t version = 0ull) { hash = Hash::Mix((uint64_t)image.view ^ version, (uint64_t)image.sampler); }
+    };
+
+    struct VulkanResourceViewHash
+    {
+        size_t operator()(const VulkanResourceView& k) const noexcept
+        {
+            return k.hash;
+        }
     };
 
     struct VulkanDescriptorBinding
     {
-        const VulkanBindHandle* const* handles;
+        const VulkanResourceView* views;
+        uint64_t hash;
         uint16_t count;
         ShaderResourceType type;
-        uint32_t version;
         bool isVariableSize;
-    };
-
-    struct VulkanBufferView : public LinkedListElement<VulkanBufferView, BufferIndexRange>, public VulkanBindHandle
-    {
     };
 
     struct VulkanImageViewCreateInfo
@@ -318,7 +327,6 @@ namespace PK
         VkImageViewType viewType;
         VkFormat format;
         VkImageUsageFlags usage;
-        VkSampleCountFlagBits samples;
         VkComponentMapping components;
         VkExtent3D extent;
         VkImageSubresourceRange subresourceRange;
@@ -331,7 +339,7 @@ namespace PK
 
         const VkDevice device;
         VkImageView view;
-        VulkanBindHandle bindHandle;
+        VulkanResourceView resourceView;
     };
 
     struct VulkanPipeline : public NoCopy
@@ -346,29 +354,16 @@ namespace PK
         VkPipelineBindPoint bindPoint;
     };
 
-    struct VulkanPipelineLayout : public NoCopy
-    {
-        VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo, const char* name);
-        ~VulkanPipelineLayout();
-
-        const VkDevice device;
-        VkPipelineLayout layout;
-        uint32_t pushConstantSize;
-        FenceRef releaseFence;
-        uint32_t referenceCount;
-    };
-
     struct VulkanDescriptorSetLayout : public NoCopy
     {
-        VulkanDescriptorSetLayout(VkDevice device, 
-                                  const VkDescriptorSetLayoutCreateInfo& createInfo, 
-                                  const char* name);
+        VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& layoutCreateInfo, uint32_t maxPushConstantSize, const char* name);
         ~VulkanDescriptorSetLayout();
 
         const VkDevice device;
-        VkDescriptorSetLayout layout;
+        VkDescriptorSetLayout layout = VK_NULL_HANDLE;
+        VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         FenceRef releaseFence;
-        uint32_t referenceCount;
+        uint32_t referenceCount = 0u;
     };
 
     struct VulkanQueryPool : public NoCopy

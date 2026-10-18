@@ -20,7 +20,7 @@ namespace PK
         VkShaderModule GetModule(uint32_t index) const { return m_modules[index]; }
         const char* GetName() const { return m_name.c_str(); }
         constexpr const VulkanDescriptorSetLayout* GetDescriptorSetLayout() const { return m_descriptorSetLayout; }
-        constexpr const VulkanPipelineLayout* GetPipelineLayout() const { return m_pipelineLayout; }
+        constexpr uint32_t GetPushConstantSize() const { return m_pushConstantSize; }
 
     private:
         const VulkanDriver* m_driver;
@@ -28,11 +28,11 @@ namespace PK
         ShaderPushConstantLayout m_pushConstantLayout;
         ShaderResourceLayout m_resourceLayout;
         ShaderStageFlags m_stageFlags = ShaderStageFlags::None;
+        uint32_t m_pushConstantSize = 0u;
         uint3 m_groupSize{};
 
         VkShaderModule m_modules[(uint32_t)ShaderStage::EnumCount];
         const VulkanDescriptorSetLayout* m_descriptorSetLayout;
-        const VulkanPipelineLayout* m_pipelineLayout;
         const FixedString128 m_name;
     };
 }

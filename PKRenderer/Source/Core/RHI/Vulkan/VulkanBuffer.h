@@ -12,10 +12,11 @@ namespace PK
         size_t GetSize() const final { return m_size; }
         BufferUsage GetUsage() const final { return m_usage; }
         const char* GetDebugName() const final { return m_name.c_str(); }
-        uint64_t GetDeviceAddress() const final { return m_deviceAddress; }
-        const void* GetNativeView() const final { return m_defaultView; }
-        const void* GetNativeView(const BufferIndexRange& range);
+        uint64_t GetDeviceAddress() const final { return m_defaultView.memory.address; }
+        const void* GetNativeView() const final { return &m_defaultView; }
         void* GetMappedPtr() const final;
+
+        VulkanResourceView GetResourceView(const BufferIndexRange& range) const;
 
     private:
         const FixedString128 m_name;
@@ -25,9 +26,6 @@ namespace PK
         void* m_mappedData;
         VmaAllocation m_memory;
         VkBuffer m_buffer;
-        VkDeviceAddress m_deviceAddress;
-        
-        VulkanBufferView* m_defaultView = nullptr;
-        LinkedList<VulkanBufferView, BufferIndexRange> m_firstView = nullptr;
+        VulkanResourceView m_defaultView{};
     };
 }

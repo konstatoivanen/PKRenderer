@@ -6,7 +6,6 @@ namespace PK
     constexpr static const uint64_t PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE = 16384ull;
     constexpr static const uint64_t PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT = 128ull;
 
-    constexpr static const uint64_t PK_VK_MAX_BUFFER_VIEWS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_IMAGE_VIEWS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_BUFFERS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_IMAGES = 1024ull;

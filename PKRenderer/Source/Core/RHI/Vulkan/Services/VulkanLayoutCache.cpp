@@ -44,38 +44,10 @@ namespace PK
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
 
         FixedString64 layoutName("SetLayout%02d", index);
-        auto newLayout = m_setLayoutPool.New(m_device, layoutCreateInfo, layoutName.c_str());
+        auto newLayout = m_setLayoutPool.New(m_device, layoutCreateInfo, m_maxPushConstantSize, layoutName.c_str());
         newLayout->referenceCount = 1u;
         newLayout->releaseFence.Invalidate();
         m_setLayoutMap[index].value = (uint16_t)m_setLayoutPool.GetIndex(newLayout);
-        return newLayout;
-    }
-
-    const VulkanPipelineLayout* VulkanLayoutCache::GetPipelineLayout(const PipelineLayoutKey& key, const char* name)
-    {
-        auto index = 0u;
-        if (!m_pipelineLayoutMap.AddKey(key, &index))
-        {
-            auto layout = m_pipelineLayoutPool[m_pipelineLayoutMap[index].value];
-            layout->referenceCount++;
-            return layout;
-        }
-
-        VkPushConstantRange pushConstants;
-        pushConstants.stageFlags = VK_SHADER_STAGE_ALL;
-        pushConstants.offset = 0u;
-        pushConstants.size = key.pushConstantsSize;
-        
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        pipelineLayoutInfo.pSetLayouts = &key.setlayout;
-        pipelineLayoutInfo.pPushConstantRanges = &pushConstants;
-        pipelineLayoutInfo.setLayoutCount = 1u;
-        pipelineLayoutInfo.pushConstantRangeCount = key.pushConstantsSize ? 1u : 0u;
-
-        auto newLayout = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo, FixedString64("%s.PipelineLayout", name).c_str());
-        newLayout->referenceCount = 1u;
-        newLayout->releaseFence.Invalidate();
-        m_pipelineLayoutMap[index].value = (uint16_t)m_pipelineLayoutPool.GetIndex(newLayout);
         return newLayout;
     }
 
@@ -90,30 +62,8 @@ namespace PK
         }
     }
 
-    void VulkanLayoutCache::ReleasePipelineLayout(const VulkanPipelineLayout* layout, const FenceRef& releaseFence)
-    {
-        auto localLayout = m_pipelineLayoutPool[m_pipelineLayoutPool.GetIndex(layout)];
-        localLayout->referenceCount--;
-
-        if (localLayout->referenceCount <= 0u)
-        {
-            localLayout->releaseFence = releaseFence;
-        }
-    }
-
     void VulkanLayoutCache::Prune()
     {
-        for (auto i = (int32_t)m_pipelineLayoutMap.GetCount() - 1; i >= 0; --i)
-        {
-            auto layout = m_pipelineLayoutPool[m_pipelineLayoutMap[i].value];
-
-            if (layout->referenceCount <= 0u && layout->releaseFence.WaitInvalidate(0u))
-            {
-                m_pipelineLayoutMap.RemoveAt(i);
-                m_pipelineLayoutPool.Delete(layout);
-            }
-        }
-
         for (auto i = (int32_t)m_setLayoutMap.GetCount() - 1; i >= 0; --i)
         {
             auto layout = m_setLayoutPool[m_setLayoutMap[i].value];

@@ -57,13 +57,9 @@ namespace PK
         virtual const char* GetDebugName() const = 0;
         virtual uint64_t GetDeviceAddress() const = 0;
         virtual const void* GetNativeView() const = 0;
-        virtual const void* GetNativeView(const BufferIndexRange& range) = 0;
         virtual void* GetMappedPtr() const = 0;
-
-        template<typename T> 
-        inline const T* GetNativeView() const { return static_cast<const T*>(GetNativeView()); }
-        template<typename T> 
-        inline const T* GetNativeView(const BufferIndexRange& range) { return static_cast<const T*>(GetNativeView(range)); }
+        template<typename T> inline const T* GetNativeView() const { return static_cast<const T*>(GetNativeView()); }
+        template<typename T> inline T* GetMappedPtr() const { return reinterpret_cast<T*>(GetMappedPtr()); }
     };
 
     struct RHIAccelerationStructure : public NoCopy

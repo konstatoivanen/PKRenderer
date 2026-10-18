@@ -25,7 +25,7 @@ namespace PK
         void Release();
         void Rebuild(const SwapchainDescriptor& createInfo);
 
-        const VulkanBindHandle* GetBindHandle() const { return &m_imageViews[m_imageIndex]->bindHandle; }
+        const VulkanResourceView* GetResourceView() const { return &m_imageViews[m_imageIndex]->resourceView; }
         const VulkanImageView* GetImageView() const { return m_imageViews[m_imageIndex]; }
         VkSemaphore ConsumeAcquireSignal();
         VkSemaphore ConsumePresentSignal();

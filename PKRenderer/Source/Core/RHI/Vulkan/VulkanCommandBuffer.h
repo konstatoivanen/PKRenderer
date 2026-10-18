@@ -9,7 +9,7 @@ namespace PK
         inline bool IsRecording() const { return m_isRecording; }
         inline bool IsExecuting() const { return m_commandBuffer != VK_NULL_HANDLE; }
 
-        void SetPipelineState(const VulkanPipeline* pipeline, const VulkanPipelineLayout* pipelineLayout, VkDeviceSize descriptorSetOffset, const void* pushConstants);
+        void SetPipelineState(const VulkanPipeline* pipeline, VkPipelineLayout pipelineLayout, VkDeviceSize descriptorSetOffset, const void* pushConstants, uint32_t pushConstantSize);
         void SetRasterState(const VkRenderingInfo* renderingInfo, const VulkanDynamicState* dynamicState);
         void SetVertexBuffers(const VkBindVertexBuffer3InfoKHR* infos, uint32_t count);
         void SetIndexBuffer(const VkBindIndexBuffer3InfoKHR& info);

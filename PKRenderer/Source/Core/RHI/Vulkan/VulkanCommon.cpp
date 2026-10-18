@@ -329,13 +329,12 @@ namespace PK
         VK_ASSERT_RESULT_CTX(vkCreateImageView(device, &info, nullptr, &view), "Failed to create an image view!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, name);
 
-        bindHandle.image.view = view;
-        bindHandle.image.image = createInfo.image;
-        bindHandle.image.format = info.format;
-        bindHandle.image.extent = createInfo.extent;
-        bindHandle.image.range = createInfo.subresourceRange;
-        bindHandle.image.samples = (uint16_t)createInfo.samples;
-        bindHandle.image.sampler = VK_NULL_HANDLE;
+        resourceView.image.view = view;
+        resourceView.image.image = createInfo.image;
+        resourceView.image.extent = createInfo.extent;
+        resourceView.image.range = createInfo.subresourceRange;
+        resourceView.image.sampler = VK_NULL_HANDLE;
+        resourceView.UpdateHashImage(Version());
     }
 
     VulkanImageView::~VulkanImageView()
@@ -373,28 +372,30 @@ namespace PK
     }
 
 
-    VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo, const char* name) :
-        device(device),
-        pushConstantSize(createInfo.pushConstantRangeCount ? createInfo.pPushConstantRanges->size : 0u)
+    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& layoutCreateInfo, uint32_t maxPushConstantSize, const char* name) : 
+        device(device)
     {
-        VK_ASSERT_RESULT_CTX(vkCreatePipelineLayout(device, &createInfo, nullptr, &layout), "Failed to create a pipeline layout!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)layout, name);
-    }
-
-    VulkanPipelineLayout::~VulkanPipelineLayout()
-    {
-        vkDestroyPipelineLayout(device, layout, nullptr);
-    }
-
-
-    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo, const char* name) : device(device)
-    {
-        VK_ASSERT_RESULT_CTX(vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &layout), "Failed to create a descriptor set layout!");
+        VK_ASSERT_RESULT_CTX(vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &layout), "Failed to create a descriptor set layout!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)layout, name);
+
+        VkPushConstantRange pushConstantRange{};
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_ALL;
+        pushConstantRange.offset = 0u;
+        pushConstantRange.size = maxPushConstantSize;
+
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+        pipelineLayoutInfo.setLayoutCount = 1u;
+        pipelineLayoutInfo.pSetLayouts = &layout;
+        pipelineLayoutInfo.pushConstantRangeCount = 1u;
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+
+        VK_ASSERT_RESULT_CTX(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout), "Failed to create a pipeline layout!");
+        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipelineLayout, FixedString64("%s.PipelineLayout", name).c_str());
     }
 
     VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
     {
+        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyDescriptorSetLayout(device, layout, nullptr);
     }
 

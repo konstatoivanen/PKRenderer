@@ -31,8 +31,9 @@ namespace PK
     struct VulkanShaderCmd : public VulkanCmd
     {
         const VulkanPipeline* pipeline;
-        const VulkanPipelineLayout* pipelineLayout;
+        VkPipelineLayout pipelineLayout;
         VkDeviceSize descriptorSetOffset;
+        VkDeviceSize pushConstantSize;
         void* pushConstants;
     };
 
@@ -209,8 +210,10 @@ namespace PK
     {
         struct Attachment
         {
-            VersionHandle<VulkanBindHandle> target;
-            VersionHandle<VulkanBindHandle> resolve;
+            VulkanResourceView target{};
+            VulkanResourceView resolve{};
+            VkFormat format = VK_FORMAT_UNDEFINED;
+            VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
             VkResolveModeFlagBits resolveMode;
             LoadOp loadOp = LoadOp::Load;
             StoreOp storeOp = StoreOp::Store;
@@ -325,8 +328,8 @@ namespace PK
         void SubmitQueue(uint32_t queueIndex, VkSemaphore signal, struct VulkanGraphDebugScopes* scopes);
 
         uint64_t AddBarrierPass(QueueType queue, bool isRaster);
-        void RecordMemoryAccess(QueueType queue, const VulkanBindHandle* handle, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
-        void RecordImageAccess(QueueType queue, const VulkanBindHandle* handle, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
+        void RecordMemoryAccess(QueueType queue, const VulkanResourceView& view, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
+        void RecordImageAccess(QueueType queue, const VulkanResourceView& view, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
         
         void RecordShaderCmd(QueueType queue, VulkanShaderCmd* cmd);
         void RecordRasterCmd(VulkanRasterCmd* cmd);
@@ -348,8 +351,8 @@ namespace PK
             VulkanDynamicState dynamicState{};
             VkStridedDeviceAddressRegionKHR sbtAddresses[(uint32_t)RayTracingShaderGroup::EnumCount]{};
             VertexStreamElement vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
-            const VulkanBindHandle* vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
-            const VulkanBindHandle* indexBuffer = nullptr;
+            VulkanResourceView vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
+            VulkanResourceView indexBuffer{};
             VkIndexType indexType = VK_INDEX_TYPE_UINT16;
             VulkanRenderTarget renderTarget{};
 
@@ -365,7 +368,7 @@ namespace PK
             VkRenderingInfo* renderingInfo = nullptr;
             VulkanDynamicState* resolvedDynamicState = nullptr;
             VkBindVertexBuffer3InfoKHR* resolvedVertexBuffers = nullptr;
-            const VulkanBindHandle* resolvedVertexHandles[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
+            VulkanResourceView resolvedVertexViews[PK_RHI_MAX_VERTEX_ATTRIBUTES]{}; 
             const VulkanPipeline* pipeline = nullptr;
         } 
         m_pipelineState;

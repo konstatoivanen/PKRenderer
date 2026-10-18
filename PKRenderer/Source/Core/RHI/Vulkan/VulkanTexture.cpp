@@ -91,7 +91,11 @@ namespace PK
 
         for (auto view : m_firstView)
         {
-            m_driver->DisposePooled(view, fence);
+            m_driver->disposer->Dispose(&m_driver->imageViewPool, view, [](void* c, void* v)
+            {
+                static_cast<decltype(m_driver->imageViewPool)*>(c)->Delete(static_cast<VulkanImageView*>(v));
+            },
+            fence);
         }
 
         m_driver->disposer->Dispose(m_driver->device, m_image, [](void* c, void* v)
@@ -118,10 +122,10 @@ namespace PK
 
             for (auto& view : m_firstView)
             {
-                if (view->bindHandle.image.sampler != VK_NULL_HANDLE)
+                if (view->resourceView.image.sampler != VK_NULL_HANDLE)
                 {
-                    view->bindHandle.IncrementVersion();
-                    view->bindHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
+                    view->resourceView.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
+                    view->resourceView.UpdateHashImage(view->Version());
                 }
             }
         }
@@ -133,14 +137,12 @@ namespace PK
 
         if (mode == TextureViewMode::RAW)
         {
-            m_rawHandle.image.view = VK_NULL_HANDLE;
-            m_rawHandle.image.image = m_image;
-            m_rawHandle.image.format = m_format;
-            m_rawHandle.image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
-            m_rawHandle.image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
-            m_rawHandle.image.range = VulkanConvertRange(normalizedRange, m_format);
-            m_rawHandle.image.sampler = VK_NULL_HANDLE;
-            return &m_rawHandle;
+            m_rawView.image.view = VK_NULL_HANDLE;
+            m_rawView.image.image = m_image;
+            m_rawView.image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
+            m_rawView.image.range = VulkanConvertRange(normalizedRange, m_format);
+            m_rawView.image.sampler = VK_NULL_HANDLE;
+            return &m_rawView;
         }
 
         auto key = GetViewKey(normalizedRange, mode);
@@ -154,11 +156,10 @@ namespace PK
             info.image = m_image;
             info.viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
             info.format = useAlias ? m_formatAlias : m_format;
-            info.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
             info.components = mode == TextureViewMode::SRV ? VulkanEnumConvert::GetSwizzle(info.format) : (VkComponentMapping{});
             info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
             info.subresourceRange = VulkanConvertRange(normalizedRange, info.format);
-            
+
             switch (mode)
             {
                 case TextureViewMode::UAV: info.usage = VK_IMAGE_USAGE_STORAGE_BIT; break;
@@ -167,17 +168,18 @@ namespace PK
                 default: break;
             }
             
-            auto newView = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, m_name.c_str());
+            auto newView = m_driver->imageViewPool.New(m_driver->device, info, m_name.c_str());
 
             if (mode == TextureViewMode::SRV)
             {
-                newView->bindHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
+                newView->resourceView.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
+                newView->resourceView.UpdateHashImage(newView->Version());
             }
 
             m_firstView.Insert(newView, key);
         }
 
-        return &m_firstView->bindHandle;
+        return &m_firstView->resourceView;
     }
 
     TextureViewRange VulkanTexture::NormalizeViewRange(const TextureViewRange& range) const

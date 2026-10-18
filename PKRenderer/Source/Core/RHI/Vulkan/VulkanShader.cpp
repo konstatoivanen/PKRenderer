@@ -48,7 +48,6 @@ namespace PK
         }
 
         DescriptorSetLayoutKey key{};
-        PipelineLayoutKey pipelineKey{};
         m_resourceLayout.ClearFast();
 
         if (variant->descriptorCount > 0)
@@ -68,15 +67,12 @@ namespace PK
         
         // Cache these so that we can optimize shaders easier based on profiling tools.
         m_descriptorSetLayout = m_driver->layoutCache->GetSetLayout(key);
-        pipelineKey.setlayout = m_descriptorSetLayout->layout;
+        m_pushConstantSize = variant->constantRange;
+        m_pushConstantLayout.ClearFast();
 
         if (variant->constantRange > 0u)
         {
-            pipelineKey.pushConstantsSize = variant->constantRange;
-
             auto pVariables = variant->constants.Get(base);
-
-            m_pushConstantLayout.ClearFast();
 
             for (auto i = 0u; i < variant->constantCount; ++i)
             {
@@ -87,15 +83,12 @@ namespace PK
                 constant->size = pVariable->size;
             }
         }
-
-        m_pipelineLayout = m_driver->layoutCache->GetPipelineLayout(pipelineKey, name);
     }
 
     VulkanShader::~VulkanShader()
     {
         auto fence = m_driver->graph->GetFenceRef();
 
-        m_driver->layoutCache->ReleasePipelineLayout(m_pipelineLayout, fence);
         m_driver->layoutCache->ReleaseSetLayout(m_descriptorSetLayout, fence);
 
         for (auto& module : m_modules)

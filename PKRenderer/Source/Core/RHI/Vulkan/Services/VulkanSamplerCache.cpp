@@ -47,13 +47,12 @@ namespace PK
             VK_ASSERT_RESULT_CTX(vkCreateSampler(m_device, &info, nullptr, &sampler->sampler), "Failed to create a sampler!");
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler->sampler, FixedString64("Sampler%u", index).c_str());
 
-            sampler->handle.image.image = VK_NULL_HANDLE;
-            sampler->handle.image.view = VK_NULL_HANDLE;
-            sampler->handle.image.sampler = sampler->sampler;
-            sampler->handle.image.format = VK_FORMAT_UNDEFINED;
-            sampler->handle.image.extent = { 0u, 0u, 0u };
-            sampler->handle.image.range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
-            sampler->handle.image.samples = VK_SAMPLE_COUNT_1_BIT;
+            sampler->view.image.image = VK_NULL_HANDLE;
+            sampler->view.image.view = VK_NULL_HANDLE;
+            sampler->view.image.sampler = sampler->sampler;
+            sampler->view.image.extent = { 0u, 0u, 0u };
+            sampler->view.image.range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
+            sampler->view.UpdateHashImage();
         }
             
         return &m_samplers[index].value;

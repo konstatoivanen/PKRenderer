@@ -13,6 +13,15 @@ namespace PK::Hash
     uint64_t FNV1AHash(const void* data, size_t size);
     uint64_t InterlaceHash32x2(uint32_t a, uint32_t b);
 
+    constexpr uint64_t Mix(uint64_t seed, uint64_t value)
+    {
+        seed ^= value + 0x9e3779b97f4a7c15ull + (seed << 6ull) + (seed >> 2ull);
+        seed ^= seed >> 33ull;
+        seed *= 0xff51afd7ed558ccdull;
+        seed ^= seed >> 33ull;
+        return seed;
+    }
+
     template<typename T>
     inline size_t GetHash(const T& k) 
     {

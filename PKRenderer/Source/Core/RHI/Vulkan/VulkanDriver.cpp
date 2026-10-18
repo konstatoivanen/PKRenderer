@@ -143,7 +143,7 @@ namespace PK
         disposer.New(512u);
         pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.enablePipelineCache, properties.gcPruneDelay);
         samplerCache.New(device);
-        layoutCache.New(device);
+        layoutCache.New(device, physicalDeviceProperties);
         stagingArena.New(device, allocator, queueInitializer.selectedAll, properties.stagingArenaSize);
         descriptorArena.New(device, allocator, queueInitializer.selectedAll, physicalDeviceProperties, properties.descriptorArenaSize);
         timerArena.New(device, physicalDeviceProperties.core.limits.timestampPeriod);

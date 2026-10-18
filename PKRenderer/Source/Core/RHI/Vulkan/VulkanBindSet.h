@@ -10,7 +10,7 @@ namespace PK
     {
         VulkanBindSet(size_t capacity);
 
-        const VulkanBindHandle* const* GetHandles(uint32_t* version, uint32_t* count) const;
+        const VulkanResourceView* GetViews(uint64_t* version, uint32_t* count) const;
 
         int32_t Add(RHITexture* value, void* bindInfo) final;
         int32_t Add(RHITexture* value) final;
@@ -21,13 +21,13 @@ namespace PK
         void Clear() final { m_set.ClearFast(); }
 
     private:
-        int32_t Add(const VulkanBindHandle* handle);
+        int32_t Add(const VulkanResourceView& handle);
 
-        HashSet16<const VulkanBindHandle*> m_set;
+        HashSet16<VulkanResourceView, VulkanResourceViewHash> m_set;
 
         // Hackedy hack dirty stuff
         mutable bool m_isDirty = false;
         mutable size_t m_previousCount = 0ull;
-        mutable uint32_t m_version = 0u;
+        mutable uint64_t m_version = 0ull;
     };
 }
