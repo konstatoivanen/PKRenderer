@@ -107,15 +107,15 @@ namespace PK
                 {
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
                     {
-                        bufferInfo.address = handle->buffer.deviceAddress;
-                        bufferInfo.range = handle->buffer.size;
+                        bufferInfo.address = handle->memory.address;
+                        bufferInfo.range = handle->memory.size;
                         data.pUniformBuffer = &bufferInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
                     {
-                        bufferInfo.address = handle->buffer.deviceAddress;
-                        bufferInfo.range = handle->buffer.size;
+                        bufferInfo.address = handle->memory.address;
+                        bufferInfo.range = handle->memory.size;
                         data.pStorageBuffer = &bufferInfo;
                         break;
                     }
@@ -151,7 +151,7 @@ namespace PK
                     }
                     case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                     {
-                        data.accelerationStructure = handle->acceleration.deviceAddress;
+                        data.accelerationStructure = handle->memory.address;
                         break;
                     }
                     default:

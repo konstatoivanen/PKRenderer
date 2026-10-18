@@ -121,6 +121,7 @@ namespace PK
                 features.descriptorBuffer.descriptorBufferImageLayoutIgnored = VK_TRUE;
                 features.unifiedLayout.unifiedImageLayouts = VK_TRUE;
                 features.deviceAddressCommands.deviceAddressCommands = VK_TRUE;
+                features.raytracingMaintenance1.rayTracingMaintenance1 = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 // Nsight uses push descriptors but they fail to set this flag
@@ -157,7 +158,8 @@ namespace PK
                     VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME,
                     VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
                     VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME,
-                    VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME
+                    VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME,
+                    VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanDriverDescriptor

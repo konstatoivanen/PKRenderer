@@ -276,11 +276,11 @@ namespace PK
         auto indirectHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(QueueType::Graphics, true);
         cmd->indirectInfo.sType = VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR;
-        cmd->indirectInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, (VkDeviceSize)drawCount * stride, stride };
+        cmd->indirectInfo.addressRange = { indirectHandle->memory.address + offset, (VkDeviceSize)drawCount * stride, stride };
         cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         cmd->indirectInfo.drawCount = drawCount;
         RecordVertexCmd(cmd);
-        RecordBufferAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
@@ -317,11 +317,11 @@ namespace PK
         auto indirectHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(QueueType::Graphics, true);
         cmd->indirectInfo.sType = VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR;
-        cmd->indirectInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, (VkDeviceSize)drawCount * stride, stride };
+        cmd->indirectInfo.addressRange = { indirectHandle->memory.address + offset, (VkDeviceSize)drawCount * stride, stride };
         cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         cmd->indirectInfo.drawCount = drawCount;
         RecordIndexCmd(cmd);
-        RecordBufferAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DrawMeshTasks(const uint3& dimensions)
@@ -350,11 +350,11 @@ namespace PK
         auto indirectHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(QueueType::Graphics, true);
         cmd->indirectInfo.sType = VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR;
-        cmd->indirectInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, (VkDeviceSize)drawCount * stride, stride };
+        cmd->indirectInfo.addressRange = { indirectHandle->memory.address + offset, (VkDeviceSize)drawCount * stride, stride };
         cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         cmd->indirectInfo.drawCount = drawCount;
         RecordRasterCmd(cmd);
-        RecordBufferAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DrawMeshTasksIndirectCount(const RHIBuffer* indirectArguments, size_t offset, const RHIBuffer* countBuffer, size_t countOffset, uint32_t maxDrawCount, uint32_t stride)
@@ -370,14 +370,14 @@ namespace PK
         auto countHandle = countBuffer->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(QueueType::Graphics, true);
         cmd->indirectCountInfo.sType = VK_STRUCTURE_TYPE_DRAW_INDIRECT_COUNT_2_INFO_KHR;
-        cmd->indirectCountInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, (VkDeviceSize)maxDrawCount * stride, stride };
+        cmd->indirectCountInfo.addressRange = { indirectHandle->memory.address + offset, (VkDeviceSize)maxDrawCount * stride, stride };
         cmd->indirectCountInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
-        cmd->indirectCountInfo.countAddressRange = { countHandle->buffer.deviceAddress + countOffset, sizeof(uint32_t) };
+        cmd->indirectCountInfo.countAddressRange = { countHandle->memory.address + countOffset, sizeof(uint32_t) };
         cmd->indirectCountInfo.countAddressFlags = PK_VK_ADDRESS_FLAGS;
         cmd->indirectCountInfo.maxDrawCount = maxDrawCount;
         RecordRasterCmd(cmd);
-        RecordBufferAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
-        RecordBufferAccess(QueueType::Graphics, countHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, countHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::Dispatch(QueueType queue, const uint3& dimensions)
@@ -407,10 +407,10 @@ namespace PK
         auto indirectHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
         cmd->indirectInfo.sType = VK_STRUCTURE_TYPE_DISPATCH_INDIRECT_2_INFO_KHR;
-        cmd->indirectInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, sizeof(VkDispatchIndirectCommand) };
+        cmd->indirectInfo.addressRange = { indirectHandle->memory.address + offset, sizeof(VkDispatchIndirectCommand) };
         cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         RecordShaderCmd(queue, cmd);
-        RecordBufferAccess(queue, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(queue, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DispatchRays(QueueType queue, const uint3& dimensions)
@@ -534,9 +534,9 @@ namespace PK
         auto handle = dst->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
         cmd->src = static_cast<VulkanSwapchain*>(src);
-        cmd->region.addressRange = { handle->buffer.deviceAddress, handle->buffer.size };
+        cmd->region.addressRange = { handle->memory.address, handle->memory.size };
         cmd->region.addressFlags = PK_VK_ADDRESS_FLAGS;
-        RecordBufferAccess(queue, handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        RecordMemoryAccess(queue, handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
     }
 
     void VulkanGraph::Blit(QueueType queue, RHITexture* src, RHITexture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter)
@@ -615,10 +615,10 @@ namespace PK
 
         auto handle = dst->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->range.address = handle->buffer.deviceAddress + offset;
+        cmd->range.address = handle->memory.address + offset;
         cmd->range.size = size;
         cmd->value = value;
-        RecordBufferAccess(queue, handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        RecordMemoryAccess(queue, handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
     }
 
     void VulkanGraph::Clear(QueueType queue, RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value)
@@ -652,11 +652,11 @@ namespace PK
 
         auto handle = dst->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->range.address = handle->buffer.deviceAddress + offset;
+        cmd->range.address = handle->memory.address + offset;
         cmd->range.size = size;
         cmd->pData = Allocate<uint8_t>(size);
         memcpy(cmd->pData, data, size);
-        RecordBufferAccess(queue, handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT);
+        RecordMemoryAccess(queue, handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT);
     }
 
     void VulkanGraph::CopyBuffer(QueueType queue, RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size)
@@ -673,13 +673,13 @@ namespace PK
         auto dstHandle = dst->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
         cmd->region.sType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_COPY_KHR;
-        cmd->region.srcRange = { srcHandle->buffer.deviceAddress + srcOffset, size };
+        cmd->region.srcRange = { srcHandle->memory.address + srcOffset, size };
         cmd->region.srcFlags = PK_VK_ADDRESS_FLAGS;
-        cmd->region.dstRange = { dstHandle->buffer.deviceAddress + dstOffset, size };
+        cmd->region.dstRange = { dstHandle->memory.address + dstOffset, size };
         cmd->region.dstFlags = PK_VK_ADDRESS_FLAGS;
 
         // Assume always staging source?!?
-        RecordBufferAccess(queue, dstHandle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        RecordMemoryAccess(queue, dstHandle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
     }
 
     void VulkanGraph::CopyToTexture(QueueType queue, RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount)
@@ -730,7 +730,7 @@ namespace PK
 
             cmd->regions[i].sType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_IMAGE_COPY_KHR;
             cmd->regions[i].pNext = nullptr;
-            cmd->regions[i].addressRange.address = srcHandle->buffer.deviceAddress + region.bufferOffset;
+            cmd->regions[i].addressRange.address = srcHandle->memory.address + region.bufferOffset;
             cmd->regions[i].addressRange.size = totalBytes;
             cmd->regions[i].addressFlags = PK_VK_ADDRESS_FLAGS;
             cmd->regions[i].addressRowLength = 0u;
@@ -759,7 +759,7 @@ namespace PK
         auto inputBufferSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceLimit;
         writer->structure = vkStructure;
         writer->stagingBuffer = AcquireStagingBuffer(inputBufferSize);
-        writer->instances = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(writer->stagingBuffer->BeginMap(0ull, 0ull));
+        writer->instances = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(writer->stagingBuffer->GetMappedPtr());
         writer->instanceIndices = Allocate<uint32_t>(instanceLimit);
         writer->instanceCount = 0u;
         writer->instanceLimit = instanceLimit;
@@ -923,7 +923,8 @@ namespace PK
             vkStructure->DisposeStructure(vkStructure->structure.handle, GetFenceRef());
             vkStructure->structure.handle = vkStructure->CreateStructure(&vkStructure->structure, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, FixedString128({ vkStructure->name.c_str(), ".TLAS" }));
             vkStructure->structure.deviceAddress = VulkanGetAccelerationStructureDeviceAddress(m_driver->device, vkStructure->structure.handle);
-            vkStructure->bindHandle.acceleration.deviceAddress = vkStructure->structure.deviceAddress;
+            vkStructure->bindHandle.memory.address = vkStructure->structure.deviceAddress;
+            vkStructure->bindHandle.memory.size = vkStructure->structure.size;
             vkStructure->bindHandle.IncrementVersion();
         }
 
@@ -969,6 +970,10 @@ namespace PK
         vkStructure->instanceCount = vkBuilder->instanceCount;
 
         cmd->passIndex = AddBarrierPass(queue, false);
+        RecordMemoryAccess(queue, 
+            &vkStructure->bindHandle, 
+            VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR,
+            VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
     }
 
 
@@ -1237,6 +1242,7 @@ namespace PK
     {
         m_invocationCounter++;
         auto& scope = m_scopes[m_invocationCounter % PK_VK_MAX_GRAPH_SCOPES];
+        auto completedPassCounter = scope.lastPassCounter;
 
         PK_FATAL_ASSERT(scope.fence.Wait(UINT64_MAX), "Failed to acquire new graph scope!");
 
@@ -1254,7 +1260,7 @@ namespace PK
         m_pipelineState = PipelineState();
         m_stagingArena->BeginRange();
         m_descriptorArena->BeginRange();
-        m_accessRecorder.ResetPasses();
+        m_accessRecorder.ResetPasses(completedPassCounter);
         RHIGraph::Clear();
 
     }
@@ -1264,6 +1270,7 @@ namespace PK
         auto& scope = m_scopes[m_invocationCounter % PK_VK_MAX_GRAPH_SCOPES];
         scope.stagingRangeIndex = m_stagingArena->EndRange();
         scope.descriptorRangeIndex = m_descriptorArena->EndRange();
+        scope.lastPassCounter = m_accessRecorder.GetPassCounter();
         return scope;
     }
 
@@ -1350,15 +1357,14 @@ namespace PK
         return 0u;
     }
 
-    void VulkanGraph::RecordBufferAccess(QueueType queue, const VulkanBindHandle* handle, VkPipelineStageFlags2 stage, VkAccessFlags2 access)
+    void VulkanGraph::RecordMemoryAccess(QueueType queue, const VulkanBindHandle* handle, VkPipelineStageFlags2 stage, VkAccessFlags2 access)
     {
         VulkanAccessRecord record;
-        record.buffer.offset = handle->buffer.offset;
-        record.buffer.size = handle->buffer.size;
+        record.memory = handle->memory;
         record.stage = stage;
         record.access = access;
         record.queue = m_driver->queues->GetQueueIndex(queue);
-        m_accessRecorder.RecordBufferAccess(handle->buffer.buffer, record);
+        m_accessRecorder.RecordMemoryAccess(record);
     }
 
     void VulkanGraph::RecordImageAccess(QueueType queue, const VulkanBindHandle* handle, VkPipelineStageFlags2 stage, VkAccessFlags2 access)
@@ -1440,12 +1446,17 @@ namespace PK
 
                 if (descriptor.type == ShaderResourceType::StorageBuffer)
                 {
-                    RecordBufferAccess(queue, handles[i], layoutStageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
+                    RecordMemoryAccess(queue, handles[i], layoutStageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
                 }
 
                 if (descriptor.type == ShaderResourceType::ConstantBuffer)
                 {
-                    RecordBufferAccess(queue, handles[i], layoutStageFlags, access | VK_ACCESS_2_UNIFORM_READ_BIT);
+                    RecordMemoryAccess(queue, handles[i], layoutStageFlags, access | VK_ACCESS_2_UNIFORM_READ_BIT);
+                }
+
+                if (descriptor.type == ShaderResourceType::AccelerationStructure)
+                {
+                    RecordMemoryAccess(queue, handles[i], layoutStageFlags, VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
                 }
             }
         }
@@ -1726,8 +1737,8 @@ namespace PK
                     info.sType = VK_STRUCTURE_TYPE_BIND_VERTEX_BUFFER_3_INFO_KHR;
                     info.pNext = nullptr;
                     info.setStride = VK_FALSE;
-                    info.addressRange.address = activeBuffers[i]->buffer.deviceAddress;
-                    info.addressRange.size = activeBuffers[i]->buffer.size;
+                    info.addressRange.address = activeBuffers[i]->memory.address;
+                    info.addressRange.size = activeBuffers[i]->memory.size;
                     info.addressRange.stride = state->pipelineKey.vertexStreams[i].stride;
                     info.addressFlags = PK_VK_ADDRESS_FLAGS;
                 }
@@ -1736,7 +1747,7 @@ namespace PK
 
         for (auto i = 0u; i < state->vertexBufferCount; ++i)
         {
-            RecordBufferAccess(QueueType::Graphics, state->resolvedVertexHandles[i], VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT);
+            RecordMemoryAccess(QueueType::Graphics, state->resolvedVertexHandles[i], VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT);
         }
 
         cmd->vertexBufferCount = state->vertexBufferCount;
@@ -1748,10 +1759,10 @@ namespace PK
     {
         if (m_pipelineState.indexBuffer != nullptr)
         {
-            RecordBufferAccess(QueueType::Graphics, m_pipelineState.indexBuffer, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT, VK_ACCESS_2_INDEX_READ_BIT);
+            RecordMemoryAccess(QueueType::Graphics, m_pipelineState.indexBuffer, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT, VK_ACCESS_2_INDEX_READ_BIT);
             cmd->indexInfo.sType = VK_STRUCTURE_TYPE_BIND_INDEX_BUFFER_3_INFO_KHR;
             cmd->indexInfo.pNext = nullptr;
-            cmd->indexInfo.addressRange = { m_pipelineState.indexBuffer->buffer.deviceAddress, m_pipelineState.indexBuffer->buffer.size };
+            cmd->indexInfo.addressRange = m_pipelineState.indexBuffer->memory;
             cmd->indexInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
             cmd->indexInfo.indexType = m_pipelineState.indexType;
         }

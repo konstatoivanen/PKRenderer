@@ -106,7 +106,7 @@ namespace PK
         },
         fence);
 
-        m_driver->graph->UnregisterResource(m_image);
+        m_driver->graph->UnregisterImage(m_image);
         m_firstView = nullptr;
     }
 

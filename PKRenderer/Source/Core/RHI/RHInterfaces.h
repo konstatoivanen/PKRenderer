@@ -58,9 +58,7 @@ namespace PK
         virtual uint64_t GetDeviceAddress() const = 0;
         virtual const void* GetNativeView() const = 0;
         virtual const void* GetNativeView(const BufferIndexRange& range) = 0;
-
-        virtual void* BeginMap(size_t offset, [[maybe_unused]] size_t readsize) const = 0;
-        virtual void EndMap(size_t offset, [[maybe_unused]] size_t writeSize) const = 0;
+        virtual void* GetMappedPtr() const = 0;
 
         template<typename T> 
         inline const T* GetNativeView() const { return static_cast<const T*>(GetNativeView()); }

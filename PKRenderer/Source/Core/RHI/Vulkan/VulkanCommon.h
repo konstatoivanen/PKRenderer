@@ -252,6 +252,7 @@ namespace PK
         VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBuffer { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT };
         VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR unifiedLayout { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR };
         VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR deviceAddressCommands { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR };
+        VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR raytracingMaintenance1 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };
@@ -275,17 +276,6 @@ namespace PK
         void* swapchainPNext = nullptr;
     };
 
-    struct VulkanImageViewCreateInfo
-    {
-        VkImage image;
-        VkImageViewType viewType;
-        VkFormat format;
-        VkImageUsageFlags usage;
-        VkSampleCountFlagBits samples;
-        VkComponentMapping components;
-        VkExtent3D extent;
-        VkImageSubresourceRange subresourceRange;
-    };
 
     struct VulkanBindHandle : VersionedObject
     {
@@ -303,20 +293,7 @@ namespace PK
             } 
             image;
 
-            struct
-            {
-                VkBuffer buffer;
-                VkDeviceAddress deviceAddress;
-                VkDeviceSize offset; // this is only used for access tracking as it doesn't support device address yet.
-                VkDeviceSize size;
-            } 
-            buffer;
-
-            struct
-            {
-                VkDeviceAddress deviceAddress;
-            } 
-            acceleration;
+            VkDeviceAddressRangeKHR memory;
         };
 
         VulkanBindHandle() : image{}{};
@@ -331,15 +308,20 @@ namespace PK
         bool isVariableSize;
     };
 
-    struct VulkanTimelineSemaphore
-    {
-        VkSemaphore semaphore = VK_NULL_HANDLE;
-        VkPipelineStageFlags2 stageFlags = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-        uint64_t counter = 0ull;
-    };
-
     struct VulkanBufferView : public LinkedListElement<VulkanBufferView, BufferIndexRange>, public VulkanBindHandle
     {
+    };
+
+    struct VulkanImageViewCreateInfo
+    {
+        VkImage image;
+        VkImageViewType viewType;
+        VkFormat format;
+        VkImageUsageFlags usage;
+        VkSampleCountFlagBits samples;
+        VkComponentMapping components;
+        VkExtent3D extent;
+        VkImageSubresourceRange subresourceRange;
     };
 
     struct VulkanImageView : public VersionedObject, public LinkedListElement<VulkanImageView, uint64_t>

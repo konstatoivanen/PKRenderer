@@ -10,12 +10,8 @@ namespace PK
     {
         union
         {
-            struct
-            {
-                VkDeviceSize offset;
-                VkDeviceSize size;
-            }
-            buffer;
+            VkDeviceAddressRangeKHR memory;
+            
             struct
             {
                 uint32_t baseMipLevel;
@@ -58,7 +54,7 @@ namespace PK
                     VkDeviceSize offset;
                     VkDeviceSize size;
                 }
-                buffer;
+                memory;
                 struct
                 {
                     uint32_t baseMipLevel;
@@ -88,15 +84,16 @@ namespace PK
             VkMemoryBarrier2 memoryBarrier;
             uint32_t dependencyMask;
         };
+
+        constexpr uint64_t GetPassCounter() const { return m_passCounter; }
         
-        void ResetPasses();
+        void ResetPasses(uint64_t completedPassCounter);
         uint64_t AddPass();
         
-        void RegisterBuffer(VkBuffer buffer);
         void RegisterImage(VkImage image, VkImageAspectFlags aspectMask);
-        void UnregisterResource(void* resource);
+        void UnregisterImage(VkImage image);
 
-        void RecordBufferAccess(VkBuffer buffer, const VulkanAccessRecord& record);
+        void RecordMemoryAccess(const VulkanAccessRecord& record);
         void RecordImageAccess(VkImage image, const VulkanAccessRecord& record);
         
         VulkanPassDependencies GetPassDependencies(uint32_t passIndex);
@@ -111,11 +108,13 @@ namespace PK
 
         Node m_nodes[PK_VK_MAX_ACCESS_NODES];
         FixedMask<PK_VK_MAX_ACCESS_NODES> m_nodeResidency;
-        FixedMap<uint64_t, ResourceHead, PK_VK_MAX_ACCESS_RESOURCES> m_resources;
+        FixedMap<uint64_t, ResourceHead, PK_VK_MAX_ACCESS_RESOURCES> m_images;
         PassBarriers m_passes[PK_VK_MAX_ACCESS_PASSES];
         VkImageMemoryBarrier2 m_imageTransitions[PK_VK_MAX_ACCESS_IMAGE_BARRIERS];
+        uint32_t m_memoryHead = ~0u;
         uint64_t m_imageTransitionHead = 0ull;
         uint64_t m_passCount = 0ull;
         uint64_t m_passCounter = 0ull;
+        uint64_t m_completedPassCounter = 0ull;
     };
 }

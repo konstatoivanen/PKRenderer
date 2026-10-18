@@ -234,6 +234,7 @@ namespace PK
         uint64_t descriptorRangeIndex = 0ull;
         uint64_t timerTimelineIndex = 0ull;
         uint64_t invocationIndex = 0ull;
+        uint64_t lastPassCounter = 0ull;
     };
 
 
@@ -253,10 +254,9 @@ namespace PK
         VulkanGraph(const VulkanDriver* driver);
         ~VulkanGraph();
 
-        // Vulkan specific image and buffer registrations into the resource tracking system.
+        // Vulkan specific image registrations into the resource tracking system.
         inline void RegisterImage(VkImage image, VkImageAspectFlags aspect) { m_accessRecorder.RegisterImage(image, aspect); }
-        inline void RegisterBuffer(VkBuffer buffer) { m_accessRecorder.RegisterBuffer(buffer); }
-        inline void UnregisterResource(void* handle) { m_accessRecorder.UnregisterResource(handle); }
+        inline void UnregisterImage(VkImage image) { m_accessRecorder.UnregisterImage(image); }
 
         void SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) final;
         void SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) final;
@@ -329,7 +329,7 @@ namespace PK
         void SubmitQueue(uint32_t queueIndex, VkSemaphore signal, struct VulkanGraphDebugScopes* scopes);
 
         uint64_t AddBarrierPass(QueueType queue, bool isRaster);
-        void RecordBufferAccess(QueueType queue, const VulkanBindHandle* handle, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
+        void RecordMemoryAccess(QueueType queue, const VulkanBindHandle* handle, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
         void RecordImageAccess(QueueType queue, const VulkanBindHandle* handle, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
         
         void RecordShaderCmd(QueueType queue, VulkanShaderCmd* cmd);

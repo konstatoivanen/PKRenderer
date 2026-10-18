@@ -78,6 +78,7 @@ namespace PK
         quadControl.pNext = &descriptorBuffer;
         descriptorBuffer.pNext = &unifiedLayout;
         unifiedLayout.pNext = &deviceAddressCommands;
+        deviceAddressCommands.pNext = &raytracingMaintenance1;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -290,6 +291,8 @@ namespace PK
             PK_TEST_FEATURE(unifiedLayout.unifiedImageLayouts)
             PK_TEST_FEATURE(unifiedLayout.unifiedImageLayoutsVideo)
             PK_TEST_FEATURE(deviceAddressCommands.deviceAddressCommands)
+            PK_TEST_FEATURE(raytracingMaintenance1.rayTracingMaintenance1)
+            PK_TEST_FEATURE(raytracingMaintenance1.rayTracingPipelineTraceRaysIndirect2)
         }
         
         #undef PK_TEST_FEATURE

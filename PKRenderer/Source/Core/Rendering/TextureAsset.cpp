@@ -21,11 +21,7 @@ namespace PK
         auto graph = RHI::GetGraph();
 
         auto stage = graph->AcquireStagingBuffer(texture.dataSize);
-        {
-            auto pMapped = stage->BeginMap(0, 0);
-            PKAssets::StreamData(&asset, pMapped, texture.data.offset, texture.dataSize);
-            stage->EndMap(0, texture.dataSize);
-        }
+        PKAssets::StreamData(&asset, stage->GetMappedPtr(), texture.data.offset, texture.dataSize);
 
         TextureDescriptor descriptor{};
         descriptor.usage = TextureUsage::Default;

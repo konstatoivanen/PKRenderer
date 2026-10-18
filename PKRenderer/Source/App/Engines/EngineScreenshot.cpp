@@ -41,14 +41,12 @@ namespace PK::App
 
         if (m_copyFence.IsValid() && m_copyFence.IsComplete())
         {
-            auto pxView = static_cast<byte*>(m_copyBuffer->BeginMap(0ull, elementCount));
+            auto pxView = static_cast<byte*>(m_copyBuffer->GetMappedPtr());
 
             for (auto i = 0u; i < elementCount; ++i)
             {
                 m_accumulatedPixels[i] += pxView[i];
             }
-
-            m_copyBuffer->EndMap(0ull,0ull);
         }
 
         m_captureCounter--;

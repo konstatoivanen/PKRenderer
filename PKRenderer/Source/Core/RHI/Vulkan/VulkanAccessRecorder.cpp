@@ -35,10 +35,33 @@ namespace PK
         return a.queueMask == b.queueMask;
     }
 
-    void VulkanAccessRecorder::ResetPasses()
+    void VulkanAccessRecorder::ResetPasses(uint64_t completedPassCounter)
     {
         m_imageTransitionHead = 0u;
         m_passCount = 0u;
+        m_completedPassCounter = MaxU64(m_completedPassCounter, completedPassCounter);
+
+        for (auto curr = m_memoryHead; curr != NULL_NODE; curr = m_nodes[curr].next)
+        {
+            auto* node = &m_nodes[curr];
+
+            if (node->state.lastPass <= m_completedPassCounter)
+            {
+                node->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+                node->state.access = VK_ACCESS_2_NONE;
+                node->state.lastPass = 0u;
+                node->state.queueMask = 0u;
+
+                if (node->prev != NULL_NODE && m_nodes[node->prev].state.lastPass == 0u)
+                {
+                    auto* prev = &m_nodes[node->prev];
+                    const auto currEnd = AddU64(node->memory.offset, node->memory.size);
+                    node->memory.offset = prev->memory.offset;
+                    node->memory.size = SubU64(prev->memory.offset, currEnd);
+                    ListRemove(&m_memoryHead, node->prev);
+                }
+            }
+        }
     }
     
     uint64_t VulkanAccessRecorder::AddPass()
@@ -59,39 +82,14 @@ namespace PK
 
         return m_passCount;
     }
-
-    void VulkanAccessRecorder::RegisterBuffer(VkBuffer buffer)
-    {
-        auto index = 0u;
-        if (buffer != VK_NULL_HANDLE && m_resources.AddKey((uint64_t)buffer, &index))
-        {
-            m_resources[index].value.aspectMask = 0u;
-            m_resources[index].value.isNew = true;
-            const auto node = AllocNode();
-            
-            if (node != NULL_NODE) 
-            {
-                auto* n = &m_nodes[node];
-                n->buffer.offset = 0;
-                n->buffer.size = VK_WHOLE_SIZE;
-                n->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-                n->state.access = VK_ACCESS_2_NONE;
-                n->state.lastPass = 0u;
-                n->state.queueMask = 0u;
-                n->next = NULL_NODE;
-                n->prev = NULL_NODE;
-                m_resources[index].value.head = node;
-            }
-        }
-    }
     
     void VulkanAccessRecorder::RegisterImage(VkImage image, VkImageAspectFlags aspectMask)
     {
         auto index = 0u;
-        if (image != VK_NULL_HANDLE && m_resources.AddKey((uint64_t)image, &index))
+        if (image != VK_NULL_HANDLE && m_images.AddKey((uint64_t)image, &index))
         {
-            m_resources[index].value.aspectMask = aspectMask;
-            m_resources[index].value.isNew = true;
+            m_images[index].value.aspectMask = aspectMask;
+            m_images[index].value.isNew = true;
             const auto node = AllocNode();
     
             if (node != NULL_NODE) 
@@ -107,19 +105,18 @@ namespace PK
                 n->state.queueMask = 0u;
                 n->next = NULL_NODE;
                 n->prev = NULL_NODE;
-                m_resources[index].value.head = node;
+                m_images[index].value.head = node;
             }
         }
     }
 
-    void VulkanAccessRecorder::UnregisterResource(void* resource)
+    void VulkanAccessRecorder::UnregisterImage(VkImage image)
     {
-        auto handle = (uint64_t)resource;
-        auto index = m_resources.GetIndex(handle);
+        auto index = m_images.GetIndex((uint64_t)image);
 
         if (index != -1)
         {
-            auto curr = m_resources[index].value.head;
+            auto curr = m_images[index].value.head;
             
             while (curr != NULL_NODE) 
             {
@@ -128,31 +125,40 @@ namespace PK
                 curr = next;
             }
             
-            m_resources.RemoveAt(index);
+            m_images.RemoveAt(index);
         }
     }
 
-    void VulkanAccessRecorder::RecordBufferAccess(VkBuffer buffer, const VulkanAccessRecord& record)
+    void VulkanAccessRecorder::RecordMemoryAccess(const VulkanAccessRecord& record)
     {
-        auto* resource = m_resources.GetValuePtr((uint64_t)buffer);
         PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanAccessRecorder::RecordBufferAccess called before calling VulkanAccessRecorder::AddPass!");
-        PK_DEBUG_FATAL_ASSERT(resource != nullptr, "VulkanAccessRecorder::RecordBufferAccess called for an untracked resource!");
 
-        const auto new_beg = record.buffer.offset;
-        const auto new_end = AddU64(record.buffer.offset, record.buffer.size);
+        if (m_memoryHead == NULL_NODE)
+        {
+            m_memoryHead = AllocNode();
+            auto* root = &m_nodes[m_memoryHead];
+            root->memory.offset = 0ull;
+            root->memory.size = VK_WHOLE_SIZE;
+            root->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+            root->state.access = VK_ACCESS_2_NONE;
+            root->state.lastPass = 0u;
+            root->state.queueMask = 0u;
+        }
+
+        const auto new_beg = record.memory.address;
+        const auto new_end = AddU64(record.memory.address, record.memory.size);
 
         State new_state;
         new_state.stage = record.stage;
         new_state.access = record.access;
-        new_state.lastPass = m_passCounter;
+        new_state.lastPass = (uint32_t)m_passCounter;
         new_state.queueMask = 1u << record.queue;
-        resource->isNew = false;
 
-        for (auto curr = resource->head; curr != NULL_NODE; curr = m_nodes[curr].next)
+        for (auto curr = m_memoryHead; curr != NULL_NODE; curr = m_nodes[curr].next)
         {
-            auto node = &m_nodes[curr];
-            const auto cur_beg = node->buffer.offset;
-            const auto cur_end = AddU64(node->buffer.offset, node->buffer.size);
+            auto* node = &m_nodes[curr];
+            const auto cur_beg = node->memory.offset;
+            const auto cur_end = AddU64(node->memory.offset, node->memory.size);
             const auto overlap_beg = MaxU64(cur_beg, new_beg);
             const auto overlap_end = MinU64(cur_end, new_end);
 
@@ -166,30 +172,42 @@ namespace PK
                 continue;
             }
 
-            if (NeedsBarrier(node->state, new_state))
-            {                
-                EmitMemoryBarrier(node->state, new_state);
+            // If this range's last access already finished on the GPU, clear its stale state
+            if (node->state.lastPass && node->state.lastPass <= m_completedPassCounter)
+            {
+                node->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+                node->state.access = VK_ACCESS_2_NONE;
+                node->state.lastPass = 0u;
+                node->state.queueMask = 0u;
+            }
+
+            if (NeedsBarrier(node->state, new_state) || node->state.access == VK_ACCESS_2_NONE)
+            {
+                if (node->state.access != VK_ACCESS_2_NONE)
+                {
+                    EmitMemoryBarrier(node->state, new_state);
+                }
 
                 if (cur_beg < overlap_beg)
                 {
                     const auto left = AllocNode();
-                    m_nodes[left].buffer.offset = cur_beg;
-                    m_nodes[left].buffer.size = overlap_beg - cur_beg;
+                    m_nodes[left].memory.offset = cur_beg;
+                    m_nodes[left].memory.size = overlap_beg - cur_beg;
                     m_nodes[left].state = node->state;
-                    ListInsertBefore(&resource->head, curr, left);
+                    ListInsertBefore(&m_memoryHead, curr, left);
                 }
 
                 if (overlap_end < cur_end)
                 {
                     const auto right = AllocNode();
-                    m_nodes[right].buffer.offset = overlap_end;
-                    m_nodes[right].buffer.size = SubU64(overlap_end, cur_end);
+                    m_nodes[right].memory.offset = overlap_end;
+                    m_nodes[right].memory.size = SubU64(overlap_end, cur_end);
                     m_nodes[right].state = node->state;
                     ListInsertAfter(curr, right);
                 }
 
-                node->buffer.offset = overlap_beg;
-                node->buffer.size = SubU64(overlap_beg, overlap_end);
+                node->memory.offset = overlap_beg;
+                node->memory.size = SubU64(overlap_beg, overlap_end);
                 node->state = new_state;
             }
             else
@@ -202,30 +220,30 @@ namespace PK
 
             if (node->prev != NULL_NODE)
             {
-                auto prev = &m_nodes[node->prev];
-
+                auto* prev = &m_nodes[node->prev];
                 if (CanMerge(prev->state, node->state))
                 {
-                    const auto curr_end_new = AddU64(node->buffer.offset, node->buffer.size);
-                    node->buffer.offset = prev->buffer.offset;
-                    node->buffer.size = SubU64(prev->buffer.offset, curr_end_new);
+                    const auto curr_end_new = AddU64(node->memory.offset, node->memory.size);
+                    node->memory.offset = prev->memory.offset;
+                    node->memory.size = SubU64(prev->memory.offset, curr_end_new);
                     node->state.stage |= prev->state.stage;
                     node->state.access |= prev->state.access;
-                    ListRemove(&resource->head, node->prev);
+                    node->state.lastPass = MaxU32(node->state.lastPass, prev->state.lastPass);
+                    ListRemove(&m_memoryHead, node->prev);
                 }
             }
 
             if (node->next != NULL_NODE)
             {
                 auto* next = &m_nodes[node->next];
-
                 if (CanMerge(node->state, next->state))
                 {
-                    const auto merged_end = AddU64(next->buffer.offset, next->buffer.size);
-                    node->buffer.size = SubU64(node->buffer.offset, merged_end);
+                    const auto merged_end = AddU64(next->memory.offset, next->memory.size);
+                    node->memory.size = SubU64(node->memory.offset, merged_end);
                     node->state.stage |= next->state.stage;
                     node->state.access |= next->state.access;
-                    ListRemove(&resource->head, node->next);
+                    node->state.lastPass = MaxU32(node->state.lastPass, next->state.lastPass);
+                    ListRemove(&m_memoryHead, node->next);
                 }
             }
         }
@@ -233,9 +251,9 @@ namespace PK
 
     void VulkanAccessRecorder::RecordImageAccess(VkImage image, const VulkanAccessRecord& record)
     {
-        auto* resource = m_resources.GetValuePtr((uint64_t)image);
+        auto* imageHead = m_images.GetValuePtr((uint64_t)image);
         PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanAccessRecorder::RecordImageAccess called before calling VulkanAccessRecorder::AddPass!");
-        PK_DEBUG_FATAL_ASSERT(resource != nullptr, "VulkanAccessRecorder::RecordImageAccess called for an untracked resource!");
+        PK_DEBUG_FATAL_ASSERT(imageHead != nullptr, "VulkanAccessRecorder::RecordImageAccess called for an untracked image!");
 
         const auto new_layer_beg = record.image.baseArrayLayer;
         const auto new_layer_end = AddU32(record.image.baseArrayLayer, record.image.layerCount);
@@ -243,7 +261,7 @@ namespace PK
         const auto new_level_end = AddU32(record.image.baseMipLevel, record.image.levelCount);
 
         // Initial and only layout transition from undefined to general.
-        if (resource->isNew)
+        if (imageHead->isNew)
         {
             auto barrier = &m_imageTransitions[m_imageTransitionHead++];
             barrier->sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
@@ -257,13 +275,13 @@ namespace PK
             barrier->srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier->dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier->image = image;
-            barrier->subresourceRange.aspectMask = resource->aspectMask;
+            barrier->subresourceRange.aspectMask = imageHead->aspectMask;
             barrier->subresourceRange.baseMipLevel = 0u;
             barrier->subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
             barrier->subresourceRange.baseArrayLayer = 0u;
             barrier->subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
             m_passes[m_passCount - 1ull].imageTransitionCount++;
-            resource->isNew = false;
+            imageHead->isNew = false;
         }
 
         State new_state;
@@ -273,7 +291,7 @@ namespace PK
         new_state.lastPass = m_passCounter;
         State accumulated_state = new_state;
 
-        for (auto curr = resource->head; curr != NULL_NODE;)
+        for (auto curr = imageHead->head; curr != NULL_NODE;)
         {
             auto* node = &m_nodes[curr];
             const auto next = node->next;
@@ -311,7 +329,7 @@ namespace PK
                 m_nodes[top].image.baseArrayLayer = cur_layer_beg;
                 m_nodes[top].image.layerCount = node->image.layerCount;
                 m_nodes[top].state = node->state;
-                ListInsertBefore(&resource->head, curr, top);
+                ListInsertBefore(&imageHead->head, curr, top);
             }
 
             if (overlap_level_end < cur_level_end)
@@ -322,7 +340,7 @@ namespace PK
                 m_nodes[bot].image.baseArrayLayer = cur_layer_beg;
                 m_nodes[bot].image.layerCount = node->image.layerCount;
                 m_nodes[bot].state = node->state;
-                ListInsertBefore(&resource->head, curr, bot);
+                ListInsertBefore(&imageHead->head, curr, bot);
             }
 
             if (cur_layer_beg < overlap_layer_beg)
@@ -333,7 +351,7 @@ namespace PK
                 m_nodes[left].image.baseArrayLayer = cur_layer_beg;
                 m_nodes[left].image.layerCount = overlap_layer_beg - cur_layer_beg;
                 m_nodes[left].state = node->state;
-                ListInsertBefore(&resource->head, curr, left);
+                ListInsertBefore(&imageHead->head, curr, left);
             }
 
             if (overlap_layer_end < cur_layer_end)
@@ -344,10 +362,10 @@ namespace PK
                 m_nodes[right].image.baseArrayLayer = overlap_layer_end;
                 m_nodes[right].image.layerCount = SubU32(overlap_layer_end, cur_layer_end);
                 m_nodes[right].state = node->state;
-                ListInsertBefore(&resource->head, curr, right);
+                ListInsertBefore(&imageHead->head, curr, right);
             }
 
-            ListRemove(&resource->head, curr);
+            ListRemove(&imageHead->head, curr);
             curr = node->next;
         }
 
@@ -358,13 +376,13 @@ namespace PK
         m_nodes[final_node].image.layerCount = record.image.layerCount;
         m_nodes[final_node].state = accumulated_state;
         
-        if (resource->head == NULL_NODE)
+        if (imageHead->head == NULL_NODE)
         {
-            resource->head = final_node;
+            imageHead->head = final_node;
         }
         else
         {
-            ListInsertBefore(&resource->head, resource->head, final_node);
+            ListInsertBefore(&imageHead->head, imageHead->head, final_node);
         }
     }
 

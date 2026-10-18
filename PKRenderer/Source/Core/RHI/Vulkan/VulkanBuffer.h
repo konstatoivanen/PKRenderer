@@ -15,9 +15,7 @@ namespace PK
         uint64_t GetDeviceAddress() const final { return m_deviceAddress; }
         const void* GetNativeView() const final { return m_defaultView; }
         const void* GetNativeView(const BufferIndexRange& range);
-
-        void* BeginMap(size_t offset, size_t readsize) const final;
-        void EndMap(size_t offset, size_t writeSize) const final;
+        void* GetMappedPtr() const final;
 
     private:
         const FixedString128 m_name;

@@ -73,7 +73,7 @@ namespace PK
             view.count = count ? count : (buffer->GetSize() / sizeof(T));
             view.size = view.count * sizeof(T);
             view.stage = graph->AcquireStagingBuffer(view.size);
-            view.data = reinterpret_cast<T*>(view.stage->BeginMap(0ull, 0ull));
+            view.data = reinterpret_cast<T*>(view.stage->GetMappedPtr());
             return view;
         }
 

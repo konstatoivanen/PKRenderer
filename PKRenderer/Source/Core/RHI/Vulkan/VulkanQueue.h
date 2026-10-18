@@ -31,6 +31,13 @@ namespace PK
 
     struct VulkanQueue : public NoCopy
     {
+        struct Timeline
+        {
+            VkSemaphore semaphore = VK_NULL_HANDLE;
+            VkPipelineStageFlags2 stageFlags = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+            uint64_t counter = 0ull;
+        };
+
         friend struct VulkanQueueSet;
         constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::EnumCount + 1u;
 
@@ -60,8 +67,8 @@ namespace PK
         VkQueue m_queue = VK_NULL_HANDLE;
         VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
-        VulkanTimelineSemaphore m_signal{};
-        VulkanTimelineSemaphore m_waits[MAX_DEPENDENCIES]{};
+        Timeline m_signal{};
+        Timeline m_waits[MAX_DEPENDENCIES]{};
         VkCommandBuffer m_commandBuffers[PK_VK_MAX_COMMAND_BUFFERS]{};
         VulkanCommandBuffer m_commandWrappers[PK_VK_MAX_COMMAND_BUFFERS]{};
         VulkanCommandBuffer* m_currentWrapper = nullptr;

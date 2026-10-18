@@ -9,14 +9,13 @@ namespace PK
 {
     struct VulkanStagingBuffer : public RHIBuffer
     {
-        size_t GetSize() const final { return handle.buffer.size; }
+        size_t GetSize() const final { return handle.memory.size; }
         BufferUsage GetUsage() const final { return BufferUsage::Vram | BufferUsage::InstanceInput; }
         const char* GetDebugName() const final { return "VulkanStagingArena"; }
-        uint64_t GetDeviceAddress() const final { return handle.buffer.deviceAddress; }
+        uint64_t GetDeviceAddress() const final { return handle.memory.address; }
         const void* GetNativeView() const final { return &handle; }
         const void* GetNativeView([[maybe_unused]] const BufferIndexRange& range) final { return &handle; }
-        virtual void* BeginMap([[maybe_unused]] size_t offset, [[maybe_unused]] size_t readsize) const final { return mappedData; }
-        virtual void EndMap([[maybe_unused]] size_t offset, [[maybe_unused]] size_t writeSize) const final {};
+        virtual void* GetMappedPtr() const final { return mappedData; }
 
         VulkanBindHandle handle;
         void* mappedData;

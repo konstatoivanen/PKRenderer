@@ -39,7 +39,7 @@ PK::BuiltInResources::BuiltInResources()
         region.offset = PK_UINT3_ZERO;
         region.extent = { 2u, 2u, 1u };
 
-        auto pMapped = static_cast<uint8_t*>(stage->BeginMap(0, 0));
+        auto pMapped = static_cast<uint8_t*>(stage->GetMappedPtr());
 
         memcpy(pMapped + region.bufferOffset, blackData, sizeof(blackData)); 
         graph->CopyToTexture(QueueType::Transfer, BlackTexture2D.get(), stage, &region, 1u);
@@ -61,8 +61,6 @@ PK::BuiltInResources::BuiltInResources()
         memcpy(pMapped + region.bufferOffset, blackArrayData, sizeof(blackArrayData));
         graph->CopyToTexture(QueueType::Transfer, BlackTexture2DArray.get(), stage, &region, 1u);
         region.bufferOffset += sizeof(blackArrayData);
-
-        stage->EndMap(0, stageSize);
     }
     graph->ReleaseStagingBuffer(stage);
 }

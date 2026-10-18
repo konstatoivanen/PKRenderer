@@ -153,7 +153,7 @@ namespace PK
         offset = size ? offset : 0ull;
         size = size ? size : buffer->GetSize();
         auto stage = graph->AcquireStagingBuffer(size);
-        memcpy(stage->BeginMap(0ull,0ull), data, size);
+        memcpy(stage->GetMappedPtr(), data, size);
         graph->CopyBuffer(queue, buffer, stage, 0ull, offset, size);
         graph->ReleaseStagingBuffer(stage);
     }
@@ -161,7 +161,7 @@ namespace PK
     void RenderGraphExt::UploadTexture(QueueType queue, RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount)
     {
         auto stage = graph->AcquireStagingBuffer(size);
-        memcpy(stage->BeginMap(0ull,0ull), data, size);
+        memcpy(stage->GetMappedPtr(), data, size);
         graph->CopyToTexture(queue, texture, stage, regions, regionCount);
         graph->ReleaseStagingBuffer(stage);
     }

@@ -47,8 +47,10 @@ namespace PK
         if ((usage & BufferUsage::TypeBits) == BufferUsage::RamRead)  allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
 
         if ((usage & BufferUsage::TypeBits) == BufferUsage::Vram)     allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        if ((usage & BufferUsage::TypeBits) == BufferUsage::BARWrite) allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-        if ((usage & BufferUsage::TypeBits) == BufferUsage::BARRead)  allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        if ((usage & BufferUsage::TypeBits) == BufferUsage::BARWrite) allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        if ((usage & BufferUsage::TypeBits) == BufferUsage::BARRead)  allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        if ((usage & BufferUsage::TypeBits) == BufferUsage::RamWrite) allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        if ((usage & BufferUsage::TypeBits) == BufferUsage::RamRead)  allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
         if ((usage & BufferUsage::TypeBits) == BufferUsage::BARWrite) allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
         if ((usage & BufferUsage::TypeBits) == BufferUsage::BARRead)  allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT;
@@ -71,14 +73,8 @@ namespace PK
             m_mappedData = allocationInfo.pMappedData;
         }
 
-        // only vram resident buffers can be bound.
-        if ((m_usage & BufferUsage::TypeBits) == BufferUsage::Vram)
-        {
-            GetNativeView({ 0, GetSize() });
-            m_defaultView = m_firstView;
-        }
-
-        m_driver->graph->RegisterBuffer(m_buffer);
+        GetNativeView({ 0, m_size });
+        m_defaultView = m_firstView;
     }
 
     VulkanBuffer::~VulkanBuffer()
@@ -104,7 +100,6 @@ namespace PK
         },
         fence);
 
-        m_driver->graph->UnregisterResource(m_buffer);
         m_mappedData = nullptr;
         m_memory = nullptr;
         m_buffer = nullptr;
@@ -113,33 +108,16 @@ namespace PK
         m_defaultView = nullptr;
     }
 
-    void* VulkanBuffer::BeginMap(size_t offset, size_t readSize) const
+    void* VulkanBuffer::GetMappedPtr() const
     {
         PK_DEBUG_FATAL_ASSERT(m_memory, "Trying to map a buffer without dedicated memory!");
         PK_DEBUG_FATAL_ASSERT((m_usage & BufferUsage::TypeBits) != BufferUsage::Vram, "Cant map a vram only buffer");
-        PK_DEBUG_FATAL_ASSERT((offset + readSize) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + readSize, GetSize());
-
-        if (readSize > 0ull)
-        {
-            vmaInvalidateAllocation(m_driver->allocator, m_memory, offset, readSize);
-        }
-
-        return static_cast<char*>(m_mappedData) + offset;
-    }
-
-    void VulkanBuffer::EndMap(size_t offset, size_t writeSize) const
-    {
-        PK_DEBUG_FATAL_ASSERT(m_memory, "Trying to umap a buffer without dedicated memory!");
-
-        if (writeSize > 0ull)
-        {
-            vmaFlushAllocation(m_driver->allocator, m_memory, offset, writeSize);
-        }
+        return m_mappedData;
     }
 
     const void* VulkanBuffer::GetNativeView(const BufferIndexRange& range)
     {
-        PK_DEBUG_FATAL_ASSERT(range.offset + range.count <= GetSize() && range.count != VK_WHOLE_SIZE, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
+        PK_DEBUG_FATAL_ASSERT(range.offset + range.count <= m_size && range.count != VK_WHOLE_SIZE, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
 
         if (m_firstView.FindAndSwapFirst(range))
         {
@@ -147,10 +125,8 @@ namespace PK
         }
 
         auto view = m_driver->CreatePooled<VulkanBufferView>();
-        view->buffer.buffer = m_buffer;
-        view->buffer.deviceAddress = m_deviceAddress + range.offset;
-        view->buffer.offset = range.offset;
-        view->buffer.size = range.count ? range.count : GetSize();
+        view->memory.address = m_deviceAddress + range.offset;
+        view->memory.size = range.count ? range.count : (m_size - range.offset);
         m_firstView.Insert(view, range);
         return m_firstView;
     }

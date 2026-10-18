@@ -21,8 +21,7 @@ namespace PK
     {
         VkDescriptorSetLayout setlayout = VK_NULL_HANDLE;
         uint32_t pushConstantsSize = 0ull;
-
-        inline bool operator == (const PipelineLayoutKey& r) const noexcept { return memcmp(this, &r, sizeof(PipelineLayoutKey)) == 0; }
+        inline bool operator == (const PipelineLayoutKey& r) const noexcept { return setlayout == r.setlayout && pushConstantsSize == r.pushConstantsSize; }
     };
 
     struct VulkanLayoutCache : public NoCopy
