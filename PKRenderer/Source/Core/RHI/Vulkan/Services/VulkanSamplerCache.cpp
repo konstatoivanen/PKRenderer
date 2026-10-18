@@ -48,7 +48,6 @@ namespace PK
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler->sampler, FixedString64("Sampler%u", index).c_str());
 
             sampler->handle.image.image = VK_NULL_HANDLE;
-            sampler->handle.image.alias = VK_NULL_HANDLE;
             sampler->handle.image.view = VK_NULL_HANDLE;
             sampler->handle.image.sampler = sampler->sampler;
             sampler->handle.image.format = VK_FORMAT_UNDEFINED;

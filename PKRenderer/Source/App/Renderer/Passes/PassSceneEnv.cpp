@@ -59,7 +59,7 @@ namespace PK::App
         resources->captureOrigin += settings.CaptureOffset;
         resources->captureCounter = math::min(resources->captureCounter + 1, math::max(0, settings.CaptureInterval));
 
-        if (RHI::ValidateBuffer<float4>(resources->sceneEnvSHBuffer, 4ull, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer"))
+        if (RHI::ValidateBuffer<float4>(resources->sceneEnvSHBuffer, 4ull, BufferUsage::Vram, "Scene.Env.SHBuffer"))
         {
             RHI::SetBuffer(hash->pk_SceneEnv_SH, resources->sceneEnvSHBuffer.get());
         }

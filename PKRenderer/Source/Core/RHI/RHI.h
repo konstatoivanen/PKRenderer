@@ -126,7 +126,7 @@ namespace PK
         RHIAPI GetActiveAPI();
         RHIGraph* GetGraph();
         RHIDriverMemoryInfo GetMemoryInfo();
-        size_t GetBufferOffsetAlignment(BufferUsage usage);
+        size_t GetBufferAlignment();
         const BuiltInResources* GetBuiltInResources();
         void WaitForIdle();
         void GC();

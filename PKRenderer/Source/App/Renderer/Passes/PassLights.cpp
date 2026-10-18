@@ -137,9 +137,9 @@ namespace PK::App
         atlasDesc.sampler.filterMag = FilterMode::Bilinear;
         m_shadowmaps = RHI::CreateTexture(atlasDesc, "Lights.Shadowmap.Atlas");
 
-        m_lightsBuffer = RHI::CreateBuffer<PackedLight>(1024ull, BufferUsage::DefaultStorage, "Lights");
-        m_lightsCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::DefaultStorage, "Lights.AtomicCounter");
-        m_lightMatricesBuffer = RHI::CreateBuffer<float4x4>(32ull, BufferUsage::DefaultStorage, "Lights.Matrices");
+        m_lightsBuffer = RHI::CreateBuffer<PackedLight>(1024ull, BufferUsage::Vram, "Lights");
+        m_lightsCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::Vram, "Lights.AtomicCounter");
+        m_lightMatricesBuffer = RHI::CreateBuffer<float4x4>(32ull, BufferUsage::Vram, "Lights.Matrices");
 
         auto hash = HashCache::Get();
         RHI::SetTexture(hash->pk_IESProfiles, m_iesAtlas.GetRHI());
@@ -496,7 +496,7 @@ namespace PK::App
             RHI::SetImage(hash->pk_LightTiles, resources->lightTiles.get());
         }
 
-        if (RHI::ValidateBuffer<ushort>(resources->lightsLists, lightIndexCount, BufferUsage::DefaultStorage, "Lights.List"))
+        if (RHI::ValidateBuffer<ushort>(resources->lightsLists, lightIndexCount, BufferUsage::Vram, "Lights.List"))
         {
             RHI::SetBuffer(hash->pk_LightLists, resources->lightsLists.get());
         }

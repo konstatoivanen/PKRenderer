@@ -251,7 +251,7 @@ namespace PK
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
-            ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferOffsets, cmd->vertexBufferCount);
+            ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDraw(*ctx->cmb, cmd->vertexCount, cmd->instanceCount, cmd->firstVertex, cmd->firstInstance);
         });
             
@@ -269,18 +269,18 @@ namespace PK
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
-            ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferOffsets, cmd->vertexBufferCount);
-            vkCmdDrawIndirect(*ctx->cmb, cmd->indirectArguments, cmd->indirectArgumentsOffset, cmd->drawCount, cmd->stride);
+            ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
+            vkCmdDrawIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
 
-        auto indirectArgumentsHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
+        auto indirectHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(QueueType::Graphics, true);
-        cmd->indirectArguments = indirectArgumentsHandle->buffer.buffer;
-        cmd->indirectArgumentsOffset = offset + indirectArgumentsHandle->buffer.offset;
-        cmd->drawCount = drawCount;
-        cmd->stride = stride;
+        cmd->indirectInfo.sType = VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR;
+        cmd->indirectInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, (VkDeviceSize)drawCount * stride, stride };
+        cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
+        cmd->indirectInfo.drawCount = drawCount;
         RecordVertexCmd(cmd);
-        RecordBufferAccess(QueueType::Graphics, indirectArgumentsHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordBufferAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
@@ -289,8 +289,8 @@ namespace PK
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
-            ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferOffsets, cmd->vertexBufferCount);
-            ctx->cmb->SetIndexBuffer(cmd->indexBuffer, cmd->indexBufferOffset, cmd->indexType);
+            ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
+            ctx->cmb->SetIndexBuffer(cmd->indexInfo);
             vkCmdDrawIndexed(*ctx->cmb, cmd->indexCount, cmd->instanceCount, cmd->firstIndex, cmd->vertexOffset, cmd->firstInstance);
         });
 
@@ -309,19 +309,19 @@ namespace PK
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
-            ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferOffsets, cmd->vertexBufferCount);
-            ctx->cmb->SetIndexBuffer(cmd->indexBuffer, cmd->indexBufferOffset, cmd->indexType);
-            vkCmdDrawIndexedIndirect(*ctx->cmb, cmd->indirectArguments, cmd->indirectArgumentsOffset, cmd->drawCount, cmd->stride);
+            ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
+            ctx->cmb->SetIndexBuffer(cmd->indexInfo);
+            vkCmdDrawIndexedIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
 
-        auto indirectArgumentsHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
+        auto indirectHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(QueueType::Graphics, true);
-        cmd->indirectArguments = indirectArgumentsHandle->buffer.buffer;
-        cmd->indirectArgumentsOffset = offset + indirectArgumentsHandle->buffer.offset;
-        cmd->drawCount = drawCount;
-        cmd->stride = stride;
+        cmd->indirectInfo.sType = VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR;
+        cmd->indirectInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, (VkDeviceSize)drawCount * stride, stride };
+        cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
+        cmd->indirectInfo.drawCount = drawCount;
         RecordIndexCmd(cmd);
-        RecordBufferAccess(QueueType::Graphics, indirectArgumentsHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordBufferAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DrawMeshTasks(const uint3& dimensions)
@@ -344,17 +344,17 @@ namespace PK
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
-            vkCmdDrawMeshTasksIndirectEXT(*ctx->cmb, cmd->indirectArguments, cmd->indirectArgumentsOffset, cmd->drawCount, cmd->stride);
+            vkCmdDrawMeshTasksIndirect2EXT(*ctx->cmb, &cmd->indirectInfo);
         });
 
-        auto indirectArgumentsHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
+        auto indirectHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(QueueType::Graphics, true);
-        cmd->indirectArguments = indirectArgumentsHandle->buffer.buffer;
-        cmd->indirectArgumentsOffset = offset + indirectArgumentsHandle->buffer.offset;
-        cmd->drawCount = drawCount;
-        cmd->stride = stride;
+        cmd->indirectInfo.sType = VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR;
+        cmd->indirectInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, (VkDeviceSize)drawCount * stride, stride };
+        cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
+        cmd->indirectInfo.drawCount = drawCount;
         RecordRasterCmd(cmd);
-        RecordBufferAccess(QueueType::Graphics, indirectArgumentsHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordBufferAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DrawMeshTasksIndirectCount(const RHIBuffer* indirectArguments, size_t offset, const RHIBuffer* countBuffer, size_t countOffset, uint32_t maxDrawCount, uint32_t stride)
@@ -363,21 +363,21 @@ namespace PK
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
-            vkCmdDrawMeshTasksIndirectCountEXT(*ctx->cmb, cmd->indirectArguments, cmd->indirectArgumentsOffset, cmd->countBuffer, cmd->countBufferOffset, cmd->maxDrawCount, cmd->stride);
+            vkCmdDrawMeshTasksIndirectCount2EXT(*ctx->cmb, &cmd->indirectCountInfo);
         });
 
-        auto indirectArgumentsHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
-        auto countBufferHandle = countBuffer->GetNativeView<VulkanBindHandle>();
+        auto indirectHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
+        auto countHandle = countBuffer->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(QueueType::Graphics, true);
-        cmd->indirectArguments = indirectArgumentsHandle->buffer.buffer;
-        cmd->indirectArgumentsOffset = offset + indirectArgumentsHandle->buffer.offset;
-        cmd->countBuffer = countBufferHandle->buffer.buffer;
-        cmd->countBufferOffset = countOffset + countBufferHandle->buffer.offset;
-        cmd->maxDrawCount = maxDrawCount;
-        cmd->stride = stride;
+        cmd->indirectCountInfo.sType = VK_STRUCTURE_TYPE_DRAW_INDIRECT_COUNT_2_INFO_KHR;
+        cmd->indirectCountInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, (VkDeviceSize)maxDrawCount * stride, stride };
+        cmd->indirectCountInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
+        cmd->indirectCountInfo.countAddressRange = { countHandle->buffer.deviceAddress + countOffset, sizeof(uint32_t) };
+        cmd->indirectCountInfo.countAddressFlags = PK_VK_ADDRESS_FLAGS;
+        cmd->indirectCountInfo.maxDrawCount = maxDrawCount;
         RecordRasterCmd(cmd);
-        RecordBufferAccess(QueueType::Graphics, indirectArgumentsHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
-        RecordBufferAccess(QueueType::Graphics, countBufferHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordBufferAccess(QueueType::Graphics, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordBufferAccess(QueueType::Graphics, countHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::Dispatch(QueueType queue, const uint3& dimensions)
@@ -401,15 +401,16 @@ namespace PK
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchIndirectCmd* cmd)
         {
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
-            vkCmdDispatchIndirect(*ctx->cmb, cmd->indirectArguments, cmd->indirectArgumentsOffset);
+            vkCmdDispatchIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
 
-        auto indirectArgumentsHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
+        auto indirectHandle = indirectArguments->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->indirectArguments = indirectArgumentsHandle->buffer.buffer;
-        cmd->indirectArgumentsOffset = offset + indirectArgumentsHandle->buffer.offset;
+        cmd->indirectInfo.sType = VK_STRUCTURE_TYPE_DISPATCH_INDIRECT_2_INFO_KHR;
+        cmd->indirectInfo.addressRange = { indirectHandle->buffer.deviceAddress + offset, sizeof(VkDispatchIndirectCommand) };
+        cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         RecordShaderCmd(queue, cmd);
-        RecordBufferAccess(queue, indirectArgumentsHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordBufferAccess(queue, indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DispatchRays(QueueType queue, const uint3& dimensions)
@@ -463,7 +464,7 @@ namespace PK
             vkCmdBlitImage(*ctx->cmb, cmd->src, VK_IMAGE_LAYOUT_GENERAL, handle->image.image, VK_IMAGE_LAYOUT_GENERAL, 1, &cmd->region, cmd->filter);
         });
 
-        const auto& handle = src->GetNativeView<VulkanBindHandle>({}, TextureViewMode::RTV);
+        const auto& handle = src->GetNativeView<VulkanBindHandle>({}, TextureViewMode::RAW);
         auto srcRes = src->GetResolution();
         auto dstRes = dst->GetResolution();
         auto minres = math::min(srcRes, dstRes);
@@ -496,7 +497,7 @@ namespace PK
                 ctx->queue->AddWait(signal, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, 0ull);
             }
 
-            VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+            VkImageMemoryBarrier2 barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
             barrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
             barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
             barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
@@ -512,7 +513,9 @@ namespace PK
             barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
             barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 
-            cmd->region.imageOffset = { 0,0,0 };
+            cmd->region.sType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_IMAGE_COPY_KHR;
+            cmd->region.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+            cmd->region.imageOffset = { 0, 0, 0 };
             cmd->region.imageExtent = handle->image.extent;
             cmd->region.imageSubresource.aspectMask = handle->image.range.aspectMask;
             cmd->region.imageSubresource.mipLevel = 0u;
@@ -520,14 +523,19 @@ namespace PK
             cmd->region.imageSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
             ctx->cmb->Barrier(&barrier);
-            vkCmdCopyImageToBuffer(*ctx->cmb, handle->image.image, VK_IMAGE_LAYOUT_GENERAL, cmd->dst, 1, &cmd->region);
+
+            VkCopyDeviceMemoryImageInfoKHR copy{ VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_IMAGE_INFO_KHR };
+            copy.image = handle->image.image;
+            copy.regionCount = 1u;
+            copy.pRegions = &cmd->region;
+            vkCmdCopyImageToMemoryKHR(*ctx->cmb, &copy);
         });
 
         auto handle = dst->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
         cmd->src = static_cast<VulkanSwapchain*>(src);
-        cmd->dst = handle->buffer.buffer;
-        cmd->region.bufferOffset = handle->buffer.offset;
+        cmd->region.addressRange = { handle->buffer.deviceAddress, handle->buffer.size };
+        cmd->region.addressFlags = PK_VK_ADDRESS_FLAGS;
         RecordBufferAccess(queue, handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
     }
 
@@ -574,8 +582,8 @@ namespace PK
             }
         });
 
-        auto srcHandle = src->GetNativeView<VulkanBindHandle>(srcRange, TextureViewMode::RTV);
-        auto dstHandle = dst->GetNativeView<VulkanBindHandle>(dstRange, TextureViewMode::RTV);
+        auto srcHandle = src->GetNativeView<VulkanBindHandle>(srcRange, TextureViewMode::RAW);
+        auto dstHandle = dst->GetNativeView<VulkanBindHandle>(dstRange, TextureViewMode::RAW);
         auto srcLayers = math::min(srcHandle->image.range.layerCount, src->GetLayers());
         auto dstLayers = math::min(dstHandle->image.range.layerCount, dst->GetLayers());
 
@@ -602,14 +610,13 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanFillBufferCmd* cmd)
         {
-            vkCmdFillBuffer(*ctx->cmb, cmd->buffer, cmd->offset, cmd->size, cmd->value);
+            vkCmdFillMemoryKHR(*ctx->cmb, &cmd->range, PK_VK_ADDRESS_FLAGS, cmd->value);
         });
 
         auto handle = dst->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->buffer = handle->buffer.buffer;
-        cmd->offset = offset + handle->buffer.offset;
-        cmd->size = size;
+        cmd->range.address = handle->buffer.deviceAddress + offset;
+        cmd->range.size = size;
         cmd->value = value;
         RecordBufferAccess(queue, handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
     }
@@ -628,7 +635,7 @@ namespace PK
             }
         });
 
-        auto handle = dst->GetNativeView<VulkanBindHandle>(range, TextureViewMode::UAV);
+        auto handle = dst->GetNativeView<VulkanBindHandle>(range, TextureViewMode::RAW);
         cmd->passIndex = AddBarrierPass(queue, false);
         cmd->image = handle->image.image;
         cmd->range = handle->image.range;
@@ -640,14 +647,13 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanUpdateBufferCmd* cmd)
         {
-            vkCmdUpdateBuffer(*ctx->cmb, cmd->buffer, cmd->offset, cmd->size, cmd->pData);
+            vkCmdUpdateMemoryKHR(*ctx->cmb, &cmd->range, PK_VK_ADDRESS_FLAGS, cmd->range.size, cmd->pData);
         });
 
         auto handle = dst->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->buffer = handle->buffer.buffer;
-        cmd->offset = offset + handle->buffer.offset;
-        cmd->size = size;
+        cmd->range.address = handle->buffer.deviceAddress + offset;
+        cmd->range.size = size;
         cmd->pData = Allocate<uint8_t>(size);
         memcpy(cmd->pData, data, size);
         RecordBufferAccess(queue, handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT);
@@ -657,17 +663,20 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanCopyBufferCmd* cmd)
         {
-            vkCmdCopyBuffer(*ctx->cmb, cmd->src, cmd->dst, 1, &cmd->region);
+            VkCopyDeviceMemoryInfoKHR copy{ VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_INFO_KHR };
+            copy.regionCount = 1u;
+            copy.pRegions = &cmd->region;
+            vkCmdCopyMemoryKHR(*ctx->cmb, &copy);
         });
 
         auto srcHandle = src->GetNativeView<VulkanBindHandle>();
         auto dstHandle = dst->GetNativeView<VulkanBindHandle>();
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->src = srcHandle->buffer.buffer;
-        cmd->dst = dstHandle->buffer.buffer;
-        cmd->region.srcOffset = srcOffset + srcHandle->buffer.offset;
-        cmd->region.dstOffset = dstOffset + dstHandle->buffer.offset;
-        cmd->region.size = size;
+        cmd->region.sType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_COPY_KHR;
+        cmd->region.srcRange = { srcHandle->buffer.deviceAddress + srcOffset, size };
+        cmd->region.srcFlags = PK_VK_ADDRESS_FLAGS;
+        cmd->region.dstRange = { dstHandle->buffer.deviceAddress + dstOffset, size };
+        cmd->region.dstFlags = PK_VK_ADDRESS_FLAGS;
 
         // Assume always staging source?!?
         RecordBufferAccess(queue, dstHandle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
@@ -677,7 +686,11 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanCopyBufferToImageCmd* cmd)
         {
-            vkCmdCopyBufferToImage(*ctx->cmb, cmd->src, cmd->dst, VK_IMAGE_LAYOUT_GENERAL, cmd->regionCount, cmd->regions);
+            VkCopyDeviceMemoryImageInfoKHR copy{ VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_IMAGE_INFO_KHR };
+            copy.image = cmd->dst;
+            copy.regionCount = cmd->regionCount;
+            copy.pRegions = cmd->regions;
+            vkCmdCopyMemoryToImageKHR(*ctx->cmb, &copy);
         });
 
         auto resourceRange = TextureViewRange();
@@ -697,24 +710,36 @@ namespace PK
         resourceRange.layers = resourceRange.layers - resourceRange.layer;
 
         auto srcHandle = buffer->GetNativeView<VulkanBindHandle>();
-        auto dstHandle = texture->GetNativeView<VulkanBindHandle>(resourceRange, TextureViewMode::SRV);
+        auto dstHandle = texture->GetNativeView<VulkanBindHandle>(resourceRange, TextureViewMode::RAW);
 
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->src = srcHandle->buffer.buffer;
         cmd->dst = dstHandle->image.image;
-        cmd->regions = Allocate<VkBufferImageCopy>(regionCount);
+        cmd->regions = Allocate<VkDeviceMemoryImageCopyKHR>(regionCount);
         cmd->regionCount = regionCount;
+
+        const auto blockSize = VulkanEnumConvert::GetFormatBlockSize(dstHandle->image.format);
+        const auto isBlockCompressed = VulkanEnumConvert::IsBlockCompressedFormat(dstHandle->image.format);
+        const auto blockExtent = isBlockCompressed ? 4ull : 1ull;
 
         for (auto i = 0u; i < regionCount; ++i)
         {
             auto& region = regions[i];
-            cmd->regions[i].bufferOffset = region.bufferOffset + srcHandle->buffer.offset;
-            cmd->regions[i].bufferRowLength = 0u;
-            cmd->regions[i].bufferImageHeight = 0u;
+            const VkDeviceSize blocksX = (region.extent.x + blockExtent - 1ull) / blockExtent;
+            const VkDeviceSize blocksY = (region.extent.y + blockExtent - 1ull) / blockExtent;
+            const VkDeviceSize totalBytes = blocksX * blocksY * blockSize * region.extent.z * region.layers;
+
+            cmd->regions[i].sType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_IMAGE_COPY_KHR;
+            cmd->regions[i].pNext = nullptr;
+            cmd->regions[i].addressRange.address = srcHandle->buffer.deviceAddress + region.bufferOffset;
+            cmd->regions[i].addressRange.size = totalBytes;
+            cmd->regions[i].addressFlags = PK_VK_ADDRESS_FLAGS;
+            cmd->regions[i].addressRowLength = 0u;
+            cmd->regions[i].addressImageHeight = 0u;
             cmd->regions[i].imageSubresource.aspectMask = dstHandle->image.range.aspectMask;
             cmd->regions[i].imageSubresource.mipLevel = region.level;
             cmd->regions[i].imageSubresource.baseArrayLayer = region.layer;
             cmd->regions[i].imageSubresource.layerCount = region.layers;
+            cmd->regions[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
             cmd->regions[i].imageOffset.x = region.offset.x;
             cmd->regions[i].imageOffset.y = region.offset.y;
             cmd->regions[i].imageOffset.z = region.offset.z;
@@ -854,7 +879,7 @@ namespace PK
             PK_LOG_RHI_SCOPE("Acceleration Structure Update: %s", vkStructure->name.c_str());
 
             FixedString128 name({ vkStructure->name.c_str(), ".StructureBuffer" });
-            vkStructure->buffer = RHI::CreateBuffer(bufferSize, BufferUsage::DefaultAccelerationStructure, name.c_str());
+            vkStructure->buffer = RHI::CreateBuffer(bufferSize, BufferUsage::Vram | BufferUsage::AccelerationStructure, name.c_str());
 
             cmd->BLASBuildInfos = Allocate<VkAccelerationStructureBuildGeometryInfoKHR>(buildCount);
             cmd->BLASRangeInfos = Allocate<VkAccelerationStructureBuildRangeInfoKHR*>(buildCount);
@@ -1329,7 +1354,7 @@ namespace PK
     {
         VulkanAccessRecord record;
         record.buffer.offset = handle->buffer.offset;
-        record.buffer.size = handle->buffer.range;
+        record.buffer.size = handle->buffer.size;
         record.stage = stage;
         record.access = access;
         record.queue = m_driver->queues->GetQueueIndex(queue);
@@ -1347,12 +1372,6 @@ namespace PK
         record.access = access;
         record.queue = m_driver->queues->GetQueueIndex(queue);
         m_accessRecorder.RecordImageAccess(handle->image.image, record);
-    
-        // Track alias as well so that layout stays consistent
-        if (handle->image.alias)
-        {
-            m_accessRecorder.RecordImageAccess(handle->image.alias, record);
-        }
     }
 
 
@@ -1366,7 +1385,8 @@ namespace PK
 
         const auto* descriptorLayout = shader->GetDescriptorSetLayout();
         const auto& resourceLayout = shader->GetResourceLayout();
-        const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags(descriptorLayout->stageFlags);
+        // Stupid temp workaround
+        const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags(shader->GetStageFlags());
 
         for (auto index = 0u; index < resourceLayout.GetCount(); ++index)
         {
@@ -1697,14 +1717,19 @@ namespace PK
             if (reallocateBuffers)
             {
                 state->vertexBufferCount = streamCount;
-                state->resolvedVertexBuffers = Allocate<VkBuffer>(streamCount);
-                state->resolvedVertexBufferOffsets = Allocate<VkDeviceSize>(streamCount);
+                state->resolvedVertexBuffers = Allocate<VkBindVertexBuffer3InfoKHR>(streamCount);
 
                 for (auto i = 0u; i < streamCount; ++i)
                 {
                     state->resolvedVertexHandles[i] = activeBuffers[i];
-                    state->resolvedVertexBuffers[i] = activeBuffers[i]->buffer.buffer;
-                    state->resolvedVertexBufferOffsets[i] = activeBuffers[i]->buffer.offset;
+                    auto& info = state->resolvedVertexBuffers[i];
+                    info.sType = VK_STRUCTURE_TYPE_BIND_VERTEX_BUFFER_3_INFO_KHR;
+                    info.pNext = nullptr;
+                    info.setStride = VK_FALSE;
+                    info.addressRange.address = activeBuffers[i]->buffer.deviceAddress;
+                    info.addressRange.size = activeBuffers[i]->buffer.size;
+                    info.addressRange.stride = state->pipelineKey.vertexStreams[i].stride;
+                    info.addressFlags = PK_VK_ADDRESS_FLAGS;
                 }
             }
         }
@@ -1716,7 +1741,6 @@ namespace PK
 
         cmd->vertexBufferCount = state->vertexBufferCount;
         cmd->vertexBuffers = state->resolvedVertexBuffers;
-        cmd->vertexBufferOffsets = state->resolvedVertexBufferOffsets;
         RecordRasterCmd(cmd);
     }
 
@@ -1725,9 +1749,11 @@ namespace PK
         if (m_pipelineState.indexBuffer != nullptr)
         {
             RecordBufferAccess(QueueType::Graphics, m_pipelineState.indexBuffer, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT, VK_ACCESS_2_INDEX_READ_BIT);
-            cmd->indexBuffer = m_pipelineState.indexBuffer->buffer.buffer;
-            cmd->indexBufferOffset = m_pipelineState.indexBuffer->buffer.offset;
-            cmd->indexType = m_pipelineState.indexType;
+            cmd->indexInfo.sType = VK_STRUCTURE_TYPE_BIND_INDEX_BUFFER_3_INFO_KHR;
+            cmd->indexInfo.pNext = nullptr;
+            cmd->indexInfo.addressRange = { m_pipelineState.indexBuffer->buffer.deviceAddress, m_pipelineState.indexBuffer->buffer.size };
+            cmd->indexInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
+            cmd->indexInfo.indexType = m_pipelineState.indexType;
         }
 
         RecordVertexCmd(cmd);

@@ -23,7 +23,7 @@ namespace PK
 
         if (m_pushConstants != pushConstants)
         {
-            vkCmdPushConstants(m_commandBuffer, pipelineLayout->layout, pipelineLayout->pushConstantStageFlags, 0u, pipelineLayout->pushConstantSize, pushConstants);
+            vkCmdPushConstants(m_commandBuffer, pipelineLayout->layout, VK_SHADER_STAGE_ALL, 0u, pipelineLayout->pushConstantSize, pushConstants);
             m_pushConstants = pushConstants;
         }
     }
@@ -48,25 +48,25 @@ namespace PK
         BeginRenderPass();
     }
 
-    void VulkanCommandBuffer::SetVertexBuffers(const VkBuffer* buffers, const VkDeviceSize* offsets, uint32_t count)
+    void VulkanCommandBuffer::SetVertexBuffers(const VkBindVertexBuffer3InfoKHR* infos, uint32_t count)
     {
-        if (count > 0u && (m_vertexBuffers != buffers || m_vertexBufferOffsets != offsets || m_vertexBufferCount != count))
+        if (count > 0u && (m_vertexBuffers != infos || m_vertexBufferCount != count))
         {
-            vkCmdBindVertexBuffers(m_commandBuffer, 0, count, buffers, offsets);
-            m_vertexBuffers = buffers;
-            m_vertexBufferOffsets = offsets;
+            vkCmdBindVertexBuffers3KHR(m_commandBuffer, 0u, count, infos);
+            m_vertexBuffers = infos;
             m_vertexBufferCount = count;
         }
     }
 
-    void VulkanCommandBuffer::SetIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType type)
+    void VulkanCommandBuffer::SetIndexBuffer(const VkBindIndexBuffer3InfoKHR& info)
     {
-        if (m_indexBuffer != buffer || m_indexOffset != offset || m_indexType != type)
+        if (m_indexRange.address != info.addressRange.address || 
+            m_indexRange.size != info.addressRange.size || 
+            m_indexType != info.indexType)
         {
-            vkCmdBindIndexBuffer(m_commandBuffer, buffer, offset, type);
-            m_indexBuffer = buffer;
-            m_indexOffset = offset;
-            m_indexType = type;
+            vkCmdBindIndexBuffer3KHR(m_commandBuffer, &info);
+            m_indexRange = info.addressRange;
+            m_indexType = info.indexType;
         }
     }
 
@@ -151,10 +151,8 @@ namespace PK
         m_viewportCount = 0u;
         m_scissorCount = 0u;
         m_vertexBuffers = nullptr;
-        m_vertexBufferOffsets = nullptr;
         m_vertexBufferCount = 0u;
-        m_indexBuffer = VK_NULL_HANDLE;
-        m_indexOffset = 0ull;
+        m_indexRange = { 0ull, 0ull };
         m_indexType = VK_INDEX_TYPE_UINT16;
         m_isRecording = false;
         m_isInRenderPass = false;

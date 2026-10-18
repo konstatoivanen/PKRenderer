@@ -23,14 +23,14 @@ namespace PK
         });
 
         m_vertexBuffers.ClearFast();
-        m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000u, BufferUsage::DefaultVertex, "MeshStaticCollection.VertexAttributes"));
-        m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000u, BufferUsage::DefaultVertex | BufferUsage::Storage, "MeshStaticCollection.VertexPositions"));
-        m_indexBuffer = RHI::CreateBuffer(m_indexSize * 2000000u, BufferUsage::DefaultIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
+        m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000u, BufferUsage::Vram | BufferUsage::InstanceInput, "MeshStaticCollection.VertexAttributes"));
+        m_vertexBuffers.Add(RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000u, BufferUsage::Vram | BufferUsage::InstanceInput, "MeshStaticCollection.VertexPositions"));
+        m_indexBuffer = RHI::CreateBuffer(m_indexSize * 2000000u, BufferUsage::Vram | BufferUsage::InstanceInput, "MeshStaticCollection.IndexBuffer");
         m_allocatorVertices.ClearAndReserve(m_vertexBuffers[0]->GetSize(), 128u);
         m_allocatorIndices.ClearAndReserve(m_indexBuffer->GetSize(), 128u);
 
         const auto meshletBufferSize = 67108864ull; // 64MB
-        m_meshletBuffer = RHI::CreateBuffer(meshletBufferSize, BufferUsage::DefaultStorage, "Meshlet.DataBuffer");
+        m_meshletBuffer = RHI::CreateBuffer(meshletBufferSize, BufferUsage::Vram, "Meshlet.DataBuffer");
         m_allocatorMeshlets.ClearAndReserve(m_meshletBuffer->GetSize(), 256u);
     }
 
@@ -377,12 +377,12 @@ namespace PK
         for (; bufferCount < PK_RHI_MAX_VERTEX_ATTRIBUTES && desc.streamLayout.GetStride(bufferCount) != 0u; ++bufferCount)
         {
             auto size = desc.streamLayout.GetStride(bufferCount) * desc.vertexCount;
-            vertexBuffers[bufferCount] = RHI::CreateBuffer(size, BufferUsage::DefaultVertex, FixedString128({ vertexBufferName.c_str(), bufferNames[bufferCount].c_str() }));
+            vertexBuffers[bufferCount] = RHI::CreateBuffer(size, BufferUsage::Vram | BufferUsage::InstanceInput, FixedString128({ vertexBufferName.c_str(), bufferNames[bufferCount].c_str() }));
             graph.UploadBufferData(QueueType::Transfer, vertexBuffers[bufferCount].get(), pVertices);
             pVertices += size;
         }
 
-        auto indexBuffer = RHI::CreateBuffer(desc.indexSize * desc.indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str());
+        auto indexBuffer = RHI::CreateBuffer(desc.indexSize * desc.indexCount, BufferUsage::Vram | BufferUsage::InstanceInput, indexBufferName.c_str());
         graph.UploadBufferData(QueueType::Transfer, indexBuffer.get(), desc.pIndices);
 
         SetResources(indexBuffer, desc.indexSize, desc.streamLayout, vertexBuffers, bufferCount, desc.pSubmeshes, desc.submeshCount);

@@ -37,7 +37,7 @@ namespace PK::App
         auto target = view->GetGBuffersFullView().previous.color;
         auto resolution = target->GetResolution();
 
-        if (RHI::ValidateBuffer<uint>(resources->histogram, 258ull, BufferUsage::DefaultStorage, "Histogram"))
+        if (RHI::ValidateBuffer<uint>(resources->histogram, 258ull, BufferUsage::Vram, "Histogram"))
         {
             RHI::SetBuffer(HashCache::Get()->pk_AutoExposure_Histogram, resources->histogram.get());
         }

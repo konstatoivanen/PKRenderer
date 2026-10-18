@@ -95,7 +95,7 @@ namespace PK
         if (value->pipeline == nullptr)
         {
             auto stageCount = 0u;
-            VkPipelineShaderStageCreateInfo shaderStages[(uint32_t)ShaderStage::EnumCount];
+            VkPipelineShaderStageCreateInfo shaderStages[(uint32_t)ShaderStage::EnumCount]{};
 
             for (auto i = 0u; i < (uint32_t)ShaderStage::EnumCount; ++i)
             {
@@ -159,7 +159,7 @@ namespace PK
             depthStencil.minDepthBounds = key.fixed.depthStencil.minDepthBounds;
             depthStencil.maxDepthBounds = key.fixed.depthStencil.maxDepthBounds;
 
-            VkPipelineColorBlendAttachmentState blendAttachments[PK_RHI_MAX_RENDER_TARGETS];
+            VkPipelineColorBlendAttachmentState blendAttachments[PK_RHI_MAX_RENDER_TARGETS]{};
 
             for (auto i = 0u; i < renderingInfo.colorAttachmentCount; ++i)
             {

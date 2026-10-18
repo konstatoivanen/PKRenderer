@@ -137,7 +137,7 @@ namespace PK
         createInfo.addressRange.size = structure->size;
         createInfo.type = type;
         createInfo.createFlags = 0;
-        createInfo.addressFlags = VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR;
+        createInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         VkAccelerationStructureKHR handle = VK_NULL_HANDLE;
         VK_ASSERT_RESULT_CTX(vkCreateAccelerationStructure2KHR(driver->device, &createInfo, nullptr, &handle), "Failed to create acceleration structure!");
         VulkanSetObjectDebugName(driver->device, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, (uint64_t)handle, name);

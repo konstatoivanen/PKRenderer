@@ -72,8 +72,8 @@ namespace PK
         m_bufferMask[index] = true;
         buffer->handle.buffer.buffer = m_buffer;
         buffer->handle.buffer.deviceAddress = m_deviceAddress + allocationOffset;
-        buffer->handle.buffer.offset = allocationOffset;
-        buffer->handle.buffer.range = size;
+        buffer->handle.buffer.offset = allocationOffset; // These are not even tracked but lets assign it anyway.
+        buffer->handle.buffer.size = size;
         buffer->mappedData = static_cast<uint8_t*>(m_mappedData) + allocationOffset;
         return buffer;
     }

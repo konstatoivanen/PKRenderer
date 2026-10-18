@@ -28,6 +28,8 @@ constexpr static const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_val
 
 #define PK_VK_IMAGE_RANGE_MAX 0x7FFFu
 
+#define PK_VK_ADDRESS_FLAGS (VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR | VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR)
+
 #if PK_PLATFORM_WINDOWS
     #define PK_VK_LIBRARY_NAME "vulkan-1.dll"
 #elif PK_PLATFORM_LINUX
@@ -144,11 +146,11 @@ extern PFN_vkCmdWriteAccelerationStructuresPropertiesKHR pkfn_vkCmdWriteAccelera
 extern PFN_vkCmdDrawMeshTasksEXT pkfn_vkCmdDrawMeshTasksEXT;
 #define vkCmdDrawMeshTasksEXT pkfn_vkCmdDrawMeshTasksEXT
 
-extern PFN_vkCmdDrawMeshTasksIndirectEXT pkfn_vkCmdDrawMeshTasksIndirectEXT;
-#define vkCmdDrawMeshTasksIndirectEXT pkfn_vkCmdDrawMeshTasksIndirectEXT
+extern PFN_vkCmdDrawMeshTasksIndirect2EXT pkfn_vkCmdDrawMeshTasksIndirect2EXT;
+#define vkCmdDrawMeshTasksIndirect2EXT pkfn_vkCmdDrawMeshTasksIndirect2EXT
 
-extern PFN_vkCmdDrawMeshTasksIndirectCountEXT pkfn_vkCmdDrawMeshTasksIndirectCountEXT;
-#define vkCmdDrawMeshTasksIndirectCountEXT pkfn_vkCmdDrawMeshTasksIndirectCountEXT
+extern PFN_vkCmdDrawMeshTasksIndirectCount2EXT pkfn_vkCmdDrawMeshTasksIndirectCount2EXT;
+#define vkCmdDrawMeshTasksIndirectCount2EXT pkfn_vkCmdDrawMeshTasksIndirectCount2EXT
 
 extern PFN_vkAcquireFullScreenExclusiveModeEXT pkfn_vkAcquireFullScreenExclusiveModeEXT;
 #define vkAcquireFullScreenExclusiveModeEXT pkfn_vkAcquireFullScreenExclusiveModeEXT
@@ -173,6 +175,40 @@ extern PFN_vkCmdBindDescriptorBuffersEXT pkfn_vkCmdBindDescriptorBuffersEXT;
 
 extern PFN_vkCmdSetDescriptorBufferOffsetsEXT pkfn_vkCmdSetDescriptorBufferOffsetsEXT;
 #define vkCmdSetDescriptorBufferOffsetsEXT pkfn_vkCmdSetDescriptorBufferOffsetsEXT
+
+extern PFN_vkCmdBindIndexBuffer3KHR pkfn_vkCmdBindIndexBuffer3KHR;
+#define vkCmdBindIndexBuffer3KHR pkfn_vkCmdBindIndexBuffer3KHR
+
+extern PFN_vkCmdBindVertexBuffers3KHR pkfn_vkCmdBindVertexBuffers3KHR;
+#define vkCmdBindVertexBuffers3KHR pkfn_vkCmdBindVertexBuffers3KHR
+
+extern PFN_vkCmdCopyImageToMemoryKHR pkfn_vkCmdCopyImageToMemoryKHR;
+#define vkCmdCopyImageToMemoryKHR pkfn_vkCmdCopyImageToMemoryKHR
+
+extern PFN_vkCmdCopyMemoryKHR pkfn_vkCmdCopyMemoryKHR;
+#define vkCmdCopyMemoryKHR pkfn_vkCmdCopyMemoryKHR
+
+extern PFN_vkCmdCopyMemoryToImageKHR pkfn_vkCmdCopyMemoryToImageKHR;
+#define vkCmdCopyMemoryToImageKHR pkfn_vkCmdCopyMemoryToImageKHR
+
+extern PFN_vkCmdCopyQueryPoolResultsToMemoryKHR pkfn_vkCmdCopyQueryPoolResultsToMemoryKHR;
+#define vkCmdCopyQueryPoolResultsToMemoryKHR pkfn_vkCmdCopyQueryPoolResultsToMemoryKHR
+
+extern PFN_vkCmdDispatchIndirect2KHR pkfn_vkCmdDispatchIndirect2KHR;
+#define vkCmdDispatchIndirect2KHR pkfn_vkCmdDispatchIndirect2KHR
+
+extern PFN_vkCmdDrawIndexedIndirect2KHR pkfn_vkCmdDrawIndexedIndirect2KHR;
+#define vkCmdDrawIndexedIndirect2KHR pkfn_vkCmdDrawIndexedIndirect2KHR
+
+extern PFN_vkCmdDrawIndirect2KHR pkfn_vkCmdDrawIndirect2KHR;
+#define vkCmdDrawIndirect2KHR pkfn_vkCmdDrawIndirect2KHR
+
+extern PFN_vkCmdFillMemoryKHR pkfn_vkCmdFillMemoryKHR;
+#define vkCmdFillMemoryKHR pkfn_vkCmdFillMemoryKHR
+
+extern PFN_vkCmdUpdateMemoryKHR pkfn_vkCmdUpdateMemoryKHR;
+#define vkCmdUpdateMemoryKHR pkfn_vkCmdUpdateMemoryKHR
+
 
 namespace PK
 {
@@ -242,15 +278,13 @@ namespace PK
     struct VulkanImageViewCreateInfo
     {
         VkImage image;
-        VkImage imageAlias;
-        VkImageViewType  viewType;
+        VkImageViewType viewType;
         VkFormat format;
-        VkFormat formatAlias;
+        VkImageUsageFlags usage;
         VkSampleCountFlagBits samples;
         VkComponentMapping components;
         VkExtent3D extent;
         VkImageSubresourceRange subresourceRange;
-        bool isAlias;
     };
 
     struct VulkanBindHandle : VersionedObject
@@ -260,7 +294,6 @@ namespace PK
             struct
             {
                 VkImage image = VK_NULL_HANDLE;
-                VkImage alias = VK_NULL_HANDLE;
                 VkImageView view = VK_NULL_HANDLE;
                 VkSampler sampler = VK_NULL_HANDLE;
                 VkFormat format = VK_FORMAT_UNDEFINED;
@@ -273,15 +306,15 @@ namespace PK
             struct
             {
                 VkBuffer buffer;
-                VkDeviceSize deviceAddress;
-                VkDeviceSize offset;
-                VkDeviceSize range;
+                VkDeviceAddress deviceAddress;
+                VkDeviceSize offset; // this is only used for access tracking as it doesn't support device address yet.
+                VkDeviceSize size;
             } 
             buffer;
 
             struct
             {
-                VkDeviceSize deviceAddress;
+                VkDeviceAddress deviceAddress;
             } 
             acceleration;
         };
@@ -338,7 +371,6 @@ namespace PK
 
         const VkDevice device;
         VkPipelineLayout layout;
-        VkShaderStageFlags pushConstantStageFlags;
         uint32_t pushConstantSize;
         FenceRef releaseFence;
         uint32_t referenceCount;
@@ -348,14 +380,11 @@ namespace PK
     {
         VulkanDescriptorSetLayout(VkDevice device, 
                                   const VkDescriptorSetLayoutCreateInfo& createInfo, 
-                                  VkShaderStageFlagBits stageFlags, 
                                   const char* name);
         ~VulkanDescriptorSetLayout();
 
         const VkDevice device;
         VkDescriptorSetLayout layout;
-        VkShaderStageFlagBits stageFlags;
-        FixedString128 name;
         FenceRef releaseFence;
         uint32_t referenceCount;
     };
@@ -392,7 +421,6 @@ namespace PK
         VkQueryPool pool;
     };
 
-
     void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames, bool enableDebugLabels);
 
     VkResult VulkanCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);
@@ -403,7 +431,6 @@ namespace PK
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
     VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
     VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkFormat format);
-    TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange);
 
     bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count);
     bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface);
@@ -436,6 +463,7 @@ namespace PK
         VkIndexType GetIndexType(size_t size);
         TextureFormat GetTextureFormat(VkFormat format);
         uint32_t GetFormatBlockSize(VkFormat format);
+        bool IsBlockCompressedFormat(VkFormat format);
         bool IsDepthFormat(VkFormat format);
         bool IsDepthStencilFormat(VkFormat format);
 
@@ -451,10 +479,8 @@ namespace PK
         VkDescriptorType GetDescriptorType(ShaderResourceType type);
         ShaderResourceType GetShaderResourceType(VkDescriptorType type);
         VkShaderStageFlagBits GetShaderStage(ShaderStage stage);
-        VkPipelineBindPoint GetPipelineBindPoint(ShaderStageFlags stageFlags);
         VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples);
         VkVertexInputRate GetInputRate(InputRate inputRate);
-        VkShaderStageFlagBits GetShaderStageFlags(ShaderStageFlags stageFlags);
         VkPolygonMode GetPolygonMode(PolygonMode mode);
         VkBlendOp GetBlendOp(BlendOp op);
         VkBlendFactor GetBlendFactor(BlendFactor factor, VkBlendFactor fallback);
@@ -468,7 +494,7 @@ namespace PK
         
         VkPipelineStageFlags2 GetQueueFlagsStageCapabilities(VkQueueFlags flags);
         VkAccessFlags2 GetQueueFlagsAccessCapabilities(VkQueueFlags flags);
-        VkPipelineStageFlags2 GetPipelineStageFlags(VkShaderStageFlags flags);
+        VkPipelineStageFlags2 GetPipelineStageFlags(ShaderStageFlags flags);
         bool IsWriteAccess(VkAccessFlags2 access);
     }
 }

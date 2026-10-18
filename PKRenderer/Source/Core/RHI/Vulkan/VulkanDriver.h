@@ -54,7 +54,7 @@ namespace PK
         RHIGraph* GetGraph() const final { return graph.get(); }
         FixedString32 GetDriverHeader() const final;
         RHIDriverMemoryInfo GetMemoryInfo() const final;
-        size_t GetBufferOffsetAlignment(BufferUsage usage) const final;
+        size_t GetBufferAlignment() const final;
         BuiltInResources* GetBuiltInResources() final { return builtInResources; }
 
         RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) final;

@@ -26,7 +26,6 @@ namespace PK
         TextureDescriptor m_descriptor;
         VmaAllocation m_memory;
         VkImage m_image;
-        VkImage m_imageAlias;
         VulkanBindHandle m_rawHandle;
         LinkedList<VulkanImageView, uint64_t> m_firstView = nullptr;
     };

@@ -17,7 +17,6 @@ PFN_vkCmdInsertDebugUtilsLabelEXT pkfn_vkCmdInsertDebugUtilsLabelEXT = nullptr;
 PFN_vkCreateDebugUtilsMessengerEXT pkfn_vkCreateDebugUtilsMessengerEXT = nullptr;
 PFN_vkDestroyDebugUtilsMessengerEXT pkfn_vkDestroyDebugUtilsMessengerEXT = nullptr;
 PFN_vkSubmitDebugUtilsMessageEXT pkfn_vkSubmitDebugUtilsMessageEXT = nullptr;
-
 PFN_vkCreateAccelerationStructure2KHR pkfn_vkCreateAccelerationStructure2KHR = nullptr;
 PFN_vkDestroyAccelerationStructureKHR pkfn_vkDestroyAccelerationStructureKHR = nullptr;
 PFN_vkCmdSetRayTracingPipelineStackSizeKHR pkfn_vkCmdSetRayTracingPipelineStackSizeKHR = nullptr;
@@ -32,21 +31,28 @@ PFN_vkGetAccelerationStructureBuildSizesKHR pkfn_vkGetAccelerationStructureBuild
 PFN_vkCmdBuildAccelerationStructuresKHR pkfn_vkCmdBuildAccelerationStructuresKHR = nullptr;
 PFN_vkCmdCopyAccelerationStructureKHR pkfn_vkCmdCopyAccelerationStructureKHR = nullptr;
 PFN_vkCmdWriteAccelerationStructuresPropertiesKHR pkfn_vkCmdWriteAccelerationStructuresPropertiesKHR = nullptr;
-
 PFN_vkCmdDrawMeshTasksEXT pkfn_vkCmdDrawMeshTasksEXT = nullptr;
-PFN_vkCmdDrawMeshTasksIndirectEXT pkfn_vkCmdDrawMeshTasksIndirectEXT = nullptr;
-PFN_vkCmdDrawMeshTasksIndirectCountEXT pkfn_vkCmdDrawMeshTasksIndirectCountEXT = nullptr;
-
+PFN_vkCmdDrawMeshTasksIndirect2EXT pkfn_vkCmdDrawMeshTasksIndirect2EXT = nullptr;
+PFN_vkCmdDrawMeshTasksIndirectCount2EXT pkfn_vkCmdDrawMeshTasksIndirectCount2EXT = nullptr;
 PFN_vkAcquireFullScreenExclusiveModeEXT pkfn_vkAcquireFullScreenExclusiveModeEXT = nullptr;
 PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT = nullptr;
-
 PFN_vkWaitForPresentKHR pkfn_vkWaitForPresentKHR = nullptr;
-
 PFN_vkGetDescriptorSetLayoutSizeEXT pkfn_vkGetDescriptorSetLayoutSizeEXT = nullptr;
 PFN_vkGetDescriptorSetLayoutBindingOffsetEXT pkfn_vkGetDescriptorSetLayoutBindingOffsetEXT = nullptr;
 PFN_vkGetDescriptorEXT pkfn_vkGetDescriptorEXT = nullptr;
 PFN_vkCmdBindDescriptorBuffersEXT pkfn_vkCmdBindDescriptorBuffersEXT = nullptr;
 PFN_vkCmdSetDescriptorBufferOffsetsEXT pkfn_vkCmdSetDescriptorBufferOffsetsEXT = nullptr;
+PFN_vkCmdBindIndexBuffer3KHR pkfn_vkCmdBindIndexBuffer3KHR = nullptr;
+PFN_vkCmdBindVertexBuffers3KHR pkfn_vkCmdBindVertexBuffers3KHR = nullptr;
+PFN_vkCmdCopyImageToMemoryKHR pkfn_vkCmdCopyImageToMemoryKHR = nullptr;
+PFN_vkCmdCopyMemoryKHR pkfn_vkCmdCopyMemoryKHR = nullptr;
+PFN_vkCmdCopyMemoryToImageKHR pkfn_vkCmdCopyMemoryToImageKHR = nullptr;
+PFN_vkCmdCopyQueryPoolResultsToMemoryKHR pkfn_vkCmdCopyQueryPoolResultsToMemoryKHR = nullptr;
+PFN_vkCmdDispatchIndirect2KHR pkfn_vkCmdDispatchIndirect2KHR = nullptr;
+PFN_vkCmdDrawIndexedIndirect2KHR pkfn_vkCmdDrawIndexedIndirect2KHR = nullptr;
+PFN_vkCmdDrawIndirect2KHR pkfn_vkCmdDrawIndirect2KHR = nullptr;
+PFN_vkCmdFillMemoryKHR pkfn_vkCmdFillMemoryKHR = nullptr;
+PFN_vkCmdUpdateMemoryKHR pkfn_vkCmdUpdateMemoryKHR = nullptr;
 
 namespace PK
 {
@@ -305,12 +311,15 @@ namespace PK
 
     VulkanImageView::VulkanImageView(VkDevice device, const VulkanImageViewCreateInfo& createInfo, const char* name) : device(device)
     {
+        VkImageViewUsageCreateInfo usageInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO };
+        usageInfo.usage = createInfo.usage;
+
         VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-        info.pNext = nullptr;
+        info.pNext = createInfo.usage != 0u ? &usageInfo : nullptr;
         info.flags = 0;
-        info.image = createInfo.isAlias ? createInfo.imageAlias : createInfo.image;
+        info.image = createInfo.image;
         info.viewType = createInfo.viewType;
-        info.format = createInfo.isAlias ? createInfo.formatAlias : createInfo.format;
+        info.format = createInfo.format;
         info.components = createInfo.components;
         info.subresourceRange = createInfo.subresourceRange;
 
@@ -319,7 +328,6 @@ namespace PK
 
         bindHandle.image.view = view;
         bindHandle.image.image = createInfo.image;
-        bindHandle.image.alias = createInfo.imageAlias;
         bindHandle.image.format = info.format;
         bindHandle.image.extent = createInfo.extent;
         bindHandle.image.range = createInfo.subresourceRange;
@@ -364,8 +372,7 @@ namespace PK
 
     VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo, const char* name) :
         device(device),
-        pushConstantStageFlags(createInfo.pPushConstantRanges->stageFlags),
-        pushConstantSize(createInfo.pPushConstantRanges->size)
+        pushConstantSize(createInfo.pushConstantRangeCount ? createInfo.pPushConstantRanges->size : 0u)
     {
         VK_ASSERT_RESULT_CTX(vkCreatePipelineLayout(device, &createInfo, nullptr, &layout), "Failed to create a pipeline layout!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)layout, name);
@@ -377,13 +384,7 @@ namespace PK
     }
 
 
-    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device,
-        const VkDescriptorSetLayoutCreateInfo& createInfo,
-        VkShaderStageFlagBits stageFlags,
-        const char* name) :
-        device(device),
-        stageFlags(stageFlags),
-        name(name)
+    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo, const char* name) : device(device)
     {
         VK_ASSERT_RESULT_CTX(vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &layout), "Failed to create a descriptor set layout!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)layout, name);
@@ -468,12 +469,11 @@ namespace PK
         pkfn_vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureBuildSizesKHR");
         pkfn_vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetInstanceProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR");
         pkfn_vkCmdCopyAccelerationStructureKHR = (PFN_vkCmdCopyAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyAccelerationStructureKHR");
-        pkfn_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
         pkfn_vkCmdWriteAccelerationStructuresPropertiesKHR = (PFN_vkCmdWriteAccelerationStructuresPropertiesKHR)vkGetInstanceProcAddr(instance, "vkCmdWriteAccelerationStructuresPropertiesKHR");
 
         pkfn_vkCmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksEXT");
-        pkfn_vkCmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectEXT");
-        pkfn_vkCmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectCountEXT");
+        pkfn_vkCmdDrawMeshTasksIndirect2EXT = (PFN_vkCmdDrawMeshTasksIndirect2EXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirect2EXT");
+        pkfn_vkCmdDrawMeshTasksIndirectCount2EXT = (PFN_vkCmdDrawMeshTasksIndirectCount2EXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectCount2EXT");
 
         pkfn_vkAcquireFullScreenExclusiveModeEXT = (PFN_vkAcquireFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkAcquireFullScreenExclusiveModeEXT");
         pkfn_vkReleaseFullScreenExclusiveModeEXT = (PFN_vkReleaseFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkReleaseFullScreenExclusiveModeEXT");
@@ -485,6 +485,18 @@ namespace PK
         pkfn_vkGetDescriptorEXT = (PFN_vkGetDescriptorEXT)vkGetInstanceProcAddr(instance, "vkGetDescriptorEXT");
         pkfn_vkCmdBindDescriptorBuffersEXT = (PFN_vkCmdBindDescriptorBuffersEXT)vkGetInstanceProcAddr(instance, "vkCmdBindDescriptorBuffersEXT");
         pkfn_vkCmdSetDescriptorBufferOffsetsEXT = (PFN_vkCmdSetDescriptorBufferOffsetsEXT)vkGetInstanceProcAddr(instance, "vkCmdSetDescriptorBufferOffsetsEXT");
+
+        pkfn_vkCmdBindIndexBuffer3KHR = (PFN_vkCmdBindIndexBuffer3KHR)vkGetInstanceProcAddr(instance, "vkCmdBindIndexBuffer3KHR");
+        pkfn_vkCmdBindVertexBuffers3KHR = (PFN_vkCmdBindVertexBuffers3KHR)vkGetInstanceProcAddr(instance, "vkCmdBindVertexBuffers3KHR");
+        pkfn_vkCmdCopyImageToMemoryKHR = (PFN_vkCmdCopyImageToMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyImageToMemoryKHR");
+        pkfn_vkCmdCopyMemoryKHR = (PFN_vkCmdCopyMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyMemoryKHR");
+        pkfn_vkCmdCopyMemoryToImageKHR = (PFN_vkCmdCopyMemoryToImageKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyMemoryToImageKHR");
+        pkfn_vkCmdCopyQueryPoolResultsToMemoryKHR = (PFN_vkCmdCopyQueryPoolResultsToMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyQueryPoolResultsToMemoryKHR");
+        pkfn_vkCmdDispatchIndirect2KHR = (PFN_vkCmdDispatchIndirect2KHR)vkGetInstanceProcAddr(instance, "vkCmdDispatchIndirect2KHR");
+        pkfn_vkCmdDrawIndexedIndirect2KHR = (PFN_vkCmdDrawIndexedIndirect2KHR)vkGetInstanceProcAddr(instance, "vkCmdDrawIndexedIndirect2KHR");
+        pkfn_vkCmdDrawIndirect2KHR = (PFN_vkCmdDrawIndirect2KHR)vkGetInstanceProcAddr(instance, "vkCmdDrawIndirect2KHR");
+        pkfn_vkCmdFillMemoryKHR = (PFN_vkCmdFillMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdFillMemoryKHR");
+        pkfn_vkCmdUpdateMemoryKHR = (PFN_vkCmdUpdateMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdUpdateMemoryKHR");
     }
 
     
@@ -655,17 +667,6 @@ namespace PK
             viewRange.levels >= PK_VK_IMAGE_RANGE_MAX ? VK_REMAINING_MIP_LEVELS : viewRange.levels, //levelCount
             viewRange.layer,  //baseArrayLayer
             viewRange.layers >= PK_VK_IMAGE_RANGE_MAX ? VK_REMAINING_ARRAY_LAYERS : viewRange.layers //layerCount
-        };
-    }
-
-    TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange)
-    {
-        return
-        {
-            (uint16_t)resourceRange.baseMipLevel,           //level
-            (uint16_t)resourceRange.baseArrayLayer,         //layer
-            (uint16_t)(resourceRange.levelCount & PK_VK_IMAGE_RANGE_MAX), //levels
-            (uint16_t)(resourceRange.layerCount & PK_VK_IMAGE_RANGE_MAX)  //layers
         };
     }
 
@@ -1165,10 +1166,10 @@ namespace PK
                 case TextureFormat::RGBA8_Unorm: return VK_FORMAT_R8G8B8A8_UNORM;
                 case TextureFormat::RGBA8_Snorm: return VK_FORMAT_R8G8B8A8_SNORM;
                 case TextureFormat::RGBA8_Srgb: return VK_FORMAT_R8G8B8A8_SRGB;
-                case TextureFormat::RGBA8_Uint: return VK_FORMAT_B8G8R8A8_UINT;
-                case TextureFormat::RGBA8_Int: return VK_FORMAT_B8G8R8A8_SINT;
+                case TextureFormat::RGBA8_Uint: return VK_FORMAT_R8G8B8A8_UINT;
+                case TextureFormat::RGBA8_Int: return VK_FORMAT_R8G8B8A8_SINT;
                 case TextureFormat::BGRA8_Unorm: return VK_FORMAT_B8G8R8A8_UNORM;
-                case TextureFormat::BGRA8_Srgb: return VK_FORMAT_B8G8R8A8_SNORM;
+                case TextureFormat::BGRA8_Srgb: return VK_FORMAT_B8G8R8A8_SRGB;
                 case TextureFormat::RGB16_Float: return VK_FORMAT_R16G16B16_SFLOAT;
                 case TextureFormat::RGB16_Uint: return VK_FORMAT_R16G16B16_UINT;
                 case TextureFormat::RGB16_Int: return VK_FORMAT_R16G16B16_SINT;
@@ -1253,10 +1254,10 @@ namespace PK
                 case VK_FORMAT_R8G8B8A8_UNORM: return TextureFormat::RGBA8_Unorm;
                 case VK_FORMAT_R8G8B8A8_SNORM: return TextureFormat::RGBA8_Snorm;
                 case VK_FORMAT_R8G8B8A8_SRGB: return TextureFormat::RGBA8_Srgb;
-                case VK_FORMAT_B8G8R8A8_UINT: return TextureFormat::RGBA8_Uint;
-                case VK_FORMAT_B8G8R8A8_SINT: return TextureFormat::RGBA8_Int;
+                case VK_FORMAT_R8G8B8A8_UINT: return TextureFormat::RGBA8_Uint;
+                case VK_FORMAT_R8G8B8A8_SINT: return TextureFormat::RGBA8_Int;
                 case VK_FORMAT_B8G8R8A8_UNORM: return TextureFormat::BGRA8_Unorm;
-                case VK_FORMAT_B8G8R8A8_SNORM: return TextureFormat::BGRA8_Srgb;
+                case VK_FORMAT_B8G8R8A8_SRGB: return TextureFormat::BGRA8_Srgb;
                 case VK_FORMAT_R16G16B16_SFLOAT: return TextureFormat::RGB16_Float;
                 case VK_FORMAT_R16G16B16_UINT: return TextureFormat::RGB16_Uint;
                 case VK_FORMAT_R16G16B16_SINT: return TextureFormat::RGB16_Int;
@@ -1405,6 +1406,28 @@ namespace PK
                 
                 default: 
                     return 0u;
+            }
+        }
+
+        bool IsBlockCompressedFormat(VkFormat format)
+        {
+            switch (format)
+            {
+                case VK_FORMAT_BC1_RGB_UNORM_BLOCK:
+                case VK_FORMAT_BC1_RGB_SRGB_BLOCK:
+                case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
+                case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
+                case VK_FORMAT_BC2_UNORM_BLOCK:
+                case VK_FORMAT_BC2_SRGB_BLOCK:
+                case VK_FORMAT_BC3_UNORM_BLOCK:
+                case VK_FORMAT_BC3_SRGB_BLOCK: 
+                case VK_FORMAT_BC4_UNORM_BLOCK:           
+                case VK_FORMAT_BC6H_UFLOAT_BLOCK:
+                case VK_FORMAT_BC6H_SFLOAT_BLOCK:
+                case VK_FORMAT_BC7_UNORM_BLOCK:
+                    return true;
+                default: 
+                    return false;
             }
         }
 
@@ -1685,26 +1708,6 @@ namespace PK
             }
         }
 
-        VkPipelineBindPoint GetPipelineBindPoint(ShaderStageFlags stageFlags)
-        {
-            if ((stageFlags & ShaderStageFlags::StagesGraphics) != 0u)
-            {
-                return VK_PIPELINE_BIND_POINT_GRAPHICS;
-            }
-
-            if ((stageFlags & ShaderStageFlags::StagesCompute) != 0u)
-            {
-                return VK_PIPELINE_BIND_POINT_COMPUTE;
-            }
-
-            if ((stageFlags & ShaderStageFlags::StagesRayTrace) != 0u)
-            {
-                return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
-            }
-
-            return VK_PIPELINE_BIND_POINT_MAX_ENUM;
-        }
-
         VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples)
         {
             uint32_t bit = VK_SAMPLE_COUNT_64_BIT;
@@ -1725,78 +1728,6 @@ namespace PK
                 case InputRate::PerInstance: return VK_VERTEX_INPUT_RATE_INSTANCE;
                 default: return VK_VERTEX_INPUT_RATE_MAX_ENUM;
             }
-        }
-
-        VkShaderStageFlagBits GetShaderStageFlags(ShaderStageFlags stageFlags)
-        {
-            uint32_t flags = 0;
-
-            if ((stageFlags & ShaderStageFlags::Vertex) != 0)
-            {
-                flags |= VK_SHADER_STAGE_VERTEX_BIT;
-            }
-
-            if ((stageFlags & ShaderStageFlags::TesselationControl) != 0)
-            {
-                flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-            }
-
-            if ((stageFlags & ShaderStageFlags::TesselationEvaluation) != 0)
-            {
-                flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-            }
-
-            if ((stageFlags & ShaderStageFlags::Geometry) != 0)
-            {
-                flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
-            }
-
-            if ((stageFlags & ShaderStageFlags::MeshTask) != 0)
-            {
-                flags |= VK_SHADER_STAGE_TASK_BIT_EXT;
-            }
-
-            if ((stageFlags & ShaderStageFlags::MeshAssembly) != 0)
-            {
-                flags |= VK_SHADER_STAGE_MESH_BIT_EXT;
-            }
-
-            if ((stageFlags & ShaderStageFlags::Fragment) != 0)
-            {
-                flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-            }
-
-            if ((stageFlags & ShaderStageFlags::Compute) != 0)
-            {
-                flags |= VK_SHADER_STAGE_COMPUTE_BIT;
-            }
-
-            if ((stageFlags & ShaderStageFlags::RayGeneration) != 0)
-            {
-                flags |= VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-            }
-
-            if ((stageFlags & ShaderStageFlags::RayMiss) != 0)
-            {
-                flags |= VK_SHADER_STAGE_MISS_BIT_KHR;
-            }
-
-            if ((stageFlags & ShaderStageFlags::RayClosestHit) != 0)
-            {
-                flags |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-            }
-
-            if ((stageFlags & ShaderStageFlags::RayAnyHit) != 0)
-            {
-                flags |= VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
-            }
-
-            if ((stageFlags & ShaderStageFlags::RayIntersection) != 0)
-            {
-                flags |= VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
-            }
-
-            return (VkShaderStageFlagBits)flags;
         }
 
         VkPolygonMode GetPolygonMode(PolygonMode mode)
@@ -2060,61 +1991,18 @@ namespace PK
             return capabilities;
         }
 
-        VkPipelineStageFlags2 GetPipelineStageFlags(VkShaderStageFlags flags)
+        VkPipelineStageFlags2 GetPipelineStageFlags(ShaderStageFlags flags)
         {
             VkPipelineStageFlags2 outflags = 0u;
-
-            if (flags & VK_SHADER_STAGE_VERTEX_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_GEOMETRY_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_FRAGMENT_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_COMPUTE_BIT)
-            {
-                outflags |= VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-            }
-
-            if (flags & VK_SHADER_STAGE_TASK_BIT_EXT)
-            {
-                outflags |= VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT;
-            }
-
-            if (flags & VK_SHADER_STAGE_MESH_BIT_EXT)
-            {
-                outflags |= VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT;
-            }
-
-            if (flags &
-                (VK_SHADER_STAGE_RAYGEN_BIT_KHR |
-                    VK_SHADER_STAGE_ANY_HIT_BIT_KHR |
-                    VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
-                    VK_SHADER_STAGE_MISS_BIT_KHR |
-                    VK_SHADER_STAGE_INTERSECTION_BIT_KHR |
-                    VK_SHADER_STAGE_CALLABLE_BIT_KHR))
-            {
-                outflags |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
-            }
-
+            if ((flags & ShaderStageFlags::Vertex) != 0)                outflags |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+            if ((flags & ShaderStageFlags::TesselationControl) != 0)    outflags |= VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT;
+            if ((flags & ShaderStageFlags::TesselationEvaluation) != 0) outflags |= VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT;
+            if ((flags & ShaderStageFlags::Geometry) != 0)              outflags |= VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT;
+            if ((flags & ShaderStageFlags::Fragment) != 0)              outflags |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+            if ((flags & ShaderStageFlags::Compute) != 0)               outflags |= VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+            if ((flags & ShaderStageFlags::MeshTask) != 0)              outflags |= VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT;
+            if ((flags & ShaderStageFlags::MeshAssembly) != 0)          outflags |= VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT;
+            if ((flags & ShaderStageFlags::StagesRayTrace) != 0)        outflags |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
             return outflags;
         }
 

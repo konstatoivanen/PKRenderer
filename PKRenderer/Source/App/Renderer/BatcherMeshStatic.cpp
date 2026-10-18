@@ -15,10 +15,10 @@ namespace PK::App
     {
         PK_LOG_VERBOSE_FUNC();
         m_textures2D = RHI::CreateBindSet<RHITexture>(PK_RHI_MAX_UNBOUNDED_SIZE);
-        m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::DefaultStorage, "Batching.Matrices");
-        m_indices = RHI::CreateBuffer<PKAssets::PKDrawInfo>(1024ull, BufferUsage::DefaultStorage, "Batching.DrawInfos");
-        m_properties = RHI::CreateBuffer(16384ull, BufferUsage::DefaultStorage, "Batching.MaterialProperties");
-        m_tasklets = RHI::CreateBuffer<uint2>(4096u, BufferUsage::DefaultStorage, "Batching.Meshlet.Tasklets");
+        m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::Vram, "Batching.Matrices");
+        m_indices = RHI::CreateBuffer<PKAssets::PKDrawInfo>(1024ull, BufferUsage::Vram, "Batching.DrawInfos");
+        m_properties = RHI::CreateBuffer(16384ull, BufferUsage::Vram, "Batching.MaterialProperties");
+        m_tasklets = RHI::CreateBuffer<uint2>(4096u, BufferUsage::Vram, "Batching.Meshlet.Tasklets");
     }
 
     void BatcherMeshStatic::AssetConstruct(MeshStatic* memory, const char* filepath)

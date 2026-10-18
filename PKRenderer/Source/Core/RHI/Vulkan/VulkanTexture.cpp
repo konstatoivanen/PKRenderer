@@ -26,6 +26,11 @@ namespace PK
         auto& familiesRender = m_driver->queues->GetFamiliesRender();
         const auto requiresTransfer = (descriptor.usage & TextureUsage::Upload) != 0;
 
+        VkFormat viewFormats[2] = { m_format, m_formatAlias };
+        VkImageFormatListCreateInfo formatListInfo{ VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO };
+        formatListInfo.viewFormatCount = 2u;
+        formatListInfo.pViewFormats = viewFormats;
+
         VkImageCreateInfo imageCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         imageCreateInfo.flags = 0u;
         imageCreateInfo.imageType = descriptor.type == TextureType::Texture3D ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
@@ -41,9 +46,6 @@ namespace PK
         imageCreateInfo.pQueueFamilyIndices = requiresTransfer ? familiesAll.indices : familiesRender.indices;
         imageCreateInfo.queueFamilyIndexCount = requiresTransfer ? familiesAll.count : familiesRender.count;
 
-        VmaAllocationCreateInfo allocationCreateInfo{};
-        allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-
         if (descriptor.type != TextureType::Texture3D)
         {
             imageCreateInfo.extent.depth = 1u;
@@ -54,10 +56,10 @@ namespace PK
             imageCreateInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         }
 
-        if (descriptor.formatAlias != TextureFormat::Invalid && descriptor.formatAlias != descriptor.format)
+        if (m_formatAlias != VK_FORMAT_UNDEFINED && m_formatAlias != m_format)
         {
-            imageCreateInfo.flags |= VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_ALIAS_BIT;
-            allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT;
+            imageCreateInfo.flags |= VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+            imageCreateInfo.pNext = &formatListInfo;
         }
 
         if ((descriptor.usage & TextureUsage::RTColor) != 0)   imageCreateInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -67,7 +69,10 @@ namespace PK
         if ((descriptor.usage & TextureUsage::Sample) != 0)    imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
         if ((descriptor.usage & TextureUsage::Input) != 0)     imageCreateInfo.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
         if ((descriptor.usage & TextureUsage::Storage) != 0)   imageCreateInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-        
+
+        VmaAllocationCreateInfo allocationCreateInfo{};
+        allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+
         if ((descriptor.usage & TextureUsage::Transient) != 0)
         {
             imageCreateInfo.usage &= ~(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
@@ -75,27 +80,9 @@ namespace PK
             allocationCreateInfo.preferredFlags |= VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
         }
 
-        if (imageCreateInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)
-        {
-            auto primaryCreateInfo = imageCreateInfo;
-            primaryCreateInfo.usage &= ~VK_IMAGE_USAGE_STORAGE_BIT;
-            VK_ASSERT_RESULT_CTX(vmaCreateImage(m_driver->allocator, &primaryCreateInfo, &allocationCreateInfo, &m_image, &m_memory, nullptr), "Failed to create a VkImage!");
-
-            auto aliasCreateInfo = imageCreateInfo;
-            aliasCreateInfo.format = VulkanEnumConvert::GetFormat(descriptor.formatAlias);
-            VK_ASSERT_RESULT_CTX(vmaCreateAliasingImage(m_driver->allocator, m_memory, &imageCreateInfo, &m_imageAlias), "Failed to create a VkImage alias!");
-
-            VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)m_imageAlias, FixedString128({ name, ".Alias" }).c_str());
-        }
-        else
-        {
-            m_imageAlias = VK_NULL_HANDLE;
-            VK_ASSERT_RESULT_CTX(vmaCreateImage(m_driver->allocator, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_memory, nullptr), "Failed to create a VkImage!");
-        }
-
+        VK_ASSERT_RESULT_CTX(vmaCreateImage(m_driver->allocator, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_memory, nullptr), "Failed to create a VkImage!");
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)m_image, name);
         m_driver->graph->RegisterImage(m_image, VulkanEnumConvert::GetFormatAspect(m_format));
-        m_driver->graph->RegisterImage(m_imageAlias, VulkanEnumConvert::GetFormatAspect(m_formatAlias));
     }
 
     VulkanTexture::~VulkanTexture()
@@ -105,15 +92,6 @@ namespace PK
         for (auto view : m_firstView)
         {
             m_driver->DisposePooled(view, fence);
-        }
-
-        if (m_imageAlias != VK_NULL_HANDLE)
-        {
-            m_driver->disposer->Dispose(m_driver->device, m_imageAlias, [](void* c, void* v)
-            {
-                vkDestroyImage(static_cast<VkDevice>(c), static_cast<VkImage>(v), nullptr);
-            },
-            fence);
         }
 
         m_driver->disposer->Dispose(m_driver->device, m_image, [](void* c, void* v)
@@ -129,7 +107,6 @@ namespace PK
         fence);
 
         m_driver->graph->UnregisterResource(m_image);
-        m_driver->graph->UnregisterResource(m_imageAlias);
         m_firstView = nullptr;
     }
 
@@ -158,52 +135,49 @@ namespace PK
         {
             m_rawHandle.image.view = VK_NULL_HANDLE;
             m_rawHandle.image.image = m_image;
-            m_rawHandle.image.alias = m_imageAlias;
             m_rawHandle.image.format = m_format;
             m_rawHandle.image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
             m_rawHandle.image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
-            m_rawHandle.image.range = VulkanConvertRange(normalizedRange, m_rawHandle.image.format);
+            m_rawHandle.image.range = VulkanConvertRange(normalizedRange, m_format);
+            m_rawHandle.image.sampler = VK_NULL_HANDLE;
+            return &m_rawHandle;
+        }
+
+        auto key = GetViewKey(normalizedRange, mode);
+
+        if (!m_firstView.FindAndSwapFirst(key))
+        {
+            const auto useAlias = mode == TextureViewMode::UAV && m_formatAlias != VK_FORMAT_UNDEFINED;
+            const auto isDepth = VulkanEnumConvert::IsDepthFormat(m_format);
+
+            VulkanImageViewCreateInfo info{};
+            info.image = m_image;
+            info.viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
+            info.format = useAlias ? m_formatAlias : m_format;
+            info.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
+            info.components = mode == TextureViewMode::SRV ? VulkanEnumConvert::GetSwizzle(info.format) : (VkComponentMapping{});
+            info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
+            info.subresourceRange = VulkanConvertRange(normalizedRange, info.format);
+            
+            switch (mode)
+            {
+                case TextureViewMode::UAV: info.usage = VK_IMAGE_USAGE_STORAGE_BIT; break;
+                case TextureViewMode::SRV: info.usage = VK_IMAGE_USAGE_SAMPLED_BIT; break;
+                case TextureViewMode::RTV: isDepth ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; break;
+                default: break;
+            }
+            
+            auto newView = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, m_name.c_str());
 
             if (mode == TextureViewMode::SRV)
             {
-                m_rawHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
+                newView->bindHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
             }
 
-            return &m_rawHandle;
+            m_firstView.Insert(newView, key);
         }
-        else
-        {
-            auto key = GetViewKey(normalizedRange, mode);
 
-            if (!m_firstView.FindAndSwapFirst(key))
-            {
-                auto useAlias = mode == TextureViewMode::UAV && m_imageAlias != VK_NULL_HANDLE;
-                auto viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
-                auto swizzle = VulkanEnumConvert::GetSwizzle(m_format);
-
-                VulkanImageViewCreateInfo info;
-                info.image = m_image;
-                info.imageAlias = m_imageAlias;
-                info.viewType = viewType;
-                info.format = m_format;
-                info.formatAlias = m_formatAlias;
-                info.samples = VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
-                info.components = mode == TextureViewMode::SRV ? swizzle : (VkComponentMapping{});
-                info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
-                info.isAlias = useAlias;
-                info.subresourceRange = VulkanConvertRange(normalizedRange, info.format);
-                auto newView = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, m_name.c_str());
-
-                if (mode == TextureViewMode::SRV)
-                {
-                    newView->bindHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
-                }
-
-                m_firstView.Insert(newView, key);
-            }
-
-            return &m_firstView->bindHandle;
-        }
+        return &m_firstView->bindHandle;
     }
 
     TextureViewRange VulkanTexture::NormalizeViewRange(const TextureViewRange& range) const

@@ -129,31 +129,15 @@ namespace PK
     enum class BufferUsage : uint32_t
     {
         None = 0,
-
-        Vram     = 1,
+        Vram = 1,
         BARWrite = 2,
-        BARRead  = 3,
+        BARRead = 3,
         RamWrite = 4,
-        RamRead  = 5,
-
-        TransferSrc           = 1 << 4,
-        Vertex                = 1 << 5,
-        Index                 = 1 << 6,
-        Constant              = 1 << 7,
-        Storage               = 1 << 8,
-        Indirect              = 1 << 9,
-        AccelerationStructure = 1 << 10,
-        InstanceInput         = 1 << 11,
-        ShaderBindingTable    = 1 << 12,
-
-        TypeBits = 7,
-        DefaultVertex = Vram | Vertex,
-        DefaultIndex = Vram | Index,
-        DefaultConstant = Vram | Constant,
-        DefaultStorage = Vram | Storage,
-        DefaultStaging = RamWrite | TransferSrc,
-        DefaultShaderBindingTable = Vram | ShaderBindingTable,
-        DefaultAccelerationStructure = Vram | AccelerationStructure
+        RamRead = 5,
+        AccelerationStructure = 1 << 4,
+        InstanceInput = 1 << 5,
+        ShaderBindingTable = 1 << 6,
+        TypeBits = 7
     };
 
     enum class TextureUsage : uint16_t

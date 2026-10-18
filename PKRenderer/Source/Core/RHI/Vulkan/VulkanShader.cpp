@@ -49,13 +49,13 @@ namespace PK
 
         DescriptorSetLayoutKey key{};
         PipelineLayoutKey pipelineKey{};
+        m_resourceLayout.ClearFast();
 
         if (variant->descriptorCount > 0)
         {
             PK_WARNING_ASSERT(variant->descriptorCount <= PK_RHI_MAX_DESCRIPTORS_PER_SET, "Warning: Shader descriptor count exceeds the maximum count per set!");
             
             auto pDescriptors = variant->descriptors.Get(base);
-            m_resourceLayout.ClearFast();
 
             for (auto j = 0u; j < variant->descriptorCount; ++j)
             {
@@ -64,17 +64,15 @@ namespace PK
                 m_resourceLayout.Add(pDescriptors[j].type, pDescriptors[j].name, pDescriptors[j].writeMask, pDescriptors[j].count);
             }
 
-            // Cache these so that we can optimize shaders easier based on profiling tools.
-            key.stageFlags = VulkanEnumConvert::GetShaderStageFlags(m_stageFlags);
-            m_descriptorSetLayout = m_driver->layoutCache->GetSetLayout(key);
-            pipelineKey.setlayout = m_descriptorSetLayout->layout;
         }
+        
+        // Cache these so that we can optimize shaders easier based on profiling tools.
+        m_descriptorSetLayout = m_driver->layoutCache->GetSetLayout(key);
+        pipelineKey.setlayout = m_descriptorSetLayout->layout;
 
         if (variant->constantRange > 0u)
         {
-            pipelineKey.pushConstantRange.stageFlags = VulkanEnumConvert::GetShaderStageFlags(variant->constantStageFlags);
-            pipelineKey.pushConstantRange.offset = 0u;
-            pipelineKey.pushConstantRange.size = variant->constantRange;
+            pipelineKey.pushConstantsSize = variant->constantRange;
 
             auto pVariables = variant->constants.Get(base);
 

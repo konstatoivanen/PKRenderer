@@ -6,19 +6,19 @@ namespace PK
 {
     ConstantBuffer::ConstantBuffer(const ShaderPropertyLayout& layout, const char* name) : 
         ShaderPropertyBlock(layout),
-        m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::DefaultConstant, name))
+        m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::Vram, name))
     {
     }
 
     ConstantBuffer::ConstantBuffer(ShaderProperty* elements, uint32_t count, const char* name) :
         ShaderPropertyBlock(elements, count),
-        m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::DefaultConstant, name))
+        m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::Vram, name))
     {
     }
 
     ConstantBuffer::ConstantBuffer(initializer_list<ShaderProperty> elements, const char* name) :
         ShaderPropertyBlock(elements),
-        m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::DefaultConstant, name))
+        m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::Vram, name))
     {
     }
 
@@ -39,7 +39,7 @@ namespace PK
     {
         m_layoutHash = layout->GetHash();
         ShaderPropertyWriter::BeginWrite(layout, memory);
-        RHI::ValidateBuffer(m_rhiBuffer, layout->GetStride(), BufferUsage::DefaultConstant, name);
+        RHI::ValidateBuffer(m_rhiBuffer, layout->GetStride(), BufferUsage::Vram, name);
     }
 
     void ConstantBufferTransient::EndWrite(RHIGraph* graph, QueueType queue)

@@ -215,24 +215,13 @@ namespace PK
         return info;
     }
 
-    size_t VulkanDriver::GetBufferOffsetAlignment(BufferUsage usage) const
+    size_t VulkanDriver::GetBufferAlignment() const
     {
-        if ((usage & BufferUsage::Storage) != 0)
-        {
-            return physicalDeviceProperties.core.limits.minStorageBufferOffsetAlignment;
-        }
-
-        if ((usage & BufferUsage::Constant) != 0)
-        {
-            return physicalDeviceProperties.core.limits.minUniformBufferOffsetAlignment;
-        }
-
-        if ((usage & BufferUsage::ShaderBindingTable) != 0)
-        {
-            return physicalDeviceProperties.rayTracing.shaderGroupBaseAlignment;
-        }
-
-        return sizeof(char);
+        auto alignment = 0ull;
+        alignment = math::max(alignment, (VkDeviceSize)physicalDeviceProperties.core.limits.minStorageBufferOffsetAlignment);
+        alignment = math::max(alignment, (VkDeviceSize)physicalDeviceProperties.core.limits.minUniformBufferOffsetAlignment);
+        alignment = math::max(alignment, (VkDeviceSize)physicalDeviceProperties.rayTracing.shaderGroupBaseAlignment);
+        return alignment;
     }
 
     RHIBufferRef VulkanDriver::CreateBuffer(size_t size, BufferUsage usage, const char* name) { return bufferPool.CreateRef(this, size, usage, name); }

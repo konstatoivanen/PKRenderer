@@ -11,8 +11,8 @@ namespace PK
 
         void SetPipelineState(const VulkanPipeline* pipeline, const VulkanPipelineLayout* pipelineLayout, VkDeviceSize descriptorSetOffset, const void* pushConstants);
         void SetRasterState(const VkRenderingInfo* renderingInfo, VkViewport* viewports, uint32_t viewportCount, VkRect2D* scissors, uint32_t scissorCount);
-        void SetVertexBuffers(const VkBuffer* buffers, const VkDeviceSize* offsets, uint32_t count);
-        void SetIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType type);
+        void SetVertexBuffers(const VkBindVertexBuffer3InfoKHR* infos, uint32_t count);
+        void SetIndexBuffer(const VkBindIndexBuffer3InfoKHR& info);
 
         void PrepareForCommands();
         void BeginRenderPass();
@@ -45,11 +45,9 @@ namespace PK
         uint32_t m_scissorCount = 0u;
 
         // Vertex cmd state
-        const VkBuffer* m_vertexBuffers = nullptr;
-        const VkDeviceSize* m_vertexBufferOffsets = nullptr;
+        const VkBindVertexBuffer3InfoKHR* m_vertexBuffers = nullptr;
         uint32_t m_vertexBufferCount = 0u;
-        VkBuffer m_indexBuffer = VK_NULL_HANDLE;
-        VkDeviceSize m_indexOffset = 0ull;
+        VkDeviceAddressRangeKHR m_indexRange = { 0ull, 0ull };
         VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;
 
         bool m_isRecording = false;

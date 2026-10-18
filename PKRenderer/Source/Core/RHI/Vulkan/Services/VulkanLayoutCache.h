@@ -11,7 +11,6 @@ namespace PK
 {
     struct DescriptorSetLayoutKey
     {
-        VkShaderStageFlags stageFlags = 0u;
         ShaderResourceType types[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         uint16_t counts[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         
@@ -21,7 +20,7 @@ namespace PK
     struct PipelineLayoutKey
     {
         VkDescriptorSetLayout setlayout = VK_NULL_HANDLE;
-        VkPushConstantRange pushConstantRange{};
+        uint32_t pushConstantsSize = 0ull;
 
         inline bool operator == (const PipelineLayoutKey& r) const noexcept { return memcmp(this, &r, sizeof(PipelineLayoutKey)) == 0; }
     };

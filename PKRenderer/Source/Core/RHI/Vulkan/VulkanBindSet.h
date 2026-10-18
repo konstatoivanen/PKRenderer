@@ -17,7 +17,6 @@ namespace PK
         int32_t Add(RHIBuffer* value, void* bindInfo) final;
         int32_t Add(RHIBuffer* value) final;
         uint3 GetBoundTextureSize(uint32_t index) const final;
-        BufferIndexRange GetBoundBufferRange(uint32_t index) const final;
 
         void Clear() final { m_set.ClearFast(); }
 

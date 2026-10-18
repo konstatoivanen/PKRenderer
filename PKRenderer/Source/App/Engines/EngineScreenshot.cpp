@@ -86,9 +86,7 @@ namespace PK::App
     {
         if (m_captureCounter == 0u && m_currentResolution.x > 0u && m_currentResolution.y > 0u)
         {
-            auto usage = BufferUsage::RamRead | BufferUsage::TransferSrc;
-            RHI::ValidateBuffer<uint32_t>(m_copyBuffer, m_currentResolution.x * m_currentResolution.y, usage, "Screenshot.CopyBuffer");
-
+            RHI::ValidateBuffer<uint32_t>(m_copyBuffer, m_currentResolution.x * m_currentResolution.y, BufferUsage::RamRead, "Screenshot.CopyBuffer");
             m_copyFence.Invalidate();
             m_accumulatedPixels.Reserve(m_currentResolution.x * m_currentResolution.y * 4, false);
             m_accumulatedPixels.Clear();

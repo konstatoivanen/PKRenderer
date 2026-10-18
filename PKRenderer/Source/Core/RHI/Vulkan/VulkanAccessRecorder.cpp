@@ -138,7 +138,6 @@ namespace PK
         PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanAccessRecorder::RecordBufferAccess called before calling VulkanAccessRecorder::AddPass!");
         PK_DEBUG_FATAL_ASSERT(resource != nullptr, "VulkanAccessRecorder::RecordBufferAccess called for an untracked resource!");
 
-        auto* pass = GetPass();
         const auto new_beg = record.buffer.offset;
         const auto new_end = AddU64(record.buffer.offset, record.buffer.size);
 
@@ -238,8 +237,6 @@ namespace PK
         PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanAccessRecorder::RecordImageAccess called before calling VulkanAccessRecorder::AddPass!");
         PK_DEBUG_FATAL_ASSERT(resource != nullptr, "VulkanAccessRecorder::RecordImageAccess called for an untracked resource!");
 
-        auto* pass = GetPass();
-
         const auto new_layer_beg = record.image.baseArrayLayer;
         const auto new_layer_end = AddU32(record.image.baseArrayLayer, record.image.layerCount);
         const auto new_level_beg = record.image.baseMipLevel;
@@ -265,7 +262,7 @@ namespace PK
             barrier->subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
             barrier->subresourceRange.baseArrayLayer = 0u;
             barrier->subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-            pass->imageTransitionCount++;
+            m_passes[m_passCount - 1ull].imageTransitionCount++;
             resource->isNew = false;
         }
 
@@ -284,10 +281,10 @@ namespace PK
             const auto cur_layer_end = AddU32(node->image.baseArrayLayer, node->image.layerCount);
             const auto cur_level_beg = node->image.baseMipLevel;
             const auto cur_level_end = AddU32(node->image.baseMipLevel, node->image.levelCount);
-            const auto overlap_layer_beg = MaxU64(cur_layer_beg, new_layer_beg);
-            const auto overlap_layer_end = MinU64(cur_layer_end, new_layer_end);
-            const auto overlap_level_beg = MaxU64(cur_level_beg, new_level_beg);
-            const auto overlap_level_end = MinU64(cur_level_end, new_level_end);
+            const auto overlap_layer_beg = MaxU32(cur_layer_beg, new_layer_beg);
+            const auto overlap_layer_end = MinU32(cur_layer_end, new_layer_end);
+            const auto overlap_level_beg = MaxU32(cur_level_beg, new_level_beg);
+            const auto overlap_level_end = MinU32(cur_level_end, new_level_end);
 
             if (overlap_layer_beg >= overlap_layer_end || overlap_level_beg >= overlap_level_end)
             {
@@ -389,18 +386,13 @@ namespace PK
 
     void VulkanAccessRecorder::EmitMemoryBarrier(const State& src, const State& dst)
     {
-        auto* pass = GetPass();
+        auto* pass = &m_passes[m_passCount - 1ull];
         pass->memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
         pass->memoryBarrier.srcStageMask |= src.stage;
         pass->memoryBarrier.srcAccessMask |= src.access;
         pass->memoryBarrier.dstStageMask |= dst.stage;
         pass->memoryBarrier.dstAccessMask |= dst.access;
         pass->dependencyMask |= src.queueMask & ~dst.queueMask;
-    }
-
-    VulkanAccessRecorder::PassBarriers* VulkanAccessRecorder::GetPass()
-    {
-        return &m_passes[m_passCount - 1ull];
     }
 
     uint32_t VulkanAccessRecorder::AllocNode()

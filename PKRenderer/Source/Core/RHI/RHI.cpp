@@ -21,7 +21,7 @@ namespace PK
     RHIAPI RHI::GetActiveAPI() { return RHIDriver::Get()->GetAPI(); }
     RHIGraph* RHI::GetGraph() { return RHIDriver::Get()->GetGraph(); }
     RHIDriverMemoryInfo RHI::GetMemoryInfo() { return RHIDriver::Get()->GetMemoryInfo(); }
-    size_t RHI::GetBufferOffsetAlignment(BufferUsage usage) { return RHIDriver::Get()->GetBufferOffsetAlignment(usage); }
+    size_t RHI::GetBufferAlignment() { return RHIDriver::Get()->GetBufferAlignment(); }
     const BuiltInResources* RHI::GetBuiltInResources() { return RHIDriver::Get()->GetBuiltInResources(); }
     void RHI::WaitForIdle() { RHIDriver::Get()->WaitForIdle(); }
     void RHI::GC() { RHIDriver::Get()->GC(); }
@@ -312,7 +312,7 @@ namespace PK
     void RHI::SetAccelerationStructureArray(NameID name, RHIAccelerationStructure** structures, size_t count) { GetGraph()->SetAccelerationStructures(name, structures, count); }
     void RHI::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { GetGraph()->SetAccelerationStructures(name, &structure, 1u); }
 
-    void RHI::SetBuffer(NameID name, RHIBuffer* buffer) { SetBuffer(name, buffer, buffer->GetFullRange()); }
+    void RHI::SetBuffer(NameID name, RHIBuffer* buffer) { SetBuffer(name, buffer, {}); }
     void RHI::SetTexture(NameID name, RHITexture* texture, uint16_t level, uint16_t layer) { SetTexture(name, texture, { level, layer, 1u, 1u }); }
     void RHI::SetTexture(NameID name, RHITexture* texture) { SetTexture(name, texture, {}); }
     void RHI::SetImage(NameID name, RHITexture* image, uint16_t level, uint16_t layer) { SetImage(name, image, { level, layer, 1u, 1u }); }
@@ -323,36 +323,21 @@ namespace PK
     void RHI::SetBufferArray(NameID name, RHIBuffer** buffers, size_t count) 
     {
         auto ranges = PK_STACK_ALLOC(BufferIndexRange, count);
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            ranges[i] = buffers[i]->GetFullRange();
-        }
-
+        memset(ranges, 0, sizeof(BufferIndexRange) * count);
         SetBufferArray(name, buffers, ranges, count); 
     }
 
     void RHI::SetTextureArray(NameID name, RHITexture** textures, size_t count) 
     {
         auto ranges = PK_STACK_ALLOC(TextureViewRange, count);
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            ranges[i] = {};
-        }
-
+        memset(ranges, 0, sizeof(TextureViewRange) * count);
         SetTextureArray(name, textures, ranges, count); 
     }
 
     void RHI::SetImageArray(NameID name, RHITexture** images, size_t count) 
     { 
         auto ranges = PK_STACK_ALLOC(TextureViewRange, count);
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            ranges[i] = {};
-        }
-
+        memset(ranges, 0, sizeof(TextureViewRange) * count);
         SetImageArray(name, images, ranges, count); 
     }
 

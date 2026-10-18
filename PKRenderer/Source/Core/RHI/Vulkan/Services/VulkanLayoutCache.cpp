@@ -38,13 +38,13 @@ namespace PK
             bindings[count].binding = count;
             bindings[count].descriptorCount = key.counts[count];
             bindings[count].descriptorType = VulkanEnumConvert::GetDescriptorType(key.types[count]);
-            bindings[count].stageFlags = key.stageFlags;
+            bindings[count].stageFlags = VK_SHADER_STAGE_ALL;
         }
 
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
 
         FixedString64 layoutName("SetLayout%02d", index);
-        auto newLayout = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags, layoutName.c_str());
+        auto newLayout = m_setLayoutPool.New(m_device, layoutCreateInfo, layoutName.c_str());
         newLayout->referenceCount = 1u;
         newLayout->releaseFence.Invalidate();
         m_setLayoutMap[index].value = (uint16_t)m_setLayoutPool.GetIndex(newLayout);
@@ -61,11 +61,16 @@ namespace PK
             return layout;
         }
 
+        VkPushConstantRange pushConstants;
+        pushConstants.stageFlags = VK_SHADER_STAGE_ALL;
+        pushConstants.offset = 0u;
+        pushConstants.size = key.pushConstantsSize;
+        
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         pipelineLayoutInfo.pSetLayouts = &key.setlayout;
-        pipelineLayoutInfo.pPushConstantRanges = &key.pushConstantRange;
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstants;
         pipelineLayoutInfo.setLayoutCount = 1u;
-        pipelineLayoutInfo.pushConstantRangeCount = key.pushConstantRange.size > 0u ? 1u : 0u;
+        pipelineLayoutInfo.pushConstantRangeCount = key.pushConstantsSize ? 1u : 0u;
 
         auto newLayout = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo, FixedString64("%s.PipelineLayout", name).c_str());
         newLayout->referenceCount = 1u;

@@ -22,9 +22,9 @@ namespace PK::App
         m_gui_context.defautFont = m_assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
 
         m_gizmos_shader = assetDatabase->Find<ShaderAsset>("VS_Gizmos").get();
-        m_gizmos_vertexBuffer = RHI::CreateBuffer<uint4>(m_gizmos_maxVertices, BufferUsage::DefaultVertex, "Gizmos.VertexBuffer");
-        m_gizmos_indirectVertexBuffer = RHI::CreateBuffer<uint4>(16384u, BufferUsage::DefaultVertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
-        m_gizmos_indirectArgsBuffer = RHI::CreateBuffer<uint4>(1u, BufferUsage::Indirect | BufferUsage::Storage | BufferUsage::Vram, "Gizmos.Indirect.Arguments");
+        m_gizmos_vertexBuffer = RHI::CreateBuffer<uint4>(m_gizmos_maxVertices, BufferUsage::Vram, "Gizmos.VertexBuffer");
+        m_gizmos_indirectVertexBuffer = RHI::CreateBuffer<uint4>(16384u, BufferUsage::Vram, "Gizmos.Indirect.VertexBuffer");
+        m_gizmos_indirectArgsBuffer = RHI::CreateBuffer<uint4>(1u, BufferUsage::Vram, "Gizmos.Indirect.Arguments");
         m_gizmos_fixedFunctionAttribs = m_gizmos_shader->GetFixedFunctionAttributes();
         m_gizmos_fixedFunctionAttribs.rasterization.polygonMode = PolygonMode::Line;
         m_gizmos_fixedFunctionAttribs.rasterization.topology = Topology::LineList;
@@ -164,8 +164,8 @@ namespace PK::App
             {
                 m_gui_shader = m_assetDatabase->Find<ShaderAsset>("VS_GUI").get();
                 m_gui_resolve_shader = m_assetDatabase->Find<ShaderAsset>("CS_GUI_Resolve").get();
-                m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::DefaultStorage, "GUI.VertexBuffer");
-                m_gui_indexBuffer = RHI::CreateBuffer<GUIIndex>(GUI_MAX_INDICES, BufferUsage::DefaultIndex, "GUI.IndexBuffer");
+                m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::Vram, "GUI.VertexBuffer");
+                m_gui_indexBuffer = RHI::CreateBuffer<GUIIndex>(GUI_MAX_INDICES, BufferUsage::Vram, "GUI.IndexBuffer");
                 m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);
                 RHI::SetBuffer(HashCache::Get()->pk_GUI_Vertices, m_gui_vertexBuffer.get());
             }

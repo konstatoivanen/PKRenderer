@@ -38,7 +38,7 @@ namespace PK::App
         auto screenHeight = view->GetResolution().y;
         auto hash = HashCache::Get();
 
-        if (RHI::ValidateBuffer<float2>(resources->autoFocusBuffer, 1ull, BufferUsage::DefaultStorage, "DepthOfField.AutoFocus.Parameters"))
+        if (RHI::ValidateBuffer<float2>(resources->autoFocusBuffer, 1ull, BufferUsage::Vram, "DepthOfField.AutoFocus.Parameters"))
         {
             RHI::SetBuffer(HashCache::Get()->pk_DoF_AutoFocusState, resources->autoFocusBuffer.get());
         }

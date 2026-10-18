@@ -62,7 +62,6 @@ namespace PK
         virtual void* BeginMap(size_t offset, [[maybe_unused]] size_t readsize) const = 0;
         virtual void EndMap(size_t offset, [[maybe_unused]] size_t writeSize) const = 0;
 
-        inline BufferIndexRange GetFullRange() const { return { 0ull, GetSize()}; }
         template<typename T> 
         inline const T* GetNativeView() const { return static_cast<const T*>(GetNativeView()); }
         template<typename T> 
@@ -95,7 +94,6 @@ namespace PK
         virtual int32_t Add(T* value) = 0;
 
         virtual uint3 GetBoundTextureSize(uint32_t index) const = 0;
-        virtual BufferIndexRange GetBoundBufferRange(uint32_t index) const = 0;
         
         virtual void Clear() = 0;
     };
@@ -268,7 +266,7 @@ namespace PK
         virtual RHIGraph* GetGraph() const = 0;
         virtual RHIDriverMemoryInfo GetMemoryInfo() const = 0;
         virtual FixedString32 GetDriverHeader() const = 0;
-        virtual size_t GetBufferOffsetAlignment(BufferUsage usage) const = 0;
+        virtual size_t GetBufferAlignment() const = 0;
         virtual BuiltInResources* GetBuiltInResources() = 0;
 
         virtual RHIAccelerationStructureRef CreateAccelerationStructure(const char* name) = 0;

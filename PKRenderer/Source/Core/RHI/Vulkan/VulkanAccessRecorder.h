@@ -104,7 +104,6 @@ namespace PK
     private:
         void EmitMemoryBarrier(const State& src, const State& dst);
 
-        PassBarriers* GetPass();
         uint32_t AllocNode();
         void ListInsertBefore(uint32_t* head, uint32_t ref, uint32_t node);
         void ListInsertAfter(uint32_t ref, uint32_t node);

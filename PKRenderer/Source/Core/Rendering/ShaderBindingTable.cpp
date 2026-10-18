@@ -20,7 +20,7 @@ namespace PK
             pipelineHash = newHash;
             currentVariantIndex = (uint32_t)variantIndex;
             tableInfo = shader->GetRHI(currentVariantIndex)->GetShaderBindingTableInfo();
-            RHI::ValidateBuffer(buffer, tableInfo.totalTableSize, BufferUsage::DefaultShaderBindingTable, "ShaderBindingTable");
+            RHI::ValidateBuffer(buffer, tableInfo.totalTableSize, BufferUsage::Vram | BufferUsage::ShaderBindingTable, "ShaderBindingTable");
             graph.UploadBufferData(queue, buffer.get(), tableInfo.handleData);
         }
     }

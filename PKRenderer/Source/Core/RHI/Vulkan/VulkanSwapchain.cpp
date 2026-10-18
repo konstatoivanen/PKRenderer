@@ -224,10 +224,9 @@ namespace PK
         {
             VulkanImageViewCreateInfo info;
             info.image = m_images[i];
-            info.imageAlias = VK_NULL_HANDLE;
             info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             info.format = m_format.format;
-            info.formatAlias = m_format.format;
             info.samples = VK_SAMPLE_COUNT_1_BIT;
             info.components = VkComponentMapping{};
             info.extent = { m_extent.width, m_extent.height, 1 };
@@ -236,8 +235,6 @@ namespace PK
             info.subresourceRange.levelCount = 1;
             info.subresourceRange.baseArrayLayer = 0;
             info.subresourceRange.layerCount = 1;
-            info.isAlias = false;
-
             FixedString64 name("Swapchain.Image%u", i);
             m_imageViews[i] = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, name.c_str());
 

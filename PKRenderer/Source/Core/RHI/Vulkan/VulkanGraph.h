@@ -47,16 +47,13 @@ namespace PK
 
     struct VulkanVertexCmd : public VulkanRasterCmd
     {
-        VkBuffer* vertexBuffers;
-        VkDeviceSize* vertexBufferOffsets;
-        uint32_t vertexBufferCount = 0u;
+        VkBindVertexBuffer3InfoKHR* vertexBuffers;
+        uint32_t vertexBufferCount;
     };
 
     struct VulkanIndexCmd : public VulkanVertexCmd
     {
-        VkBuffer indexBuffer;
-        VkDeviceSize indexBufferOffset;
-        VkIndexType indexType;
+        VkBindIndexBuffer3InfoKHR indexInfo;
     };
 
     struct VulkanDrawCmd : public VulkanVertexCmd
@@ -69,10 +66,7 @@ namespace PK
 
     struct VulkanDrawIndirectCmd : public VulkanVertexCmd
     {
-        VkBuffer indirectArguments;
-        size_t indirectArgumentsOffset;
-        uint32_t drawCount;
-        uint32_t stride;
+        VkDrawIndirect2InfoKHR indirectInfo;
     };
 
     struct VulkanDrawIndexedCmd : public VulkanIndexCmd
@@ -86,10 +80,7 @@ namespace PK
 
     struct VulkanDrawIndexedIndirectCmd : public VulkanIndexCmd
     {
-        VkBuffer indirectArguments;
-        size_t indirectArgumentsOffset;
-        uint32_t drawCount; 
-        uint32_t stride;
+        VkDrawIndirect2InfoKHR indirectInfo;
     };
 
     struct VulkanDrawMeshTasksCmd : public VulkanRasterCmd
@@ -99,20 +90,12 @@ namespace PK
 
     struct VulkanDrawMeshTasksIndirectCmd : public VulkanRasterCmd
     {
-        VkBuffer indirectArguments;
-        size_t indirectArgumentsOffset;
-        uint32_t drawCount;
-        uint32_t stride;
+        VkDrawIndirect2InfoKHR indirectInfo;
     };
 
     struct VulkanDrawMeshTasksIndirectCountCmd : public VulkanRasterCmd
     {
-        VkBuffer indirectArguments;
-        size_t indirectArgumentsOffset;
-        VkBuffer countBuffer;
-        size_t countBufferOffset;
-        uint32_t maxDrawCount;
-        uint32_t stride;
+        VkDrawIndirectCount2InfoKHR indirectCountInfo;
     };
 
     struct VulkanDispatchCmd : public VulkanShaderCmd
@@ -122,8 +105,7 @@ namespace PK
 
     struct VulkanDispatchIndirectCmd : public VulkanShaderCmd
     {
-        VkBuffer indirectArguments;
-        size_t indirectArgumentsOffset;
+        VkDispatchIndirect2InfoKHR indirectInfo;
     };
 
     struct VulkanDispatchRaysCmd : public VulkanShaderCmd
@@ -151,15 +133,12 @@ namespace PK
     struct VulkanBlitSwapchainToBufferCmd : public VulkanCmd
     {
         VulkanSwapchain* src;
-        VkBuffer dst;
-        VkBufferImageCopy region;
+        VkDeviceMemoryImageCopyKHR region;
     };
 
     struct VulkanFillBufferCmd : public VulkanCmd
     {
-        VkBuffer buffer;
-        VkDeviceSize offset;
-        VkDeviceSize size;
+        VkDeviceAddressRangeKHR range;
         uint32_t value;
     };
 
@@ -172,24 +151,19 @@ namespace PK
 
     struct VulkanUpdateBufferCmd : public VulkanCmd
     {
-        VkBuffer buffer;
-        VkDeviceSize offset;
-        VkDeviceSize size;
+        VkDeviceAddressRangeKHR range;
         void* pData;
     };
 
     struct VulkanCopyBufferCmd : public VulkanCmd
     {
-        VkBuffer src;
-        VkBuffer dst;
-        VkBufferCopy region;
+        VkDeviceMemoryCopyKHR region;
     };
 
     struct VulkanCopyBufferToImageCmd : public VulkanCmd
     {
-        VkBuffer src;
         VkImage dst;
-        VkBufferImageCopy* regions;
+        VkDeviceMemoryImageCopyKHR* regions;
         uint32_t regionCount;
     };
 
@@ -398,8 +372,7 @@ namespace PK
             VkRenderingInfo* renderingInfo = nullptr;
             VkViewport* resolvedViewports = nullptr;
             VkRect2D* resolvedScissors = nullptr;
-            VkBuffer* resolvedVertexBuffers = nullptr;
-            VkDeviceSize* resolvedVertexBufferOffsets = nullptr;
+            VkBindVertexBuffer3InfoKHR* resolvedVertexBuffers = nullptr;
             const VulkanBindHandle* resolvedVertexHandles[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
             const VulkanPipeline* pipeline = nullptr;
         } 

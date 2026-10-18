@@ -15,7 +15,7 @@ namespace PK::App
     {
         PK_LOG_VERBOSE_FUNC();
         m_computeHierachicalDepth = assetDatabase->Find<ShaderAsset>("CS_HierarchicalDepth").get();
-        m_worgroupCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::DefaultStorage, "HierarchicalDepth.AtomicCounter");
+        m_worgroupCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::Vram, "HierarchicalDepth.AtomicCounter");
         RHI::SetTexture(HashCache::Get()->pk_GB_Current_DepthMips, RHI::GetBuiltInResources()->BlackTexture2DArray.get());
         RHI::SetBuffer(HashCache::Get()->pk_HZB_WorkgroupCounter, m_worgroupCounter.get());
     }

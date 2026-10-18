@@ -107,15 +107,15 @@ namespace PK
                 {
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
                     {
-                        bufferInfo.address = handle->buffer.deviceAddress + handle->buffer.offset;
-                        bufferInfo.range = handle->buffer.range;
+                        bufferInfo.address = handle->buffer.deviceAddress;
+                        bufferInfo.range = handle->buffer.size;
                         data.pUniformBuffer = &bufferInfo;
                         break;
                     }
                     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
                     {
-                        bufferInfo.address = handle->buffer.deviceAddress + handle->buffer.offset;
-                        bufferInfo.range = handle->buffer.range;
+                        bufferInfo.address = handle->buffer.deviceAddress;
+                        bufferInfo.range = handle->buffer.size;
                         data.pStorageBuffer = &bufferInfo;
                         break;
                     }

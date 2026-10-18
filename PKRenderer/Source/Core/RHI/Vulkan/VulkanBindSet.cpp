@@ -69,17 +69,6 @@ namespace PK
         return PK_UINT3_ZERO;
     }
 
-    BufferIndexRange VulkanBindSet::GetBoundBufferRange(uint32_t index) const
-    {
-        if (index < m_set.GetCount())
-        {
-            auto& buffer = m_set[index]->buffer;
-            return { buffer.offset, buffer.range };
-        }
-
-        return { 0u, 0u };
-    }
-
     int32_t VulkanBindSet::Add(const VulkanBindHandle* handle)
     {
         if (handle == nullptr || m_set.GetCount() >= m_set.GetCapacity())
