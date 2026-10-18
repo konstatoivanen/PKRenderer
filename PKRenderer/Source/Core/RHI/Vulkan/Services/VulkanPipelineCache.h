@@ -12,14 +12,17 @@ namespace PK
     {
         struct FixedFunctionState
         {
-            RasterizationParameters rasterization{};
             BlendParameters blending{};
-            DepthStencilParameters depthStencil{};
             MultisamplingParameters multisampling{};
             VkFormat colorFormats[PK_RHI_MAX_RENDER_TARGETS]{};
             VkFormat depthFormat = VK_FORMAT_UNDEFINED;
+            float overEstimation = 0.0f;
             uint16_t excludeStageMask = 0u;
             uint16_t sampleCountFlags = VK_SAMPLE_COUNT_1_BIT;
+            PolygonMode polygonMode = PolygonMode::Fill;
+            RasterMode rasterMode = RasterMode::Default;
+            Topology topology = Topology::TriangleList;
+            bool depthClampEnable = false;
         };
 
         struct PipelineKey

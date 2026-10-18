@@ -28,20 +28,39 @@ namespace PK
         }
     }
 
-    void VulkanCommandBuffer::SetRasterState(const VkRenderingInfo* renderingInfo, VkViewport* viewports, uint32_t viewportCount, VkRect2D* scissors, uint32_t scissorCount)
+    void VulkanCommandBuffer::SetRasterState(const VkRenderingInfo* renderingInfo, const VulkanDynamicState* dynamicState)
     {
-        if (m_viewports != viewports || m_viewportCount != viewportCount)
+        if (m_dynamicState != dynamicState)
         {
-            vkCmdSetViewportWithCount(m_commandBuffer, viewportCount, viewports);
-            m_viewports = viewports;
-            m_viewportCount = viewportCount;
-        }
+            const auto* pre = m_dynamicState;
+            const auto* cur = dynamicState;
+            const auto& ds = dynamicState->depthStencil;
+            const auto depthTestEnable = ds.depthCompareOp != Comparison::Off;
 
-        if (m_scissors != scissors || m_scissorCount != scissorCount)
-        {
-            vkCmdSetScissorWithCount(m_commandBuffer, scissorCount, scissors);
-            m_scissors = scissors;
-            m_scissorCount = scissorCount;
+            if (!pre || pre->viewports != cur->viewports || pre->viewportCount != cur->viewportCount)  vkCmdSetViewportWithCount(m_commandBuffer, cur->viewportCount, cur->viewports);
+            if (!pre || pre->scissors != cur->scissors || pre->scissorCount != cur->scissorCount)      vkCmdSetScissorWithCount(m_commandBuffer, cur->scissorCount, cur->scissors);
+            if (!pre || pre->cullMode != cur->cullMode)                                                vkCmdSetCullMode(m_commandBuffer, VulkanEnumConvert::GetCullMode(cur->cullMode));
+            if (!pre || pre->frontFace != cur->frontFace)                                              vkCmdSetFrontFace(m_commandBuffer, VulkanEnumConvert::GetFrontFace(cur->frontFace));
+            if (!pre || pre->rasterizerDiscardEnable != cur->rasterizerDiscardEnable)                  vkCmdSetRasterizerDiscardEnable(m_commandBuffer, cur->rasterizerDiscardEnable);
+            if (!pre || pre->lineWidth != dynamicState->lineWidth)                                     vkCmdSetLineWidth(m_commandBuffer, cur->lineWidth);
+            if (!pre || pre->depthBiasEnable != cur->depthBiasEnable)                                  vkCmdSetDepthBiasEnable(m_commandBuffer, cur->depthBiasEnable);
+            if (!pre || (pre->depthStencil.depthCompareOp != Comparison::Off) != depthTestEnable)      vkCmdSetDepthTestEnable(m_commandBuffer, depthTestEnable);
+            if (!pre || pre->depthStencil.depthWriteEnable != ds.depthWriteEnable)                     vkCmdSetDepthWriteEnable(m_commandBuffer, ds.depthWriteEnable);
+            if (!pre || pre->depthStencil.depthCompareOp != ds.depthCompareOp)                         vkCmdSetDepthCompareOp(m_commandBuffer, VulkanEnumConvert::GetCompareOp(ds.depthCompareOp));
+            if (!pre || pre->depthStencil.depthBoundsTestEnable != ds.depthBoundsTestEnable)           vkCmdSetDepthBoundsTestEnable(m_commandBuffer, ds.depthBoundsTestEnable);
+            if (!pre || pre->depthStencil.stencilTestEnable != ds.stencilTestEnable)                   vkCmdSetStencilTestEnable(m_commandBuffer, ds.stencilTestEnable);
+
+            if (cur->depthBiasEnable && (!pre || pre->depthBiasConstantFactor != cur->depthBiasConstantFactor || pre->depthBiasClamp != cur->depthBiasClamp || pre->depthBiasSlopeFactor != cur->depthBiasSlopeFactor))
+            {
+                vkCmdSetDepthBias(m_commandBuffer, dynamicState->depthBiasConstantFactor, dynamicState->depthBiasClamp, dynamicState->depthBiasSlopeFactor);
+            }
+
+            if (ds.depthBoundsTestEnable && (!pre || pre->depthStencil.minDepthBounds != ds.minDepthBounds || pre->depthStencil.maxDepthBounds != ds.maxDepthBounds))
+            {
+                vkCmdSetDepthBounds(m_commandBuffer, ds.minDepthBounds, ds.maxDepthBounds);
+            }
+
+            m_dynamicState = dynamicState;
         }
 
         m_renderingInfo = renderingInfo;
@@ -146,10 +165,7 @@ namespace PK
         m_descriptorSetOffset = ~0ull;
         m_pushConstants = nullptr;
         m_renderingInfo = nullptr;
-        m_viewports = nullptr;
-        m_scissors = nullptr;
-        m_viewportCount = 0u;
-        m_scissorCount = 0u;
+        m_dynamicState = nullptr;
         m_vertexBuffers = nullptr;
         m_vertexBufferCount = 0u;
         m_indexRange = { 0ull, 0ull };

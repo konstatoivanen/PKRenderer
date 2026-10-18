@@ -73,35 +73,37 @@ namespace PK
     void VulkanGraph::SetViewPorts(const uint4* rects, uint32_t count)
     {
         count = math::min(count, PK_RHI_MAX_VIEWPORTS);
+        auto& dynamic = m_pipelineState.dynamicState;
+        VkViewport viewports[PK_RHI_MAX_VIEWPORTS];
 
-        if (m_pipelineState.viewportCount != count)
-        {
-            m_pipelineState.viewportCount = count;
-            m_pipelineState.dirtyFlags |= STATE_DIRTY_VIEWPORTS;
-        }
-
-        for (auto i = 0u; i < count && i < PK_RHI_MAX_VIEWPORTS; ++i)
+        for (auto i = 0u; i < count; ++i)
         {
             auto& rect = rects[i];
-            VkViewport v = { (float)rect.x, (float)rect.y, (float)rect.z, (float)rect.w, 0.0f, 1.0f };
+            viewports[i] = { (float)rect.x, (float)rect.y, (float)rect.z, (float)rect.w, 0.0f, 1.0f };
+        }
 
-            if (memcmp(&m_pipelineState.viewports[i], &v, sizeof(VkViewport)) != 0)
-            {
-                m_pipelineState.viewports[i] = v;
-                m_pipelineState.dirtyFlags |= STATE_DIRTY_VIEWPORTS;
-            }
+        if (dynamic.viewportCount != count || (count && memcmp(dynamic.viewports, viewports, sizeof(VkViewport) * count) != 0))
+        {
+            auto* resolved = Allocate<VkViewport>(count);
+            memcpy(resolved, viewports, sizeof(VkViewport) * count);
+            dynamic.viewports = resolved;
+            dynamic.viewportCount = (uint16_t)count;
+            m_pipelineState.dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
         }
     }
 
     void VulkanGraph::SetScissors(const uint4* rects, uint32_t count)
     {
         count = math::min(count, PK_RHI_MAX_VIEWPORTS);
+        auto& dynamic = m_pipelineState.dynamicState;
 
-        if (m_pipelineState.scissorCount != count || memcmp(m_pipelineState.scissors, rects, sizeof(VkRect2D) * count) != 0)
+        if (dynamic.scissorCount != count || (count > 0u && memcmp(dynamic.scissors, rects, sizeof(VkRect2D) * count) != 0))
         {
-            memcpy(m_pipelineState.scissors, rects, sizeof(VkRect2D) * count);
-            m_pipelineState.dirtyFlags |= STATE_DIRTY_SCISSORS;
-            m_pipelineState.scissorCount = count;
+            auto* resolved = Allocate<VkRect2D>(count);
+            memcpy(resolved, rects, sizeof(VkRect2D) * count);
+            dynamic.scissors = resolved;
+            dynamic.scissorCount = (uint16_t)count;
+            m_pipelineState.dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
         }
     }
 
@@ -145,19 +147,50 @@ namespace PK
 
     void VulkanGraph::SetRasterization(const RasterizationParameters& rasterization)
     {
-        if (memcmp(&m_pipelineState.pipelineKey.fixed.rasterization, &rasterization, sizeof(RasterizationParameters)) != 0)
+        auto& fixed = m_pipelineState.pipelineKey.fixed;
+        auto& dynamic = m_pipelineState.dynamicState;
+        
+        if (fixed.depthClampEnable != rasterization.depthClampEnable ||
+            fixed.polygonMode != rasterization.polygonMode ||
+            fixed.rasterMode != rasterization.rasterMode ||
+            fixed.topology != rasterization.topology ||
+            fixed.overEstimation != rasterization.overEstimation)
         {
+            fixed.depthClampEnable = rasterization.depthClampEnable;
+            fixed.polygonMode = rasterization.polygonMode;
+            fixed.rasterMode = rasterization.rasterMode;
+            fixed.topology = rasterization.topology;
+            fixed.overEstimation = rasterization.overEstimation;
             m_pipelineState.dirtyFlags |= STATE_DIRTY_PIPELINE;
-            m_pipelineState.pipelineKey.fixed.rasterization = rasterization;
+        }
+
+        if (dynamic.cullMode != rasterization.cullMode ||
+            dynamic.frontFace != rasterization.frontFace ||
+            dynamic.rasterizerDiscardEnable != rasterization.rasterizerDiscardEnable ||
+            dynamic.depthBiasEnable != rasterization.depthBiasEnable ||
+            dynamic.depthBiasConstantFactor != rasterization.depthBiasConstantFactor ||
+            dynamic.depthBiasClamp != rasterization.depthBiasClamp ||
+            dynamic.depthBiasSlopeFactor != rasterization.depthBiasSlopeFactor ||
+            dynamic.lineWidth != rasterization.lineWidth)
+        {
+            dynamic.cullMode = rasterization.cullMode;
+            dynamic.frontFace = rasterization.frontFace;
+            dynamic.rasterizerDiscardEnable = rasterization.rasterizerDiscardEnable;
+            dynamic.depthBiasEnable = rasterization.depthBiasEnable;
+            dynamic.depthBiasConstantFactor = rasterization.depthBiasConstantFactor;
+            dynamic.depthBiasClamp = rasterization.depthBiasClamp;
+            dynamic.depthBiasSlopeFactor = rasterization.depthBiasSlopeFactor;
+            dynamic.lineWidth = rasterization.lineWidth;
+            m_pipelineState.dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
         }
     }
 
     void VulkanGraph::SetDepthStencil(const DepthStencilParameters& depthStencil)
     {
-        if (memcmp(&m_pipelineState.pipelineKey.fixed.depthStencil, &depthStencil, sizeof(DepthStencilParameters)) != 0)
+        if (memcmp(&m_pipelineState.dynamicState.depthStencil, &depthStencil, sizeof(DepthStencilParameters)) != 0)
         {
-            m_pipelineState.dirtyFlags |= STATE_DIRTY_PIPELINE;
-            m_pipelineState.pipelineKey.fixed.depthStencil = depthStencil;
+            m_pipelineState.dynamicState.depthStencil = depthStencil;
+            m_pipelineState.dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
         }
     }
 
@@ -249,7 +282,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawCmd* cmd)
         {
-            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
+            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDraw(*ctx->cmb, cmd->vertexCount, cmd->instanceCount, cmd->firstVertex, cmd->firstInstance);
@@ -267,7 +300,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndirectCmd* cmd)
         {
-            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
+            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDrawIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
@@ -287,7 +320,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedCmd* cmd)
         {
-            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
+            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
@@ -307,7 +340,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedIndirectCmd* cmd)
         {
-            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
+            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
@@ -328,7 +361,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksCmd* cmd)
         {
-            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
+            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
             vkCmdDrawMeshTasksEXT(*ctx->cmb, cmd->dimensions.x, cmd->dimensions.y, cmd->dimensions.z);
         });
@@ -342,7 +375,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCmd* cmd)
         {
-            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
+            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
             vkCmdDrawMeshTasksIndirect2EXT(*ctx->cmb, &cmd->indirectInfo);
         });
@@ -361,7 +394,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCountCmd* cmd)
         {
-            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->viewports, cmd->viewportCount, cmd->scissors, cmd->scissorCount);
+            ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
             ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants);
             vkCmdDrawMeshTasksIndirectCount2EXT(*ctx->cmb, &cmd->indirectCountInfo);
         });
@@ -498,8 +531,8 @@ namespace PK
             }
 
             VkImageMemoryBarrier2 barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
-            barrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-            barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+            barrier.srcStageMask = signal ? VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT : (VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+            barrier.srcAccessMask = signal ? 0u : VK_ACCESS_2_TRANSFER_WRITE_BIT;
             barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
             barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
             barrier.oldLayout = signal ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
@@ -969,11 +1002,15 @@ namespace PK
         vkStructure->topologyHash = vkBuilder->topologyHash;
         vkStructure->instanceCount = vkBuilder->instanceCount;
 
-        cmd->passIndex = AddBarrierPass(queue, false);
-        RecordMemoryAccess(queue, 
-            &vkStructure->bindHandle, 
-            VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR,
-            VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
+        if (rebuildTLAS)
+        {
+            cmd->passIndex = AddBarrierPass(queue, false);
+
+            RecordMemoryAccess(queue, 
+                &vkStructure->bindHandle, 
+                VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR,
+                VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
+        }
     }
 
 
@@ -1502,9 +1539,8 @@ namespace PK
         auto state = &m_pipelineState;
         const bool isNewPass = cmd->passIndex != 0u;
         const bool isDirtyRenderTarget = state->dirtyFlags & STATE_DIRTY_RENDERTARGET;
-        const bool isDirtyViewports = state->dirtyFlags & STATE_DIRTY_VIEWPORTS;
-        const bool isDirtyScissors  = state->dirtyFlags & STATE_DIRTY_SCISSORS;
-        state->dirtyFlags &= ~(STATE_DIRTY_RENDERTARGET | STATE_DIRTY_VIEWPORTS | STATE_DIRTY_SCISSORS);
+        const bool isDirtyDynamic = !state->resolvedDynamicState || (state->dirtyFlags & STATE_DIRTY_DYNAMIC_STATE) != 0u;
+        state->dirtyFlags &= ~(STATE_DIRTY_RENDERTARGET | STATE_DIRTY_DYNAMIC_STATE);
 
         if (isDirtyRenderTarget || isNewPass)
         {
@@ -1575,7 +1611,7 @@ namespace PK
             if (depthFormat)
             {
                 const auto isStencil = VulkanEnumConvert::IsDepthStencilFormat(depthFormat);
-                const auto isReadOnly = !state->pipelineKey.fixed.depthStencil.depthWriteEnable && (!isStencil || state->pipelineKey.fixed.depthStencil.stencilTestEnable);
+                const auto isReadOnly = !state->dynamicState.depthStencil.depthWriteEnable && (!isStencil || state->dynamicState.depthStencil.stencilTestEnable);
 
                 depthAttachment->sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
                 depthAttachment->pNext = nullptr;
@@ -1615,23 +1651,14 @@ namespace PK
             }
         }
 
-        if (isDirtyViewports)
+        if (isDirtyDynamic)
         {
-            state->resolvedViewports = Allocate<VkViewport>(state->viewportCount);
-            Memory::Memcpy(state->resolvedViewports, state->viewports, state->viewportCount);
+            state->resolvedDynamicState = Allocate<VulkanDynamicState>(1u);
+            *state->resolvedDynamicState = state->dynamicState;
         }
 
-        if (isDirtyScissors)
-        {
-            state->resolvedScissors = Allocate<VkRect2D>(state->scissorCount);
-            Memory::Memcpy(state->resolvedScissors, state->scissors, state->scissorCount);
-        }
-        
         cmd->renderingInfo = state->renderingInfo;
-        cmd->viewports = state->resolvedViewports;
-        cmd->scissors = state->resolvedScissors;
-        cmd->viewportCount = state->viewportCount;
-        cmd->scissorCount = state->scissorCount;
+        cmd->dynamicState = state->resolvedDynamicState;
         RecordShaderCmd(QueueType::Graphics, cmd);
     }
 

@@ -10,7 +10,7 @@ namespace PK
         inline bool IsExecuting() const { return m_commandBuffer != VK_NULL_HANDLE; }
 
         void SetPipelineState(const VulkanPipeline* pipeline, const VulkanPipelineLayout* pipelineLayout, VkDeviceSize descriptorSetOffset, const void* pushConstants);
-        void SetRasterState(const VkRenderingInfo* renderingInfo, VkViewport* viewports, uint32_t viewportCount, VkRect2D* scissors, uint32_t scissorCount);
+        void SetRasterState(const VkRenderingInfo* renderingInfo, const VulkanDynamicState* dynamicState);
         void SetVertexBuffers(const VkBindVertexBuffer3InfoKHR* infos, uint32_t count);
         void SetIndexBuffer(const VkBindIndexBuffer3InfoKHR& info);
 
@@ -39,10 +39,7 @@ namespace PK
 
         // Raster cmd state
         const VkRenderingInfo* m_renderingInfo = nullptr;
-        const VkViewport* m_viewports = nullptr;
-        const VkRect2D* m_scissors = nullptr;
-        uint32_t m_viewportCount = 0u;
-        uint32_t m_scissorCount = 0u;
+        const VulkanDynamicState* m_dynamicState = nullptr;
 
         // Vertex cmd state
         const VkBindVertexBuffer3InfoKHR* m_vertexBuffers = nullptr;

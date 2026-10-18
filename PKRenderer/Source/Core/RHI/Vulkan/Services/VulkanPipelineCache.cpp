@@ -77,13 +77,13 @@ namespace PK
         const auto stageFlags = key.shader->GetStageFlags();
         PipelineValue* value = nullptr;
 
-        PK_DEBUG_FATAL_ASSERT(((stageFlags & ShaderStageFlags::StagesMesh) != 0) ^ ((stageFlags & ShaderStageFlags::StagesVertex) != 0) , "Trying to create a graphics pipeline with both vertex & mesh stages!");
+        PK_DEBUG_FATAL_ASSERT(((stageFlags & ShaderStageFlags::StagesMesh) != 0) ^ ((stageFlags & ShaderStageFlags::StagesVertex) != 0), "Trying to create a graphics pipeline with both vertex & mesh stages!");
 
         if ((ShaderStageFlags::StagesMesh & stageFlags) != 0u)
         {
             // this doesn't matter for mesh shaders. set it to a default to prevent duplicate pipelines.
             MeshPipelineKey meshKey = { key.shader, key.fixed };
-            meshKey.fixed.rasterization.topology = Topology::PointList;
+            meshKey.fixed.topology = Topology::PointList;
             value = &m_meshPipelines[m_meshPipelines.AddKey(meshKey)].value;
         }
 
@@ -121,21 +121,13 @@ namespace PK
             for (; renderingInfo.colorAttachmentCount < PK_RHI_MAX_RENDER_TARGETS && key.fixed.colorFormats[renderingInfo.colorAttachmentCount] != VK_FORMAT_UNDEFINED; ++renderingInfo.colorAttachmentCount) {}
 
             VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
-            rasterizer.depthClampEnable = key.fixed.rasterization.depthClampEnable;
-            rasterizer.rasterizerDiscardEnable = key.fixed.rasterization.rasterizerDiscardEnable;
-            rasterizer.polygonMode = VulkanEnumConvert::GetPolygonMode(key.fixed.rasterization.polygonMode);
-            rasterizer.lineWidth = key.fixed.rasterization.lineWidth;
-            rasterizer.cullMode = VulkanEnumConvert::GetCullMode(key.fixed.rasterization.cullMode);
-            rasterizer.frontFace = VulkanEnumConvert::GetFrontFace(key.fixed.rasterization.frontFace);
-            rasterizer.depthBiasEnable = key.fixed.rasterization.depthBiasEnable;
-            rasterizer.depthBiasConstantFactor = key.fixed.rasterization.depthBiasConstantFactor;
-            rasterizer.depthBiasClamp = key.fixed.rasterization.depthBiasClamp;
-            rasterizer.depthBiasSlopeFactor = key.fixed.rasterization.depthBiasSlopeFactor;
+            rasterizer.depthClampEnable = key.fixed.depthClampEnable;
+            rasterizer.polygonMode = VulkanEnumConvert::GetPolygonMode(key.fixed.polygonMode);
 
             VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT };
-            conservativeRaster.conservativeRasterizationMode = VulkanEnumConvert::GetRasterMode(key.fixed.rasterization.rasterMode, m_allowUnderEstimation);
-            conservativeRaster.extraPrimitiveOverestimationSize = fminf(m_maxOverEstimation, key.fixed.rasterization.overEstimation);
-            rasterizer.pNext = key.fixed.rasterization.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
+            conservativeRaster.conservativeRasterizationMode = VulkanEnumConvert::GetRasterMode(key.fixed.rasterMode, m_allowUnderEstimation);
+            conservativeRaster.extraPrimitiveOverestimationSize = fminf(m_maxOverEstimation, key.fixed.overEstimation);
+            rasterizer.pNext = key.fixed.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
 
             VkPipelineRasterizationLineStateCreateInfo lineRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO };
             lineRaster.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH;
@@ -151,13 +143,6 @@ namespace PK
             multisampling.alphaToOneEnable = key.fixed.multisampling.alphaToOneEnable;
 
             VkPipelineDepthStencilStateCreateInfo depthStencil{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
-            depthStencil.depthTestEnable = key.fixed.depthStencil.depthCompareOp != Comparison::Off;
-            depthStencil.depthWriteEnable = key.fixed.depthStencil.depthWriteEnable;
-            depthStencil.depthCompareOp = VulkanEnumConvert::GetCompareOp(key.fixed.depthStencil.depthCompareOp);
-            depthStencil.depthBoundsTestEnable = key.fixed.depthStencil.depthBoundsTestEnable;
-            depthStencil.stencilTestEnable = key.fixed.depthStencil.stencilTestEnable;
-            depthStencil.minDepthBounds = key.fixed.depthStencil.minDepthBounds;
-            depthStencil.maxDepthBounds = key.fixed.depthStencil.maxDepthBounds;
 
             VkPipelineColorBlendAttachmentState blendAttachments[PK_RHI_MAX_RENDER_TARGETS]{};
 
@@ -178,19 +163,27 @@ namespace PK
             colorBlending.logicOp = VulkanEnumConvert::GetLogicOp(key.fixed.blending.logicOp);
             colorBlending.attachmentCount = renderingInfo.colorAttachmentCount;
             colorBlending.pAttachments = blendAttachments;
-            colorBlending.blendConstants[0] = 0.0f;
-            colorBlending.blendConstants[1] = 0.0f;
-            colorBlending.blendConstants[2] = 0.0f;
-            colorBlending.blendConstants[3] = 0.0f;
 
             VkDynamicState dynamicStates[] =
             {
                 VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
-                VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT
+                VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
+                VK_DYNAMIC_STATE_CULL_MODE,
+                VK_DYNAMIC_STATE_FRONT_FACE,
+                VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE,
+                VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
+                VK_DYNAMIC_STATE_DEPTH_BIAS,
+                VK_DYNAMIC_STATE_LINE_WIDTH,
+                VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+                VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+                VK_DYNAMIC_STATE_DEPTH_COMPARE_OP,
+                VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE,
+                VK_DYNAMIC_STATE_DEPTH_BOUNDS,
+                VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE
             };
 
             VkPipelineDynamicStateCreateInfo dynamicState{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-            dynamicState.dynamicStateCount = 2;
+            dynamicState.dynamicStateCount = sizeof(dynamicStates) / sizeof(VkDynamicState);
             dynamicState.pDynamicStates = dynamicStates;
 
             VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
@@ -229,7 +222,7 @@ namespace PK
                     vertexInputInfo.vertexAttributeDescriptionCount += key.vertexAttributes[i].format != VK_FORMAT_UNDEFINED;
                 }
 
-                inputAssembly.topology = VulkanEnumConvert::GetTopology(key.fixed.rasterization.topology);
+                inputAssembly.topology = VulkanEnumConvert::GetTopology(key.fixed.topology);
                 inputAssembly.primitiveRestartEnable = key.primitiveRestart;
                 pipelineInfo.pVertexInputState = &vertexInputInfo;
                 pipelineInfo.pInputAssemblyState = &inputAssembly;

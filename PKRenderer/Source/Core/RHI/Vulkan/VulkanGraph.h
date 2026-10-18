@@ -39,10 +39,7 @@ namespace PK
     struct VulkanRasterCmd : public VulkanShaderCmd
     {
         VkRenderingInfo* renderingInfo;
-        VkViewport* viewports;
-        VkRect2D* scissors;
-        uint32_t viewportCount;
-        uint32_t scissorCount;
+        const VulkanDynamicState* dynamicState;
     };
 
     struct VulkanVertexCmd : public VulkanRasterCmd
@@ -247,8 +244,7 @@ namespace PK
             STATE_DIRTY_SHADER = 1ull << 2ull,
             STATE_DIRTY_VERTEXBUFFERS = 1ull << 3ull,
             STATE_DIRTY_DESCRIPTORS = 1ull << 4ull,
-            STATE_DIRTY_VIEWPORTS = 1ull << 5ull,
-            STATE_DIRTY_SCISSORS = 1ull << 6ull
+            STATE_DIRTY_DYNAMIC_STATE = 1u << 5u
         };
 
         VulkanGraph(const VulkanDriver* driver);
@@ -349,16 +345,13 @@ namespace PK
         struct PipelineState
         {
             VulkanPipelineCache::PipelineKey pipelineKey{};
+            VulkanDynamicState dynamicState{};
             VkStridedDeviceAddressRegionKHR sbtAddresses[(uint32_t)RayTracingShaderGroup::EnumCount]{};
             VertexStreamElement vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
             const VulkanBindHandle* vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
             const VulkanBindHandle* indexBuffer = nullptr;
             VkIndexType indexType = VK_INDEX_TYPE_UINT16;
             VulkanRenderTarget renderTarget{};
-            VkViewport viewports[PK_RHI_MAX_VIEWPORTS]{};
-            uint32_t viewportCount = 0u;
-            VkRect2D scissors[PK_RHI_MAX_VIEWPORTS]{};
-            uint32_t scissorCount = 0u;
 
             VulkanDescriptorBinding descriptors[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
             const VulkanDescriptorSetLayout* descriptorLayout = nullptr;
@@ -370,8 +363,7 @@ namespace PK
             uint32_t vertexBufferCount = 0u;
             VkDeviceSize descriptorSetOffset = 0ull;
             VkRenderingInfo* renderingInfo = nullptr;
-            VkViewport* resolvedViewports = nullptr;
-            VkRect2D* resolvedScissors = nullptr;
+            VulkanDynamicState* resolvedDynamicState = nullptr;
             VkBindVertexBuffer3InfoKHR* resolvedVertexBuffers = nullptr;
             const VulkanBindHandle* resolvedVertexHandles[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
             const VulkanPipeline* pipeline = nullptr;

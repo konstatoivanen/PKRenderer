@@ -403,6 +403,23 @@ namespace PK
         VkQueryPool pool;
     };
 
+    struct VulkanDynamicState
+    {
+        DepthStencilParameters depthStencil{};
+        const VkViewport* viewports = nullptr;
+        const VkRect2D* scissors = nullptr;
+        uint16_t viewportCount = 0u;
+        uint16_t scissorCount = 0u;
+        CullMode cullMode = CullMode::Off;
+        FrontFace frontFace = FrontFace::CounterClockwise;
+        bool rasterizerDiscardEnable = false;
+        bool depthBiasEnable = false;
+        float depthBiasConstantFactor = 0.0f;
+        float depthBiasClamp = 0.0f;
+        float depthBiasSlopeFactor = 0.0f;
+        float lineWidth = 1.0f;
+    };
+
     void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames, bool enableDebugLabels);
 
     VkResult VulkanCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);
