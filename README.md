@@ -117,6 +117,7 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
   <summary>Architecture</summary>
 
   - Vulkan 1.4 rendering backend.
+    - "No-API" style design.
   - Async compute & transfer queues.
   - Multiple buffering.
   - Automatic resource barrier management.
@@ -201,7 +202,7 @@ Device Extensions:
 - VK_KHR_present_wait
 - VK_KHR_present_id
 - VK_KHR_swapchain_maintenance1
-- VK_EXT_descriptor_buffer
+- VK_EXT_descriptor_heap
 - VK_KHR_unified_image_layouts
 
 Physical Device Requirements:
