@@ -11,7 +11,7 @@ namespace PK
         union
         {
             VkDeviceAddressRangeKHR memory;
-            
+
             struct
             {
                 uint32_t baseMipLevel;
@@ -24,7 +24,8 @@ namespace PK
 
         VkPipelineStageFlags2 stage;
         VkAccessFlags2 access;
-        uint32_t queue;
+        uint16_t queueMask;
+        uint16_t isLocked;
     };
 
     struct VulkanPassDependencies
@@ -42,7 +43,8 @@ namespace PK
             VkPipelineStageFlags2 stage;
             VkAccessFlags2 access;
             uint32_t lastPass;
-            uint32_t queueMask;
+            uint16_t queueMask;
+            uint16_t isLocked;
         };
         
         struct Node
@@ -70,7 +72,7 @@ namespace PK
             uint32_t prev;
         };
         
-        struct ResourceHead
+        struct ImageHead
         {
             VkImageAspectFlags aspectMask : 16;
             uint32_t isNew : 16;
@@ -87,7 +89,7 @@ namespace PK
 
         constexpr uint64_t GetPassCounter() const { return m_passCounter; }
         
-        void ResetPasses(uint64_t completedPassCounter);
+        void ResetPasses(uint64_t flushedPassIndex);
         uint64_t AddPass();
         
         void RegisterImage(VkImage image, VkImageAspectFlags aspectMask);
@@ -108,13 +110,14 @@ namespace PK
 
         Node m_nodes[PK_VK_MAX_ACCESS_NODES];
         FixedMask<PK_VK_MAX_ACCESS_NODES> m_nodeResidency;
-        FixedMap<uint64_t, ResourceHead, PK_VK_MAX_ACCESS_RESOURCES> m_images;
+        FixedMap<uint64_t, ImageHead, PK_VK_MAX_ACCESS_RESOURCES> m_images;
         PassBarriers m_passes[PK_VK_MAX_ACCESS_PASSES];
         VkImageMemoryBarrier2 m_imageTransitions[PK_VK_MAX_ACCESS_IMAGE_BARRIERS];
         uint32_t m_memoryHead = ~0u;
         uint64_t m_imageTransitionHead = 0ull;
         uint64_t m_passCount = 0ull;
         uint64_t m_passCounter = 0ull;
-        uint64_t m_completedPassCounter = 0ull;
+        uint64_t m_passFlush = 0ull;
+        uint64_t m_passFirst = 0ull;
     };
 }

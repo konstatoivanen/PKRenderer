@@ -14,7 +14,6 @@ namespace PK::App
     BatcherMeshStatic::BatcherMeshStatic() : m_transforms(1024u, 3u)
     {
         PK_LOG_VERBOSE_FUNC();
-        m_textures2D = RHI::CreateBindSet<RHITexture>(PK_RHI_MAX_UNBOUNDED_SIZE);
         m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::Vram, "Batching.Matrices");
         m_indices = RHI::CreateBuffer<PKAssets::PKDrawInfo>(1024ull, BufferUsage::Vram, "Batching.DrawInfos");
         m_properties = RHI::CreateBuffer(16384ull, BufferUsage::Vram, "Batching.MaterialProperties");
@@ -40,7 +39,6 @@ namespace PK::App
         m_drawInfoCount = 0u;
         m_materials.ClearFast();
         m_transforms.ClearFast();
-        m_textures2D->Clear();
         m_drawArena.Clear();
         m_resolvedGroups = nullptr;
         m_drawInfos = m_drawArena.GetHead<DrawInfo>();
@@ -88,7 +86,7 @@ namespace PK::App
                 if (shaderBatch->GetSize() > 0)
                 {
                     auto destination = propertyView.data + shaderBatch->GetOffset();
-                    materialRef->reference->CopyTo(destination + materialRef->batchIndex * shaderBatch->materialStride, m_textures2D.get());
+                    materialRef->reference->CopyTo(destination + materialRef->batchIndex * shaderBatch->materialStride);
                 }
             }
 
@@ -185,7 +183,6 @@ namespace PK::App
         RHI::SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
         RHI::SetBuffer(hash->pk_Instancing_Indices, m_indices.get());
         RHI::SetBuffer(hash->pk_Instancing_Properties, m_properties.get());
-        RHI::SetTextureSet(hash->pk_Instancing_Textures2D, m_textures2D.get());
     }
 
     void BatcherMeshStatic::SubmitMeshStaticDraw(ComponentTransform* transform,

@@ -6,35 +6,25 @@ namespace PK
     constexpr static const uint64_t PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE = 16384ull;
     constexpr static const uint64_t PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT = 128ull;
 
-    constexpr static const uint64_t PK_VK_MAX_IMAGE_VIEWS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_BUFFERS = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_IMAGES = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_SHADERS = 2048ull;
 
-    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SETS = 512u;
-    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLERS = 64u;
-    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_STORAGE_BUFFER = 256u;
-    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_UNIFORM_BUFFER = 128u;
-    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_SAMPLED_IMAGE = 256u;
-    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_STORAGE_IMAGE = 256u;
-    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_COMBINED_IMAGE = 128u;
-    constexpr static const uint32_t PK_VK_DESCRIPTOR_INITIAL_COUNT_ACCELERATION_STRUCTURE = 16u;
-
-    constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_TYPE_POOL_SIZES = 32ull;
-    constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_SETS = 1024ull;
-    constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_BINDINGS = 8192ull;
-    constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_SET_POOLS = 8ull;
-    constexpr static const uint64_t PK_VK_DESCRIPTOR_WRITE_ARENA_SIZE = 8192ull;
-
     constexpr static const uint64_t PK_VK_MAX_SAMPLERS = 32ull;
+    constexpr static const uint64_t PK_VK_MAX_DESCRIPTORS = 4096ull;
+
+    constexpr static const uint32_t PK_VK_MAX_RENDER_TARGET_VIEWS = 256u;
+    constexpr static const uint32_t PK_VK_MAX_DESCRIPTOR_RANGES = 8u;
+
+    constexpr static const uint32_t PK_VK_MAX_RESOURCE_DESCRIPTOR_SIZE = 64u;
+    constexpr static const uint32_t PK_VK_MAX_SAMPLER_DESCRIPTOR_SIZE = 32u;
+    constexpr static const uint32_t PK_VK_PUSH_OFFSET_RESOURCE_HEAP = 248u;
+    constexpr static const uint32_t PK_VK_PUSH_OFFSET_SAMPLER_HEAP = 252u;
     
     constexpr static const uint64_t PK_VK_MAX_PIPELINES = 2048ull;
     constexpr static const uint64_t PK_VK_MAX_PIPELINES_VERTEX = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_PIPELINES_MESH = 1024ull;
     constexpr static const uint64_t PK_VK_MAX_PIPELINES_GENERIC = 1024ull;
-
-    constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_SET_LAYOUTS = 1024ull;
-    constexpr static const uint64_t PK_VK_MAX_PIPELINE_LAYOUTS = 1024ull;
 
     constexpr static const uint64_t PK_VK_MAX_COMMAND_BUFFERS = 24ull;
 
@@ -52,4 +42,5 @@ namespace PK
     constexpr const static uint32_t PK_VK_MAX_TIMER_SCOPES = 64u;
     constexpr const static uint32_t PK_VK_MAX_TIMER_STACK = 32u;
     constexpr const static uint32_t PK_VK_MAX_DEBUG_STACK = 32u;
+
 }

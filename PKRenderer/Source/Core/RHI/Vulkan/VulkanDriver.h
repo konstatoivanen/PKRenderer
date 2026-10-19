@@ -1,17 +1,19 @@
 #pragma once
-#include "Core/Base/Containers/TypeSet.h"
-#include "Core/Base/Types/Ref.h"
 #include "Core/Base/NoCopy.h"
+#include "Core/Base/Types/Ref.h"
+#include "Core/Base/Containers/TypeSet.h"
+#include "Core/Base/Containers/Pool.h"
 #include "Core/ControlFlow/Disposer.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
-#include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
-#include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
-#include "Core/RHI/Vulkan/Services/VulkanLayoutCache.h"
-#include "Core/RHI/Vulkan/VulkanGraph.h"
+#include "Core/RHI/Vulkan/VulkanPipelineCache.h"
+#include "Core/RHI/Vulkan/VulkanDescriptorHeap.h"
 #include "Core/RHI/Vulkan/VulkanAccessRecorder.h"
+#include "Core/RHI/Vulkan/VulkanStagingArena.h"
+#include "Core/RHI/Vulkan/VulkanTimerArena.h"
+#include "Core/RHI/Vulkan/VulkanGraph.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanQueue.h"
@@ -60,8 +62,6 @@ namespace PK
         RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) final;
         RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) final;
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name) final;
-        RHITextureBindSetRef CreateTextureBindSet(size_t capacity) final;
-        RHIBufferBindSetRef CreateBufferBindSet(size_t capacity) final;
         RHIShaderRef CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) final;
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) final;
 
@@ -85,11 +85,9 @@ namespace PK
 
         mutable FixedUnique<Disposer> disposer;
         mutable FixedUnique<VulkanPipelineCache> pipelineCache;
-        mutable FixedUnique<VulkanSamplerCache> samplerCache;
-        mutable FixedUnique<VulkanLayoutCache> layoutCache;
         mutable FixedUnique<VulkanQueueSet> queues;
         mutable FixedUnique<VulkanStagingArena> stagingArena;
-        mutable FixedUnique<VulkanDescriptorArena> descriptorArena;
+        mutable FixedUnique<VulkanDescriptorHeap> descriptorHeap;
         mutable FixedUnique<VulkanTimerArena> timerArena;
         mutable FixedUnique<VulkanGraph> graph;
         mutable FixedUnique<BuiltInResources> builtInResources;
@@ -97,6 +95,5 @@ namespace PK
         FixedRefPool<VulkanTexture, PK_VK_MAX_IMAGES> texturePool;
         FixedRefPool<VulkanShader, PK_VK_MAX_SHADERS> shaderPool;
         FixedRefPool<VulkanBuffer, PK_VK_MAX_BUFFERS> bufferPool;
-        mutable FixedPool<VulkanImageView, PK_VK_MAX_IMAGE_VIEWS> imageViewPool;
     };
 }

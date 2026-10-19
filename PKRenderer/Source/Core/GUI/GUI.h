@@ -14,6 +14,7 @@ namespace PK
         InputState* input = nullptr;
         Font* defautFont = nullptr;
 
+        GUIDefaultTextures defaultTextures;
         GUIInputState inputState{};
         short4 clipRect = PK_SHORT4_ZERO;
         short4 renderArea = PK_SHORT4_ZERO;
@@ -27,7 +28,7 @@ namespace PK
             m_ctx(ctx),
             m_hashStack(),
             m_layoutStack(ctx->renderArea),
-            m_drawList(ctx->allocator, ctx->clipRect),
+            m_drawList(ctx->allocator, ctx->defaultTextures, ctx->clipRect),
             m_input(ctx->keys, &ctx->inputState, ctx->input, ctx->screenOffset, ctx->screenScale)
         {
         }
@@ -106,12 +107,12 @@ namespace PK
 
         inline void DrawRect(const color32& color, const short4& rect, uint16_t renderMode)
         {
-            m_drawList.Rect(color, rect, PK_USHORT4_ZERO, GUI_TEX_INDEX_WHITE, renderMode);
+            m_drawList.Rect(color, rect, PK_USHORT4_ZERO, m_drawList.GetTextureWhite(), renderMode);
         }
 
         inline void DrawRect(const color32& color, const short4& rect)
         {
-            m_drawList.Rect(color, rect, PK_USHORT4_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT);
+            m_drawList.Rect(color, rect, PK_USHORT4_ZERO, m_drawList.GetTextureWhite(), GUI_RENDER_MODE_DEFAULT);
         }
 
         inline int16_t GetLineHeight(const FontStyle& style) { return (int16_t)m_ctx->defautFont->GetLineHeight(style); }

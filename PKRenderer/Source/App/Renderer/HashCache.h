@@ -213,7 +213,6 @@ namespace PK::App
         DECLARE_HASH(pk_Gizmos_IndirectVertices)
         DECLARE_HASH(pk_Gizmos_IndirectArguments)
         DECLARE_HASH(pk_GUI_Vertices)
-        DECLARE_HASH(pk_GUI_Textures)
         DECLARE_HASH(pk_GUI_ScreenTransform)
 
         DECLARE_HASH(PK_LIGHT_PASS_DIRECTIONAL)

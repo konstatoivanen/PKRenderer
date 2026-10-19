@@ -32,7 +32,7 @@ namespace PK
 
         size_t GetPropertyStride() const;
         bool SupportsKeyword(const NameID keyword) const;
-        void CopyTo(char* dst, RHITextureBindSet* textureSet) const;
+        void CopyTo(char* dst) const;
 
     private:
         void ReservePropertyBuffer();

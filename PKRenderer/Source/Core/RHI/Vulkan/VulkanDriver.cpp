@@ -3,7 +3,6 @@
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
 #include "Core/RHI/Vulkan/VulkanAccelerationStructure.h"
-#include "Core/RHI/Vulkan/VulkanBindSet.h"
 #include "Core/RHI/Vulkan/VulkanSwapchain.h"
 #include "Core/RHI/BuiltInResources.h"
 #include "VulkanDriver.h"
@@ -142,12 +141,10 @@ namespace PK
 
         disposer.New(512u);
         pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.enablePipelineCache, properties.gcPruneDelay);
-        samplerCache.New(device);
-        layoutCache.New(device, physicalDeviceProperties);
         stagingArena.New(device, allocator, queueInitializer.selectedAll, properties.stagingArenaSize);
-        descriptorArena.New(device, allocator, queueInitializer.selectedAll, physicalDeviceProperties, properties.descriptorArenaSize);
+        descriptorHeap.New(device, allocator, queueInitializer.selectedAll, physicalDeviceProperties, properties.descriptorArenaSize, properties.gcPruneDelay);
         timerArena.New(device, physicalDeviceProperties.core.limits.timestampPeriod);
-        queues.New(device, descriptorArena->GetDeviceAddress(), queueInitializer);
+        queues.New(device, queueInitializer);
         graph.New(this);
         builtInResources.New();
     }
@@ -160,11 +157,9 @@ namespace PK
         vkDeviceWaitIdle(device);
 
         timerArena.Delete();
-        descriptorArena.Delete();
+        descriptorHeap.Delete();
         stagingArena.Delete();
-        samplerCache.Delete();
         pipelineCache.Delete();
-        layoutCache.Delete();
         queues.Delete();
         disposer.Delete();
 
@@ -227,8 +222,6 @@ namespace PK
     RHIBufferRef VulkanDriver::CreateBuffer(size_t size, BufferUsage usage, const char* name) { return bufferPool.CreateRef(this, size, usage, name); }
     RHITextureRef VulkanDriver::CreateTexture(const TextureDescriptor& descriptor, const char* name) { return texturePool.CreateRef(this, descriptor, name); }
     RHIAccelerationStructureRef VulkanDriver::CreateAccelerationStructure(const char* name) { return CreateRef<VulkanAccelerationStructure>(this, name); }
-    RHITextureBindSetRef VulkanDriver::CreateTextureBindSet(size_t capacity) { return CreateRef<VulkanBindSet>(capacity); }
-    RHIBufferBindSetRef VulkanDriver::CreateBufferBindSet(size_t capacity) { return CreateRef<VulkanBindSet>(capacity); }
     RHIShaderRef VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return shaderPool.CreateRef(this, base, pVariant, name); }
     RHISwapchainScope VulkanDriver::CreateSwapchain(const SwapchainDescriptor& descriptor) { return CreateUnique<VulkanSwapchain>(this, descriptor); }
 
@@ -237,7 +230,7 @@ namespace PK
         pipelineCache->Prune();
         disposer->Prune();
         queues->Prune();
-        layoutCache->Prune();
+        descriptorHeap->Prune();
     }
 
 

@@ -98,21 +98,12 @@ namespace PK
     struct RHISwapchain;
     struct RHIAccelerationStructure;
     struct RHIAccelerationStructureBuilder;
-    template <typename>
-    struct RHIBindSet;
     struct RHIBuffer;
     struct RHIGraph;
     struct RHIShader;
     struct RHITexture;
-    template<typename T>
-    using RHIBindSetRef = Ref<RHIBindSet<T>>;
-
-    typedef RHIBindSet<RHITexture> RHITextureBindSet;
-    typedef RHIBindSet<RHIBuffer> RHIBufferBindSet;
 
     typedef Ref<RHIAccelerationStructure> RHIAccelerationStructureRef;
-    typedef Ref<RHITextureBindSet> RHITextureBindSetRef;
-    typedef Ref<RHIBufferBindSet> RHIBufferBindSetRef;
     typedef Ref<RHIBuffer> RHIBufferRef;
     typedef Ref<RHITexture> RHITextureRef;
     typedef Ref<RHIShader> RHIShaderRef;
@@ -139,9 +130,6 @@ namespace PK
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor);
 
         template<typename T>
-        RHIBindSetRef<T> CreateBindSet(size_t capacity);
-
-        template<typename T>
         inline RHIBufferRef CreateBuffer(size_t count, BufferUsage usage, const char* name) { return CreateBuffer(sizeof(T) * count, usage, name); }
 
         bool ValidateTexture(RHITextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name);
@@ -160,12 +148,10 @@ namespace PK
 
         void SetBufferArray(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count);
         void SetBufferArray(NameID name, RHIBuffer** buffers, size_t count);
-        void SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferSet);
         void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range);
         void SetBuffer(NameID name, RHIBuffer* buffer);
         void SetTextureArray(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count);
         void SetTextureArray(NameID name, RHITexture** textures, size_t count);
-        void SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureSet);
         void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range);
         void SetTexture(NameID name, RHITexture* texture, uint16_t level, uint16_t layer);
         void SetTexture(NameID name, RHITexture* texture);

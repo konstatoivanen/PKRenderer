@@ -4,11 +4,22 @@
 
 namespace PK
 {
+    struct GUIDefaultTextures
+    {
+        uint16_t white;
+        uint16_t error;
+        uint16_t font;
+    };
+
     struct GUIDrawList
     {
         constexpr const static uint32_t CLIP_STACK_MAX = 15u;
 
-        GUIDrawList(IGUIAllocator* allocator, const short4& initialClipRect);
+        GUIDrawList(IGUIAllocator* allocator, const GUIDefaultTextures& defaultTextures, const short4& initialClipRect);
+
+        constexpr uint16_t GetTextureWhite() const { return m_defaultTextures.white; }
+        constexpr uint16_t GetTextureError() const { return m_defaultTextures.error; }
+        constexpr uint16_t GetTextureFont() const { return m_defaultTextures.font; }
 
         void PushClipRect(const short4& rect);
         void PopClipRect();
@@ -52,6 +63,7 @@ namespace PK
 
     private:
         IGUIAllocator* m_allocator = nullptr;
+        GUIDefaultTextures m_defaultTextures;
         short4 m_clipStack[CLIP_STACK_MAX + 1u]{};
         uint32_t m_clipIndices[CLIP_STACK_MAX + 1u]{};
         uint32_t m_clipIndex = 0u;

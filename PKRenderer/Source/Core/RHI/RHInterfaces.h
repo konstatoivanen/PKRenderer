@@ -34,7 +34,8 @@ namespace PK
         virtual void SetSampler(const SamplerDescriptor& sampler) = 0;
         virtual const TextureDescriptor& GetDescriptor() const = 0;
         virtual const char* GetDebugName() const = 0;
-        virtual const void* GetNativeView(const TextureViewRange& range, TextureViewMode viewMode) = 0;
+        virtual const void* GetNativeView() const = 0;
+        template<typename T> inline const T* GetNativeView() const { return static_cast<const T*>(GetNativeView()); }
 
         inline TextureFormat GetFormat() const { return GetDescriptor().format; }
         inline TextureUsage GetUsage() const { return GetDescriptor().usage; }
@@ -44,9 +45,6 @@ namespace PK
         inline float3 GetTexelSize() const { return 1.0f / float3(GetDescriptor().resolution); }
         inline uint32_t GetLevels() const { return GetDescriptor().levels; }
         inline uint32_t GetLayers() const { return GetDescriptor().layers; }
-
-        template<typename T> 
-        inline const T* GetNativeView(const TextureViewRange& range, TextureViewMode viewMode) { return static_cast<const T*>(GetNativeView(range, viewMode)); }
     };
 
     struct RHIBuffer : public NoCopy
@@ -73,23 +71,6 @@ namespace PK
     struct RHIAccelerationStructureBuilder : public NoCopy
     {
         virtual void AddInstance(const RayTracingGeometryInfo& geometry, const float3x4& matrix) = 0;
-    };
-
-    template<typename T>
-    struct RHIBindSet : public NoCopy
-    {
-        // @TODO MSVC doesnt allow this to be specialized but clang does?
-        #if defined(__clang__)
-        virtual ~RHIBindSet() = 0;
-        #else
-        virtual ~RHIBindSet() {};
-        #endif
-        virtual int32_t Add(T* value, void* bindInfo) = 0;
-        virtual int32_t Add(T* value) = 0;
-
-        virtual uint3 GetBoundTextureSize(uint32_t index) const = 0;
-        
-        virtual void Clear() = 0;
     };
 
     struct RHIShader : public NoCopy
@@ -147,10 +128,13 @@ namespace PK
         virtual void SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) = 0;
         virtual void SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) = 0;
         virtual void SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) = 0;
-        virtual void SetBufferSet(NameID name, RHIBufferBindSet* bufferSet) = 0;
-        virtual void SetTextureSet(NameID name, RHITextureBindSet* textureSet) = 0;
         virtual void SetConstant(NameID name, const void* data, uint32_t size) = 0;
         virtual void SetKeyword(NameID name, bool value) = 0;
+
+        virtual uint32_t MakeResident(RHITexture* texture) = 0;
+        virtual uint32_t MakeResident(RHIBuffer* buffer) = 0;
+        virtual uint32_t MakeResident(const SamplerDescriptor& sampler) = 0;
+        virtual uint3 GetResidentTextureSize(uint32_t bindlessIndex) = 0;
 
         virtual RHIBuffer* AcquireStagingBuffer(size_t size) = 0;
         virtual void ReleaseStagingBuffer(RHIBuffer* buffer) = 0;
@@ -264,8 +248,6 @@ namespace PK
         virtual BuiltInResources* GetBuiltInResources() = 0;
 
         virtual RHIAccelerationStructureRef CreateAccelerationStructure(const char* name) = 0;
-        virtual RHITextureBindSetRef CreateTextureBindSet(size_t capacity) = 0;
-        virtual RHIBufferBindSetRef CreateBufferBindSet(size_t capacity) = 0;
         virtual RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) = 0;
         virtual RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) = 0;
         virtual RHIShaderRef CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) = 0;

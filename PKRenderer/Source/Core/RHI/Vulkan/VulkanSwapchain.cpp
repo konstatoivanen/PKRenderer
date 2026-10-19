@@ -118,21 +118,22 @@ namespace PK
             m_descriptor.nativeMonitorHandle = nullptr;
         }
 
-        for (auto i = 0u; i < PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT; ++i)
+        for (auto i = 0u; i < m_imageCount; ++i)
         {
-            if (m_imageViews[i] != nullptr)
+            if (m_semaphoresPresent[i] != VK_NULL_HANDLE)
             {
-                m_driver->imageViewPool.Delete(m_imageViews[i]);
-                m_imageViews[i] = nullptr;
-
                 vkDestroySemaphore(m_driver->device, m_semaphoresPresent[i], nullptr);
                 vkDestroySemaphore(m_driver->device, m_semaphoresAcquire[i], nullptr);
+                m_semaphoresPresent[i] = VK_NULL_HANDLE;
+                m_semaphoresAcquire[i] = VK_NULL_HANDLE;
             }
+            m_imageViews[i] = {};
         }
 
         if (m_swapchain != VK_NULL_HANDLE)
         {
             vkDestroySwapchainKHR(m_driver->device, m_swapchain, nullptr);
+            m_swapchain = VK_NULL_HANDLE;
         }
     }
 
@@ -222,22 +223,14 @@ namespace PK
 
         for (auto i = 0u; i < m_imageCount; ++i)
         {
-            VulkanImageViewCreateInfo info;
-            info.image = m_images[i];
-            info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-            info.format = m_format.format;
-            info.components = VkComponentMapping{};
-            info.extent = { m_extent.width, m_extent.height, 1 };
-            info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            info.subresourceRange.baseMipLevel = 0;
-            info.subresourceRange.levelCount = 1;
-            info.subresourceRange.baseArrayLayer = 0;
-            info.subresourceRange.layerCount = 1;
-            FixedString64 name("Swapchain.Image%u", i);
-            m_imageViews[i] = m_driver->imageViewPool.New(m_driver->device, info, name.c_str());
+            auto& view = m_imageViews[i];
+            view.image.image = m_images[i];
+            view.image.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            view.image.format = m_format.format;
+            view.image.extent = { m_extent.width, m_extent.height, 1u };
+            view.image.range = { VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u };
 
-            VkSemaphoreCreateInfo semaphoreCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, };
+            VkSemaphoreCreateInfo semaphoreCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
             vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_semaphoresPresent[i]);
             vkCreateSemaphore(m_driver->device, &semaphoreCreateInfo, nullptr, &m_semaphoresAcquire[i]);
             VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_semaphoresPresent[i], "PK_Swapchain_Present_Semaphore");
@@ -301,7 +294,6 @@ namespace PK
     {
         m_acquireSignal = VK_NULL_HANDLE;
         m_presentSignal = VK_NULL_HANDLE;
-        m_hasExternalFrameFence = false;
         m_frameIndex = (m_frameIndex + 1) % PK_RHI_MAX_FRAMES_IN_FLIGHT;
         m_presentId++;
         queue->Present(m_swapchain, m_imageIndex, m_presentId, m_presentMode, presentSignal);

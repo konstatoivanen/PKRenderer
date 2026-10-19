@@ -3,9 +3,6 @@
 #include "Core/Base/NoCopy.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
-#include "Core/RHI/Vulkan/VulkanTimerArena.h"
-#include "Core/RHI/Vulkan/VulkanStagingArena.h"
-#include "Core/RHI/Vulkan/VulkanDescriptorArena.h"
 #include "Core/RHI/Vulkan/VulkanCommandBuffer.h"
 
 namespace PK
@@ -41,7 +38,7 @@ namespace PK
         friend struct VulkanQueueSet;
         constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::EnumCount + 1u;
 
-        VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, VkDeviceAddress descriptorHeapAddress, const char* name);
+        VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, const char* name);
         ~VulkanQueue();
 
         constexpr uint32_t GetFamily() const { return m_family; }
@@ -62,7 +59,8 @@ namespace PK
         const VkQueueFlags m_queueFlags;
         const VkAccessFlags2 m_accessFlags;
         const VkPipelineStageFlags2 m_stageFlags;
-        const VkDeviceAddress m_descriptorHeapAddress;
+        VkBindHeapInfoEXT m_resourceHeap{};
+        VkBindHeapInfoEXT m_samplerHeap{};
 
         VkQueue m_queue = VK_NULL_HANDLE;
         VkCommandPool m_commandPool = VK_NULL_HANDLE;
@@ -84,7 +82,7 @@ namespace PK
 
         constexpr static const uint32_t MAX_FENCE_SNAPSHOTS = PK_VK_MAX_GRAPH_SCOPES * 4u;
 
-        VulkanQueueSet(const VkDevice device, VkDeviceAddress descriptorHeapAddress, const VulkanQueueSetInitializer& initializer);
+        VulkanQueueSet(const VkDevice device, const VulkanQueueSetInitializer& initializer);
         constexpr uint32_t GetQueueCount() const { return m_queueCount; }
         constexpr const VulkanQueueFamilies& GetFamiliesAll() const { return m_familiesAll; }
         constexpr const VulkanQueueFamilies& GetFamiliesRender() const { return m_familiesRender; }
@@ -92,6 +90,8 @@ namespace PK
         inline VulkanQueue* GetQueue(QueueType type) { return m_queues[GetQueueIndex(type)].get(); }
         inline VulkanQueue* GetQueueAt(uint32_t index) const { return m_queues[index].get(); }
         inline VulkanQueue* GetQueueAt(uint32_t index) { return m_queues[index].get(); }
+
+        void SetDescriptorHeaps(const VkBindHeapInfoEXT& resourceHeap, const VkBindHeapInfoEXT& samplerHeap);
         FenceRef GetFenceRef() const;
         void Prune();
 

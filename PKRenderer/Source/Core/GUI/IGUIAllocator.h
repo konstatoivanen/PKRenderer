@@ -5,9 +5,6 @@
 namespace PK
 {
     // Required render modes and texture indices.
-    constexpr static const uint16_t GUI_TEX_INDEX_WHITE = 0u;
-    constexpr static const uint16_t GUI_TEX_INDEX_ERROR = 1u;
-    constexpr static const uint16_t GUI_TEX_INDEX_DEFAULT_FONT = 2u;
     constexpr static const uint16_t GUI_RENDER_MODE_DEFAULT = 0u;
     constexpr static const uint16_t GUI_RENDER_MODE_TEXT = 1u;
 

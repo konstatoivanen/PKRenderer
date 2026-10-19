@@ -139,7 +139,6 @@ namespace PK::App
             graph->BeginTimer(hash->STAT_GUI);
 
             RHI::SetConstant<float4>(hash->pk_GUI_ScreenTransform, screenTransform);
-            RHI::SetTextureSet(hash->pk_GUI_Textures, m_gui_textures.get());
             
             graph->SetIndexBuffer(m_gui_indexBuffer.get(), sizeof(uint16_t));
             graph.SetShader(m_gui_shader);
@@ -166,7 +165,6 @@ namespace PK::App
                 m_gui_resolve_shader = m_assetDatabase->Find<ShaderAsset>("CS_GUI_Resolve").get();
                 m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::Vram, "GUI.VertexBuffer");
                 m_gui_indexBuffer = RHI::CreateBuffer<GUIIndex>(GUI_MAX_INDICES, BufferUsage::Vram, "GUI.IndexBuffer");
-                m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);
                 RHI::SetBuffer(HashCache::Get()->pk_GUI_Vertices, m_gui_vertexBuffer.get());
             }
 
@@ -175,10 +173,9 @@ namespace PK::App
             {
                 m_gui_vertexView = m_gui_graph->BeginBufferWrite<GUIVertex>(m_gui_vertexBuffer.get());
                 m_gui_indexView = m_gui_graph->BeginBufferWrite<uint16_t>(m_gui_indexBuffer.get());
-                m_gui_textures->Clear();
-                m_gui_textures->Add(RHI::GetBuiltInResources()->WhiteTexture2D.get());
-                m_gui_textures->Add(RHI::GetBuiltInResources()->ErrorTexture2D.get());
-                m_gui_textures->Add(m_gui_context.defautFont->GetRHI());
+                m_gui_context.defaultTextures.white = m_gui_graph->graph->MakeResident(RHI::GetBuiltInResources()->WhiteTexture2D.get());
+                m_gui_context.defaultTextures.error = m_gui_graph->graph->MakeResident(RHI::GetBuiltInResources()->ErrorTexture2D.get());
+                m_gui_context.defaultTextures.font = m_gui_graph->graph->MakeResident(m_gui_context.defautFont->GetRHI());
             }
         }
         
@@ -190,22 +187,22 @@ namespace PK::App
     {
         if (!GUIValidateDraw())
         {
-            return GUI_TEX_INDEX_ERROR;
+            return m_gui_context.defaultTextures.error;
         }
 
         if (texture == nullptr)
         {
             PK_LOG_WARNING("Trying to add a null texture to be drawn in gui!");
             // Return error tex handle
-            return GUI_TEX_INDEX_ERROR;
+            return m_gui_context.defaultTextures.error;
         }
 
-        return (uint16_t)m_gui_textures->Add(texture);
+        return (uint16_t)RHI::GetGraph()->MakeResident(texture);
     }
 
     uint3 EngineGUIRenderer::GUIGetTextureSize(uint16_t textureIndex) const
     {
-        return m_gui_textures->GetBoundTextureSize(textureIndex);
+        return RHI::GetGraph()->GetResidentTextureSize(textureIndex);
     }
 
     bool EngineGUIRenderer::GUIAllocate(uint32_t layer, uint32_t vertexCount, uint32_t indexCount, GUIAllocation* allocation)

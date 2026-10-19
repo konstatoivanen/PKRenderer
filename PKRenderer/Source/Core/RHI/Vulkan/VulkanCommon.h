@@ -161,21 +161,6 @@ extern PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusive
 extern PFN_vkWaitForPresentKHR pkfn_vkWaitForPresentKHR;
 #define vkWaitForPresentKHR pkfn_vkWaitForPresentKHR
 
-extern PFN_vkGetDescriptorSetLayoutSizeEXT pkfn_vkGetDescriptorSetLayoutSizeEXT;
-#define vkGetDescriptorSetLayoutSizeEXT pkfn_vkGetDescriptorSetLayoutSizeEXT
-    
-extern PFN_vkGetDescriptorSetLayoutBindingOffsetEXT pkfn_vkGetDescriptorSetLayoutBindingOffsetEXT;
-#define vkGetDescriptorSetLayoutBindingOffsetEXT pkfn_vkGetDescriptorSetLayoutBindingOffsetEXT
-
-extern PFN_vkGetDescriptorEXT pkfn_vkGetDescriptorEXT;
-#define vkGetDescriptorEXT pkfn_vkGetDescriptorEXT
-
-extern PFN_vkCmdBindDescriptorBuffersEXT pkfn_vkCmdBindDescriptorBuffersEXT;
-#define vkCmdBindDescriptorBuffersEXT pkfn_vkCmdBindDescriptorBuffersEXT
-
-extern PFN_vkCmdSetDescriptorBufferOffsetsEXT pkfn_vkCmdSetDescriptorBufferOffsetsEXT;
-#define vkCmdSetDescriptorBufferOffsetsEXT pkfn_vkCmdSetDescriptorBufferOffsetsEXT
-
 extern PFN_vkCmdBindIndexBuffer3KHR pkfn_vkCmdBindIndexBuffer3KHR;
 #define vkCmdBindIndexBuffer3KHR pkfn_vkCmdBindIndexBuffer3KHR
 
@@ -209,6 +194,20 @@ extern PFN_vkCmdFillMemoryKHR pkfn_vkCmdFillMemoryKHR;
 extern PFN_vkCmdUpdateMemoryKHR pkfn_vkCmdUpdateMemoryKHR;
 #define vkCmdUpdateMemoryKHR pkfn_vkCmdUpdateMemoryKHR
 
+extern PFN_vkWriteResourceDescriptorsEXT pkfn_vkWriteResourceDescriptorsEXT;
+#define vkWriteResourceDescriptorsEXT pkfn_vkWriteResourceDescriptorsEXT
+
+extern PFN_vkWriteSamplerDescriptorsEXT pkfn_vkWriteSamplerDescriptorsEXT;
+#define vkWriteSamplerDescriptorsEXT pkfn_vkWriteSamplerDescriptorsEXT
+
+extern PFN_vkCmdBindResourceHeapEXT pkfn_vkCmdBindResourceHeapEXT;
+#define vkCmdBindResourceHeapEXT pkfn_vkCmdBindResourceHeapEXT
+
+extern PFN_vkCmdBindSamplerHeapEXT pkfn_vkCmdBindSamplerHeapEXT;
+#define vkCmdBindSamplerHeapEXT pkfn_vkCmdBindSamplerHeapEXT
+
+extern PFN_vkCmdPushDataEXT pkfn_vkCmdPushDataEXT;
+#define vkCmdPushDataEXT pkfn_vkCmdPushDataEXT
 
 namespace PK
 {
@@ -216,6 +215,20 @@ namespace PK
     {
         uint32_t indices[(uint32_t)QueueType::EnumCount]{};
         uint32_t count;
+    };
+
+    struct VulkanDescriptorHeapProperties
+    {
+        VkDeviceSize imageStride = 0ull;
+        VkDeviceSize bufferStride = 0ull;
+        VkDeviceSize maxResourceStride = 0ull;
+        VkDeviceSize samplerStride = 0ull;
+        VkDeviceSize resourceHeapOffset = 0ull;
+        VkDeviceSize samplerHeapOffset = 0ull;
+        VkDeviceSize resourceHeapAlignment = 0ull;
+        VkDeviceSize samplerHeapAlignment = 0ull;
+        VkDeviceSize maxResourceHeapSize = 0ull;
+        VkDeviceSize maxSamplerHeapSize = 0ull;
     };
 
     struct VulkanPhysicalDeviceProperties
@@ -226,7 +239,8 @@ namespace PK
         VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterization;
         VkPhysicalDeviceSubgroupProperties subgroup;
         VkPhysicalDeviceMeshShaderPropertiesEXT meshShader;
-        VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptorBuffer;
+        VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptorHeap;
+        VulkanDescriptorHeapProperties descriptorHeapDerived;
     };
 
     struct VulkanPhysicalDeviceFeatures
@@ -249,7 +263,7 @@ namespace PK
         VkPhysicalDevicePresentWaitFeaturesKHR presentWait{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR };
         VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR maximalReconvergence { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR };
         VkPhysicalDeviceShaderQuadControlFeaturesKHR quadControl{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR };
-        VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBuffer { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT };
+        VkPhysicalDeviceDescriptorHeapFeaturesEXT descriptorHeap { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT };
         VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR unifiedLayout { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR };
         VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR deviceAddressCommands { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR };
         VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR raytracingMaintenance1 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR };
@@ -276,6 +290,7 @@ namespace PK
         void* swapchainPNext = nullptr;
     };
 
+
     struct VulkanResourceView
     {
         uint64_t hash = 0ull;
@@ -285,8 +300,10 @@ namespace PK
             struct
             {
                 VkImage image = VK_NULL_HANDLE;
-                VkImageView view = VK_NULL_HANDLE;
-                VkSampler sampler = VK_NULL_HANDLE;
+                VkFormat format = VK_FORMAT_UNDEFINED;
+                VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
+                uint16_t samplerIndex = 0u;
+                uint16_t samples = (uint16_t)VK_SAMPLE_COUNT_1_BIT;
                 VkExtent3D extent = { 0u, 0u, 0u };
                 VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
             }
@@ -299,9 +316,23 @@ namespace PK
 
         constexpr bool operator == (const VulkanResourceView& r) const noexcept { return hash == r.hash; }
         constexpr bool operator != (const VulkanResourceView& r) const noexcept { return hash != r.hash; }
-        
-        inline void UpdateHashMemory() { hash = Hash::Mix(memory.address, memory.size); }
-        inline void UpdateHashImage(uint64_t version = 0ull) { hash = Hash::Mix((uint64_t)image.view ^ version, (uint64_t)image.sampler); }
+
+        inline void UpdateHashMemory()
+        {
+            hash = Hash::Mix(memory.address, memory.size);
+        }
+
+        inline void UpdateHashImage(uint64_t version = 0ull)
+        {
+            auto h2 = 0ull;
+            h2 |= ((uint64_t)image.range.baseMipLevel) << 48ull;
+            h2 |= ((uint64_t)(image.range.levelCount & 0xFFFFu)) << 32ull;
+            h2 |= ((uint64_t)image.range.baseArrayLayer) << 16ull;
+            h2 |= ((uint64_t)(image.range.layerCount & 0xFFFFu));
+            const auto h0 = Hash::Mix((uint64_t)image.image, version ^ ((uint64_t)image.format << 16) ^ (uint64_t)image.viewType);
+            const auto h1 = Hash::Mix((uint64_t)image.samplerIndex, h2);
+            hash = Hash::Mix(h0, h1);
+        }
     };
 
     struct VulkanResourceViewHash
@@ -318,28 +349,6 @@ namespace PK
         uint64_t hash;
         uint16_t count;
         ShaderResourceType type;
-        bool isVariableSize;
-    };
-
-    struct VulkanImageViewCreateInfo
-    {
-        VkImage image;
-        VkImageViewType viewType;
-        VkFormat format;
-        VkImageUsageFlags usage;
-        VkComponentMapping components;
-        VkExtent3D extent;
-        VkImageSubresourceRange subresourceRange;
-    };
-
-    struct VulkanImageView : public VersionedObject, public LinkedListElement<VulkanImageView, uint64_t>
-    {
-        VulkanImageView(VkDevice device, const VulkanImageViewCreateInfo& createInfo, const char* name);
-        ~VulkanImageView();
-
-        const VkDevice device;
-        VkImageView view;
-        VulkanResourceView resourceView;
     };
 
     struct VulkanPipeline : public NoCopy
@@ -352,18 +361,6 @@ namespace PK
         const VkDevice device;
         VkPipeline pipeline;
         VkPipelineBindPoint bindPoint;
-    };
-
-    struct VulkanDescriptorSetLayout : public NoCopy
-    {
-        VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& layoutCreateInfo, uint32_t maxPushConstantSize, const char* name);
-        ~VulkanDescriptorSetLayout();
-
-        const VkDevice device;
-        VkDescriptorSetLayout layout = VK_NULL_HANDLE;
-        VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-        FenceRef releaseFence;
-        uint32_t referenceCount = 0u;
     };
 
     struct VulkanQueryPool : public NoCopy
@@ -448,7 +445,6 @@ namespace PK
     namespace VulkanEnumConvert
     {
         VkFormat GetFormat(ElementType format);
-        ElementType GetUniformFormat(VkFormat format);
         VkColorSpaceKHR GetColorSpace(ColorSpace colorSpace);
         VkPresentModeKHR GetPresentMode(VSyncMode vsyncMode);
         ColorSpace GetColorSpace(VkColorSpaceKHR colorSpace);
@@ -471,7 +467,6 @@ namespace PK
         VkSamplerAddressMode GetSamplerAddressMode(WrapMode wrap);
         VkFilter GetFilterMode(FilterMode filter);
         VkDescriptorType GetDescriptorType(ShaderResourceType type);
-        ShaderResourceType GetShaderResourceType(VkDescriptorType type);
         VkShaderStageFlagBits GetShaderStage(ShaderStage stage);
         VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples);
         VkVertexInputRate GetInputRate(InputRate inputRate);

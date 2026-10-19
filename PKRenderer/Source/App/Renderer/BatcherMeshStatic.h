@@ -143,6 +143,5 @@ namespace PK::App
         RHIBufferRef m_indices;
         RHIBufferRef m_properties;
         RHIBufferRef m_tasklets;
-        RHITextureBindSetRef m_textures2D;
     };
 }

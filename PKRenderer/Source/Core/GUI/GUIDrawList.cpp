@@ -14,8 +14,9 @@ namespace PK
     };
 
 
-    GUIDrawList::GUIDrawList(IGUIAllocator* allocator, const short4& initialClipRect) :
-        m_allocator(allocator) 
+    GUIDrawList::GUIDrawList(IGUIAllocator* allocator, const GUIDefaultTextures& defaultTextures, const short4& initialClipRect) :
+        m_allocator(allocator),
+        m_defaultTextures(defaultTextures)
     {
         m_clipStack[0] = initialClipRect;
         m_clipIndices[0] = 0u;
@@ -102,10 +103,10 @@ namespace PK
                 allocation.indices[3] = allocation.vertexOffset + 2u;
                 allocation.indices[4] = allocation.vertexOffset + 3u;
                 allocation.indices[5] = allocation.vertexOffset + 0u;
-                allocation.vertices[0] = { color0, math::round(p0f + offset), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-                allocation.vertices[1] = { color1, math::round(p1f + offset), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-                allocation.vertices[2] = { color1, math::round(p1f - offset), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-                allocation.vertices[3] = { color0, math::round(p0f - offset), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+                allocation.vertices[0] = { color0, math::round(p0f + offset), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+                allocation.vertices[1] = { color1, math::round(p1f + offset), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+                allocation.vertices[2] = { color1, math::round(p1f - offset), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+                allocation.vertices[3] = { color0, math::round(p0f - offset), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
             }
         }
     }
@@ -147,8 +148,8 @@ namespace PK
                     normal = offset * length;
                 }
 
-                allocation.vertices[i * 2u + 0u] = { color, math::round(pCurr + normal * width * 0.5f), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-                allocation.vertices[i * 2u + 1u] = { color, math::round(pCurr - normal * width * 0.5f), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+                allocation.vertices[i * 2u + 0u] = { color, math::round(pCurr + normal * width * 0.5f), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+                allocation.vertices[i * 2u + 1u] = { color, math::round(pCurr - normal * width * 0.5f), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
             }
 
             for (auto i = 0u, j = 0u; i < count - 1u; ++i, j += 6u)
@@ -233,14 +234,14 @@ namespace PK
                 allocation.indices[j++] = base0 + 0u;
             }
 
-            allocation.vertices[0u] = { color, outer.xy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, inner.xy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, outer.xw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, inner.xw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, outer.zw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, inner.zw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[6u] = { color, outer.zy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[7u] = { color, inner.zy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, outer.xy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, inner.xy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, outer.xw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, inner.xw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, outer.zw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, inner.zw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[6u] = { color, outer.zy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[7u] = { color, inner.zy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -262,12 +263,12 @@ namespace PK
             allocation.indices[9] = allocation.vertexOffset + 1u;
             allocation.indices[10] = allocation.vertexOffset + 2u;
             allocation.indices[11] = allocation.vertexOffset + 3u;
-            allocation.vertices[0u] = { color, minmax.zw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, minmax.xw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, minmax.xy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, minmax.zy + short2(-dent.x, 0), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, minmax.zy + short2(-dent.x / 2, dent.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, minmax.zy + short2(0, dent.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, minmax.zw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, minmax.xw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, minmax.xy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, minmax.zy + short2(-dent.x, 0), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, minmax.zy + short2(-dent.x / 2, dent.y), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, minmax.zy + short2(0, dent.y), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -278,18 +279,18 @@ namespace PK
         {
             const auto minmax = math::rectToMinMax(rect);
             const auto bias = (inset + 1) / 2;
-            allocation.vertices[0u] = { color, minmax.zw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, minmax.xw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, minmax.xy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, minmax.zy + short2(-dent.x, 0), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, minmax.zy + short2(-dent.x / 2, dent.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, minmax.zy + short2(0, dent.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[6u] = { color, minmax.zw + short2(-inset,-inset), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[7u] = { color, minmax.xw + short2(inset,-inset), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[8u] = { color, minmax.xy + short2(inset,inset), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[9u] = { color, minmax.zy + short2(0,inset) + short2(-dent.x - bias, 0), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[10u] = { color, minmax.zy + short2(0,inset) + short2(-dent.x / 2 - bias, dent.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[11u] = { color, minmax.zy + short2(-inset,inset) + short2(0, dent.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, minmax.zw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, minmax.xw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, minmax.xy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, minmax.zy + short2(-dent.x, 0), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, minmax.zy + short2(-dent.x / 2, dent.y), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, minmax.zy + short2(0, dent.y), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[6u] = { color, minmax.zw + short2(-inset,-inset), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[7u] = { color, minmax.xw + short2(inset,-inset), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[8u] = { color, minmax.xy + short2(inset,inset), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[9u] = { color, minmax.zy + short2(0,inset) + short2(-dent.x - bias, 0), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[10u] = { color, minmax.zy + short2(0,inset) + short2(-dent.x / 2 - bias, dent.y), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[11u] = { color, minmax.zy + short2(-inset,inset) + short2(0, dent.y), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
 
             for (auto i = 0u; i < 6u; ++i)
             {
@@ -320,18 +321,18 @@ namespace PK
             const auto interection = (float2(middle) + 0.5f) / float2(delta);
             const auto offset = short2(delta.x * interection.y, delta.y * interection.x);
 
-            allocation.vertices[0u] = { color, short2(outer.x, inner.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, short2(inner.x, outer.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, short2(center.x, outer.y + offset.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, short2(inner.z, outer.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, short2(outer.z, inner.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, short2(outer.z - offset.x, center.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[6u] = { color, short2(outer.z, inner.w), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[7u] = { color, short2(inner.z, outer.w), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[8u] = { color, short2(center.x, outer.w - offset.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[9u] = { color, short2(inner.x, outer.w), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[10u] = { color, short2(outer.x, inner.w), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[11u] = { color, short2(outer.x + offset.x, center.y), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, short2(outer.x, inner.y),              PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, short2(inner.x, outer.y),              PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, short2(center.x, outer.y + offset.y),  PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, short2(inner.z, outer.y),              PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, short2(outer.z, inner.y),              PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, short2(outer.z - offset.x, center.y),  PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[6u] = { color, short2(outer.z, inner.w),              PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[7u] = { color, short2(inner.z, outer.w),              PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[8u] = { color, short2(center.x, outer.w - offset.y),  PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[9u] = { color, short2(inner.x, outer.w),              PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[10u] = { color, short2(outer.x, inner.w),             PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[11u] = { color, short2(outer.x + offset.x, center.y), PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
 
             for (auto i = 0u; i < 4u; ++i)
             {
@@ -361,9 +362,9 @@ namespace PK
             allocation.indices[0u] = allocation.vertexOffset + 0u;
             allocation.indices[1u] = allocation.vertexOffset + 1u;
             allocation.indices[2u] = allocation.vertexOffset + 2u;
-            allocation.vertices[0u] = { color, sminmax.zy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, sminmax.zw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, sminmax.xw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, sminmax.zy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, sminmax.zw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, sminmax.xw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -376,9 +377,9 @@ namespace PK
             allocation.indices[0u] = allocation.vertexOffset + 0u;
             allocation.indices[1u] = allocation.vertexOffset + 1u;
             allocation.indices[2u] = allocation.vertexOffset + 2u;
-            allocation.vertices[0u] = { color, sminmax.zw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, sminmax.xw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, sminmax.xy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, sminmax.zw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, sminmax.xw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, sminmax.xy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -391,9 +392,9 @@ namespace PK
             allocation.indices[0u] = allocation.vertexOffset + 0u;
             allocation.indices[1u] = allocation.vertexOffset + 1u;
             allocation.indices[2u] = allocation.vertexOffset + 2u;
-            allocation.vertices[0u] = { color, sminmax.xy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, sminmax.zy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, sminmax.zw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, sminmax.xy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, sminmax.zy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, sminmax.zw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -406,9 +407,9 @@ namespace PK
             allocation.indices[0u] = allocation.vertexOffset + 0u;
             allocation.indices[1u] = allocation.vertexOffset + 1u;
             allocation.indices[2u] = allocation.vertexOffset + 2u;
-            allocation.vertices[0u] = { color, sminmax.xw, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, sminmax.xy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, sminmax.zy, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, sminmax.xw, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, sminmax.xy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, sminmax.zy, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -435,12 +436,12 @@ namespace PK
             allocation.indices[10u] = allocation.vertexOffset + 4u;
             allocation.indices[11u] = allocation.vertexOffset + 1u;
 
-            allocation.vertices[0u] = { color, { sminmax.z, sminmax.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, { sminmax.z, sminmax.w }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, { sminmax.x, sminmax.w }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, { sminmax.x, sminmax.w - thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, { sminmax.z - thickness, sminmax.w - thickness  }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, { sminmax.z - thickness, sminmax.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, { sminmax.z, sminmax.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, { sminmax.z, sminmax.w }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, { sminmax.x, sminmax.w }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, { sminmax.x, sminmax.w - thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, { sminmax.z - thickness, sminmax.w - thickness  }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, { sminmax.z - thickness, sminmax.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -462,12 +463,12 @@ namespace PK
             allocation.indices[9u] = allocation.vertexOffset + 3u;
             allocation.indices[10u] = allocation.vertexOffset + 1u;
             allocation.indices[11u] = allocation.vertexOffset + 4u;
-            allocation.vertices[0u] = { color, { sminmax.x, sminmax.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, { sminmax.x, sminmax.w }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, { sminmax.z, sminmax.w }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, { sminmax.z, sminmax.w - thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, { sminmax.x + thickness, sminmax.w - thickness  }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, { sminmax.x + thickness, sminmax.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, { sminmax.x, sminmax.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, { sminmax.x, sminmax.w }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, { sminmax.z, sminmax.w }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, { sminmax.z, sminmax.w - thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, { sminmax.x + thickness, sminmax.w - thickness  }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, { sminmax.x + thickness, sminmax.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -495,12 +496,12 @@ namespace PK
             allocation.indices[10u] = allocation.vertexOffset + 4u;
             allocation.indices[11u] = allocation.vertexOffset + 1u;
 
-            allocation.vertices[0u] = { color, { center.x, sminmax.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, { sminmax.z, center.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, { center.x, sminmax.w }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, { center.x - thickness, sminmax.w - thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, { sminmax.z - thickness * 2, center.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, { center.x - thickness, sminmax.y + thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, { center.x, sminmax.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, { sminmax.z, center.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, { center.x, sminmax.w }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, { center.x - thickness, sminmax.w - thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, { sminmax.z - thickness * 2, center.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, { center.x - thickness, sminmax.y + thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -523,12 +524,12 @@ namespace PK
             allocation.indices[9u] = allocation.vertexOffset + 3u;
             allocation.indices[10u] = allocation.vertexOffset + 1u;
             allocation.indices[11u] = allocation.vertexOffset + 4u;
-            allocation.vertices[0u] = { color, { center.x, sminmax.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, { sminmax.x, center.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, { center.x, sminmax.w }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, { center.x + thickness, sminmax.w - thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, { sminmax.x + thickness * 2, center.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, { center.x + thickness, sminmax.y + thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, { center.x, sminmax.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, { sminmax.x, center.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, { center.x, sminmax.w }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, { center.x + thickness, sminmax.w - thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, { sminmax.x + thickness * 2, center.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, { center.x + thickness, sminmax.y + thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -551,12 +552,12 @@ namespace PK
             allocation.indices[9u] = allocation.vertexOffset + 3u;
             allocation.indices[10u] = allocation.vertexOffset + 4u;
             allocation.indices[11u] = allocation.vertexOffset + 1u;
-            allocation.vertices[0u] = { color, { sminmax.x, center.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, { center.x, sminmax.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, { sminmax.z, center.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, { sminmax.z - thickness, center.y + thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, { center.x, sminmax.y + thickness * 2 }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, { sminmax.x + thickness, center.y + thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, { sminmax.x, center.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, { center.x, sminmax.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, { sminmax.z, center.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, { sminmax.z - thickness, center.y + thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, { center.x, sminmax.y + thickness * 2 }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, { sminmax.x + thickness, center.y + thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 
@@ -579,12 +580,12 @@ namespace PK
             allocation.indices[9u] = allocation.vertexOffset + 3u;
             allocation.indices[10u] = allocation.vertexOffset + 1u;
             allocation.indices[11u] = allocation.vertexOffset + 4u;
-            allocation.vertices[0u] = { color, { sminmax.x, center.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[1u] = { color, { center.x, sminmax.w }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[2u] = { color, { sminmax.z, center.y }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[3u] = { color, { sminmax.z - thickness, center.y - thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[4u] = { color, { center.x, sminmax.w - thickness * 2 }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
-            allocation.vertices[5u] = { color, { sminmax.x + thickness, center.y - thickness }, PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[0u] = { color, { sminmax.x, center.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[1u] = { color, { center.x, sminmax.w }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[2u] = { color, { sminmax.z, center.y }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[3u] = { color, { sminmax.z - thickness, center.y - thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[4u] = { color, { center.x, sminmax.w - thickness * 2 }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
+            allocation.vertices[5u] = { color, { sminmax.x + thickness, center.y - thickness }, PK_USHORT2_ZERO, m_defaultTextures.white, GUI_RENDER_MODE_DEFAULT };
         }
     }
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Base/Containers/PropertyBlock.h"
-#include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
+#include "Core/RHI/Vulkan/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/VulkanAccessRecorder.h"
 #include "Core/RHI/Vulkan/VulkanQueue.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
@@ -13,7 +13,7 @@ namespace PK
     struct VulkanAccessRecorder;
     struct VulkanSwapchain;
     struct VulkanStagingArena;
-    struct VulkanDescriptorArena;
+    struct VulkanDescriptorHeap;
     struct VulkanTimerArena;
     struct VulkanCommandBuffer;
 
@@ -31,10 +31,9 @@ namespace PK
     struct VulkanShaderCmd : public VulkanCmd
     {
         const VulkanPipeline* pipeline;
-        VkPipelineLayout pipelineLayout;
-        VkDeviceSize descriptorSetOffset;
-        VkDeviceSize pushConstantSize;
         void* pushConstants;
+        uint2 descriptorHeapOffsets;
+        uint32_t pushConstantSize;
     };
 
     struct VulkanRasterCmd : public VulkanShaderCmd
@@ -262,10 +261,13 @@ namespace PK
         void SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) final;
         void SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) final;
         void SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) final;
-        void SetBufferSet(NameID name, RHIBufferBindSet* bufferSet) final;
-        void SetTextureSet(NameID name, RHITextureBindSet* textureSet) final;
         void SetConstant(NameID name, const void* data, uint32_t size) final;
         void SetKeyword(NameID name, bool value) final;
+
+        uint32_t MakeResident(RHITexture* texture) final;
+        uint32_t MakeResident(RHIBuffer* buffer) final;
+        uint32_t MakeResident(const SamplerDescriptor& sampler) final;
+        uint3 GetResidentTextureSize(uint32_t bindlessIndex) final;
 
         RHIBuffer* AcquireStagingBuffer(size_t size) final;
         void ReleaseStagingBuffer(RHIBuffer* buffer) final;
@@ -327,6 +329,7 @@ namespace PK
         void ApplyDebugScopes(uint32_t queueIndex, struct VulkanGraphDebugScopes* scopes, uint32_t debugTarget, uint32_t timerTarget);
         void SubmitQueue(uint32_t queueIndex, VkSemaphore signal, struct VulkanGraphDebugScopes* scopes);
 
+        void AddResidencyBarrierPass();
         uint64_t AddBarrierPass(QueueType queue, bool isRaster);
         void RecordMemoryAccess(QueueType queue, const VulkanResourceView& view, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
         void RecordImageAccess(QueueType queue, const VulkanResourceView& view, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
@@ -340,7 +343,7 @@ namespace PK
         VulkanAccessRecorder m_accessRecorder;
         const VulkanDriver* m_driver;
         VulkanStagingArena* m_stagingArena;
-        VulkanDescriptorArena* m_descriptorArena;
+        VulkanDescriptorHeap* m_descriptorHeap;
         VulkanTimerArena* m_timerArena;
         mutable VulkanGraphScope m_scopes[PK_VK_MAX_GRAPH_SCOPES]{};
         uint64_t m_invocationCounter;
@@ -357,10 +360,11 @@ namespace PK
             VulkanRenderTarget renderTarget{};
 
             VulkanDescriptorBinding descriptors[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
-            const VulkanDescriptorSetLayout* descriptorLayout = nullptr;
             uint32_t descriptorCount = 0u;
             uint32_t dirtyFlags = 0u;
             uint32_t coalescingQueue = ~0u;
+            uint64_t residencyPass = 0ull;
+            uint2 descriptorHeapOffsets = PK_UINT2_ZERO;
 
             // Resolved state
             uint32_t vertexBufferCount = 0u;

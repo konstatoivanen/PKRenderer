@@ -1,9 +1,8 @@
 #include "PrecompiledHeader.h"
 #define VMA_IMPLEMENTATION
 #include <vulkan/vk_enum_string_helper.h>
-#include "Core/Base/Containers/FixedString.h"
-#include "Core/Base/Memory.h"
 #include "Core/CLI/Log.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "VulkanCommon.h"
 
 PFN_vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT = nullptr;
@@ -37,11 +36,6 @@ PFN_vkCmdDrawMeshTasksIndirectCount2EXT pkfn_vkCmdDrawMeshTasksIndirectCount2EXT
 PFN_vkAcquireFullScreenExclusiveModeEXT pkfn_vkAcquireFullScreenExclusiveModeEXT = nullptr;
 PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT = nullptr;
 PFN_vkWaitForPresentKHR pkfn_vkWaitForPresentKHR = nullptr;
-PFN_vkGetDescriptorSetLayoutSizeEXT pkfn_vkGetDescriptorSetLayoutSizeEXT = nullptr;
-PFN_vkGetDescriptorSetLayoutBindingOffsetEXT pkfn_vkGetDescriptorSetLayoutBindingOffsetEXT = nullptr;
-PFN_vkGetDescriptorEXT pkfn_vkGetDescriptorEXT = nullptr;
-PFN_vkCmdBindDescriptorBuffersEXT pkfn_vkCmdBindDescriptorBuffersEXT = nullptr;
-PFN_vkCmdSetDescriptorBufferOffsetsEXT pkfn_vkCmdSetDescriptorBufferOffsetsEXT = nullptr;
 PFN_vkCmdBindIndexBuffer3KHR pkfn_vkCmdBindIndexBuffer3KHR = nullptr;
 PFN_vkCmdBindVertexBuffers3KHR pkfn_vkCmdBindVertexBuffers3KHR = nullptr;
 PFN_vkCmdCopyImageToMemoryKHR pkfn_vkCmdCopyImageToMemoryKHR = nullptr;
@@ -53,6 +47,12 @@ PFN_vkCmdDrawIndexedIndirect2KHR pkfn_vkCmdDrawIndexedIndirect2KHR = nullptr;
 PFN_vkCmdDrawIndirect2KHR pkfn_vkCmdDrawIndirect2KHR = nullptr;
 PFN_vkCmdFillMemoryKHR pkfn_vkCmdFillMemoryKHR = nullptr;
 PFN_vkCmdUpdateMemoryKHR pkfn_vkCmdUpdateMemoryKHR = nullptr;
+
+PFN_vkWriteResourceDescriptorsEXT pkfn_vkWriteResourceDescriptorsEXT = nullptr;
+PFN_vkWriteSamplerDescriptorsEXT pkfn_vkWriteSamplerDescriptorsEXT = nullptr;
+PFN_vkCmdBindResourceHeapEXT pkfn_vkCmdBindResourceHeapEXT = nullptr;
+PFN_vkCmdBindSamplerHeapEXT pkfn_vkCmdBindSamplerHeapEXT = nullptr;
+PFN_vkCmdPushDataEXT pkfn_vkCmdPushDataEXT = nullptr;
 
 namespace PK
 {
@@ -75,8 +75,8 @@ namespace PK
         presentId.pNext = &presentWait;
         presentWait.pNext = &maximalReconvergence;
         maximalReconvergence.pNext = &quadControl;
-        quadControl.pNext = &descriptorBuffer;
-        descriptorBuffer.pNext = &unifiedLayout;
+        quadControl.pNext = &descriptorHeap;
+        descriptorHeap.pNext = &unifiedLayout;
         unifiedLayout.pNext = &deviceAddressCommands;
         deviceAddressCommands.pNext = &raytracingMaintenance1;
     }
@@ -284,17 +284,15 @@ namespace PK
             PK_TEST_FEATURE(presentWait.presentWait)
             PK_TEST_FEATURE(maximalReconvergence.shaderMaximalReconvergence)
             PK_TEST_FEATURE(quadControl.shaderQuadControl)
-            PK_TEST_FEATURE(descriptorBuffer.descriptorBuffer)
-            PK_TEST_FEATURE(descriptorBuffer.descriptorBufferCaptureReplay)
-            PK_TEST_FEATURE(descriptorBuffer.descriptorBufferImageLayoutIgnored)
-            PK_TEST_FEATURE(descriptorBuffer.descriptorBufferPushDescriptors)
+            PK_TEST_FEATURE(descriptorHeap.descriptorHeap)
+            PK_TEST_FEATURE(descriptorHeap.descriptorHeapCaptureReplay)
             PK_TEST_FEATURE(unifiedLayout.unifiedImageLayouts)
             PK_TEST_FEATURE(unifiedLayout.unifiedImageLayoutsVideo)
             PK_TEST_FEATURE(deviceAddressCommands.deviceAddressCommands)
             PK_TEST_FEATURE(raytracingMaintenance1.rayTracingMaintenance1)
             PK_TEST_FEATURE(raytracingMaintenance1.rayTracingPipelineTraceRaysIndirect2)
         }
-        
+
         #undef PK_TEST_FEATURE
 
         if (missingFeatures)
@@ -309,37 +307,6 @@ namespace PK
         PK_LOG_NEWLINE();
 
         return !missingFeatures;
-    }
-
-
-    VulkanImageView::VulkanImageView(VkDevice device, const VulkanImageViewCreateInfo& createInfo, const char* name) : device(device)
-    {
-        VkImageViewUsageCreateInfo usageInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO };
-        usageInfo.usage = createInfo.usage;
-
-        VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-        info.pNext = createInfo.usage != 0u ? &usageInfo : nullptr;
-        info.flags = 0;
-        info.image = createInfo.image;
-        info.viewType = createInfo.viewType;
-        info.format = createInfo.format;
-        info.components = createInfo.components;
-        info.subresourceRange = createInfo.subresourceRange;
-
-        VK_ASSERT_RESULT_CTX(vkCreateImageView(device, &info, nullptr, &view), "Failed to create an image view!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, name);
-
-        resourceView.image.view = view;
-        resourceView.image.image = createInfo.image;
-        resourceView.image.extent = createInfo.extent;
-        resourceView.image.range = createInfo.subresourceRange;
-        resourceView.image.sampler = VK_NULL_HANDLE;
-        resourceView.UpdateHashImage(Version());
-    }
-
-    VulkanImageView::~VulkanImageView()
-    {
-        vkDestroyImageView(device, view, nullptr);
     }
 
     VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name) : 
@@ -371,33 +338,6 @@ namespace PK
         vkDestroyPipeline(device, pipeline, nullptr);
     }
 
-
-    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& layoutCreateInfo, uint32_t maxPushConstantSize, const char* name) : 
-        device(device)
-    {
-        VK_ASSERT_RESULT_CTX(vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &layout), "Failed to create a descriptor set layout!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)layout, name);
-
-        VkPushConstantRange pushConstantRange{};
-        pushConstantRange.stageFlags = VK_SHADER_STAGE_ALL;
-        pushConstantRange.offset = 0u;
-        pushConstantRange.size = maxPushConstantSize;
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        pipelineLayoutInfo.setLayoutCount = 1u;
-        pipelineLayoutInfo.pSetLayouts = &layout;
-        pipelineLayoutInfo.pushConstantRangeCount = 1u;
-        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-        VK_ASSERT_RESULT_CTX(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout), "Failed to create a pipeline layout!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipelineLayout, FixedString64("%s.PipelineLayout", name).c_str());
-    }
-
-    VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
-    {
-        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-        vkDestroyDescriptorSetLayout(device, layout, nullptr);
-    }
 
     VulkanQueryPool::VulkanQueryPool(VkDevice device, VkQueryType type, uint32_t size) :
         device(device),
@@ -484,12 +424,6 @@ namespace PK
 
         pkfn_vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vkGetInstanceProcAddr(instance, "vkWaitForPresentKHR");
 
-        pkfn_vkGetDescriptorSetLayoutSizeEXT = (PFN_vkGetDescriptorSetLayoutSizeEXT)vkGetInstanceProcAddr(instance, "vkGetDescriptorSetLayoutSizeEXT");
-        pkfn_vkGetDescriptorSetLayoutBindingOffsetEXT = (PFN_vkGetDescriptorSetLayoutBindingOffsetEXT)vkGetInstanceProcAddr(instance, "vkGetDescriptorSetLayoutBindingOffsetEXT");
-        pkfn_vkGetDescriptorEXT = (PFN_vkGetDescriptorEXT)vkGetInstanceProcAddr(instance, "vkGetDescriptorEXT");
-        pkfn_vkCmdBindDescriptorBuffersEXT = (PFN_vkCmdBindDescriptorBuffersEXT)vkGetInstanceProcAddr(instance, "vkCmdBindDescriptorBuffersEXT");
-        pkfn_vkCmdSetDescriptorBufferOffsetsEXT = (PFN_vkCmdSetDescriptorBufferOffsetsEXT)vkGetInstanceProcAddr(instance, "vkCmdSetDescriptorBufferOffsetsEXT");
-
         pkfn_vkCmdBindIndexBuffer3KHR = (PFN_vkCmdBindIndexBuffer3KHR)vkGetInstanceProcAddr(instance, "vkCmdBindIndexBuffer3KHR");
         pkfn_vkCmdBindVertexBuffers3KHR = (PFN_vkCmdBindVertexBuffers3KHR)vkGetInstanceProcAddr(instance, "vkCmdBindVertexBuffers3KHR");
         pkfn_vkCmdCopyImageToMemoryKHR = (PFN_vkCmdCopyImageToMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyImageToMemoryKHR");
@@ -501,6 +435,12 @@ namespace PK
         pkfn_vkCmdDrawIndirect2KHR = (PFN_vkCmdDrawIndirect2KHR)vkGetInstanceProcAddr(instance, "vkCmdDrawIndirect2KHR");
         pkfn_vkCmdFillMemoryKHR = (PFN_vkCmdFillMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdFillMemoryKHR");
         pkfn_vkCmdUpdateMemoryKHR = (PFN_vkCmdUpdateMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdUpdateMemoryKHR");
+
+        pkfn_vkWriteResourceDescriptorsEXT = (PFN_vkWriteResourceDescriptorsEXT)vkGetInstanceProcAddr(instance, "vkWriteResourceDescriptorsEXT");
+        pkfn_vkWriteSamplerDescriptorsEXT = (PFN_vkWriteSamplerDescriptorsEXT)vkGetInstanceProcAddr(instance, "vkWriteSamplerDescriptorsEXT");
+        pkfn_vkCmdBindResourceHeapEXT = (PFN_vkCmdBindResourceHeapEXT)vkGetInstanceProcAddr(instance, "vkCmdBindResourceHeapEXT");
+        pkfn_vkCmdBindSamplerHeapEXT = (PFN_vkCmdBindSamplerHeapEXT)vkGetInstanceProcAddr(instance, "vkCmdBindSamplerHeapEXT");
+        pkfn_vkCmdPushDataEXT = (PFN_vkCmdPushDataEXT)vkGetInstanceProcAddr(instance, "vkCmdPushDataEXT");
     }
 
     
@@ -609,24 +549,40 @@ namespace PK
 
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device)
     {
-        VulkanPhysicalDeviceProperties returnProperties;
-        returnProperties.accelerationStructure = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR };
-        returnProperties.rayTracing = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
-        returnProperties.conservativeRasterization = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT };
-        returnProperties.subgroup = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES };
-        returnProperties.meshShader = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT };
-        returnProperties.descriptorBuffer = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT };
+        VulkanPhysicalDeviceProperties props;
+        props.accelerationStructure = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR };
+        props.rayTracing = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
+        props.conservativeRasterization = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT };
+        props.subgroup = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES };
+        props.meshShader = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT };
+        props.descriptorHeap = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_PROPERTIES_EXT };
         
         VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
-        deviceProperties.pNext = &returnProperties.accelerationStructure;
-        returnProperties.accelerationStructure.pNext = &returnProperties.rayTracing;
-        returnProperties.rayTracing.pNext = &returnProperties.conservativeRasterization;
-        returnProperties.conservativeRasterization.pNext = &returnProperties.subgroup;
-        returnProperties.subgroup.pNext = &returnProperties.meshShader;
-        returnProperties.meshShader.pNext = &returnProperties.descriptorBuffer;
+        deviceProperties.pNext = &props.accelerationStructure;
+        props.accelerationStructure.pNext = &props.rayTracing;
+        props.rayTracing.pNext = &props.conservativeRasterization;
+        props.conservativeRasterization.pNext = &props.subgroup;
+        props.subgroup.pNext = &props.meshShader;
+        props.meshShader.pNext = &props.descriptorHeap;
         vkGetPhysicalDeviceProperties2(device, &deviceProperties);
-        returnProperties.core = deviceProperties.properties;
-        return returnProperties;
+        props.core = deviceProperties.properties;
+
+        const auto& heap = props.descriptorHeap;
+        auto& heapDerived = props.descriptorHeapDerived;
+        heapDerived.imageStride = math::align(heap.imageDescriptorSize, heap.imageDescriptorAlignment);
+        heapDerived.bufferStride = math::align(heap.bufferDescriptorSize, heap.bufferDescriptorAlignment);
+        heapDerived.maxResourceStride = math::max(heapDerived.imageStride, heapDerived.bufferStride);
+        heapDerived.samplerStride = math::align(heap.samplerDescriptorSize, heap.samplerDescriptorAlignment);
+        heapDerived.resourceHeapOffset = math::align(heap.minResourceHeapReservedRange, heapDerived.maxResourceStride);
+        heapDerived.samplerHeapOffset = math::align(heap.minSamplerHeapReservedRange, heapDerived.samplerStride);
+        heapDerived.resourceHeapAlignment = heap.resourceHeapAlignment;
+        heapDerived.samplerHeapAlignment = heap.samplerHeapAlignment;
+        heapDerived.maxResourceHeapSize = heap.maxResourceHeapSize;
+        heapDerived.maxSamplerHeapSize = heap.maxSamplerHeapSize;
+
+        PK_FATAL_ASSERT(heapDerived.maxResourceStride <= PK_VK_MAX_RESOURCE_DESCRIPTOR_SIZE, "Device resource descriptor stride exceeds PK_VK_MAX_RESOURCE_DESCRIPTOR_SIZE!");
+        PK_FATAL_ASSERT(heapDerived.samplerStride <= PK_VK_MAX_SAMPLER_DESCRIPTOR_SIZE, "Device sampler descriptor stride exceeds PK_VK_MAX_SAMPLER_DESCRIPTOR_SIZE!");
+        return props;
     }
 
     VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen)
@@ -1016,50 +972,6 @@ namespace PK
                 case ElementType::Half3x3: return VK_FORMAT_R16G16B16_SFLOAT;
                 case ElementType::Half4x4: return VK_FORMAT_R16G16B16A16_SFLOAT;
                 default: return VK_FORMAT_UNDEFINED;
-            }
-        }
-
-        ElementType GetUniformFormat(VkFormat format)
-        {
-            switch (format)
-            {
-                case VK_FORMAT_R32_SFLOAT: return ElementType::Float;
-                case VK_FORMAT_R32G32_SFLOAT: return ElementType::Float2;
-                case VK_FORMAT_R32G32B32_SFLOAT: return ElementType::Float3;
-                case VK_FORMAT_R32G32B32A32_SFLOAT: return ElementType::Float4;
-                case VK_FORMAT_R64_SFLOAT: return ElementType::Double;
-                case VK_FORMAT_R64G64_SFLOAT: return ElementType::Double2;
-                case VK_FORMAT_R64G64B64_SFLOAT: return ElementType::Double3;
-                case VK_FORMAT_R64G64B64A64_SFLOAT: return ElementType::Double4;
-                case VK_FORMAT_R16_SFLOAT: return ElementType::Half;
-                case VK_FORMAT_R16G16_SFLOAT: return ElementType::Half2;
-                case VK_FORMAT_R16G16B16_SFLOAT: return ElementType::Half3;
-                case VK_FORMAT_R16G16B16A16_SFLOAT: return ElementType::Half4;
-                case VK_FORMAT_R32_SINT: return ElementType::Int;
-                case VK_FORMAT_R32G32_SINT: return ElementType::Int2;
-                case VK_FORMAT_R32G32B32_SINT: return ElementType::Int3;
-                case VK_FORMAT_R32G32B32A32_SINT: return ElementType::Int4;
-                case VK_FORMAT_R32_UINT: return ElementType::Uint;
-                case VK_FORMAT_R32G32_UINT: return ElementType::Uint2;
-                case VK_FORMAT_R32G32B32_UINT: return ElementType::Uint3;
-                case VK_FORMAT_R32G32B32A32_UINT: return ElementType::Uint4;
-                case VK_FORMAT_R16_SINT: return ElementType::Short;
-                case VK_FORMAT_R16G16_SINT: return ElementType::Short2;
-                case VK_FORMAT_R16G16B16_SINT: return ElementType::Short3;
-                case VK_FORMAT_R16G16B16A16_SINT: return ElementType::Short4;
-                case VK_FORMAT_R16_UINT: return ElementType::Ushort;
-                case VK_FORMAT_R16G16_UINT: return ElementType::Ushort2;
-                case VK_FORMAT_R16G16B16_UINT: return ElementType::Ushort3;
-                case VK_FORMAT_R16G16B16A16_UINT: return ElementType::Ushort4;
-                case VK_FORMAT_R64_SINT: return ElementType::Long;
-                case VK_FORMAT_R64G64_SINT: return ElementType::Long2;
-                case VK_FORMAT_R64G64B64_SINT: return ElementType::Long3;
-                case VK_FORMAT_R64G64B64A64_SINT: return ElementType::Long4;
-                case VK_FORMAT_R64_UINT: return ElementType::Ulong;
-                case VK_FORMAT_R64G64_UINT: return ElementType::Ulong2;
-                case VK_FORMAT_R64G64B64_UINT: return ElementType::Ulong3;
-                case VK_FORMAT_R64G64B64A64_UINT: return ElementType::Ulong4;
-                default: return ElementType::Invalid;
             }
         }
 
@@ -1664,7 +1576,7 @@ namespace PK
             switch (type)
             {
                 case ShaderResourceType::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER;
-                case ShaderResourceType::SamplerTexture: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                case ShaderResourceType::SamplerTexture:
                 case ShaderResourceType::Texture: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                 case ShaderResourceType::Image: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
                 case ShaderResourceType::ConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1672,22 +1584,6 @@ namespace PK
                 case ShaderResourceType::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
                 case ShaderResourceType::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
                 default: return VK_DESCRIPTOR_TYPE_MAX_ENUM;
-            }
-        }
-
-        ShaderResourceType GetShaderResourceType(VkDescriptorType type)
-        {
-            switch (type)
-            {
-                case VK_DESCRIPTOR_TYPE_SAMPLER: return ShaderResourceType::Sampler;
-                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: return ShaderResourceType::SamplerTexture;
-                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE: return ShaderResourceType::Texture;
-                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: return ShaderResourceType::Image;
-                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: return ShaderResourceType::ConstantBuffer;
-                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER: return ShaderResourceType::StorageBuffer;
-                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: return ShaderResourceType::InputAttachment;
-                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: return ShaderResourceType::AccelerationStructure;
-                default: return ShaderResourceType::Invalid;
             }
         }
 

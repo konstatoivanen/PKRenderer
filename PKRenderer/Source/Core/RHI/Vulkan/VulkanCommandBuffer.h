@@ -9,7 +9,7 @@ namespace PK
         inline bool IsRecording() const { return m_isRecording; }
         inline bool IsExecuting() const { return m_commandBuffer != VK_NULL_HANDLE; }
 
-        void SetPipelineState(const VulkanPipeline* pipeline, VkPipelineLayout pipelineLayout, VkDeviceSize descriptorSetOffset, const void* pushConstants, uint32_t pushConstantSize);
+        void SetPipelineState(const VulkanPipeline* pipeline, uint2 descriptorHeapOffsets, const void* pushConstants, uint32_t pushConstantSize);
         void SetRasterState(const VkRenderingInfo* renderingInfo, const VulkanDynamicState* dynamicState);
         void SetVertexBuffers(const VkBindVertexBuffer3InfoKHR* infos, uint32_t count);
         void SetIndexBuffer(const VkBindIndexBuffer3InfoKHR& info);
@@ -20,13 +20,21 @@ namespace PK
         void Barrier(const VkMemoryBarrier2* pMemoryBarrier, const VkImageMemoryBarrier2* pImageTransitions, uint32_t imageTransitionCount);
         void Barrier(const VkImageMemoryBarrier2* imageBarrier);
 
-        void QueueInitialize(VkCommandBuffer commandBuffer, VkQueueFlags queueFlags, VkPipelineStageFlags2 queueStageFlags, VkAccessFlags2 queueAccessFlags, VkDeviceAddress descriptorHeapAddress);
+        void QueueInitialize(
+            VkCommandBuffer commandBuffer,
+            VkQueueFlags queueFlags,
+            VkPipelineStageFlags2 queueStageFlags,
+            VkAccessFlags2 queueAccessFlags,
+            const VkBindHeapInfoEXT& resourceHeap,
+            const VkBindHeapInfoEXT& samplerHeap);
+
         bool QueueSubmit(uint64_t timelineIndex);
         bool QueueFinalize(uint64_t resolvedTimelineIndex);
 
     private:
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
-        VkDeviceAddress m_descriptorHeapAddress = 0ull;
+        VkBindHeapInfoEXT m_resourceHeap{};
+        VkBindHeapInfoEXT m_samplerHeap{};
         VkPipelineStageFlags2 m_queueStageFlags = 0ull;
         VkAccessFlags2 m_queueAccessFlags = 0ull;
         VkQueueFlags m_queueFlags = 0ull;
@@ -34,7 +42,7 @@ namespace PK
 
         // Shader cmd state
         const VulkanPipeline* m_pipeline = nullptr;
-        VkDeviceSize m_descriptorSetOffset = ~0ull;
+        uint2 m_descriptorHeapOffsets = { ~0u, ~0u };
         const void* m_pushConstants = nullptr;
 
         // Raster cmd state

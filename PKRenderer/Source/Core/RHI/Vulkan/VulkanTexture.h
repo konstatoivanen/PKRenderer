@@ -6,18 +6,16 @@ namespace PK
 {
     struct VulkanDriver;
 
-    struct VulkanTexture : public RHITexture
+    struct VulkanTexture : public RHITexture, public VersionedObject
     {
         VulkanTexture(struct VulkanDriver* driver, const TextureDescriptor& descriptor, const char* name);
         ~VulkanTexture();
-        
+
         void SetSampler(const SamplerDescriptor& sampler) final;
         const TextureDescriptor& GetDescriptor() const final { return m_descriptor; }
         const char* GetDebugName() const final { return m_name.c_str(); }
-        const void* GetNativeView(const TextureViewRange& range, TextureViewMode viewMode);
-        
-        inline VkFormat GetNativeFormat() const { return m_format; }
-        inline VkSampleCountFlagBits GetNativeSamples() const { return VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples); }
+        const void* GetNativeView() const final { return &m_defaultView; }
+        VulkanResourceView GetResourceView(const TextureViewRange& range, TextureViewMode viewMode) const;
 
     private:
         TextureViewRange NormalizeViewRange(const TextureViewRange& range) const;
@@ -27,9 +25,9 @@ namespace PK
         const VkFormat m_format;
         const VkFormat m_formatAlias;
         TextureDescriptor m_descriptor;
-        VmaAllocation m_memory;
-        VkImage m_image;
-        VulkanResourceView m_rawView;
-        LinkedList<VulkanImageView, uint64_t> m_firstView = nullptr;
+        uint16_t m_samplerIndex = 0u;
+        VmaAllocation m_memory = nullptr;
+        VkImage m_image = VK_NULL_HANDLE;
+        VulkanResourceView m_defaultView{};
     };
 }

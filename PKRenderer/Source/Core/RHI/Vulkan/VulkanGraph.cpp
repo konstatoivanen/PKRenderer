@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
-#include "Core/RHI/Vulkan/VulkanBindSet.h"
 #include "Core/RHI/Vulkan/VulkanSwapchain.h"
 #include "Core/RHI/Vulkan/VulkanAccelerationStructure.h"
 #include "Core/RHI/Vulkan/VulkanAccessRecorder.h"
@@ -31,12 +30,12 @@ namespace PK
         uint32_t queueIndex = 0u;
     };
 
-    VulkanGraph::VulkanGraph(const VulkanDriver* driver) : 
+    VulkanGraph::VulkanGraph(const VulkanDriver* driver) :
         m_globalResources(PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE, PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT),
         m_accessRecorder(),
         m_driver(driver),
         m_stagingArena(driver->stagingArena),
-        m_descriptorArena(driver->descriptorArena),
+        m_descriptorHeap(driver->descriptorHeap),
         m_timerArena(driver->timerArena),
         m_invocationCounter(0ull)
     {
@@ -55,17 +54,34 @@ namespace PK
     m_globalResources.Set(name, handles, (uint32_t)count)                
 
     void VulkanGraph::SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<const VulkanBuffer*>(buffers[i])->GetResourceView(ranges[i]), count); }
-    void VulkanGraph::SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, *textures[i]->GetNativeView<VulkanResourceView>(ranges[i], TextureViewMode::SRV), count); }
-    void VulkanGraph::SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, *images[i]->GetNativeView<VulkanResourceView>(ranges[i], TextureViewMode::UAV), count); }
-    void VulkanGraph::SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) { PK_VK_BIND_VIEWS(name, m_driver->samplerCache->GetResourceView(samplers[i]), count); }
+    void VulkanGraph::SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<const VulkanTexture*>(textures[i])->GetResourceView(ranges[i], TextureViewMode::SRV), count); }
+    void VulkanGraph::SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<const VulkanTexture*>(images[i])->GetResourceView(ranges[i], TextureViewMode::UAV), count); }
+    void VulkanGraph::SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) { PK_VK_BIND_VIEWS(name, m_descriptorHeap->GetSamplerView(samplers[i]), count); }
     void VulkanGraph::SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<VulkanAccelerationStructure*>(structures[i])->GetResourceView(), count); }
-    void VulkanGraph::SetBufferSet(NameID name, RHIBufferBindSet* bufferArray) { m_globalResources.Set(name, static_cast<const VulkanBindSet*>(bufferArray)); }
-    void VulkanGraph::SetTextureSet(NameID name, RHITextureBindSet* textureArray) { m_globalResources.Set(name, static_cast<const VulkanBindSet*>(textureArray)); }
     void VulkanGraph::SetConstant(NameID name, const void* data, uint32_t size) { m_globalResources.Set<char>(name, static_cast<const char*>(data), size); }
     void VulkanGraph::SetKeyword(NameID name, bool value) { m_globalResources.Set<bool>(name, value); }
 
     #undef PK_VK_BIND_VIEWS
 
+    uint32_t VulkanGraph::MakeResident(RHITexture* texture)
+    {
+        const auto& view = *texture->GetNativeView<VulkanResourceView>();
+        AddResidencyBarrierPass();
+        RecordImageAccess(QueueType::EnumCount, view, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT);
+        return m_descriptorHeap->GetBindlessIndex(view, ShaderResourceType::Texture);
+    }
+
+    uint32_t VulkanGraph::MakeResident(RHIBuffer* buffer)
+    {
+        const auto& view = *buffer->GetNativeView<VulkanResourceView>();
+        AddResidencyBarrierPass();
+        RecordMemoryAccess(QueueType::EnumCount, view, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_UNIFORM_READ_BIT);
+        return m_descriptorHeap->GetBindlessIndex(view, ShaderResourceType::StorageBuffer);
+    }
+
+    uint32_t VulkanGraph::MakeResident(const SamplerDescriptor& sampler) { return m_descriptorHeap->GetSamplerIndex(sampler); }
+    uint3 VulkanGraph::GetResidentTextureSize(uint32_t bindlessIndex) { return m_descriptorHeap->GetTextureSize(bindlessIndex); }
+    
     RHIBuffer* VulkanGraph::AcquireStagingBuffer(size_t size) { return m_stagingArena->BeginWrite(size); }
     void VulkanGraph::ReleaseStagingBuffer(RHIBuffer* buffer) { m_stagingArena->EndWrite(buffer); }
 
@@ -123,8 +139,8 @@ namespace PK
             const auto isDepth = VulkanEnumConvert::IsDepthFormat(format);
 
             auto* attachment = isDepth ? &renderTarget.depth : (renderTarget.colors + renderTarget.colorCount++);
-            attachment->target = *binding->target->GetNativeView<VulkanResourceView>(binding->targetRange, TextureViewMode::RTV);
-            attachment->resolve = binding->resolve ? *binding->resolve->GetNativeView<VulkanResourceView>(binding->resolveRange, TextureViewMode::RTV) : VulkanResourceView{};
+            attachment->target = static_cast<const VulkanTexture*>(binding->target)->GetResourceView(binding->targetRange, TextureViewMode::RTV);
+            attachment->resolve = binding->resolve ? static_cast<const VulkanTexture*>(binding->resolve)->GetResourceView(binding->resolveRange, TextureViewMode::RTV) : VulkanResourceView{};
             attachment->format = format;
             attachment->samples = samples;
             attachment->loadOp = binding->loadOp;
@@ -287,7 +303,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDraw(*ctx->cmb, cmd->vertexCount, cmd->instanceCount, cmd->firstVertex, cmd->firstInstance);
         });
@@ -305,7 +321,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDrawIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
@@ -325,7 +341,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
             vkCmdDrawIndexed(*ctx->cmb, cmd->indexCount, cmd->instanceCount, cmd->firstIndex, cmd->vertexOffset, cmd->firstInstance);
@@ -345,7 +361,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
             vkCmdDrawIndexedIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
@@ -366,7 +382,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksEXT(*ctx->cmb, cmd->dimensions.x, cmd->dimensions.y, cmd->dimensions.z);
         });
 
@@ -380,7 +396,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksIndirect2EXT(*ctx->cmb, &cmd->indirectInfo);
         });
 
@@ -399,7 +415,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCountCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksIndirectCount2EXT(*ctx->cmb, &cmd->indirectCountInfo);
         });
 
@@ -421,7 +437,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchCmd* cmd)
         {
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDispatch(*ctx->cmb, cmd->groupCounts.x, cmd->groupCounts.y, cmd->groupCounts.z);
         });
 
@@ -437,7 +453,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchIndirectCmd* cmd)
         {
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDispatchIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
 
@@ -454,7 +470,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchRaysCmd* cmd)
         {
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->pipelineLayout, cmd->descriptorSetOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdTraceRaysKHR(*ctx->cmb, &cmd->addressRayGen, &cmd->addressMiss, &cmd->addressHit, &cmd->addressCallable, cmd->dimensions.x, cmd->dimensions.y, cmd->dimensions.z);
         });
 
@@ -501,7 +517,7 @@ namespace PK
             vkCmdBlitImage(*ctx->cmb, cmd->src, VK_IMAGE_LAYOUT_GENERAL, handle->image.image, VK_IMAGE_LAYOUT_GENERAL, 1, &cmd->region, cmd->filter);
         });
 
-        const auto& handle = src->GetNativeView<VulkanResourceView>({}, TextureViewMode::RAW);
+        const auto* view = src->GetNativeView<VulkanResourceView>();
         auto srcRes = src->GetResolution();
         auto dstRes = dst->GetResolution();
         auto minres = math::min(srcRes, dstRes);
@@ -510,16 +526,16 @@ namespace PK
         auto srcMax = int3(srcRes) - (diff - srcMin);
 
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->src = handle->image.image;
+        cmd->src = view->image.image;
         cmd->dstSwapchain = static_cast<VulkanSwapchain*>(dst);
-        cmd->region.srcSubresource = { (uint32_t)handle->image.range.aspectMask, 0u, 0u, 1u };
+        cmd->region.srcSubresource = { (uint32_t)view->image.range.aspectMask, 0u, 0u, 1u };
         cmd->region.srcOffsets[0] = { srcMin.x, srcMax.y, srcMin.z };
         cmd->region.srcOffsets[1] = { srcMax.x, srcMin.y, srcMax.z };
         cmd->region.dstOffsets[0] = { 0, 0, 0 };
         cmd->region.dstOffsets[1] = { (int)dstRes.x, (int)dstRes.y, (int)dstRes.z };
         cmd->filter = VulkanEnumConvert::GetFilterMode(filter);
 
-        RecordImageAccess(queue, *handle, VK_PIPELINE_STAGE_2_BLIT_BIT_KHR, VK_ACCESS_2_TRANSFER_READ_BIT);
+        RecordImageAccess(queue, *view, VK_PIPELINE_STAGE_2_BLIT_BIT_KHR, VK_ACCESS_2_TRANSFER_READ_BIT);
     }
 
     void VulkanGraph::Blit(QueueType queue, RHISwapchain* src, RHIBuffer* dst)
@@ -619,27 +635,27 @@ namespace PK
             }
         });
 
-        auto srcView = src->GetNativeView<VulkanResourceView>(srcRange, TextureViewMode::RAW);
-        auto dstView = dst->GetNativeView<VulkanResourceView>(dstRange, TextureViewMode::RAW);
-        auto srcLayers = math::min(srcView->image.range.layerCount, src->GetLayers());
-        auto dstLayers = math::min(dstView->image.range.layerCount, dst->GetLayers());
+        auto srcView = static_cast<VulkanTexture*>(src)->GetResourceView(srcRange, TextureViewMode::RAW);
+        auto dstView = static_cast<VulkanTexture*>(dst)->GetResourceView(dstRange, TextureViewMode::RAW);
+        auto srcLayers = math::min(srcView.image.range.layerCount, src->GetLayers());
+        auto dstLayers = math::min(dstView.image.range.layerCount, dst->GetLayers());
 
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->src = srcView->image.image;
-        cmd->dst = dstView->image.image;
-        cmd->srcFormat = VulkanEnumConvert::GetFormat(src->GetDescriptor().format);
-        cmd->dstFormat = VulkanEnumConvert::GetFormat(dst->GetDescriptor().format);
-        cmd->srcSamples = VulkanEnumConvert::GetSampleCountFlags(src->GetDescriptor().samples);
-        cmd->dstSamples = VulkanEnumConvert::GetSampleCountFlags(dst->GetDescriptor().samples);
-        cmd->region.srcSubresource = { (uint32_t)srcView->image.range.aspectMask, srcView->image.range.baseMipLevel, srcView->image.range.baseArrayLayer, 0u };
-        cmd->region.dstSubresource = { (uint32_t)srcView->image.range.aspectMask, dstView->image.range.baseMipLevel, dstView->image.range.baseArrayLayer, 0u };
-        cmd->region.srcOffsets[1] = { (int)srcView->image.extent.width, (int)srcView->image.extent.height, (int)srcView->image.extent.depth };
-        cmd->region.dstOffsets[1] = { (int)dstView->image.extent.width, (int)dstView->image.extent.height, (int)dstView->image.extent.depth };
+        cmd->src = srcView.image.image;
+        cmd->dst = dstView.image.image;
+        cmd->srcFormat = srcView.image.format;
+        cmd->dstFormat = dstView.image.format;
+        cmd->srcSamples = srcView.image.samples;
+        cmd->dstSamples = dstView.image.samples;
+        cmd->region.srcSubresource = { (uint32_t)srcView.image.range.aspectMask, srcView.image.range.baseMipLevel, srcView.image.range.baseArrayLayer, 0u };
+        cmd->region.dstSubresource = { (uint32_t)srcView.image.range.aspectMask, dstView.image.range.baseMipLevel, dstView.image.range.baseArrayLayer, 0u };
+        cmd->region.srcOffsets[1] = { (int)srcView.image.extent.width, (int)srcView.image.extent.height, (int)srcView.image.extent.depth };
+        cmd->region.dstOffsets[1] = { (int)dstView.image.extent.width, (int)dstView.image.extent.height, (int)dstView.image.extent.depth };
         cmd->region.dstSubresource.layerCount = cmd->region.srcSubresource.layerCount = math::min(srcLayers, dstLayers);
         cmd->filter = VulkanEnumConvert::GetFilterMode(filter);
         
-        RecordImageAccess(queue, *srcView, VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT);
-        RecordImageAccess(queue, *dstView, VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        RecordImageAccess(queue, srcView, VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT);
+        RecordImageAccess(queue, dstView, VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
         EndDebugScope();
     }
 
@@ -672,12 +688,12 @@ namespace PK
             }
         });
 
-        auto handle = dst->GetNativeView<VulkanResourceView>(range, TextureViewMode::RAW);
+        auto view = static_cast<VulkanTexture*>(dst)->GetResourceView(range, TextureViewMode::RAW);
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->image = handle->image.image;
-        cmd->range = handle->image.range;
+        cmd->image = view.image.image;
+        cmd->range = view.image.range;
         cmd->clearValue = VulkanEnumConvert::GetClearValue(value);
-        RecordImageAccess(queue, *handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT);
+        RecordImageAccess(queue, view, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT);
     }
 
     void VulkanGraph::UpdateBuffer(QueueType queue, RHIBuffer* dst, size_t offset, size_t size, const void* data)
@@ -746,11 +762,11 @@ namespace PK
         resourceRange.levels = resourceRange.levels - resourceRange.level;
         resourceRange.layers = resourceRange.layers - resourceRange.layer;
 
-        auto srcHandle = buffer->GetNativeView<VulkanResourceView>();
-        auto dstHandle = texture->GetNativeView<VulkanResourceView>(resourceRange, TextureViewMode::RAW);
+        auto srcView = buffer->GetNativeView<VulkanResourceView>();
+        auto dstView = static_cast<VulkanTexture*>(texture)->GetResourceView(resourceRange, TextureViewMode::RAW);
 
         cmd->passIndex = AddBarrierPass(queue, false);
-        cmd->dst = dstHandle->image.image;
+        cmd->dst = dstView.image.image;
         cmd->regions = Allocate<VkDeviceMemoryImageCopyKHR>(regionCount);
         cmd->regionCount = regionCount;
 
@@ -768,12 +784,12 @@ namespace PK
 
             cmd->regions[i].sType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_IMAGE_COPY_KHR;
             cmd->regions[i].pNext = nullptr;
-            cmd->regions[i].addressRange.address = srcHandle->memory.address + region.bufferOffset;
+            cmd->regions[i].addressRange.address = srcView->memory.address + region.bufferOffset;
             cmd->regions[i].addressRange.size = totalBytes;
             cmd->regions[i].addressFlags = PK_VK_ADDRESS_FLAGS;
             cmd->regions[i].addressRowLength = 0u;
             cmd->regions[i].addressImageHeight = 0u;
-            cmd->regions[i].imageSubresource.aspectMask = dstHandle->image.range.aspectMask;
+            cmd->regions[i].imageSubresource.aspectMask = dstView.image.range.aspectMask;
             cmd->regions[i].imageSubresource.mipLevel = region.level;
             cmd->regions[i].imageSubresource.baseArrayLayer = region.layer;
             cmd->regions[i].imageSubresource.layerCount = region.layers;
@@ -787,7 +803,7 @@ namespace PK
         }
         
         // Assume always staging source?!?
-        RecordImageAccess(queue, *dstHandle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        RecordImageAccess(queue, dstView, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
     }
 
     RHIAccelerationStructureBuilder* VulkanGraph::BeginAccelerationStructureWrite(RHIAccelerationStructure* structure, size_t instanceLimit)
@@ -1166,6 +1182,8 @@ namespace PK
     void VulkanGraph::Execute()
     {
         auto queues = m_driver->queues.get();
+        queues->SetDescriptorHeaps(m_descriptorHeap->GetResourceHeapInfo(), m_descriptorHeap->GetSamplerHeapInfo());
+
         auto queueCount = queues->GetQueueCount();
         auto& scope = EndGraph();
         m_timerArena->BeginTimeline();
@@ -1294,24 +1312,23 @@ namespace PK
             {
                 m_timerArena->FlushTimeline(m_scopes[i].timerTimelineIndex);
                 m_stagingArena->FreeRange(m_scopes[i].stagingRangeIndex);
-                m_descriptorArena->FreeRange(m_scopes[i].descriptorRangeIndex);
+                m_descriptorHeap->FreeRange(m_scopes[i].descriptorRangeIndex);
                 m_scopes[i].fence.Invalidate();
             }
         }
 
         m_pipelineState = PipelineState();
         m_stagingArena->BeginRange();
-        m_descriptorArena->BeginRange();
+        m_descriptorHeap->BeginRange();
         m_accessRecorder.ResetPasses(completedPassCounter);
         RHIGraph::Clear();
-
     }
 
     VulkanGraphScope& VulkanGraph::EndGraph()
     {
         auto& scope = m_scopes[m_invocationCounter % PK_VK_MAX_GRAPH_SCOPES];
         scope.stagingRangeIndex = m_stagingArena->EndRange();
-        scope.descriptorRangeIndex = m_descriptorArena->EndRange();
+        scope.descriptorRangeIndex = m_descriptorHeap->EndRange();
         scope.lastPassCounter = m_accessRecorder.GetPassCounter();
         return scope;
     }
@@ -1380,6 +1397,14 @@ namespace PK
     }
 
 
+    void VulkanGraph::AddResidencyBarrierPass()
+    {
+        if ((m_pipelineState.coalescingQueue == ~0u || (m_pipelineState.dirtyFlags & STATE_DIRTY_RENDERTARGET) != 0u) && m_pipelineState.residencyPass == 0ull)
+        {
+            m_pipelineState.residencyPass = m_accessRecorder.AddPass();
+        }
+    }
+
     uint64_t VulkanGraph::AddBarrierPass(QueueType queue, bool isRaster)
     {
         auto queueIndex = m_driver->queues->GetQueueIndex(queue);
@@ -1387,38 +1412,44 @@ namespace PK
         if (!isRaster)
         {
             m_pipelineState.coalescingQueue = ~0u;
-            return m_accessRecorder.AddPass();
+            const auto pass = m_pipelineState.residencyPass ? m_pipelineState.residencyPass : m_accessRecorder.AddPass();
+            m_pipelineState.residencyPass = 0ull;
+            return pass;
         }
 
         if (m_pipelineState.coalescingQueue != queueIndex || (m_pipelineState.dirtyFlags & STATE_DIRTY_RENDERTARGET) != 0u)
         {
             m_pipelineState.coalescingQueue = queueIndex;
-            return m_accessRecorder.AddPass();
+            const auto pass = m_pipelineState.residencyPass ? m_pipelineState.residencyPass : m_accessRecorder.AddPass();
+            m_pipelineState.residencyPass = 0ull;
+            return pass;
         }
-     
+
         return 0u;
     }
 
     void VulkanGraph::RecordMemoryAccess(QueueType queue, const VulkanResourceView& view, VkPipelineStageFlags2 stage, VkAccessFlags2 access)
     {
-        VulkanAccessRecord record;
+        VulkanAccessRecord record{};
         record.memory = view.memory;
         record.stage = stage;
         record.access = access;
-        record.queue = m_driver->queues->GetQueueIndex(queue);
+        record.isLocked = queue == QueueType::EnumCount;
+        record.queueMask = record.isLocked ? 0xFFFFu : (uint16_t)(1u << m_driver->queues->GetQueueIndex(queue));
         m_accessRecorder.RecordMemoryAccess(record);
     }
 
     void VulkanGraph::RecordImageAccess(QueueType queue, const VulkanResourceView& view, VkPipelineStageFlags2 stage, VkAccessFlags2 access)
     {
-        VulkanAccessRecord record;
+        VulkanAccessRecord record{};
         record.image.baseMipLevel = view.image.range.baseMipLevel;
         record.image.levelCount = view.image.range.levelCount;
         record.image.baseArrayLayer = view.image.range.baseArrayLayer;
         record.image.layerCount = view.image.range.layerCount;
         record.stage = stage;
         record.access = access;
-        record.queue = m_driver->queues->GetQueueIndex(queue);
+        record.isLocked = queue == QueueType::EnumCount;
+        record.queueMask = record.isLocked ? 0xFFFFu : (uint16_t)(1u << m_driver->queues->GetQueueIndex(queue));
         m_accessRecorder.RecordImageAccess(view.image.image, record);
     }
 
@@ -1431,41 +1462,26 @@ namespace PK
 
         PK_DEBUG_FATAL_ASSERT(shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
-        const auto* descriptorLayout = shader->GetDescriptorSetLayout();
         const auto& resourceLayout = shader->GetResourceLayout();
-        // Stupid temp workaround
         const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags(shader->GetStageFlags());
 
         for (auto index = 0u; index < resourceLayout.GetCount(); ++index)
         {
             const auto& element = resourceLayout[index];
-            const auto access = element.writeMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
-            const auto isVariableSize = element.count == PK_RHI_MAX_UNBOUNDED_SIZE;
+            const auto access = element.writeMask != 0u ? VK_ACCESS_2_SHADER_WRITE_BIT : VK_ACCESS_2_NONE;
 
             auto& descriptor = state->descriptors[index];
             const VulkanResourceView* views = nullptr;
-            uint64_t hash = 0ull;
-            uint32_t count = 0u;
+            auto size = 0ull;
 
-            if (isVariableSize)
-            {
-                const VulkanBindSet* handleSet = nullptr;
-                PK_FATAL_ASSERT(resources->TryGet<const VulkanBindSet*>(element.name, handleSet), "Descriptors '%s' not bound!", element.name.c_str());
-                views = handleSet->GetViews(&hash, &count);
-            }
-            else
-            {
-                auto size = 0ull;
-                PK_FATAL_ASSERT(resources->TryGet<VulkanResourceView>(element.name, &views, &size), "Descriptor '%s' not bound!", element.name.c_str());
-                auto storedCount = size / sizeof(VulkanResourceView);
+            PK_FATAL_ASSERT(resources->TryGet<VulkanResourceView>(element.name, &views, &size), "Descriptor '%s' not bound!", element.name.c_str());
+            
+            const auto count = (uint32_t)(size / sizeof(VulkanResourceView));
+            PK_FATAL_ASSERT(count == element.count, "Descriptor '%s' bound array size '%u' doesn't match size '%u' in shader", element.name.c_str(), count, element.count);
 
-                PK_FATAL_ASSERT(storedCount == element.count, "Descriptor '%s' bound array size '%u' doesn't match size '%u' in shader", element.name.c_str(), storedCount, element.count);
-                hash = views[0].hash;
-                count = element.count;
-            }
+            auto hash = views[0].hash;
 
-            // Hash fixed size array.
-            for (auto i = 1u; i < count && !isVariableSize; ++i)
+            for (auto i = 1u; i < count; ++i)
             {
                 hash = Hash::Mix(hash, views[i].hash);
             }
@@ -1477,12 +1493,13 @@ namespace PK
                 descriptor.count = (uint16_t)count;
                 descriptor.type = element.type;
                 descriptor.hash = hash;
-                descriptor.isVariableSize = isVariableSize;
             }
 
             for (auto i = 0u; i < count; ++i)
             {
-                if (descriptor.type == ShaderResourceType::SamplerTexture || descriptor.type == ShaderResourceType::Texture || descriptor.type == ShaderResourceType::Image)
+                if (descriptor.type == ShaderResourceType::SamplerTexture || 
+                    descriptor.type == ShaderResourceType::Texture || 
+                    descriptor.type == ShaderResourceType::Image)
                 {
                     RecordImageAccess(queue, views[i], layoutStageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
                 }
@@ -1504,16 +1521,15 @@ namespace PK
             }
         }
 
-        if (state->descriptorCount != resourceLayout.GetCount() || state->descriptorLayout != descriptorLayout)
+        if (state->descriptorCount != resourceLayout.GetCount() || (state->dirtyFlags & STATE_DIRTY_SHADER) != 0u)
         {
             state->dirtyFlags |= STATE_DIRTY_DESCRIPTORS;
             state->descriptorCount = (uint32_t)resourceLayout.GetCount();
-            state->descriptorLayout = descriptorLayout;
         }
 
         if (state->dirtyFlags & STATE_DIRTY_DESCRIPTORS)
         {
-            state->descriptorSetOffset = m_descriptorArena->AllocateDescriptorSet(descriptorLayout, state->descriptors, state->descriptorCount);
+            state->descriptorHeapOffsets = m_descriptorHeap->AllocateDescriptorSet(shader.value, state->descriptors, state->descriptorCount);
         }
 
         if (state->dirtyFlags & STATE_DIRTY_PIPELINE)
@@ -1521,11 +1537,10 @@ namespace PK
             state->pipeline = m_driver->pipelineCache->GetPipeline(state->pipelineKey);
         }
 
-        state->dirtyFlags &= ~(STATE_DIRTY_PIPELINE | STATE_DIRTY_DESCRIPTORS);
+        state->dirtyFlags &= ~(STATE_DIRTY_PIPELINE | STATE_DIRTY_DESCRIPTORS | STATE_DIRTY_SHADER);
 
         cmd->pipeline = state->pipeline;
-        cmd->pipelineLayout = shader->GetDescriptorSetLayout()->pipelineLayout;
-        cmd->descriptorSetOffset = state->descriptorSetOffset;
+        cmd->descriptorHeapOffsets = state->descriptorHeapOffsets;
         cmd->pushConstantSize = shader->GetPushConstantSize();
         cmd->pushConstants = Allocate<uint8_t>(cmd->pushConstantSize);
 
@@ -1584,10 +1599,10 @@ namespace PK
                     auto& attachment = colorAttachments[i];
                     attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
                     attachment.pNext = nullptr;
-                    attachment.imageView = color.target.image.view;
+                    attachment.imageView = m_descriptorHeap->GetRenderTargetView(color.target);
                     attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                     attachment.resolveMode = color.resolveMode;
-                    attachment.resolveImageView = hasResolve ? color.resolve.image.view : VK_NULL_HANDLE;
+                    attachment.resolveImageView = hasResolve ? m_descriptorHeap->GetRenderTargetView(color.resolve) : VK_NULL_HANDLE;
                     attachment.resolveImageLayout = hasResolve ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED;
                     attachment.loadOp = VulkanEnumConvert::GetLoadOp(color.loadOp);
                     attachment.storeOp = VulkanEnumConvert::GetStoreOp(color.storeOp);
@@ -1624,10 +1639,10 @@ namespace PK
 
                 depthAttachment->sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
                 depthAttachment->pNext = nullptr;
-                depthAttachment->imageView = depth.target.image.view;
+                depthAttachment->imageView = m_descriptorHeap->GetRenderTargetView(depth.target);
                 depthAttachment->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                 depthAttachment->resolveMode = depth.resolveMode;
-                depthAttachment->resolveImageView = hasResolve ? depth.resolve.image.view : VK_NULL_HANDLE;
+                depthAttachment->resolveImageView = hasResolve ? m_descriptorHeap->GetRenderTargetView(depth.resolve) : VK_NULL_HANDLE;
                 depthAttachment->resolveImageLayout = hasResolve ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED;
                 depthAttachment->loadOp = VulkanEnumConvert::GetLoadOp(depth.loadOp);
                 depthAttachment->storeOp = VulkanEnumConvert::GetStoreOp(depth.storeOp);
@@ -1681,7 +1696,7 @@ namespace PK
         const auto& vertexLayout = shader->GetVertexLayout();
         const bool isDirtyShader = state->dirtyFlags & STATE_DIRTY_SHADER;
         const bool isDirtyBuffers = state->dirtyFlags & STATE_DIRTY_VERTEXBUFFERS;
-        state->dirtyFlags &= ~(STATE_DIRTY_VERTEXBUFFERS | STATE_DIRTY_SHADER);
+        state->dirtyFlags &= ~STATE_DIRTY_VERTEXBUFFERS;
 
         if (isDirtyShader)
         {

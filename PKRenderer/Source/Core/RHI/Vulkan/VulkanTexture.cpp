@@ -4,17 +4,6 @@
 
 namespace PK
 {
-    constexpr static uint64_t GetViewKey(const TextureViewRange& range, TextureViewMode mode)
-    {
-        uint64_t h = 0ull;
-        h |= range.level & 0xFFull;
-        h |= (range.levels & 0xFFull) << 8ull;
-        h |= (uint64_t)range.layer << 16ull;
-        h |= (uint64_t)range.layers << 32ull;
-        h |= (uint64_t)mode << 48ull;
-        return h;
-    }
-
     VulkanTexture::VulkanTexture(struct VulkanDriver* driver, const TextureDescriptor& descriptor, const char* name) :
         m_name(name),
         m_driver(driver),
@@ -69,7 +58,7 @@ namespace PK
         if ((descriptor.usage & TextureUsage::Sample) != 0)    imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
         if ((descriptor.usage & TextureUsage::Input) != 0)     imageCreateInfo.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
         if ((descriptor.usage & TextureUsage::Storage) != 0)   imageCreateInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-
+        
         VmaAllocationCreateInfo allocationCreateInfo{};
         allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
@@ -82,21 +71,15 @@ namespace PK
 
         VK_ASSERT_RESULT_CTX(vmaCreateImage(m_driver->allocator, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_memory, nullptr), "Failed to create a VkImage!");
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)m_image, name);
+
+        m_samplerIndex = m_driver->descriptorHeap->GetSamplerIndex(m_descriptor.sampler);
+        m_defaultView = GetResourceView({}, TextureViewMode::SRV);
         m_driver->graph->RegisterImage(m_image, VulkanEnumConvert::GetFormatAspect(m_format));
     }
 
     VulkanTexture::~VulkanTexture()
     {
         auto fence = m_driver->graph->GetFenceRef();
-
-        for (auto view : m_firstView)
-        {
-            m_driver->disposer->Dispose(&m_driver->imageViewPool, view, [](void* c, void* v)
-            {
-                static_cast<decltype(m_driver->imageViewPool)*>(c)->Delete(static_cast<VulkanImageView*>(v));
-            },
-            fence);
-        }
 
         m_driver->disposer->Dispose(m_driver->device, m_image, [](void* c, void* v)
         {
@@ -111,7 +94,6 @@ namespace PK
         fence);
 
         m_driver->graph->UnregisterImage(m_image);
-        m_firstView = nullptr;
     }
 
     void VulkanTexture::SetSampler(const SamplerDescriptor& sampler)
@@ -119,67 +101,32 @@ namespace PK
         if (m_descriptor.sampler != sampler)
         {
             m_descriptor.sampler = sampler;
-
-            for (auto& view : m_firstView)
-            {
-                if (view->resourceView.image.sampler != VK_NULL_HANDLE)
-                {
-                    view->resourceView.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
-                    view->resourceView.UpdateHashImage(view->Version());
-                }
-            }
+            m_samplerIndex = m_driver->descriptorHeap->GetSamplerIndex(m_descriptor.sampler);
+            m_defaultView.image.samplerIndex = m_samplerIndex;
+            m_defaultView.UpdateHashImage(Version());
         }
     }
 
-    const void* VulkanTexture::GetNativeView(const TextureViewRange& range, TextureViewMode mode)
+    VulkanResourceView VulkanTexture::GetResourceView(const TextureViewRange& range, TextureViewMode mode) const
     {
-        auto normalizedRange = NormalizeViewRange(range);
+        const auto normalizedRange = NormalizeViewRange(range);
+        const auto useAlias = mode == TextureViewMode::UAV && m_formatAlias != VK_FORMAT_UNDEFINED;
 
-        if (mode == TextureViewMode::RAW)
+        VulkanResourceView view{};
+        view.image.image = m_image;
+        view.image.format = useAlias ? m_formatAlias : m_format;
+        view.image.viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
+        view.image.samplerIndex = mode == TextureViewMode::SRV ? m_samplerIndex : 0u;
+        view.image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
+        view.image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
+        view.image.range = VulkanConvertRange(normalizedRange, view.image.format);
+
+        if (mode != TextureViewMode::RAW)
         {
-            m_rawView.image.view = VK_NULL_HANDLE;
-            m_rawView.image.image = m_image;
-            m_rawView.image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
-            m_rawView.image.range = VulkanConvertRange(normalizedRange, m_format);
-            m_rawView.image.sampler = VK_NULL_HANDLE;
-            return &m_rawView;
+            view.UpdateHashImage(Version());
         }
 
-        auto key = GetViewKey(normalizedRange, mode);
-
-        if (!m_firstView.FindAndSwapFirst(key))
-        {
-            const auto useAlias = mode == TextureViewMode::UAV && m_formatAlias != VK_FORMAT_UNDEFINED;
-            const auto isDepth = VulkanEnumConvert::IsDepthFormat(m_format);
-
-            VulkanImageViewCreateInfo info{};
-            info.image = m_image;
-            info.viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
-            info.format = useAlias ? m_formatAlias : m_format;
-            info.components = mode == TextureViewMode::SRV ? VulkanEnumConvert::GetSwizzle(info.format) : (VkComponentMapping{});
-            info.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
-            info.subresourceRange = VulkanConvertRange(normalizedRange, info.format);
-
-            switch (mode)
-            {
-                case TextureViewMode::UAV: info.usage = VK_IMAGE_USAGE_STORAGE_BIT; break;
-                case TextureViewMode::SRV: info.usage = VK_IMAGE_USAGE_SAMPLED_BIT; break;
-                case TextureViewMode::RTV: isDepth ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; break;
-                default: break;
-            }
-            
-            auto newView = m_driver->imageViewPool.New(m_driver->device, info, m_name.c_str());
-
-            if (mode == TextureViewMode::SRV)
-            {
-                newView->resourceView.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
-                newView->resourceView.UpdateHashImage(newView->Version());
-            }
-
-            m_firstView.Insert(newView, key);
-        }
-
-        return &m_firstView->resourceView;
+        return view;
     }
 
     TextureViewRange VulkanTexture::NormalizeViewRange(const TextureViewRange& range) const

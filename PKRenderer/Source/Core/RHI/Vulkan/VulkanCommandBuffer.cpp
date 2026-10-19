@@ -1,29 +1,32 @@
 #include "PrecompiledHeader.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "VulkanCommandBuffer.h"
 
 namespace PK
 {
-    void VulkanCommandBuffer::SetPipelineState(const VulkanPipeline* pipeline, VkPipelineLayout pipelineLayout, VkDeviceSize descriptorSetOffset, const void* pushConstants, uint32_t pushConstantSize)
+    void VulkanCommandBuffer::SetPipelineState(const VulkanPipeline* pipeline, uint2 descriptorHeapOffsets, const void* pushConstants, uint32_t pushConstantSize)
     {
-        auto bufferIndex = 0u;
-
         if (m_pipeline != pipeline)
         {
             vkCmdBindPipeline(m_commandBuffer, pipeline->bindPoint, pipeline->pipeline);
             m_pipeline = pipeline;
-            m_descriptorSetOffset = ~0ull;
-            m_pushConstants = nullptr;
         }
 
-        if (m_descriptorSetOffset != descriptorSetOffset)
+        if (math::any(m_descriptorHeapOffsets != descriptorHeapOffsets))
         {
-            vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer, pipeline->bindPoint, pipelineLayout, 0, 1, &bufferIndex, &descriptorSetOffset);
-            m_descriptorSetOffset = descriptorSetOffset;
+            VkPushDataInfoEXT pushOffsetsInfo{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
+            pushOffsetsInfo.offset = PK_VK_PUSH_OFFSET_RESOURCE_HEAP;
+            pushOffsetsInfo.data = { &descriptorHeapOffsets, sizeof(uint2) };
+            vkCmdPushDataEXT(m_commandBuffer, &pushOffsetsInfo);
+            m_descriptorHeapOffsets = descriptorHeapOffsets;
         }
 
         if (m_pushConstants != pushConstants && pushConstantSize)
         {
-            vkCmdPushConstants(m_commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0u, pushConstantSize, pushConstants);
+            VkPushDataInfoEXT pushDataInfo{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
+            pushDataInfo.offset = 0u;
+            pushDataInfo.data = { pushConstants, pushConstantSize };
+            vkCmdPushDataEXT(m_commandBuffer, &pushDataInfo);
             m_pushConstants = pushConstants;
         }
     }
@@ -99,12 +102,10 @@ namespace PK
 
             if ((m_queueFlags & (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT)) != 0u)
             {
-                VkDescriptorBufferBindingInfoEXT bindingInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT };
-                bindingInfo.address = m_descriptorHeapAddress;
-                bindingInfo.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-                vkCmdBindDescriptorBuffersEXT(m_commandBuffer, 1, &bindingInfo);
+                vkCmdBindResourceHeapEXT(m_commandBuffer, &m_resourceHeap);
+                vkCmdBindSamplerHeapEXT(m_commandBuffer, &m_samplerHeap);
             }
-            
+
             m_isRecording = true;
         }
     }
@@ -138,6 +139,8 @@ namespace PK
             memoryBarrier = *pMemoryBarrier;
             memoryBarrier.srcAccessMask &= m_queueAccessFlags;
             memoryBarrier.srcStageMask &= m_queueStageFlags;
+            memoryBarrier.dstAccessMask &= m_queueAccessFlags;
+            memoryBarrier.dstStageMask &= m_queueStageFlags;
         }
 
         VkDependencyInfo barrier{ VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
@@ -153,16 +156,23 @@ namespace PK
         Barrier(nullptr, imageBarrier, 1u);
     }
 
-    void VulkanCommandBuffer::QueueInitialize(VkCommandBuffer commandBuffer, VkQueueFlags queueFlags, VkPipelineStageFlags2 queueStageFlags, VkAccessFlags2 queueAccessFlags, VkDeviceAddress descriptorHeapAddress)
+    void VulkanCommandBuffer::QueueInitialize(
+        VkCommandBuffer commandBuffer,
+        VkQueueFlags queueFlags,
+        VkPipelineStageFlags2 queueStageFlags,
+        VkAccessFlags2 queueAccessFlags,
+        const VkBindHeapInfoEXT& resourceHeap,
+        const VkBindHeapInfoEXT& samplerHeap)
     {
         m_commandBuffer = commandBuffer;
-        m_descriptorHeapAddress = descriptorHeapAddress;
+        m_resourceHeap = resourceHeap;
+        m_samplerHeap = samplerHeap;
         m_queueStageFlags = queueStageFlags;
         m_queueAccessFlags = queueAccessFlags;
         m_queueFlags = queueFlags;
         m_timelineIndex = ~0ull;
         m_pipeline = nullptr;
-        m_descriptorSetOffset = ~0ull;
+        m_descriptorHeapOffsets = { ~0u, ~0u };
         m_pushConstants = nullptr;
         m_renderingInfo = nullptr;
         m_dynamicState = nullptr;

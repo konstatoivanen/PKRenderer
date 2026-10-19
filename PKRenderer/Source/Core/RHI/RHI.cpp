@@ -8,8 +8,6 @@
 namespace PK
 {
     RHIAccelerationStructure::~RHIAccelerationStructure() = default;
-    template<> RHIBindSet<RHITexture>::~RHIBindSet() = default;
-    template<> RHIBindSet<RHIBuffer>::~RHIBindSet() = default;
     RHIBuffer::~RHIBuffer() = default;
     RHISwapchain::~RHISwapchain() = default;
     RHITexture::~RHITexture() = default;
@@ -117,8 +115,7 @@ namespace PK
                 features.presentWait.presentWait = VK_TRUE;
                 features.maximalReconvergence.shaderMaximalReconvergence = VK_TRUE;
                 features.quadControl.shaderQuadControl = VK_TRUE;
-                features.descriptorBuffer.descriptorBuffer = VK_TRUE;
-                features.descriptorBuffer.descriptorBufferImageLayoutIgnored = VK_TRUE;
+                features.descriptorHeap.descriptorHeap = VK_TRUE;
                 features.unifiedLayout.unifiedImageLayouts = VK_TRUE;
                 features.deviceAddressCommands.deviceAddressCommands = VK_TRUE;
                 features.raytracingMaintenance1.rayTracingMaintenance1 = VK_TRUE;
@@ -156,7 +153,7 @@ namespace PK
                     VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
                     VK_KHR_PRESENT_ID_EXTENSION_NAME,
                     VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME,
-                    VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
+                    VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME,
                     VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME,
                     VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME,
                     VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME
@@ -189,9 +186,6 @@ namespace PK
     RHIAccelerationStructureRef RHI::CreateAccelerationStructure(const char* name) { return RHIDriver::Get()->CreateAccelerationStructure(name); }
     RHIShaderRef RHI::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return RHIDriver::Get()->CreateShader(base, pVariant, name); }
     RHISwapchainScope RHI::CreateSwapchain(const SwapchainDescriptor& descriptor) { return RHIDriver::Get()->CreateSwapchain(descriptor); }
-
-    template<> RHITextureBindSetRef RHI::CreateBindSet(size_t capacity) { return RHIDriver::Get()->CreateTextureBindSet(capacity); }
-    template<> RHIBufferBindSetRef RHI::CreateBindSet(size_t capacity) { return RHIDriver::Get()->CreateBufferBindSet(capacity); }
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name)
     {
@@ -302,10 +296,8 @@ namespace PK
     }
 
     void RHI::SetBufferArray(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { GetGraph()->SetBuffers(name, buffers, ranges, count); }
-    void RHI::SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferSet) { GetGraph()->SetBufferSet(name, bufferSet); }
     void RHI::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { GetGraph()->SetBuffers(name, &buffer, &range, 1u); }
     void RHI::SetTextureArray(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { GetGraph()->SetTextures(name, textures, ranges, count); }
-    void RHI::SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureSet) { GetGraph()->SetTextureSet(name, textureSet); }
     void RHI::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { GetGraph()->SetTextures(name, &texture, &range, 1u); }
     void RHI::SetImageArray(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { GetGraph()->SetImages(name, images, ranges, count); }
     void RHI::SetImage(NameID name, RHITexture* image, const TextureViewRange& range) { GetGraph()->SetImages(name, &image, &range, 1u); }

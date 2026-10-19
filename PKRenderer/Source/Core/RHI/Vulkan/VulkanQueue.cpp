@@ -149,14 +149,13 @@ namespace PK
         }
     }
 
-    VulkanQueue::VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, VkDeviceAddress descriptorHeapAddress, const char* name) :
+    VulkanQueue::VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex, const char* name) :
         m_device(device),
         m_family(queueFamily),
         m_queueIndex(queueIndex),
         m_queueFlags(flags),
         m_accessFlags(VulkanEnumConvert::GetQueueFlagsAccessCapabilities(flags)),
-        m_stageFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags)),
-        m_descriptorHeapAddress(descriptorHeapAddress)
+        m_stageFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags))
     {
         vkGetDeviceQueue(device, m_family, m_queueIndex, &m_queue);
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_QUEUE, (uint64_t)m_queue, FixedString32("PK_Queue_%s", name).c_str());
@@ -226,7 +225,7 @@ namespace PK
             if (!m_commandWrappers[i].IsExecuting())
             {
                 m_currentWrapper = &m_commandWrappers[i];
-                m_currentWrapper->QueueInitialize(m_commandBuffers[i], m_queueFlags, m_stageFlags, m_accessFlags, m_descriptorHeapAddress);
+                m_currentWrapper->QueueInitialize(m_commandBuffers[i], m_queueFlags, m_stageFlags, m_accessFlags, m_resourceHeap, m_samplerHeap);
                 return m_currentWrapper;
             }
         }
@@ -364,7 +363,7 @@ namespace PK
     }
 
 
-    VulkanQueueSet::VulkanQueueSet(const VkDevice device, VkDeviceAddress descriptorHeapAddress, const VulkanQueueSetInitializer& initializer) :
+    VulkanQueueSet::VulkanQueueSet(const VkDevice device, const VulkanQueueSetInitializer& initializer) :
         m_device(device),
         m_queueCount(initializer.queueCount),
         m_familiesAll(initializer.selectedAll),
@@ -374,7 +373,16 @@ namespace PK
 
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
-            m_queues[i] = CreateUnique<VulkanQueue>(device, initializer.familyProperties[i].queueFlags, initializer.queueFamilies[i], 0, descriptorHeapAddress, initializer.names[i]);
+            m_queues[i] = CreateUnique<VulkanQueue>(device, initializer.familyProperties[i].queueFlags, initializer.queueFamilies[i], 0, initializer.names[i]);
+        }
+    }
+
+    void VulkanQueueSet::SetDescriptorHeaps(const VkBindHeapInfoEXT& resourceHeap, const VkBindHeapInfoEXT& samplerHeap)
+    {
+        for (auto i = 0u; i < m_queueCount; ++i)
+        {
+            m_queues[i]->m_resourceHeap = resourceHeap;
+            m_queues[i]->m_samplerHeap = samplerHeap;
         }
     }
 

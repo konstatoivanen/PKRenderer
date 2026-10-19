@@ -27,6 +27,11 @@ namespace PK
 
     inline static bool CanMerge(const VulkanAccessRecorder::State& a, const VulkanAccessRecorder::State& b)
     {
+        if (a.isLocked != b.isLocked)
+        {
+            return false;
+        }
+
         if (VulkanEnumConvert::IsWriteAccess(a.access) || VulkanEnumConvert::IsWriteAccess(b.access))
         {
             return a.access == b.access && a.stage == b.stage && a.lastPass == b.lastPass && a.queueMask == b.queueMask;
@@ -35,17 +40,19 @@ namespace PK
         return a.queueMask == b.queueMask;
     }
 
-    void VulkanAccessRecorder::ResetPasses(uint64_t completedPassCounter)
+    void VulkanAccessRecorder::ResetPasses(uint64_t flushedPassIndex)
     {
         m_imageTransitionHead = 0u;
         m_passCount = 0u;
-        m_completedPassCounter = MaxU64(m_completedPassCounter, completedPassCounter);
+        m_passFlush = MaxU64(m_passFlush, flushedPassIndex);
+        m_passFirst = m_passCounter;
 
         for (auto curr = m_memoryHead; curr != NULL_NODE; curr = m_nodes[curr].next)
         {
             auto* node = &m_nodes[curr];
+            node->state.isLocked = 0u;
 
-            if (node->state.lastPass <= m_completedPassCounter)
+            if (node->state.lastPass <= m_passFlush)
             {
                 node->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
                 node->state.access = VK_ACCESS_2_NONE;
@@ -103,6 +110,7 @@ namespace PK
                 n->state.access = VK_ACCESS_2_NONE;
                 n->state.lastPass = 0u;
                 n->state.queueMask = 0u;
+                n->state.isLocked = 0u;
                 n->next = NULL_NODE;
                 n->prev = NULL_NODE;
                 m_images[index].value.head = node;
@@ -143,6 +151,7 @@ namespace PK
             root->state.access = VK_ACCESS_2_NONE;
             root->state.lastPass = 0u;
             root->state.queueMask = 0u;
+            root->state.isLocked = 0u;
         }
 
         const auto new_beg = record.memory.address;
@@ -152,7 +161,8 @@ namespace PK
         new_state.stage = record.stage;
         new_state.access = record.access;
         new_state.lastPass = (uint32_t)m_passCounter;
-        new_state.queueMask = 1u << record.queue;
+        new_state.queueMask = record.queueMask;
+        new_state.isLocked = record.isLocked;
 
         for (auto curr = m_memoryHead; curr != NULL_NODE; curr = m_nodes[curr].next)
         {
@@ -172,17 +182,26 @@ namespace PK
                 continue;
             }
 
+            if (node->state.lastPass <= m_passFirst)
+            {
+                node->state.isLocked = 0u;
+            }
+
             // If this range's last access already finished on the GPU, clear its stale state
-            if (node->state.lastPass && node->state.lastPass <= m_completedPassCounter)
+            if (node->state.lastPass && node->state.lastPass <= m_passFlush)
             {
                 node->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
                 node->state.access = VK_ACCESS_2_NONE;
                 node->state.lastPass = 0u;
                 node->state.queueMask = 0u;
+                node->state.isLocked = 0u;
             }
+
 
             if (NeedsBarrier(node->state, new_state) || node->state.access == VK_ACCESS_2_NONE)
             {
+                PK_DEBUG_FATAL_ASSERT(!node->state.isLocked || !VulkanEnumConvert::IsWriteAccess(new_state.access), "Attempting to write to a read-only locked resident memory range!");
+                
                 if (node->state.access != VK_ACCESS_2_NONE)
                 {
                     EmitMemoryBarrier(node->state, new_state);
@@ -216,6 +235,7 @@ namespace PK
                 node->state.access |= new_state.access;
                 node->state.lastPass = new_state.lastPass;
                 node->state.queueMask |= new_state.queueMask;
+                node->state.isLocked |= new_state.isLocked;
             }
 
             if (node->prev != NULL_NODE)
@@ -287,8 +307,9 @@ namespace PK
         State new_state;
         new_state.stage = record.stage;
         new_state.access = record.access;
-        new_state.queueMask = 1u << record.queue;
         new_state.lastPass = m_passCounter;
+        new_state.queueMask = record.queueMask;
+        new_state.isLocked = record.isLocked;;
         State accumulated_state = new_state;
 
         for (auto curr = imageHead->head; curr != NULL_NODE;)
@@ -310,8 +331,23 @@ namespace PK
                 continue;
             }
 
+            if (node->state.lastPass <= m_passFirst)
+            {
+                node->state.isLocked = 0u;
+            }
+
+            if (node->state.lastPass && node->state.lastPass <= m_passFlush)
+            {
+                node->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+                node->state.access = VK_ACCESS_2_NONE;
+                node->state.lastPass = 0u;
+                node->state.queueMask = 0u;
+                node->state.isLocked = 0u;
+            }
+
             if (NeedsBarrier(node->state, new_state))
             {
+                PK_DEBUG_FATAL_ASSERT(!node->state.isLocked || !VulkanEnumConvert::IsWriteAccess(new_state.access), "Cannot write to a bindless resident image during the same graph scope!");
                 EmitMemoryBarrier(node->state, new_state);
             }
             else
@@ -319,6 +355,8 @@ namespace PK
                 accumulated_state.stage |= node->state.stage;
                 accumulated_state.access |= node->state.access;
                 accumulated_state.queueMask |= node->state.queueMask;
+                accumulated_state.isLocked |= node->state.isLocked;
+                PK_DEBUG_FATAL_ASSERT(!accumulated_state.isLocked || !VulkanEnumConvert::IsWriteAccess(accumulated_state.access), "Cannot write to a bindless resident image during the same graph scope!");
             }
 
             if (cur_level_beg < overlap_level_beg)
@@ -410,7 +448,11 @@ namespace PK
         pass->memoryBarrier.srcAccessMask |= src.access;
         pass->memoryBarrier.dstStageMask |= dst.stage;
         pass->memoryBarrier.dstAccessMask |= dst.access;
-        pass->dependencyMask |= src.queueMask & ~dst.queueMask;
+
+        if (src.queueMask != dst.queueMask)
+        {
+            pass->dependencyMask |= src.queueMask;
+        }
     }
 
     uint32_t VulkanAccessRecorder::AllocNode()

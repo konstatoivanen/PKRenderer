@@ -105,6 +105,7 @@ namespace PK
                 if (module != VK_NULL_HANDLE && (stageFlag & stageFlags) != 0u && (stageFlag & key.fixed.excludeStageMask) == 0u)
                 {
                     VkPipelineShaderStageCreateInfo stageInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+                    stageInfo.pNext = key.shader->GetDescriptorLayout();
                     stageInfo.stage = VulkanEnumConvert::GetShaderStage((ShaderStage)i);
                     stageInfo.module = module;
                     stageInfo.pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
@@ -119,6 +120,10 @@ namespace PK
             renderingInfo.depthAttachmentFormat = key.fixed.depthFormat;
             renderingInfo.stencilAttachmentFormat = VulkanEnumConvert::IsDepthStencilFormat(key.fixed.depthFormat) ? key.fixed.depthFormat : VK_FORMAT_UNDEFINED;
             for (; renderingInfo.colorAttachmentCount < PK_RHI_MAX_RENDER_TARGETS && key.fixed.colorFormats[renderingInfo.colorAttachmentCount] != VK_FORMAT_UNDEFINED; ++renderingInfo.colorAttachmentCount) {}
+
+            VkPipelineCreateFlags2CreateInfo flags2Info{ VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO };
+            flags2Info.pNext = &renderingInfo;
+            flags2Info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
             VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
             rasterizer.depthClampEnable = key.fixed.depthClampEnable;
@@ -191,8 +196,8 @@ namespace PK
             VkPipelineInputAssemblyStateCreateInfo inputAssembly{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
 
             VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
-            pipelineInfo.pNext = &renderingInfo;
-            pipelineInfo.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+            pipelineInfo.pNext = &flags2Info;
+            pipelineInfo.flags ;
             pipelineInfo.stageCount = stageCount;
             pipelineInfo.pStages = shaderStages;
             pipelineInfo.pVertexInputState = nullptr;
@@ -203,7 +208,7 @@ namespace PK
             pipelineInfo.pDepthStencilState = &depthStencil;
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.pDynamicState = &dynamicState;
-            pipelineInfo.layout = key.shader->GetDescriptorSetLayout()->pipelineLayout;
+            pipelineInfo.layout = VK_NULL_HANDLE;
             pipelineInfo.renderPass = VK_NULL_HANDLE;
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -241,15 +246,18 @@ namespace PK
 
         if (value->pipeline == nullptr)
         {
-            PK_DEBUG_WARNING_ASSERT(value->pipeline == nullptr, "Wack");
+            VkPipelineCreateFlags2CreateInfo flags2Info{ VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO };
+            flags2Info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
             VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
-            pipelineInfo.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+            pipelineInfo.pNext = &flags2Info;
+            pipelineInfo.flags = 0u;
             pipelineInfo.stage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+            pipelineInfo.stage.pNext = shader->GetDescriptorLayout();
             pipelineInfo.stage.stage = VulkanEnumConvert::GetShaderStage(ShaderStage::Compute);
             pipelineInfo.stage.module = shader->GetModule((uint32_t)ShaderStage::Compute);
             pipelineInfo.stage.pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
-            pipelineInfo.layout = shader->GetDescriptorSetLayout()->pipelineLayout;
+            pipelineInfo.layout = VK_NULL_HANDLE;
             value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         }
 
@@ -297,22 +305,27 @@ namespace PK
                 }
 
                 VkPipelineShaderStageCreateInfo stageInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+                stageInfo.pNext = shader->GetDescriptorLayout();
                 stageInfo.stage = VulkanEnumConvert::GetShaderStage(stage);
                 stageInfo.module = shader->GetModule(i);
                 stageInfo.pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
                 shaderStages[stageCount++] = stageInfo;
             }
 
+            VkPipelineCreateFlags2CreateInfo flags2Info{ VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO };
+            flags2Info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT |
+                VK_PIPELINE_CREATE_2_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR |
+                VK_PIPELINE_CREATE_2_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
+
             VkRayTracingPipelineCreateInfoKHR pipelineInfo{ VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR };
+            pipelineInfo.pNext = &flags2Info;
             pipelineInfo.stageCount = stageCount;
             pipelineInfo.pStages = shaderStages;
             pipelineInfo.groupCount = stageCount;
             pipelineInfo.pGroups = shaderGroups;
             pipelineInfo.maxPipelineRayRecursionDepth = 1;
-            pipelineInfo.flags |= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR;
-            pipelineInfo.flags |= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
-            pipelineInfo.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-            pipelineInfo.layout = shader->GetDescriptorSetLayout()->pipelineLayout;
+            pipelineInfo.flags = 0u;
+            pipelineInfo.layout = VK_NULL_HANDLE;
             value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         }
 

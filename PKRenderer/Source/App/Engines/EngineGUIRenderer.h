@@ -70,7 +70,6 @@ namespace PK::App
 
         RenderGraphExt* m_gui_graph = nullptr;
         RHITextureRef m_gui_msaa_target = nullptr;
-        RHITextureBindSetRef m_gui_textures;
         HeapHashArena m_gui_stateCache;
         ShaderAsset* m_gui_shader = nullptr;
         ShaderAsset* m_gui_resolve_shader = nullptr;

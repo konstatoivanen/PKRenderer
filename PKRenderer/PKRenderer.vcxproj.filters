@@ -324,9 +324,6 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanAccelerationStructure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBindSet.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -342,13 +339,7 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanTexture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanPipelineCache.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanSamplerCache.h">
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanPipelineCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanStagingArena.h">
@@ -768,7 +759,7 @@
     <ClInclude Include="Source\Core\Base\Containers\TLSFAllocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDescriptorArena.h">
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDescriptorHeap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\RHIGraph.h">
@@ -1065,9 +1056,6 @@
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanAccelerationStructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBindSet.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1083,13 +1071,7 @@
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanPipelineCache.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanSamplerCache.cpp">
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanPipelineCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanStagingArena.cpp">
@@ -1281,7 +1263,7 @@
     <ClCompile Include="Source\Core\Base\Containers\TLSFAllocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDescriptorArena.cpp">
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDescriptorHeap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanGraph.cpp">

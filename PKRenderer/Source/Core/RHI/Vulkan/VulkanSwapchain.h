@@ -25,8 +25,7 @@ namespace PK
         void Release();
         void Rebuild(const SwapchainDescriptor& createInfo);
 
-        const VulkanResourceView* GetResourceView() const { return &m_imageViews[m_imageIndex]->resourceView; }
-        const VulkanImageView* GetImageView() const { return m_imageViews[m_imageIndex]; }
+        const VulkanResourceView* GetResourceView() const { return &m_imageViews[m_imageIndex]; }
         VkSemaphore ConsumeAcquireSignal();
         VkSemaphore ConsumePresentSignal();
 
@@ -41,15 +40,15 @@ namespace PK
         VkSurfaceKHR m_surface = VK_NULL_HANDLE;
         VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
         VkImage m_images[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
-        VulkanImageView* m_imageViews[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
+        VulkanResourceView m_imageViews[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VkSemaphore m_semaphoresAcquire[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VkSemaphore m_semaphoresPresent[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
         VkPresentModeKHR m_presentModes[(uint32_t)VSyncMode::EnumCount]{};
         VkPresentModeKHR m_presentMode;
         VkSurfaceFormatKHR m_format;
         VkExtent2D m_extent;
-        uint32_t m_presentModeCount;
-        uint32_t m_imageCount;
+        uint32_t m_presentModeCount = 0u;
+        uint32_t m_imageCount = 0u;
 
         VkSemaphore m_acquireSignal = VK_NULL_HANDLE;
         VkSemaphore m_presentSignal = VK_NULL_HANDLE;
@@ -58,6 +57,5 @@ namespace PK
         uint32_t m_imageIndex = 0u;
         uint64_t m_presentId = 0ull;
         bool m_outofdate = false;
-        bool m_hasExternalFrameFence = false;
     };
 }
