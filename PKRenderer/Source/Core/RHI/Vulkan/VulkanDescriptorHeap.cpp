@@ -31,16 +31,15 @@ namespace PK
             bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
             bufferInfo.queueFamilyIndexCount = queueFamilies.count;
             bufferInfo.pQueueFamilyIndices = queueFamilies.indices;
-            PK_FATAL_ASSERT(bufferInfo.size <= m_properties.maxResourceHeapSize, "heap size '%ull' exceeds allowed max size 'ull'!", bufferInfo.size, m_properties.maxResourceHeapSize);
+            PK_FATAL_ASSERT(bufferInfo.size <= m_properties.maxResourceHeapSize, "heap size '%llu' exceeds allowed max size '%llu'!", bufferInfo.size, m_properties.maxResourceHeapSize);
        
             VmaAllocationInfo allocationInfo{};
             VK_ASSERT_RESULT_CTX(vmaCreateBufferWithAlignment(m_allocator, &bufferInfo, &allocInfo, m_properties.resourceHeapAlignment, &m_resourceHeap.buffer, &m_resourceHeap.memory, &allocationInfo), "Failed to create a resource heap buffer!");
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_resourceHeap.buffer, "PK_Resource_Heap");
             m_resourceHeap.mappedPtr = static_cast<uint8_t*>(allocationInfo.pMappedData);
             
-            VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, m_resourceHeap.buffer };
             m_resourceHeap.bindInfo.sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT;
-            m_resourceHeap.bindInfo.heapRange = { vkGetBufferDeviceAddress(m_device, &addressInfo), bufferInfo.size };
+            m_resourceHeap.bindInfo.heapRange = { VulkanGetBudderDeviceAddress(m_device, m_resourceHeap.buffer), bufferInfo.size };
             m_resourceHeap.bindInfo.reservedRangeOffset = 0ull;
             m_resourceHeap.bindInfo.reservedRangeSize = properties.descriptorHeap.minResourceHeapReservedRange;
         }
@@ -56,16 +55,15 @@ namespace PK
             bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
             bufferInfo.queueFamilyIndexCount = queueFamilies.count;
             bufferInfo.pQueueFamilyIndices = queueFamilies.indices;
-            PK_FATAL_ASSERT(bufferInfo.size <= m_properties.maxSamplerHeapSize, "heap size '%ull' exceeds allowed max size 'ull'!", bufferInfo.size, m_properties.maxSamplerHeapSize);
+            PK_FATAL_ASSERT(bufferInfo.size <= m_properties.maxSamplerHeapSize, "heap size '%llu' exceeds allowed max size '%llu'!", bufferInfo.size, m_properties.maxSamplerHeapSize);
 
             VmaAllocationInfo allocationInfo{};
             VK_ASSERT_RESULT_CTX(vmaCreateBufferWithAlignment(m_allocator, &bufferInfo, &allocInfo, m_properties.samplerHeapAlignment, &m_samplerHeap.buffer, &m_samplerHeap.memory, &allocationInfo), "Failed to create a sampler heap buffer!");
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_samplerHeap.buffer, "PK_Sampler_Heap");
             m_samplerHeap.mappedPtr = static_cast<uint8_t*>(allocationInfo.pMappedData);
         
-            VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, m_samplerHeap.buffer };
             m_samplerHeap.bindInfo.sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT;
-            m_samplerHeap.bindInfo.heapRange = { vkGetBufferDeviceAddress(m_device, &addressInfo), bufferInfo.size };
+            m_samplerHeap.bindInfo.heapRange = { VulkanGetBudderDeviceAddress(m_device, m_samplerHeap.buffer), bufferInfo.size };
             m_samplerHeap.bindInfo.reservedRangeOffset = 0ull;
             m_samplerHeap.bindInfo.reservedRangeSize = properties.descriptorHeap.minSamplerHeapReservedRange;
         }

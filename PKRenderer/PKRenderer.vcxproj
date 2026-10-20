@@ -336,7 +336,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Base\Allocation.h" />
     <ClInclude Include="Source\Core\Base\Containers\FixedArena.h" />
     <ClInclude Include="Source\Core\Base\Containers\FixedString.h" />
-    <ClInclude Include="Source\Core\Base\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Base\Reflect.h" />
     <ClInclude Include="Source\Core\Base\Sort.h" />
     <ClInclude Include="Source\Core\Base\TypeMeta.h" />

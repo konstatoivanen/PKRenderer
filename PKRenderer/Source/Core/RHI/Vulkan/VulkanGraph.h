@@ -368,7 +368,6 @@ namespace PK
 
             // Resolved state
             uint32_t vertexBufferCount = 0u;
-            VkDeviceSize descriptorSetOffset = 0ull;
             VkRenderingInfo* renderingInfo = nullptr;
             VulkanDynamicState* resolvedDynamicState = nullptr;
             VkBindVertexBuffer3InfoKHR* resolvedVertexBuffers = nullptr;

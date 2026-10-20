@@ -148,11 +148,8 @@ namespace PK
     void EntityDatabase::ReserveEntitities(uint32_t compositionIndex, size_t entryCount)
     {
         auto* comp = &m_compositions[compositionIndex].value;
-        const auto isEntity = (m_compositions[compositionIndex].key & VIEW_MASK) == 0u;
         const auto isNew = comp->buffer == nullptr;
         const auto isPrimeExpand = !isNew && entryCount == 1ull;
-
-        PK_DEBUG_WARNING_ASSERT(isEntity, "Trying to reserve entities for a view composition!");
 
         if (comp->capacity - comp->count >= entryCount)
         {

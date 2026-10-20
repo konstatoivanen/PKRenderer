@@ -35,10 +35,7 @@ namespace PK
             PK_FATAL_ASSERT(memFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "VulkanStagingArena failed to allocate in ReBAR (DEVICE_LOCAL) memory!");
 
             VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanStagingArena");
-
-            VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
-            addressInfo.buffer = m_buffer;
-            m_deviceAddress = vkGetBufferDeviceAddress(device, &addressInfo);
+            m_deviceAddress = VulkanGetBudderDeviceAddress(device, m_buffer);
         }
     }
 

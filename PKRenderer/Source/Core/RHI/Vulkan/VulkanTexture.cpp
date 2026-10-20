@@ -119,7 +119,14 @@ namespace PK
         view.image.samplerIndex = mode == TextureViewMode::SRV ? m_samplerIndex : 0u;
         view.image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
         view.image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
-        view.image.range = VulkanConvertRange(normalizedRange, view.image.format);
+        view.image.range = 
+        {
+            (uint32_t)VulkanEnumConvert::GetFormatAspect(view.image.format), // aspect
+            normalizedRange.level,  //baseMipLevel
+            normalizedRange.levels >= PK_VK_IMAGE_RANGE_MAX ? VK_REMAINING_MIP_LEVELS : normalizedRange.levels, //levelCount
+            normalizedRange.layer,  //baseArrayLayer
+            normalizedRange.layers >= PK_VK_IMAGE_RANGE_MAX ? VK_REMAINING_ARRAY_LAYERS : normalizedRange.layers //layerCount
+        };
 
         if (mode != TextureViewMode::RAW)
         {

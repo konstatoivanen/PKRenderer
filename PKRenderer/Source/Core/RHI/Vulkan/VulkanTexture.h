@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Base/Types/VersionedObject.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 

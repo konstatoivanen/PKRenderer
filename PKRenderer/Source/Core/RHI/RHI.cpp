@@ -121,9 +121,6 @@ namespace PK
                 features.raytracingMaintenance1.rayTracingMaintenance1 = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
-                // Nsight uses push descriptors but they fail to set this flag
-                features.vk14.pushDescriptor = VK_TRUE;
-
                 const char* PK_INSTANCE_EXTENTIONS[] =
                 {
                     VK_KHR_SURFACE_EXTENSION_NAME,

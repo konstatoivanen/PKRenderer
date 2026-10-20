@@ -6,25 +6,17 @@
 #include "VulkanCommon.h"
 
 PFN_vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT = nullptr;
-PFN_vkSetDebugUtilsObjectTagEXT pkfn_vkSetDebugUtilsObjectTagEXT = nullptr;
-PFN_vkQueueBeginDebugUtilsLabelEXT pkfn_vkQueueBeginDebugUtilsLabelEXT = nullptr;
-PFN_vkQueueEndDebugUtilsLabelEXT pkfn_vkQueueEndDebugUtilsLabelEXT = nullptr;
-PFN_vkQueueInsertDebugUtilsLabelEXT pkfn_vkQueueInsertDebugUtilsLabelEXT = nullptr;
 PFN_vkCmdBeginDebugUtilsLabelEXT pkfn_vkCmdBeginDebugUtilsLabelEXT = nullptr;
 PFN_vkCmdEndDebugUtilsLabelEXT pkfn_vkCmdEndDebugUtilsLabelEXT = nullptr;
 PFN_vkCmdInsertDebugUtilsLabelEXT pkfn_vkCmdInsertDebugUtilsLabelEXT = nullptr;
 PFN_vkCreateDebugUtilsMessengerEXT pkfn_vkCreateDebugUtilsMessengerEXT = nullptr;
 PFN_vkDestroyDebugUtilsMessengerEXT pkfn_vkDestroyDebugUtilsMessengerEXT = nullptr;
-PFN_vkSubmitDebugUtilsMessageEXT pkfn_vkSubmitDebugUtilsMessageEXT = nullptr;
 PFN_vkCreateAccelerationStructure2KHR pkfn_vkCreateAccelerationStructure2KHR = nullptr;
 PFN_vkDestroyAccelerationStructureKHR pkfn_vkDestroyAccelerationStructureKHR = nullptr;
-PFN_vkCmdSetRayTracingPipelineStackSizeKHR pkfn_vkCmdSetRayTracingPipelineStackSizeKHR = nullptr;
 PFN_vkCmdTraceRaysIndirectKHR pkfn_vkCmdTraceRaysIndirectKHR = nullptr;
 PFN_vkCmdTraceRaysKHR pkfn_vkCmdTraceRaysKHR = nullptr;
 PFN_vkCreateRayTracingPipelinesKHR pkfn_vkCreateRayTracingPipelinesKHR = nullptr;
-PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR pkfn_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR = nullptr;
 PFN_vkGetRayTracingShaderGroupHandlesKHR pkfn_vkGetRayTracingShaderGroupHandlesKHR = nullptr;
-PFN_vkGetRayTracingShaderGroupStackSizeKHR pkfn_vkGetRayTracingShaderGroupStackSizeKHR = nullptr;
 PFN_vkGetAccelerationStructureDeviceAddressKHR pkfn_vkGetAccelerationStructureDeviceAddressKHR = nullptr;
 PFN_vkGetAccelerationStructureBuildSizesKHR pkfn_vkGetAccelerationStructureBuildSizesKHR = nullptr;
 PFN_vkCmdBuildAccelerationStructuresKHR pkfn_vkCmdBuildAccelerationStructuresKHR = nullptr;
@@ -41,7 +33,6 @@ PFN_vkCmdBindVertexBuffers3KHR pkfn_vkCmdBindVertexBuffers3KHR = nullptr;
 PFN_vkCmdCopyImageToMemoryKHR pkfn_vkCmdCopyImageToMemoryKHR = nullptr;
 PFN_vkCmdCopyMemoryKHR pkfn_vkCmdCopyMemoryKHR = nullptr;
 PFN_vkCmdCopyMemoryToImageKHR pkfn_vkCmdCopyMemoryToImageKHR = nullptr;
-PFN_vkCmdCopyQueryPoolResultsToMemoryKHR pkfn_vkCmdCopyQueryPoolResultsToMemoryKHR = nullptr;
 PFN_vkCmdDispatchIndirect2KHR pkfn_vkCmdDispatchIndirect2KHR = nullptr;
 PFN_vkCmdDrawIndexedIndirect2KHR pkfn_vkCmdDrawIndexedIndirect2KHR = nullptr;
 PFN_vkCmdDrawIndirect2KHR pkfn_vkCmdDrawIndirect2KHR = nullptr;
@@ -387,14 +378,9 @@ namespace PK
 
         if (enableDebugLabels)
         {
-            pkfn_vkSetDebugUtilsObjectTagEXT = (PFN_vkSetDebugUtilsObjectTagEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectTagEXT");
-            pkfn_vkQueueBeginDebugUtilsLabelEXT = (PFN_vkQueueBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueBeginDebugUtilsLabelEXT");
-            pkfn_vkQueueEndDebugUtilsLabelEXT = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
-            pkfn_vkQueueInsertDebugUtilsLabelEXT = (PFN_vkQueueInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueInsertDebugUtilsLabelEXT");
             pkfn_vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
             pkfn_vkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
             pkfn_vkCmdInsertDebugUtilsLabelEXT = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
-            pkfn_vkSubmitDebugUtilsMessageEXT = (PFN_vkSubmitDebugUtilsMessageEXT)vkGetInstanceProcAddr(instance, "vkSubmitDebugUtilsMessageEXT");
         }
         
         pkfn_vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -402,13 +388,10 @@ namespace PK
 
         pkfn_vkCreateAccelerationStructure2KHR = (PFN_vkCreateAccelerationStructure2KHR)vkGetInstanceProcAddr(instance, "vkCreateAccelerationStructure2KHR");
         pkfn_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkDestroyAccelerationStructureKHR");
-        pkfn_vkCmdSetRayTracingPipelineStackSizeKHR = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR)vkGetInstanceProcAddr(instance, "vkCmdSetRayTracingPipelineStackSizeKHR");
         pkfn_vkCmdTraceRaysIndirectKHR = (PFN_vkCmdTraceRaysIndirectKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysIndirectKHR");
         pkfn_vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysKHR");
         pkfn_vkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetInstanceProcAddr(instance, "vkCreateRayTracingPipelinesKHR");
-        pkfn_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR = (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
         pkfn_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
-        pkfn_vkGetRayTracingShaderGroupStackSizeKHR = (PFN_vkGetRayTracingShaderGroupStackSizeKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupStackSizeKHR");
         pkfn_vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureDeviceAddressKHR");
         pkfn_vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureBuildSizesKHR");
         pkfn_vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetInstanceProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR");
@@ -429,7 +412,6 @@ namespace PK
         pkfn_vkCmdCopyImageToMemoryKHR = (PFN_vkCmdCopyImageToMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyImageToMemoryKHR");
         pkfn_vkCmdCopyMemoryKHR = (PFN_vkCmdCopyMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyMemoryKHR");
         pkfn_vkCmdCopyMemoryToImageKHR = (PFN_vkCmdCopyMemoryToImageKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyMemoryToImageKHR");
-        pkfn_vkCmdCopyQueryPoolResultsToMemoryKHR = (PFN_vkCmdCopyQueryPoolResultsToMemoryKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyQueryPoolResultsToMemoryKHR");
         pkfn_vkCmdDispatchIndirect2KHR = (PFN_vkCmdDispatchIndirect2KHR)vkGetInstanceProcAddr(instance, "vkCmdDispatchIndirect2KHR");
         pkfn_vkCmdDrawIndexedIndirect2KHR = (PFN_vkCmdDrawIndexedIndirect2KHR)vkGetInstanceProcAddr(instance, "vkCmdDrawIndexedIndirect2KHR");
         pkfn_vkCmdDrawIndirect2KHR = (PFN_vkCmdDrawIndirect2KHR)vkGetInstanceProcAddr(instance, "vkCmdDrawIndirect2KHR");
@@ -618,18 +600,11 @@ namespace PK
         return vkGetAccelerationStructureDeviceAddressKHR(device, &info);
     }
 
-    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkFormat format)
+    VkDeviceAddress VulkanGetBudderDeviceAddress(VkDevice device, VkBuffer buffer)
     {
-        return
-        {
-            (uint32_t)VulkanEnumConvert::GetFormatAspect(format), // aspect
-            viewRange.level,  //baseMipLevel
-            viewRange.levels >= PK_VK_IMAGE_RANGE_MAX ? VK_REMAINING_MIP_LEVELS : viewRange.levels, //levelCount
-            viewRange.layer,  //baseArrayLayer
-            viewRange.layers >= PK_VK_IMAGE_RANGE_MAX ? VK_REMAINING_ARRAY_LAYERS : viewRange.layers //layerCount
-        };
+        VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, buffer };
+        return vkGetBufferDeviceAddress(device, &addressInfo);
     }
-
 
     bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count)
     {

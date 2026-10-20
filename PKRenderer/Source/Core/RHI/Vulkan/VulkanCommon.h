@@ -5,9 +5,8 @@
 #define VMA_STATS_STRING_ENABLED 0
 #include "vulkan/vulkan.h"
 #include "VMA/vk_mem_alloc.h"
+#include "Core/Base/NoCopy.h"
 #include "Core/Base/Containers/FixedString.h"
-#include "Core/Base/Containers/LinkedList.h"
-#include "Core/Base/Types/VersionedObject.h"
 #include "Core/ControlFlow/FenceRef.h"
 #include "Core/RHI/Structs.h"
 
@@ -71,18 +70,6 @@ constexpr static const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_val
 extern PFN_vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT;
 #define vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT
 
-extern PFN_vkSetDebugUtilsObjectTagEXT pkfn_vkSetDebugUtilsObjectTagEXT;
-#define vkSetDebugUtilsObjectTagEXT pkfn_vkSetDebugUtilsObjectTagEXT
-
-extern PFN_vkQueueBeginDebugUtilsLabelEXT pkfn_vkQueueBeginDebugUtilsLabelEXT;
-#define vkQueueBeginDebugUtilsLabelEXT pkfn_vkQueueBeginDebugUtilsLabelEXT
-
-extern PFN_vkQueueEndDebugUtilsLabelEXT pkfn_vkQueueEndDebugUtilsLabelEXT;
-#define vkQueueEndDebugUtilsLabelEXT pkfn_vkQueueEndDebugUtilsLabelEXT
-
-extern PFN_vkQueueInsertDebugUtilsLabelEXT pkfn_vkQueueInsertDebugUtilsLabelEXT;
-#define vkQueueInsertDebugUtilsLabelEXT pkfn_vkQueueInsertDebugUtilsLabelEXT
-
 extern PFN_vkCmdBeginDebugUtilsLabelEXT pkfn_vkCmdBeginDebugUtilsLabelEXT;
 #define vkCmdBeginDebugUtilsLabelEXT pkfn_vkCmdBeginDebugUtilsLabelEXT
 
@@ -98,17 +85,11 @@ extern PFN_vkCreateDebugUtilsMessengerEXT pkfn_vkCreateDebugUtilsMessengerEXT;
 extern PFN_vkDestroyDebugUtilsMessengerEXT pkfn_vkDestroyDebugUtilsMessengerEXT;
 #define vkDestroyDebugUtilsMessengerEXT pkfn_vkDestroyDebugUtilsMessengerEXT
 
-extern PFN_vkSubmitDebugUtilsMessageEXT pkfn_vkSubmitDebugUtilsMessageEXT;
-#define vkSubmitDebugUtilsMessageEXT pkfn_vkSubmitDebugUtilsMessageEXT
-
 extern PFN_vkCreateAccelerationStructure2KHR pkfn_vkCreateAccelerationStructure2KHR;
 #define vkCreateAccelerationStructure2KHR pkfn_vkCreateAccelerationStructure2KHR
 
 extern PFN_vkDestroyAccelerationStructureKHR pkfn_vkDestroyAccelerationStructureKHR;
 #define vkDestroyAccelerationStructureKHR pkfn_vkDestroyAccelerationStructureKHR
-
-extern PFN_vkCmdSetRayTracingPipelineStackSizeKHR pkfn_vkCmdSetRayTracingPipelineStackSizeKHR;
-#define vkCmdSetRayTracingPipelineStackSizeKHR pkfn_vkCmdSetRayTracingPipelineStackSizeKHR
 
 extern PFN_vkCmdTraceRaysIndirectKHR pkfn_vkCmdTraceRaysIndirectKHR;
 #define vkCmdTraceRaysIndirectKHR pkfn_vkCmdTraceRaysIndirectKHR
@@ -119,14 +100,8 @@ extern PFN_vkCmdTraceRaysKHR pkfn_vkCmdTraceRaysKHR;
 extern PFN_vkCreateRayTracingPipelinesKHR pkfn_vkCreateRayTracingPipelinesKHR;
 #define vkCreateRayTracingPipelinesKHR pkfn_vkCreateRayTracingPipelinesKHR
 
-extern PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR pkfn_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR;
-#define vkGetRayTracingCaptureReplayShaderGroupHandlesKHR pkfn_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR
-
 extern PFN_vkGetRayTracingShaderGroupHandlesKHR pkfn_vkGetRayTracingShaderGroupHandlesKHR;
 #define vkGetRayTracingShaderGroupHandlesKHR pkfn_vkGetRayTracingShaderGroupHandlesKHR
-
-extern PFN_vkGetRayTracingShaderGroupStackSizeKHR pkfn_vkGetRayTracingShaderGroupStackSizeKHR;
-#define vkGetRayTracingShaderGroupStackSizeKHR pkfn_vkGetRayTracingShaderGroupStackSizeKHR
 
 extern PFN_vkGetAccelerationStructureDeviceAddressKHR pkfn_vkGetAccelerationStructureDeviceAddressKHR;
 #define vkGetAccelerationStructureDeviceAddressKHR pkfn_vkGetAccelerationStructureDeviceAddressKHR
@@ -175,9 +150,6 @@ extern PFN_vkCmdCopyMemoryKHR pkfn_vkCmdCopyMemoryKHR;
 
 extern PFN_vkCmdCopyMemoryToImageKHR pkfn_vkCmdCopyMemoryToImageKHR;
 #define vkCmdCopyMemoryToImageKHR pkfn_vkCmdCopyMemoryToImageKHR
-
-extern PFN_vkCmdCopyQueryPoolResultsToMemoryKHR pkfn_vkCmdCopyQueryPoolResultsToMemoryKHR;
-#define vkCmdCopyQueryPoolResultsToMemoryKHR pkfn_vkCmdCopyQueryPoolResultsToMemoryKHR
 
 extern PFN_vkCmdDispatchIndirect2KHR pkfn_vkCmdDispatchIndirect2KHR;
 #define vkCmdDispatchIndirect2KHR pkfn_vkCmdDispatchIndirect2KHR
@@ -335,14 +307,6 @@ namespace PK
         }
     };
 
-    struct VulkanResourceViewHash
-    {
-        size_t operator()(const VulkanResourceView& k) const noexcept
-        {
-            return k.hash;
-        }
-    };
-
     struct VulkanDescriptorBinding
     {
         const VulkanResourceView* views;
@@ -419,9 +383,9 @@ namespace PK
 
     VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount);
     VkDeviceAddress VulkanGetAccelerationStructureDeviceAddress(VkDevice device, VkAccelerationStructureKHR handle);
+    VkDeviceAddress VulkanGetBudderDeviceAddress(VkDevice device, VkBuffer buffer);
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
     VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
-    VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkFormat format);
 
     bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count);
     bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface);

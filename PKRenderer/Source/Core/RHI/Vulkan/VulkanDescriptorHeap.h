@@ -28,8 +28,8 @@ namespace PK
 
         struct ResourceView
         {
-            uint64_t pruneTick = 0ull;
             uint64_t index = 0ull;
+            uint64_t pruneTick = 0ull;
         };
 
         struct ResourceData

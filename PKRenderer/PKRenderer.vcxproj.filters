@@ -582,9 +582,6 @@
     <ClInclude Include="Source\Core\Base\Containers\FixedString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Base\Containers\LinkedList.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Base\Reflect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
