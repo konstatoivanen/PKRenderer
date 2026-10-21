@@ -1,10 +1,8 @@
 #pragma once
 #include "Core/Base/Containers/PropertyBlock.h"
-#include "Core/RHI/Vulkan/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/VulkanAccessRecorder.h"
+#include "Core/RHI/Vulkan/VulkanShader.h"
 #include "Core/RHI/Vulkan/VulkanQueue.h"
-#include "Core/RHI/Vulkan/VulkanCommon.h"
-#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/RHIGraph.h"
 
 namespace PK
@@ -30,10 +28,11 @@ namespace PK
 
     struct VulkanShaderCmd : public VulkanCmd
     {
-        const VulkanPipeline* pipeline;
+        const VulkanShader* shader;
         void* pushConstants;
         uint2 descriptorHeapOffsets;
         uint32_t pushConstantSize;
+        uint16_t excludeStageMask;
     };
 
     struct VulkanRasterCmd : public VulkanShaderCmd
@@ -212,7 +211,6 @@ namespace PK
             VulkanResourceView target{};
             VulkanResourceView resolve{};
             VkFormat format = VK_FORMAT_UNDEFINED;
-            VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
             VkResolveModeFlagBits resolveMode;
             LoadOp loadOp = LoadOp::Load;
             StoreOp storeOp = StoreOp::Store;
@@ -242,11 +240,10 @@ namespace PK
         enum DirtyFlags : uint32_t
         {
             STATE_DIRTY_RENDERTARGET = 1ull << 0ull,
-            STATE_DIRTY_PIPELINE = 1ull << 1ull,
-            STATE_DIRTY_SHADER = 1ull << 2ull,
-            STATE_DIRTY_VERTEXBUFFERS = 1ull << 3ull,
-            STATE_DIRTY_DESCRIPTORS = 1ull << 4ull,
-            STATE_DIRTY_DYNAMIC_STATE = 1u << 5u
+            STATE_DIRTY_SHADER = 1ull << 1ull,
+            STATE_DIRTY_VERTEXBUFFERS = 1ull << 2ull,
+            STATE_DIRTY_DESCRIPTORS = 1ull << 3ull,
+            STATE_DIRTY_DYNAMIC_STATE = 1u << 4u
         };
 
         VulkanGraph(const VulkanDriver* driver);
@@ -315,7 +312,6 @@ namespace PK
         void EndDebugScope() final;
         void BeginTimer(NameID name) final;
         void EndTimer() final;
-        void AddDispatchHint(QueueType queue) final;
         
         PropertyBlock* GetResourceState() final { return &m_globalResources; }
         ConstBufferView<RHITimerScope> GetTimers() const final;
@@ -350,10 +346,12 @@ namespace PK
         
         struct PipelineState
         {
-            VulkanPipelineCache::PipelineKey pipelineKey{};
+            VersionHandle<VulkanShader> shader{};
             VulkanDynamicState dynamicState{};
             VkStridedDeviceAddressRegionKHR sbtAddresses[(uint32_t)RayTracingShaderGroup::EnumCount]{};
             VertexStreamElement vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
+            VkVertexInputBindingDescription2EXT vertexStreams[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
+            VkVertexInputAttributeDescription2EXT vertexAttributes[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
             VulkanResourceView vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
             VulkanResourceView indexBuffer{};
             VkIndexType indexType = VK_INDEX_TYPE_UINT16;
@@ -362,6 +360,7 @@ namespace PK
             VulkanDescriptorBinding descriptors[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
             uint32_t descriptorCount = 0u;
             uint32_t dirtyFlags = 0u;
+            uint16_t excludeStageMask = 0u;
             uint32_t coalescingQueue = ~0u;
             uint64_t residencyPass = 0ull;
             uint2 descriptorHeapOffsets = PK_UINT2_ZERO;
@@ -371,8 +370,7 @@ namespace PK
             VkRenderingInfo* renderingInfo = nullptr;
             VulkanDynamicState* resolvedDynamicState = nullptr;
             VkBindVertexBuffer3InfoKHR* resolvedVertexBuffers = nullptr;
-            VulkanResourceView resolvedVertexViews[PK_RHI_MAX_VERTEX_ATTRIBUTES]{}; 
-            const VulkanPipeline* pipeline = nullptr;
+            VulkanResourceView resolvedVertexViews[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
         } 
         m_pipelineState;
     };

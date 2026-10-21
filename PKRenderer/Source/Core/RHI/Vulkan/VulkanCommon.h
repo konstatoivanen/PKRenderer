@@ -181,6 +181,63 @@ extern PFN_vkCmdBindSamplerHeapEXT pkfn_vkCmdBindSamplerHeapEXT;
 extern PFN_vkCmdPushDataEXT pkfn_vkCmdPushDataEXT;
 #define vkCmdPushDataEXT pkfn_vkCmdPushDataEXT
 
+extern PFN_vkCreateShadersEXT pkfn_vkCreateShadersEXT;
+#define vkCreateShadersEXT pkfn_vkCreateShadersEXT
+
+extern PFN_vkDestroyShaderEXT pkfn_vkDestroyShaderEXT;
+#define vkDestroyShaderEXT pkfn_vkDestroyShaderEXT
+
+extern PFN_vkCmdBindShadersEXT pkfn_vkCmdBindShadersEXT;
+#define vkCmdBindShadersEXT pkfn_vkCmdBindShadersEXT
+
+extern PFN_vkCmdSetVertexInputEXT pkfn_vkCmdSetVertexInputEXT;
+#define vkCmdSetVertexInputEXT pkfn_vkCmdSetVertexInputEXT
+
+extern PFN_vkCmdSetPolygonModeEXT pkfn_vkCmdSetPolygonModeEXT;
+#define vkCmdSetPolygonModeEXT pkfn_vkCmdSetPolygonModeEXT
+
+extern PFN_vkCmdSetRasterizationSamplesEXT pkfn_vkCmdSetRasterizationSamplesEXT;
+#define vkCmdSetRasterizationSamplesEXT pkfn_vkCmdSetRasterizationSamplesEXT
+
+extern PFN_vkCmdSetSampleMaskEXT pkfn_vkCmdSetSampleMaskEXT;
+#define vkCmdSetSampleMaskEXT pkfn_vkCmdSetSampleMaskEXT
+
+extern PFN_vkCmdSetAlphaToCoverageEnableEXT pkfn_vkCmdSetAlphaToCoverageEnableEXT;
+#define vkCmdSetAlphaToCoverageEnableEXT pkfn_vkCmdSetAlphaToCoverageEnableEXT
+
+extern PFN_vkCmdSetAlphaToOneEnableEXT pkfn_vkCmdSetAlphaToOneEnableEXT;
+#define vkCmdSetAlphaToOneEnableEXT pkfn_vkCmdSetAlphaToOneEnableEXT
+
+extern PFN_vkCmdSetDepthClampEnableEXT pkfn_vkCmdSetDepthClampEnableEXT;
+#define vkCmdSetDepthClampEnableEXT pkfn_vkCmdSetDepthClampEnableEXT
+
+extern PFN_vkCmdSetLogicOpEnableEXT pkfn_vkCmdSetLogicOpEnableEXT;
+#define vkCmdSetLogicOpEnableEXT pkfn_vkCmdSetLogicOpEnableEXT
+
+extern PFN_vkCmdSetLogicOpEXT pkfn_vkCmdSetLogicOpEXT;
+#define vkCmdSetLogicOpEXT pkfn_vkCmdSetLogicOpEXT
+
+extern PFN_vkCmdSetColorBlendEnableEXT pkfn_vkCmdSetColorBlendEnableEXT;
+#define vkCmdSetColorBlendEnableEXT pkfn_vkCmdSetColorBlendEnableEXT
+
+extern PFN_vkCmdSetColorBlendEquationEXT pkfn_vkCmdSetColorBlendEquationEXT;
+#define vkCmdSetColorBlendEquationEXT pkfn_vkCmdSetColorBlendEquationEXT
+
+extern PFN_vkCmdSetColorWriteMaskEXT pkfn_vkCmdSetColorWriteMaskEXT;
+#define vkCmdSetColorWriteMaskEXT pkfn_vkCmdSetColorWriteMaskEXT
+
+extern PFN_vkCmdSetConservativeRasterizationModeEXT pkfn_vkCmdSetConservativeRasterizationModeEXT;
+#define vkCmdSetConservativeRasterizationModeEXT pkfn_vkCmdSetConservativeRasterizationModeEXT
+
+extern PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT pkfn_vkCmdSetExtraPrimitiveOverestimationSizeEXT;
+#define vkCmdSetExtraPrimitiveOverestimationSizeEXT pkfn_vkCmdSetExtraPrimitiveOverestimationSizeEXT
+
+extern PFN_vkCmdSetLineRasterizationModeEXT pkfn_vkCmdSetLineRasterizationModeEXT;
+#define vkCmdSetLineRasterizationModeEXT pkfn_vkCmdSetLineRasterizationModeEXT
+
+extern PFN_vkCmdSetFragmentShadingRateKHR pkfn_vkCmdSetFragmentShadingRateKHR;
+#define vkCmdSetFragmentShadingRateKHR pkfn_vkCmdSetFragmentShadingRateKHR
+
 namespace PK
 {
     struct VulkanQueueFamilies
@@ -230,7 +287,7 @@ namespace PK
         VkPhysicalDeviceMeshShaderFeaturesEXT meshshader{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT };
         VkPhysicalDeviceFragmentShadingRateFeaturesKHR shadingRate{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR };
         VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT fifoLatestReady{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT };
-        VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT swapchainMaintenance1{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT };
+        VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR swapchainMaintenance1{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_KHR };
         VkPhysicalDevicePresentIdFeaturesKHR presentId{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR };
         VkPhysicalDevicePresentWaitFeaturesKHR presentWait{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR };
         VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR maximalReconvergence { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR };
@@ -239,6 +296,7 @@ namespace PK
         VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR unifiedLayout { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR };
         VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR deviceAddressCommands { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR };
         VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR raytracingMaintenance1 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR };
+        VkPhysicalDeviceShaderObjectFeaturesEXT shaderObject{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };
@@ -315,16 +373,21 @@ namespace PK
         ShaderResourceType type;
     };
 
-    struct VulkanPipeline : public NoCopy
+    struct VulkanDynamicState
     {
-        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name);
-        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo, const char* name);
-        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkRayTracingPipelineCreateInfoKHR& createInfo, const char* name);
-        ~VulkanPipeline();
-
-        const VkDevice device;
-        VkPipeline pipeline;
-        VkPipelineBindPoint bindPoint;
+        BlendParameters blending{};
+        DepthStencilParameters depthStencil{};
+        RasterizationParameters rasterization{};
+        MultisamplingParameters multisampling{};
+        const VkViewport* viewports = nullptr;
+        const VkRect2D* scissors = nullptr;
+        const VkVertexInputBindingDescription2EXT* vertexStreams = nullptr;
+        const VkVertexInputAttributeDescription2EXT* vertexAttributes = nullptr;
+        uint16_t viewportCount = 0u;
+        uint16_t scissorCount = 0u;
+        uint16_t vertexStreamCount = 0u;
+        uint16_t vertexAttributeCount = 0u;
+        uint16_t colorAttachmentCount = 0u;
     };
 
     struct VulkanQueryPool : public NoCopy
@@ -357,23 +420,6 @@ namespace PK
         const VkQueryType type;
         FenceRef fence;
         VkQueryPool pool;
-    };
-
-    struct VulkanDynamicState
-    {
-        DepthStencilParameters depthStencil{};
-        const VkViewport* viewports = nullptr;
-        const VkRect2D* scissors = nullptr;
-        uint16_t viewportCount = 0u;
-        uint16_t scissorCount = 0u;
-        CullMode cullMode = CullMode::Off;
-        FrontFace frontFace = FrontFace::CounterClockwise;
-        bool rasterizerDiscardEnable = false;
-        bool depthBiasEnable = false;
-        float depthBiasConstantFactor = 0.0f;
-        float depthBiasClamp = 0.0f;
-        float depthBiasSlopeFactor = 0.0f;
-        float lineWidth = 1.0f;
     };
 
     void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames, bool enableDebugLabels);

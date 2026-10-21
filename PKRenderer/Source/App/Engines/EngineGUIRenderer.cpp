@@ -143,7 +143,7 @@ namespace PK::App
             graph->SetIndexBuffer(m_gui_indexBuffer.get(), sizeof(uint16_t));
             graph.SetShader(m_gui_shader);
             graph.SetRenderTarget({ m_gui_msaa_target.get(), LoadOp::Clear, StoreOp::Store }, true);
-            graph->SetMultisampling({ .sampleShadingEnable = true });
+            graph->SetMultisampling({ .sampleCount = m_gui_msaa_target->GetDescriptor().samples });
             graph->DrawIndexed(math::min(GUI_MAX_INDICES, m_gui_indexCount), 1u, 0u, 0u, 0u);
 
             RHI::SetTexture(hash->pk_Texture, m_gui_msaa_target.get());

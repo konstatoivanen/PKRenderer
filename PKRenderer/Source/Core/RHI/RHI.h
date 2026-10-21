@@ -122,7 +122,7 @@ namespace PK
         void WaitForIdle();
         void GC();
 
-        RHIDriverScope CreateDriver(const char* workingDirectory, const RHIDriverDescriptor& descriptor);
+        RHIDriverScope CreateDriver(const RHIDriverDescriptor& descriptor);
         RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name);
         RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name);
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name);

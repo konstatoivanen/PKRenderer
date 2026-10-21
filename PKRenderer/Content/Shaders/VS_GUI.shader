@@ -17,8 +17,8 @@ uniform Buffer<uint4> pk_GUI_Vertices;
 uniform Texture2D pk_GUI_Textures[];
 uniform float4 pk_GUI_ScreenTransform;
 
-PK_DECLARE_VS_ATTRIB(float2 vs_TEXCOORD);
-PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
+PK_DECLARE_VS_MSAA_ATTRIB(float2 vs_TEXCOORD);
+PK_DECLARE_VS_MSAA_ATTRIB(float4 vs_COLOR);
 PK_DECLARE_VS_ATTRIB(flat uint vs_TEXTURE_INDEX);
 PK_DECLARE_VS_ATTRIB(flat uint vs_SHADING_MODE);
 

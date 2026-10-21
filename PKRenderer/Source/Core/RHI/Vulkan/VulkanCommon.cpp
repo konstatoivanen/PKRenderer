@@ -38,12 +38,30 @@ PFN_vkCmdDrawIndexedIndirect2KHR pkfn_vkCmdDrawIndexedIndirect2KHR = nullptr;
 PFN_vkCmdDrawIndirect2KHR pkfn_vkCmdDrawIndirect2KHR = nullptr;
 PFN_vkCmdFillMemoryKHR pkfn_vkCmdFillMemoryKHR = nullptr;
 PFN_vkCmdUpdateMemoryKHR pkfn_vkCmdUpdateMemoryKHR = nullptr;
-
 PFN_vkWriteResourceDescriptorsEXT pkfn_vkWriteResourceDescriptorsEXT = nullptr;
 PFN_vkWriteSamplerDescriptorsEXT pkfn_vkWriteSamplerDescriptorsEXT = nullptr;
 PFN_vkCmdBindResourceHeapEXT pkfn_vkCmdBindResourceHeapEXT = nullptr;
 PFN_vkCmdBindSamplerHeapEXT pkfn_vkCmdBindSamplerHeapEXT = nullptr;
 PFN_vkCmdPushDataEXT pkfn_vkCmdPushDataEXT = nullptr;
+PFN_vkCreateShadersEXT pkfn_vkCreateShadersEXT = nullptr;
+PFN_vkDestroyShaderEXT pkfn_vkDestroyShaderEXT = nullptr;
+PFN_vkCmdBindShadersEXT pkfn_vkCmdBindShadersEXT = nullptr;
+PFN_vkCmdSetVertexInputEXT pkfn_vkCmdSetVertexInputEXT = nullptr;
+PFN_vkCmdSetPolygonModeEXT pkfn_vkCmdSetPolygonModeEXT = nullptr;
+PFN_vkCmdSetRasterizationSamplesEXT pkfn_vkCmdSetRasterizationSamplesEXT = nullptr;
+PFN_vkCmdSetSampleMaskEXT pkfn_vkCmdSetSampleMaskEXT = nullptr;
+PFN_vkCmdSetAlphaToCoverageEnableEXT pkfn_vkCmdSetAlphaToCoverageEnableEXT = nullptr;
+PFN_vkCmdSetAlphaToOneEnableEXT pkfn_vkCmdSetAlphaToOneEnableEXT = nullptr;
+PFN_vkCmdSetDepthClampEnableEXT pkfn_vkCmdSetDepthClampEnableEXT = nullptr;
+PFN_vkCmdSetLogicOpEnableEXT pkfn_vkCmdSetLogicOpEnableEXT = nullptr;
+PFN_vkCmdSetLogicOpEXT pkfn_vkCmdSetLogicOpEXT = nullptr;
+PFN_vkCmdSetColorBlendEnableEXT pkfn_vkCmdSetColorBlendEnableEXT = nullptr;
+PFN_vkCmdSetColorBlendEquationEXT pkfn_vkCmdSetColorBlendEquationEXT = nullptr;
+PFN_vkCmdSetColorWriteMaskEXT pkfn_vkCmdSetColorWriteMaskEXT = nullptr;
+PFN_vkCmdSetConservativeRasterizationModeEXT pkfn_vkCmdSetConservativeRasterizationModeEXT = nullptr;
+PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT pkfn_vkCmdSetExtraPrimitiveOverestimationSizeEXT = nullptr;
+PFN_vkCmdSetLineRasterizationModeEXT pkfn_vkCmdSetLineRasterizationModeEXT = nullptr;
+PFN_vkCmdSetFragmentShadingRateKHR pkfn_vkCmdSetFragmentShadingRateKHR = nullptr;
 
 namespace PK
 {
@@ -70,6 +88,7 @@ namespace PK
         descriptorHeap.pNext = &unifiedLayout;
         unifiedLayout.pNext = &deviceAddressCommands;
         deviceAddressCommands.pNext = &raytracingMaintenance1;
+        raytracingMaintenance1.pNext = &shaderObject;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -282,6 +301,7 @@ namespace PK
             PK_TEST_FEATURE(deviceAddressCommands.deviceAddressCommands)
             PK_TEST_FEATURE(raytracingMaintenance1.rayTracingMaintenance1)
             PK_TEST_FEATURE(raytracingMaintenance1.rayTracingPipelineTraceRaysIndirect2)
+            PK_TEST_FEATURE(shaderObject.shaderObject)
         }
 
         #undef PK_TEST_FEATURE
@@ -299,36 +319,6 @@ namespace PK
 
         return !missingFeatures;
     }
-
-    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name) : 
-        device(device),
-        bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)
-    {
-        VK_ASSERT_RESULT_CTX(vkCreateGraphicsPipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, name);
-    }
-
-    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo, const char* name) : 
-        device(device),
-        bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE)
-    {
-        VK_ASSERT_RESULT_CTX(vkCreateComputePipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, name);
-    }
-
-    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkRayTracingPipelineCreateInfoKHR& createInfo, const char* name) : 
-        device(device),
-        bindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-    {
-        VK_ASSERT_RESULT_CTX(vkCreateRayTracingPipelinesKHR(device, VK_NULL_HANDLE, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, name);
-    }
-
-    VulkanPipeline::~VulkanPipeline()
-    {
-        vkDestroyPipeline(device, pipeline, nullptr);
-    }
-
 
     VulkanQueryPool::VulkanQueryPool(VkDevice device, VkQueryType type, uint32_t size) :
         device(device),
@@ -423,6 +413,26 @@ namespace PK
         pkfn_vkCmdBindResourceHeapEXT = (PFN_vkCmdBindResourceHeapEXT)vkGetInstanceProcAddr(instance, "vkCmdBindResourceHeapEXT");
         pkfn_vkCmdBindSamplerHeapEXT = (PFN_vkCmdBindSamplerHeapEXT)vkGetInstanceProcAddr(instance, "vkCmdBindSamplerHeapEXT");
         pkfn_vkCmdPushDataEXT = (PFN_vkCmdPushDataEXT)vkGetInstanceProcAddr(instance, "vkCmdPushDataEXT");
+
+        pkfn_vkCreateShadersEXT = (PFN_vkCreateShadersEXT)vkGetInstanceProcAddr(instance, "vkCreateShadersEXT");
+        pkfn_vkDestroyShaderEXT = (PFN_vkDestroyShaderEXT)vkGetInstanceProcAddr(instance, "vkDestroyShaderEXT");
+        pkfn_vkCmdBindShadersEXT = (PFN_vkCmdBindShadersEXT)vkGetInstanceProcAddr(instance, "vkCmdBindShadersEXT");
+        pkfn_vkCmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)vkGetInstanceProcAddr(instance, "vkCmdSetVertexInputEXT");
+        pkfn_vkCmdSetPolygonModeEXT = (PFN_vkCmdSetPolygonModeEXT)vkGetInstanceProcAddr(instance, "vkCmdSetPolygonModeEXT");
+        pkfn_vkCmdSetRasterizationSamplesEXT = (PFN_vkCmdSetRasterizationSamplesEXT)vkGetInstanceProcAddr(instance, "vkCmdSetRasterizationSamplesEXT");
+        pkfn_vkCmdSetSampleMaskEXT = (PFN_vkCmdSetSampleMaskEXT)vkGetInstanceProcAddr(instance, "vkCmdSetSampleMaskEXT");
+        pkfn_vkCmdSetAlphaToCoverageEnableEXT = (PFN_vkCmdSetAlphaToCoverageEnableEXT)vkGetInstanceProcAddr(instance, "vkCmdSetAlphaToCoverageEnableEXT");
+        pkfn_vkCmdSetAlphaToOneEnableEXT = (PFN_vkCmdSetAlphaToOneEnableEXT)vkGetInstanceProcAddr(instance, "vkCmdSetAlphaToOneEnableEXT");
+        pkfn_vkCmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)vkGetInstanceProcAddr(instance, "vkCmdSetDepthClampEnableEXT");
+        pkfn_vkCmdSetLogicOpEnableEXT = (PFN_vkCmdSetLogicOpEnableEXT)vkGetInstanceProcAddr(instance, "vkCmdSetLogicOpEnableEXT");
+        pkfn_vkCmdSetLogicOpEXT = (PFN_vkCmdSetLogicOpEXT)vkGetInstanceProcAddr(instance, "vkCmdSetLogicOpEXT");
+        pkfn_vkCmdSetColorBlendEnableEXT = (PFN_vkCmdSetColorBlendEnableEXT)vkGetInstanceProcAddr(instance, "vkCmdSetColorBlendEnableEXT");
+        pkfn_vkCmdSetColorBlendEquationEXT = (PFN_vkCmdSetColorBlendEquationEXT)vkGetInstanceProcAddr(instance, "vkCmdSetColorBlendEquationEXT");
+        pkfn_vkCmdSetColorWriteMaskEXT = (PFN_vkCmdSetColorWriteMaskEXT)vkGetInstanceProcAddr(instance, "vkCmdSetColorWriteMaskEXT");
+        pkfn_vkCmdSetConservativeRasterizationModeEXT = (PFN_vkCmdSetConservativeRasterizationModeEXT)vkGetInstanceProcAddr(instance, "vkCmdSetConservativeRasterizationModeEXT");
+        pkfn_vkCmdSetExtraPrimitiveOverestimationSizeEXT = (PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT)vkGetInstanceProcAddr(instance, "vkCmdSetExtraPrimitiveOverestimationSizeEXT");
+        pkfn_vkCmdSetLineRasterizationModeEXT = (PFN_vkCmdSetLineRasterizationModeEXT)vkGetInstanceProcAddr(instance, "vkCmdSetLineRasterizationModeEXT");
+        pkfn_vkCmdSetFragmentShadingRateKHR = (PFN_vkCmdSetFragmentShadingRateKHR)vkGetInstanceProcAddr(instance, "vkCmdSetFragmentShadingRateKHR");
     }
 
     

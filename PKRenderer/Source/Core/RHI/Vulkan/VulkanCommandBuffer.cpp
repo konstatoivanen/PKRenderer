@@ -1,15 +1,56 @@
 #include "PrecompiledHeader.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
+#include "Core/RHI/Vulkan/VulkanShader.h"
 #include "VulkanCommandBuffer.h"
 
 namespace PK
 {
-    void VulkanCommandBuffer::SetPipelineState(const VulkanPipeline* pipeline, uint2 descriptorHeapOffsets, const void* pushConstants, uint32_t pushConstantSize)
+    constexpr static const VkShaderStageFlagBits SHADER_STAGES[(uint32_t)ShaderStage::RayGeneration] =
     {
-        if (m_pipeline != pipeline)
+        VK_SHADER_STAGE_VERTEX_BIT,
+        VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+        VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+        VK_SHADER_STAGE_GEOMETRY_BIT,
+        VK_SHADER_STAGE_TASK_BIT_EXT,
+        VK_SHADER_STAGE_MESH_BIT_EXT,
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        VK_SHADER_STAGE_COMPUTE_BIT
+    };
+
+    void VulkanCommandBuffer::SetShaderState(const VulkanShader* shader, uint16_t excludeStageMask, uint2 descriptorHeapOffsets, const void* pushConstants, uint32_t pushConstantSize)
+    {
+        if (m_shader != shader || m_excludeStageMask != excludeStageMask)
         {
-            vkCmdBindPipeline(m_commandBuffer, pipeline->bindPoint, pipeline->pipeline);
-            m_pipeline = pipeline;
+            const auto bindPoint = shader->GetBindPoint();
+            const auto* shaders = shader->GetShaderObjects();
+
+            if (bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
+            {
+                vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shader->GetRayTracingPipeline());
+            }
+            else if (bindPoint == VK_PIPELINE_BIND_POINT_COMPUTE)
+            {
+                constexpr auto computeIdx = (uint32_t)ShaderStage::Compute;
+                vkCmdBindShadersEXT(m_commandBuffer, 1u, SHADER_STAGES + computeIdx, shaders + computeIdx);
+            }
+            else
+            {
+                constexpr auto graphicsCount = (uint32_t)ShaderStage::Compute;
+                VkShaderEXT maskedShaders[graphicsCount];
+
+                if (excludeStageMask)
+                {
+                    for (auto i = 0u; i < graphicsCount; ++i)
+                    {
+                        maskedShaders[i] = (excludeStageMask & (1u << i)) ? VK_NULL_HANDLE : shaders[i];
+                    }
+                }
+
+                vkCmdBindShadersEXT(m_commandBuffer, graphicsCount, SHADER_STAGES, excludeStageMask ? maskedShaders : shaders);
+            }
+
+            m_shader = shader;
+            m_excludeStageMask = excludeStageMask;
         }
 
         if (math::any(m_descriptorHeapOffsets != descriptorHeapOffsets))
@@ -37,30 +78,124 @@ namespace PK
         {
             const auto* pre = m_dynamicState;
             const auto* cur = dynamicState;
-            const auto& ds = dynamicState->depthStencil;
-            const auto depthTestEnable = ds.depthCompareOp != Comparison::Off;
 
-            if (!pre || pre->viewports != cur->viewports || pre->viewportCount != cur->viewportCount)  vkCmdSetViewportWithCount(m_commandBuffer, cur->viewportCount, cur->viewports);
-            if (!pre || pre->scissors != cur->scissors || pre->scissorCount != cur->scissorCount)      vkCmdSetScissorWithCount(m_commandBuffer, cur->scissorCount, cur->scissors);
-            if (!pre || pre->cullMode != cur->cullMode)                                                vkCmdSetCullMode(m_commandBuffer, VulkanEnumConvert::GetCullMode(cur->cullMode));
-            if (!pre || pre->frontFace != cur->frontFace)                                              vkCmdSetFrontFace(m_commandBuffer, VulkanEnumConvert::GetFrontFace(cur->frontFace));
-            if (!pre || pre->rasterizerDiscardEnable != cur->rasterizerDiscardEnable)                  vkCmdSetRasterizerDiscardEnable(m_commandBuffer, cur->rasterizerDiscardEnable);
-            if (!pre || pre->lineWidth != dynamicState->lineWidth)                                     vkCmdSetLineWidth(m_commandBuffer, cur->lineWidth);
-            if (!pre || pre->depthBiasEnable != cur->depthBiasEnable)                                  vkCmdSetDepthBiasEnable(m_commandBuffer, cur->depthBiasEnable);
-            if (!pre || (pre->depthStencil.depthCompareOp != Comparison::Off) != depthTestEnable)      vkCmdSetDepthTestEnable(m_commandBuffer, depthTestEnable);
-            if (!pre || pre->depthStencil.depthWriteEnable != ds.depthWriteEnable)                     vkCmdSetDepthWriteEnable(m_commandBuffer, ds.depthWriteEnable);
-            if (!pre || pre->depthStencil.depthCompareOp != ds.depthCompareOp)                         vkCmdSetDepthCompareOp(m_commandBuffer, VulkanEnumConvert::GetCompareOp(ds.depthCompareOp));
-            if (!pre || pre->depthStencil.depthBoundsTestEnable != ds.depthBoundsTestEnable)           vkCmdSetDepthBoundsTestEnable(m_commandBuffer, ds.depthBoundsTestEnable);
-            if (!pre || pre->depthStencil.stencilTestEnable != ds.stencilTestEnable)                   vkCmdSetStencilTestEnable(m_commandBuffer, ds.stencilTestEnable);
-
-            if (cur->depthBiasEnable && (!pre || pre->depthBiasConstantFactor != cur->depthBiasConstantFactor || pre->depthBiasClamp != cur->depthBiasClamp || pre->depthBiasSlopeFactor != cur->depthBiasSlopeFactor))
+            if (!pre || pre->viewports != cur->viewports)
             {
-                vkCmdSetDepthBias(m_commandBuffer, dynamicState->depthBiasConstantFactor, dynamicState->depthBiasClamp, dynamicState->depthBiasSlopeFactor);
+                vkCmdSetViewportWithCount(m_commandBuffer, cur->viewportCount, cur->viewports);
             }
 
-            if (ds.depthBoundsTestEnable && (!pre || pre->depthStencil.minDepthBounds != ds.minDepthBounds || pre->depthStencil.maxDepthBounds != ds.maxDepthBounds))
+            if (!pre || pre->scissors != cur->scissors)
             {
-                vkCmdSetDepthBounds(m_commandBuffer, ds.minDepthBounds, ds.maxDepthBounds);
+                vkCmdSetScissorWithCount(m_commandBuffer, cur->scissorCount, cur->scissors);
+            }
+
+            if (!pre || pre->vertexStreams != cur->vertexStreams || pre->vertexAttributes != cur->vertexAttributes)
+            {
+                vkCmdSetVertexInputEXT(m_commandBuffer, cur->vertexStreamCount, cur->vertexStreams, cur->vertexAttributeCount, cur->vertexAttributes);
+            }
+
+            if (!pre || memcmp(&pre->rasterization, &cur->rasterization, sizeof(RasterizationParameters)) != 0)
+            {
+                const auto& rs = cur->rasterization;
+                const auto polyMode = VulkanEnumConvert::GetPolygonMode(rs.polygonMode);
+
+                vkCmdSetCullMode(m_commandBuffer, VulkanEnumConvert::GetCullMode(rs.cullMode));
+                vkCmdSetFrontFace(m_commandBuffer, VulkanEnumConvert::GetFrontFace(rs.frontFace));
+                vkCmdSetRasterizerDiscardEnable(m_commandBuffer, rs.rasterizerDiscardEnable);
+                vkCmdSetLineWidth(m_commandBuffer, rs.lineWidth);
+                vkCmdSetDepthClampEnableEXT(m_commandBuffer, rs.depthClampEnable);
+                vkCmdSetPrimitiveTopology(m_commandBuffer, VulkanEnumConvert::GetTopology(rs.topology));
+                vkCmdSetPrimitiveRestartEnable(m_commandBuffer, VK_FALSE);
+                vkCmdSetPolygonModeEXT(m_commandBuffer, polyMode);
+                vkCmdSetConservativeRasterizationModeEXT(m_commandBuffer, VulkanEnumConvert::GetRasterMode(rs.rasterMode, true));
+                vkCmdSetDepthBiasEnable(m_commandBuffer, rs.depthBiasEnable);
+
+                if (rs.depthBiasEnable)
+                {
+                    vkCmdSetDepthBias(m_commandBuffer, rs.depthBiasConstantFactor, rs.depthBiasClamp, rs.depthBiasSlopeFactor);
+                }
+
+                if (polyMode == VK_POLYGON_MODE_LINE)
+                {
+                    vkCmdSetLineRasterizationModeEXT(m_commandBuffer, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH);
+                }
+
+                if (rs.rasterMode == RasterMode::OverEstimate)
+                {
+                    vkCmdSetExtraPrimitiveOverestimationSizeEXT(m_commandBuffer, rs.overEstimation);
+                }
+            }
+
+            if (!pre || memcmp(&pre->depthStencil, &cur->depthStencil, sizeof(DepthStencilParameters)) != 0)
+            {
+                const auto& ds = cur->depthStencil;
+
+                vkCmdSetDepthTestEnable(m_commandBuffer, ds.depthCompareOp != Comparison::Off);
+                vkCmdSetDepthWriteEnable(m_commandBuffer, ds.depthWriteEnable);
+                vkCmdSetDepthCompareOp(m_commandBuffer, VulkanEnumConvert::GetCompareOp(ds.depthCompareOp));
+                vkCmdSetDepthBoundsTestEnable(m_commandBuffer, ds.depthBoundsTestEnable);
+                vkCmdSetStencilTestEnable(m_commandBuffer, ds.stencilTestEnable);
+
+                if (ds.depthBoundsTestEnable)
+                {
+                    vkCmdSetDepthBounds(m_commandBuffer, ds.minDepthBounds, ds.maxDepthBounds);
+                }
+            }
+
+            if (!pre || memcmp(&pre->multisampling, &cur->multisampling, sizeof(MultisamplingParameters)) != 0)
+            {
+                const auto& ms = cur->multisampling;
+                const auto samples = VulkanEnumConvert::GetSampleCountFlags(ms.sampleCount);
+                const VkSampleMask fullMask[2] = { ~0u, ~0u };
+                const VkExtent2D fragmentSize = { math::max(1u, (uint32_t)ms.fragmentSize.x), math::max(1u, (uint32_t)ms.fragmentSize.y) };
+                const VkFragmentShadingRateCombinerOpKHR combinerOps[2] =
+                {
+                    VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
+                    VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR
+                };
+
+                vkCmdSetAlphaToCoverageEnableEXT(m_commandBuffer, ms.alphaToCoverageEnable);
+                vkCmdSetAlphaToOneEnableEXT(m_commandBuffer, ms.alphaToOneEnable);
+                vkCmdSetRasterizationSamplesEXT(m_commandBuffer, samples);
+                vkCmdSetSampleMaskEXT(m_commandBuffer, samples, fullMask);
+                vkCmdSetFragmentShadingRateKHR(m_commandBuffer, &fragmentSize, combinerOps);
+            }
+
+            if (!pre || pre->colorAttachmentCount != cur->colorAttachmentCount || memcmp(&pre->blending, &cur->blending, sizeof(BlendParameters)) != 0)
+            {
+                const auto& blend = cur->blending;
+                vkCmdSetLogicOpEnableEXT(m_commandBuffer, blend.isLogicOpEnabled());
+
+                if (blend.isLogicOpEnabled())
+                {
+                    vkCmdSetLogicOpEXT(m_commandBuffer, VulkanEnumConvert::GetLogicOp(blend.logicOp));
+                }
+
+                if (cur->colorAttachmentCount)
+                {
+                    VkBool32 blendEnables[PK_RHI_MAX_RENDER_TARGETS]{};
+                    VkColorBlendEquationEXT blendEquations[PK_RHI_MAX_RENDER_TARGETS]{};
+                    VkColorComponentFlags writeMasks[PK_RHI_MAX_RENDER_TARGETS]{};
+
+                    VkColorBlendEquationEXT equation{};
+                    equation.srcColorBlendFactor = VulkanEnumConvert::GetBlendFactor(blend.srcColorFactor, VK_BLEND_FACTOR_ONE);
+                    equation.dstColorBlendFactor = VulkanEnumConvert::GetBlendFactor(blend.dstColorFactor, VK_BLEND_FACTOR_ZERO);
+                    equation.colorBlendOp = VulkanEnumConvert::GetBlendOp(blend.colorOp);
+                    equation.srcAlphaBlendFactor = VulkanEnumConvert::GetBlendFactor(blend.srcAlphaFactor, VK_BLEND_FACTOR_ONE);
+                    equation.dstAlphaBlendFactor = VulkanEnumConvert::GetBlendFactor(blend.dstAlphaFactor, VK_BLEND_FACTOR_ZERO);
+                    equation.alphaBlendOp = VulkanEnumConvert::GetBlendOp(blend.alphaOp);
+
+                    for (auto i = 0u; i < cur->colorAttachmentCount; ++i)
+                    {
+                        blendEnables[i] = blend.isBlendEnabled();
+                        blendEquations[i] = equation;
+                        writeMasks[i] = (VkColorComponentFlagBits)blend.colorMask;
+                    }
+
+                    vkCmdSetColorBlendEnableEXT(m_commandBuffer, 0u, cur->colorAttachmentCount, blendEnables);
+                    vkCmdSetColorBlendEquationEXT(m_commandBuffer, 0u, cur->colorAttachmentCount, blendEquations);
+                    vkCmdSetColorWriteMaskEXT(m_commandBuffer, 0u, cur->colorAttachmentCount, writeMasks);
+                }
             }
 
             m_dynamicState = dynamicState;
@@ -82,9 +217,7 @@ namespace PK
 
     void VulkanCommandBuffer::SetIndexBuffer(const VkBindIndexBuffer3InfoKHR& info)
     {
-        if (m_indexRange.address != info.addressRange.address || 
-            m_indexRange.size != info.addressRange.size || 
-            m_indexType != info.indexType)
+        if (m_indexRange.address != info.addressRange.address || m_indexRange.size != info.addressRange.size || m_indexType != info.indexType)
         {
             vkCmdBindIndexBuffer3KHR(m_commandBuffer, &info);
             m_indexRange = info.addressRange;
@@ -171,7 +304,8 @@ namespace PK
         m_queueAccessFlags = queueAccessFlags;
         m_queueFlags = queueFlags;
         m_timelineIndex = ~0ull;
-        m_pipeline = nullptr;
+        m_shader = nullptr;
+        m_excludeStageMask = 0u;
         m_descriptorHeapOffsets = { ~0u, ~0u };
         m_pushConstants = nullptr;
         m_renderingInfo = nullptr;
@@ -186,16 +320,16 @@ namespace PK
 
     bool VulkanCommandBuffer::QueueSubmit(uint64_t timelineIndex)
     {
-        if (!m_isRecording)
+        if (m_isRecording)
         {
-            return false;
+            EndRenderPass();
+            VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
+            m_timelineIndex = timelineIndex;
+            m_isRecording = false;
+            return true;
         }
 
-        EndRenderPass();
-        VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
-        m_timelineIndex = timelineIndex;
-        m_isRecording = false;
-        return true;
+        return false;
     }
 
     bool VulkanCommandBuffer::QueueFinalize(uint64_t resolvedTimelineIndex)

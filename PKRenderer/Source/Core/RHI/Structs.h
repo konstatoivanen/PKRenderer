@@ -332,10 +332,10 @@ namespace PK
 
     struct MultisamplingParameters
     {
-        bool sampleShadingEnable = false;
+        byte2 fragmentSize = { 1u, 1u };
+        uint8_t sampleCount = 1u;
         bool alphaToCoverageEnable = false;
         bool alphaToOneEnable = false;
-        float minSampleShading = 1.0f;
     };
 
     struct DepthStencilParameters

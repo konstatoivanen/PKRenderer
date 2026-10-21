@@ -90,18 +90,22 @@ float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float
 #if defined(SHADER_STAGE_MESH_ASSEMBLY)
     #define PK_DECLARE_FS_OUT(variable) variable
     #define PK_DECLARE_VS_ATTRIB(variable) out variable[]
+    #define PK_DECLARE_VS_MSAA_ATTRIB(variable) out variable[]
     #define PK_SET_VS_ATTRIB(variable, index, value) variable[index] = value
 #elif defined(SHADER_STAGE_VERTEX)
     #define PK_DECLARE_FS_OUT(variable) variable
     #define PK_DECLARE_VS_ATTRIB(variable) out variable
+    #define PK_DECLARE_VS_MSAA_ATTRIB(variable) out variable
     #define PK_SET_VS_ATTRIB(variable, index, value) variable = value
 #elif defined(SHADER_STAGE_FRAGMENT)
     #define PK_DECLARE_FS_OUT(variable) out variable
     #define PK_DECLARE_VS_ATTRIB(variable) in variable
+    #define PK_DECLARE_VS_MSAA_ATTRIB(variable) sample in variable
     #define PK_SET_VS_ATTRIB(variable, index, value)
 #else
     #define PK_DECLARE_FS_OUT(variable) variable
     #define PK_DECLARE_VS_ATTRIB(variable)
+    #define PK_DECLARE_VS_MSAA_ATTRIB(variable)
     #define PK_SET_VS_ATTRIB(variable, index, value)
 #endif
 

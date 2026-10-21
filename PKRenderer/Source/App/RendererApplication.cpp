@@ -69,7 +69,7 @@ namespace PK::App
 
         auto config = Serialize::Load<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
         m_inactiveFrameInterval = config.InactiveFrameInterval;
-        m_RHIDriver = RHI::CreateDriver(GetWorkingDirectory(), config.RHIDesc);
+        m_RHIDriver = RHI::CreateDriver(config.RHIDesc);
 
         config.WindowDesc.title = { GetName(), m_RHIDriver->GetDriverHeader() };
         m_window = CreateUnique<Window>(config.WindowDesc);

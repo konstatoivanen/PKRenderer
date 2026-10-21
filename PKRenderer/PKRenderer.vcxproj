@@ -493,7 +493,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanShader.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanSwapchain.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanTexture.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanPipelineCache.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanStagingArena.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommon.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDriver.h" />
@@ -803,7 +802,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanShader.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanSwapchain.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanTexture.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanPipelineCache.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanStagingArena.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommon.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDriver.cpp" />

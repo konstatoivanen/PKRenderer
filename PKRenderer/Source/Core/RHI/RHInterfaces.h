@@ -182,7 +182,6 @@ namespace PK
         virtual void EndDebugScope() = 0;
         virtual void BeginTimer(NameID name) = 0;
         virtual void EndTimer() = 0;
-        virtual void AddDispatchHint(QueueType queue) = 0;
 
         virtual FenceRef GetFenceRef() const = 0;
         virtual ConstBufferView<RHITimerScope> GetTimers() const = 0;

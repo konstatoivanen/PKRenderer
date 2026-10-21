@@ -140,7 +140,6 @@ namespace PK
         VK_ASSERT_RESULT_CTX(vmaCreateAllocator(&allocatorInfo, &allocator), "Failed to create a VMA allocator!");
 
         disposer.New(512u);
-        pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.enablePipelineCache, properties.gcPruneDelay);
         stagingArena.New(device, allocator, queueInitializer.selectedAll, properties.stagingArenaSize);
         descriptorHeap.New(device, allocator, queueInitializer.selectedAll, physicalDeviceProperties, properties.descriptorArenaSize, properties.gcPruneDelay);
         timerArena.New(device, physicalDeviceProperties.core.limits.timestampPeriod);
@@ -159,7 +158,6 @@ namespace PK
         timerArena.Delete();
         descriptorHeap.Delete();
         stagingArena.Delete();
-        pipelineCache.Delete();
         queues.Delete();
         disposer.Delete();
 
@@ -227,7 +225,6 @@ namespace PK
 
     void VulkanDriver::GC()
     {
-        pipelineCache->Prune();
         disposer->Prune();
         queues->Prune();
         descriptorHeap->Prune();

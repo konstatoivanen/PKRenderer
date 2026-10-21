@@ -24,7 +24,7 @@ namespace PK
     void RHI::WaitForIdle() { RHIDriver::Get()->WaitForIdle(); }
     void RHI::GC() { RHIDriver::Get()->GC(); }
 
-    RHIDriverScope RHI::CreateDriver(const char* workingDirectory, const RHIDriverDescriptor& descriptor)
+    RHIDriverScope RHI::CreateDriver(const RHIDriverDescriptor& descriptor)
     {
         PK_LOG_NEWLINE();
         PK_LOG_HEADER_SCOPE("----------INITIALIZING RHI----------");
@@ -98,6 +98,7 @@ namespace PK
                 features.vk13.synchronization2 = VK_TRUE;
                 features.vk14.dynamicRenderingLocalRead = VK_TRUE;
                 features.vk14.smoothLines = VK_TRUE;
+                features.vk14.maintenance5 = VK_TRUE;
                 features.accelerationStructure.accelerationStructure = VK_TRUE;
                 features.rayTracingPipeline.rayTracingPipeline = VK_TRUE;
                 features.rayQuery.rayQuery = VK_TRUE;
@@ -119,6 +120,7 @@ namespace PK
                 features.unifiedLayout.unifiedImageLayouts = VK_TRUE;
                 features.deviceAddressCommands.deviceAddressCommands = VK_TRUE;
                 features.raytracingMaintenance1.rayTracingMaintenance1 = VK_TRUE;
+                features.shaderObject.shaderObject = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 const char* PK_INSTANCE_EXTENTIONS[] =
@@ -153,14 +155,14 @@ namespace PK
                     VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME,
                     VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME,
                     VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME,
-                    VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME
+                    VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME,
+                    VK_EXT_SHADER_OBJECT_EXTENSION_NAME
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanDriverDescriptor
                 (
                     "PK Renderer",
                     "PK Vulkan Engine",
-                    workingDirectory,
                     descriptor,
                     features,
                     { PK_INSTANCE_EXTENTIONS, sizeof(PK_INSTANCE_EXTENTIONS) / sizeof(const char*) },

@@ -8,7 +8,6 @@
 #include "Core/RHI/BuiltInResources.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
-#include "Core/RHI/Vulkan/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/VulkanDescriptorHeap.h"
 #include "Core/RHI/Vulkan/VulkanAccessRecorder.h"
 #include "Core/RHI/Vulkan/VulkanStagingArena.h"
@@ -24,7 +23,6 @@ namespace PK
     {
         FixedString64 appName;
         FixedString64 engineName;
-        FixedString256 workingDirectory;
         VulkanPhysicalDeviceFeatures features;
         ConstBufferView<const char*> instanceExtensions;
         ConstBufferView<const char*> deviceExtensions;
@@ -32,14 +30,12 @@ namespace PK
         VulkanDriverDescriptor(
             const char* appName = "Vulkan App",
             const char* engineName = "Vulkan Engine",
-            const char* workingDirectory = "",
             RHIDriverDescriptor descriptor = {},
             VulkanPhysicalDeviceFeatures features = {},
             ConstBufferView<const char*> instanceExtensions = { nullptr, 0u },
             ConstBufferView<const char*> deviceExtensions = { nullptr, 0u }) : RHIDriverDescriptor(descriptor),
             appName(appName),
             engineName(engineName),
-            workingDirectory(workingDirectory),
             features(features),
             instanceExtensions(instanceExtensions),
             deviceExtensions(deviceExtensions)
@@ -84,7 +80,6 @@ namespace PK
         uint32_t apiVersion;
 
         mutable FixedUnique<Disposer> disposer;
-        mutable FixedUnique<VulkanPipelineCache> pipelineCache;
         mutable FixedUnique<VulkanQueueSet> queues;
         mutable FixedUnique<VulkanStagingArena> stagingArena;
         mutable FixedUnique<VulkanDescriptorHeap> descriptorHeap;

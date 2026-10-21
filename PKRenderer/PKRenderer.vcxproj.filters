@@ -339,9 +339,6 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanTexture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanPipelineCache.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanStagingArena.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1066,9 +1063,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanTexture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanPipelineCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanStagingArena.cpp">

@@ -135,14 +135,12 @@ namespace PK
             auto* binding = &bindings[i];
             const auto& desc = binding->target->GetDescriptor();
             const auto format = VulkanEnumConvert::GetFormat(desc.format);
-            const auto samples = VulkanEnumConvert::GetSampleCountFlags(desc.samples);
             const auto isDepth = VulkanEnumConvert::IsDepthFormat(format);
 
             auto* attachment = isDepth ? &renderTarget.depth : (renderTarget.colors + renderTarget.colorCount++);
             attachment->target = static_cast<const VulkanTexture*>(binding->target)->GetResourceView(binding->targetRange, TextureViewMode::RTV);
             attachment->resolve = binding->resolve ? static_cast<const VulkanTexture*>(binding->resolve)->GetResourceView(binding->resolveRange, TextureViewMode::RTV) : VulkanResourceView{};
             attachment->format = format;
-            attachment->samples = samples;
             attachment->loadOp = binding->loadOp;
             attachment->storeOp = binding->storeOp;
             attachment->clearValue = binding->clearValue;
@@ -158,49 +156,18 @@ namespace PK
 
     void VulkanGraph::SetBlending(const BlendParameters& blend)
     {
-        if (memcmp(&m_pipelineState.pipelineKey.fixed.blending, &blend, sizeof(BlendParameters)) != 0)
+        if (memcmp(&m_pipelineState.dynamicState.blending, &blend, sizeof(BlendParameters)) != 0)
         {
-            m_pipelineState.dirtyFlags |= STATE_DIRTY_PIPELINE;
-            m_pipelineState.pipelineKey.fixed.blending = blend;
+            m_pipelineState.dynamicState.blending = blend;
+            m_pipelineState.dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
         }
     }
 
     void VulkanGraph::SetRasterization(const RasterizationParameters& rasterization)
     {
-        auto& fixed = m_pipelineState.pipelineKey.fixed;
-        auto& dynamic = m_pipelineState.dynamicState;
-        
-        if (fixed.depthClampEnable != rasterization.depthClampEnable ||
-            fixed.polygonMode != rasterization.polygonMode ||
-            fixed.rasterMode != rasterization.rasterMode ||
-            fixed.topology != rasterization.topology ||
-            fixed.overEstimation != rasterization.overEstimation)
+        if (memcmp(&m_pipelineState.dynamicState.rasterization, &rasterization, sizeof(RasterizationParameters)) != 0)
         {
-            fixed.depthClampEnable = rasterization.depthClampEnable;
-            fixed.polygonMode = rasterization.polygonMode;
-            fixed.rasterMode = rasterization.rasterMode;
-            fixed.topology = rasterization.topology;
-            fixed.overEstimation = rasterization.overEstimation;
-            m_pipelineState.dirtyFlags |= STATE_DIRTY_PIPELINE;
-        }
-
-        if (dynamic.cullMode != rasterization.cullMode ||
-            dynamic.frontFace != rasterization.frontFace ||
-            dynamic.rasterizerDiscardEnable != rasterization.rasterizerDiscardEnable ||
-            dynamic.depthBiasEnable != rasterization.depthBiasEnable ||
-            dynamic.depthBiasConstantFactor != rasterization.depthBiasConstantFactor ||
-            dynamic.depthBiasClamp != rasterization.depthBiasClamp ||
-            dynamic.depthBiasSlopeFactor != rasterization.depthBiasSlopeFactor ||
-            dynamic.lineWidth != rasterization.lineWidth)
-        {
-            dynamic.cullMode = rasterization.cullMode;
-            dynamic.frontFace = rasterization.frontFace;
-            dynamic.rasterizerDiscardEnable = rasterization.rasterizerDiscardEnable;
-            dynamic.depthBiasEnable = rasterization.depthBiasEnable;
-            dynamic.depthBiasConstantFactor = rasterization.depthBiasConstantFactor;
-            dynamic.depthBiasClamp = rasterization.depthBiasClamp;
-            dynamic.depthBiasSlopeFactor = rasterization.depthBiasSlopeFactor;
-            dynamic.lineWidth = rasterization.lineWidth;
+            m_pipelineState.dynamicState.rasterization = rasterization;
             m_pipelineState.dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
         }
     }
@@ -216,28 +183,24 @@ namespace PK
 
     void VulkanGraph::SetMultisampling(const MultisamplingParameters& multisampling)
     {
-        if (memcmp(&m_pipelineState.pipelineKey.fixed.multisampling, &multisampling, sizeof(MultisamplingParameters)) != 0)
+        if (memcmp(&m_pipelineState.dynamicState.multisampling, &multisampling, sizeof(MultisamplingParameters)) != 0)
         {
-            m_pipelineState.dirtyFlags |= STATE_DIRTY_PIPELINE;
-            m_pipelineState.pipelineKey.fixed.multisampling = multisampling;
+            m_pipelineState.dynamicState.multisampling = multisampling;
+            m_pipelineState.dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
         }
     }
 
     void VulkanGraph::SetStageExcludeMask(const ShaderStageFlags mask)
     {
-        if (m_pipelineState.pipelineKey.fixed.excludeStageMask != (uint16_t)mask)
-        {
-            m_pipelineState.dirtyFlags |= STATE_DIRTY_PIPELINE;
-            m_pipelineState.pipelineKey.fixed.excludeStageMask = (uint16_t)mask;
-        }
+        m_pipelineState.excludeStageMask = (uint16_t)mask;
     }
 
     void VulkanGraph::SetShader(const RHIShader* shader)
     {
-        if (m_pipelineState.pipelineKey.shader != shader)
+        if (m_pipelineState.shader != shader)
         {
-            m_pipelineState.dirtyFlags |= STATE_DIRTY_PIPELINE | STATE_DIRTY_SHADER;
-            m_pipelineState.pipelineKey.shader = static_cast<const VulkanShader*>(shader);
+            m_pipelineState.dirtyFlags |= STATE_DIRTY_SHADER;
+            m_pipelineState.shader = static_cast<const VulkanShader*>(shader);
         }
     }
 
@@ -303,7 +266,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDraw(*ctx->cmb, cmd->vertexCount, cmd->instanceCount, cmd->firstVertex, cmd->firstInstance);
         });
@@ -321,7 +284,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDrawIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
@@ -341,7 +304,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
             vkCmdDrawIndexed(*ctx->cmb, cmd->indexCount, cmd->instanceCount, cmd->firstIndex, cmd->vertexOffset, cmd->firstInstance);
@@ -361,7 +324,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
             vkCmdDrawIndexedIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
@@ -382,7 +345,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksEXT(*ctx->cmb, cmd->dimensions.x, cmd->dimensions.y, cmd->dimensions.z);
         });
 
@@ -396,7 +359,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksIndirect2EXT(*ctx->cmb, &cmd->indirectInfo);
         });
 
@@ -415,7 +378,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCountCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksIndirectCount2EXT(*ctx->cmb, &cmd->indirectCountInfo);
         });
 
@@ -437,11 +400,11 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchCmd* cmd)
         {
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDispatch(*ctx->cmb, cmd->groupCounts.x, cmd->groupCounts.y, cmd->groupCounts.z);
         });
 
-        const auto groupSize = m_pipelineState.pipelineKey.shader->GetGroupSize();
+        const auto groupSize = m_pipelineState.shader->GetGroupSize();
         cmd->passIndex = AddBarrierPass(queue, false);
         cmd->groupCounts.x = (dimensions.x + groupSize.x - 1u) / groupSize.x;
         cmd->groupCounts.y = (dimensions.y + groupSize.y - 1u) / groupSize.y;
@@ -453,7 +416,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchIndirectCmd* cmd)
         {
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDispatchIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
 
@@ -470,7 +433,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchRaysCmd* cmd)
         {
-            ctx->cmb->SetPipelineState(cmd->pipeline, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdTraceRaysKHR(*ctx->cmb, &cmd->addressRayGen, &cmd->addressMiss, &cmd->addressHit, &cmd->addressCallable, cmd->dimensions.x, cmd->dimensions.y, cmd->dimensions.z);
         });
 
@@ -1144,11 +1107,6 @@ namespace PK
         });
     }
 
-    void VulkanGraph::AddDispatchHint(QueueType queue)
-    {
-        PK_FATAL_ERROR("NOT IMPLEMENTED!");
-    }
-
 
     ConstBufferView<RHITimerScope> VulkanGraph::GetTimers() const { return m_timerArena->GetResults(); }
 
@@ -1458,7 +1416,7 @@ namespace PK
     {
         auto state = &m_pipelineState;
         const auto resources = &m_globalResources;
-        const auto shader = state->pipelineKey.shader;
+        const auto shader = state->shader;
 
         PK_DEBUG_FATAL_ASSERT(shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
@@ -1497,9 +1455,7 @@ namespace PK
 
             for (auto i = 0u; i < count; ++i)
             {
-                if (descriptor.type == ShaderResourceType::SamplerTexture || 
-                    descriptor.type == ShaderResourceType::Texture || 
-                    descriptor.type == ShaderResourceType::Image)
+                if (descriptor.type == ShaderResourceType::SamplerTexture || descriptor.type == ShaderResourceType::Texture || descriptor.type == ShaderResourceType::Image)
                 {
                     RecordImageAccess(queue, views[i], layoutStageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
                 }
@@ -1532,14 +1488,10 @@ namespace PK
             state->descriptorHeapOffsets = m_descriptorHeap->AllocateDescriptorSet(shader.value, state->descriptors, state->descriptorCount);
         }
 
-        if (state->dirtyFlags & STATE_DIRTY_PIPELINE)
-        {
-            state->pipeline = m_driver->pipelineCache->GetPipeline(state->pipelineKey);
-        }
+        state->dirtyFlags &= ~(STATE_DIRTY_DESCRIPTORS | STATE_DIRTY_SHADER);
 
-        state->dirtyFlags &= ~(STATE_DIRTY_PIPELINE | STATE_DIRTY_DESCRIPTORS | STATE_DIRTY_SHADER);
-
-        cmd->pipeline = state->pipeline;
+        cmd->shader = shader.value;
+        cmd->excludeStageMask = state->excludeStageMask;
         cmd->descriptorHeapOffsets = state->descriptorHeapOffsets;
         cmd->pushConstantSize = shader->GetPushConstantSize();
         cmd->pushConstants = Allocate<uint8_t>(cmd->pushConstantSize);
@@ -1561,8 +1513,7 @@ namespace PK
         auto state = &m_pipelineState;
         const bool isNewPass = cmd->passIndex != 0u;
         const bool isDirtyRenderTarget = state->dirtyFlags & STATE_DIRTY_RENDERTARGET;
-        const bool isDirtyDynamic = !state->resolvedDynamicState || (state->dirtyFlags & STATE_DIRTY_DYNAMIC_STATE) != 0u;
-        state->dirtyFlags &= ~(STATE_DIRTY_RENDERTARGET | STATE_DIRTY_DYNAMIC_STATE);
+        state->dirtyFlags &= ~STATE_DIRTY_RENDERTARGET;
 
         if (isDirtyRenderTarget || isNewPass)
         {
@@ -1582,16 +1533,16 @@ namespace PK
             state->renderingInfo->pColorAttachments = colorAttachments;
             state->renderingInfo->pDepthAttachment = depthAttachment;
 
+            if (state->dynamicState.colorAttachmentCount != colorCount)
+            {
+                state->dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
+                state->dynamicState.colorAttachmentCount = (uint16_t)colorCount;
+            }
+
             for (auto i = 0u; i < PK_RHI_MAX_RENDER_TARGETS; ++i)
             {
                 auto& color = colors[i];
                 const auto format = i < colorCount && color.target.image.image ? color.format : VK_FORMAT_UNDEFINED;
-
-                if (state->pipelineKey.fixed.colorFormats[i] != format)
-                {
-                    state->dirtyFlags |= STATE_DIRTY_PIPELINE;
-                    state->pipelineKey.fixed.colorFormats[i] = format;
-                }
 
                 if (format)
                 {
@@ -1610,12 +1561,6 @@ namespace PK
                     
                     color.loadOp = LoadOp::Load;
 
-                    if (state->pipelineKey.fixed.sampleCountFlags != color.samples)
-                    {
-                        state->dirtyFlags |= STATE_DIRTY_PIPELINE;
-                        state->pipelineKey.fixed.sampleCountFlags = (uint16_t)color.samples;
-                    }
-
                     RecordImageAccess(QueueType::Graphics, color.target, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
                     if (hasResolve)
@@ -1623,12 +1568,6 @@ namespace PK
                         RecordImageAccess(QueueType::Graphics, color.resolve, VK_PIPELINE_STAGE_2_RESOLVE_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
                     }
                 }
-            }
-
-            if (state->pipelineKey.fixed.depthFormat != depthFormat)
-            {
-                state->dirtyFlags |= STATE_DIRTY_PIPELINE;
-                state->pipelineKey.fixed.depthFormat = depthFormat;
             }
 
             if (depthFormat)
@@ -1660,12 +1599,6 @@ namespace PK
                     state->renderingInfo->pStencilAttachment = depthAttachment;
                 }
 
-                if (state->pipelineKey.fixed.sampleCountFlags != depth.samples)
-                {
-                    state->dirtyFlags |= STATE_DIRTY_PIPELINE;
-                    state->pipelineKey.fixed.sampleCountFlags = (uint16_t)depth.samples;
-                }
-
                 RecordImageAccess(QueueType::Graphics, 
                     depth.target, 
                     VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, 
@@ -1678,8 +1611,9 @@ namespace PK
             }
         }
 
-        if (isDirtyDynamic)
+        if (!state->resolvedDynamicState || (state->dirtyFlags & STATE_DIRTY_DYNAMIC_STATE) != 0u)
         {
+            state->dirtyFlags &= ~STATE_DIRTY_DYNAMIC_STATE;
             state->resolvedDynamicState = Allocate<VulkanDynamicState>(1u);
             *state->resolvedDynamicState = state->dynamicState;
         }
@@ -1692,7 +1626,7 @@ namespace PK
     void VulkanGraph::RecordVertexCmd(VulkanVertexCmd* cmd)
     {
         auto state = &m_pipelineState;
-        const auto shader = state->pipelineKey.shader;
+        const auto shader = state->shader;
         const auto& vertexLayout = shader->GetVertexLayout();
         const bool isDirtyShader = state->dirtyFlags & STATE_DIRTY_SHADER;
         const bool isDirtyBuffers = state->dirtyFlags & STATE_DIRTY_VERTEXBUFFERS;
@@ -1705,19 +1639,20 @@ namespace PK
             {
                 auto format = VulkanEnumConvert::GetFormat(vertexLayout[index].format);
 
-                if (state->pipelineKey.vertexAttributes[index].location != vertexLayout[index].location ||
-                    state->pipelineKey.vertexAttributes[index].format != format)
+                if (state->vertexAttributes[index].location != vertexLayout[index].location ||
+                    state->vertexAttributes[index].format != format)
                 {
-                    state->dirtyFlags |= STATE_DIRTY_PIPELINE;
-                    state->pipelineKey.vertexAttributes[index].location = vertexLayout[index].location;
-                    state->pipelineKey.vertexAttributes[index].format = format;
+                    state->dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
+                    state->vertexAttributes[index].sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT;
+                    state->vertexAttributes[index].location = vertexLayout[index].location;
+                    state->vertexAttributes[index].format = format;
                 }
             }
 
-            if (index < PK_RHI_MAX_VERTEX_ATTRIBUTES && state->pipelineKey.vertexAttributes[index].format != VK_FORMAT_UNDEFINED)
+            if (index < PK_RHI_MAX_VERTEX_ATTRIBUTES && state->vertexAttributes[index].format != VK_FORMAT_UNDEFINED)
             {
-                state->dirtyFlags |= STATE_DIRTY_PIPELINE;
-                Memory::Memset(state->pipelineKey.vertexAttributes + index, 0, PK_RHI_MAX_VERTEX_ATTRIBUTES - index);
+                state->dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
+                Memory::Memset(state->vertexAttributes + index, 0, PK_RHI_MAX_VERTEX_ATTRIBUTES - index);
             }
         }
 
@@ -1748,22 +1683,25 @@ namespace PK
                     activeBuffers[streamIndex] = state->vertexBuffers[element.stream];
                     reallocateBuffers |= state->resolvedVertexViews[streamIndex] != activeBuffers[streamIndex];
 
-                    if (state->pipelineKey.vertexStreams[streamIndex].binding != streamIndex ||
-                        state->pipelineKey.vertexStreams[streamIndex].inputRate != inputRate ||
-                        state->pipelineKey.vertexStreams[streamIndex].stride != element.stride)
+                    if (state->vertexStreams[streamIndex].binding != streamIndex ||
+                        state->vertexStreams[streamIndex].inputRate != inputRate ||
+                        state->vertexStreams[streamIndex].stride != element.stride)
                     {
-                        state->dirtyFlags |= STATE_DIRTY_PIPELINE;
-                        state->pipelineKey.vertexStreams[streamIndex].binding = (uint16_t)streamIndex;
-                        state->pipelineKey.vertexStreams[streamIndex].inputRate = inputRate;
-                        state->pipelineKey.vertexStreams[streamIndex].stride = element.stride;
+                        state->dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
+                        state->vertexStreams[streamIndex].sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT;
+                        state->vertexStreams[streamIndex].binding = streamIndex;
+                        state->vertexStreams[streamIndex].inputRate = inputRate;
+                        state->vertexStreams[streamIndex].stride = element.stride;
+                        state->vertexStreams[streamIndex].divisor = 1u;
                     }
 
-                    if (state->pipelineKey.vertexAttributes[elementIdx].binding != streamIndex ||
-                        state->pipelineKey.vertexAttributes[elementIdx].offset != element.offset)
+                    if (state->vertexAttributes[elementIdx].binding != streamIndex ||
+                        state->vertexAttributes[elementIdx].offset != element.offset)
                     {
-                        state->dirtyFlags |= STATE_DIRTY_PIPELINE;
-                        state->pipelineKey.vertexAttributes[elementIdx].binding = (uint16_t)streamIndex;
-                        state->pipelineKey.vertexAttributes[elementIdx].offset = element.offset;
+                        state->dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
+                        state->vertexAttributes[elementIdx].sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT;
+                        state->vertexAttributes[elementIdx].binding = streamIndex;
+                        state->vertexAttributes[elementIdx].offset = element.offset;
                     }
                 }
             }
@@ -1771,12 +1709,25 @@ namespace PK
             PK_DEBUG_WARNING_ASSERT(remainingAttributes == 0, "Warning '%u' of shader vertex input attributes were not bound.", remainingAttributes);
 
             const auto streamCount = prevElement ? (streamIndex + 1u) : 0u;
+            const auto attrCount = (uint32_t)vertexLayout.GetCount();
             reallocateBuffers |= state->vertexBufferCount != streamCount;
 
-            if (streamCount < PK_RHI_MAX_VERTEX_ATTRIBUTES && state->pipelineKey.vertexStreams[streamCount].stride)
+            if (streamCount < PK_RHI_MAX_VERTEX_ATTRIBUTES && state->vertexStreams[streamCount].stride)
             {
-                state->dirtyFlags |= STATE_DIRTY_PIPELINE;
-                Memory::Memset(state->pipelineKey.vertexStreams + streamCount, 0, PK_RHI_MAX_VERTEX_ATTRIBUTES - streamCount);
+                state->dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
+                Memory::Memset(state->vertexStreams + streamCount, 0, PK_RHI_MAX_VERTEX_ATTRIBUTES - streamCount);
+            }
+
+            if (state->dirtyFlags & STATE_DIRTY_DYNAMIC_STATE)
+            {
+                auto* resolvedStreams = Allocate<VkVertexInputBindingDescription2EXT>(streamCount);
+                auto* resolvedAttrs = Allocate<VkVertexInputAttributeDescription2EXT>(attrCount);
+                memcpy(resolvedStreams, state->vertexStreams, sizeof(VkVertexInputBindingDescription2EXT) * streamCount);
+                memcpy(resolvedAttrs, state->vertexAttributes, sizeof(VkVertexInputAttributeDescription2EXT) * attrCount);
+                state->dynamicState.vertexStreams = resolvedStreams;
+                state->dynamicState.vertexStreamCount = (uint16_t)streamCount;
+                state->dynamicState.vertexAttributes = resolvedAttrs;
+                state->dynamicState.vertexAttributeCount = (uint16_t)attrCount;
             }
 
             if (reallocateBuffers)
@@ -1793,7 +1744,7 @@ namespace PK
                     info.setStride = VK_FALSE;
                     info.addressRange.address = activeBuffers[i].memory.address;
                     info.addressRange.size = activeBuffers[i].memory.size;
-                    info.addressRange.stride = state->pipelineKey.vertexStreams[i].stride;
+                    info.addressRange.stride = state->vertexStreams[i].stride;
                     info.addressFlags = PK_VK_ADDRESS_FLAGS;
                 }
             }

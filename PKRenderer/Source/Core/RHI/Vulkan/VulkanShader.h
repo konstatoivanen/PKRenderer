@@ -1,12 +1,12 @@
 #pragma once
 #include "Core/Base/Types/VersionedObject.h"
+#include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Layout.h"
-#include "Core/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK
 {
-    struct VulkanShader : public RHIShader, public VersionedObject
+struct VulkanShader : public RHIShader, public VersionedObject
     {
         struct DescriptorOffsets
         {
@@ -26,7 +26,9 @@ namespace PK
         const uint3& GetGroupSize() const final { return m_groupSize; }
         ShaderBindingTableInfo GetShaderBindingTableInfo() const final;
 
-        VkShaderModule GetModule(uint32_t index) const { return m_modules[index]; }
+        const VkShaderEXT* GetShaderObjects() const { return m_shaders; }
+        VkPipeline GetRayTracingPipeline() const { return m_rayTracingPipeline; }
+        VkPipelineBindPoint GetBindPoint() const { return m_bindPoint; }
         const char* GetName() const { return m_name.c_str(); }
         constexpr const VkShaderDescriptorSetAndBindingMappingInfoEXT* GetDescriptorLayout() const { return &m_descriptorLayout; }
         constexpr const DescriptorOffsets* GetDescriptorOffsets() const { return m_descriptorOffsets; }
@@ -45,7 +47,9 @@ namespace PK
         uint32_t m_samplerSetSize = 0u;
         uint3 m_groupSize{};
 
-        VkShaderModule m_modules[(uint32_t)ShaderStage::EnumCount]{};
+        VkPipelineBindPoint m_bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        VkShaderEXT m_shaders[(uint32_t)ShaderStage::EnumCount]{};
+        VkPipeline m_rayTracingPipeline = VK_NULL_HANDLE;
         VkDescriptorSetAndBindingMappingEXT m_descriptors[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         DescriptorOffsets m_descriptorOffsets[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         VkShaderDescriptorSetAndBindingMappingInfoEXT m_descriptorLayout{ VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT };
