@@ -86,7 +86,7 @@ namespace PK
 
                 descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
                 
-                m_resourceLayout.Add(type, pDescriptors[j].name, pDescriptors[j].writeMask, count);
+                m_resourceLayout.Add(type, pDescriptors[j].name, pDescriptors[j].accessMask, pDescriptors[j].writeMask, count);
 
                 if (resourceStride)
                 {

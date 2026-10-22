@@ -501,7 +501,7 @@ namespace PKAssets
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
         PKDescriptorType type;               // 65 bytes
-        uint8_t set;                         // 66 bytes
+        uint8_t __padding;                   // 66 bytes
         uint16_t count;                      // 68 bytes
         PKShaderStageFlags writeMask;        // 70 bytes
         PKShaderStageFlags accessMask;       // 72 bytes
@@ -534,12 +534,11 @@ namespace PKAssets
 
     struct alignas(4) PKShaderVariant
     {
-        uint16_t descriptorCount;                                           // 2 bytes
-        uint16_t vertexAttributeCount;                                      // 2 bytes
+        uint8_t descriptorCount;                                            // 1 bytes
+        uint8_t vertexAttributeCount;                                       // 2 bytes
         uint16_t constantCount;                                             // 4 bytes
-        uint16_t constantRange;                                             // 8 bytes
-        PKShaderStageFlags constantStageFlags;                              // 10 bytes
-        uint16_t groupSize[3]{};                                            // 16 bytes
+        uint16_t constantRange;                                             // 6 bytes
+        uint16_t groupSize[3]{};                                            // 12 bytes
         RelativePtr<PKDescriptor> descriptors;                              // 20 bytes
         RelativePtr<PKConstantVariable> constants;                          // 24 bytes
         RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 28 bytes

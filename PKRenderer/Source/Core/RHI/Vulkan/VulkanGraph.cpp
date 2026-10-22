@@ -1421,12 +1421,12 @@ namespace PK
         PK_DEBUG_FATAL_ASSERT(shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
         const auto& resourceLayout = shader->GetResourceLayout();
-        const auto layoutStageFlags = VulkanEnumConvert::GetPipelineStageFlags(shader->GetStageFlags());
 
         for (auto index = 0u; index < resourceLayout.GetCount(); ++index)
         {
             const auto& element = resourceLayout[index];
             const auto access = element.writeMask != 0u ? VK_ACCESS_2_SHADER_WRITE_BIT : VK_ACCESS_2_NONE;
+            const auto stageFlags = VulkanEnumConvert::GetPipelineStageFlags(element.accessMask);
 
             auto& descriptor = state->descriptors[index];
             const VulkanResourceView* views = nullptr;
@@ -1457,22 +1457,22 @@ namespace PK
             {
                 if (descriptor.type == ShaderResourceType::SamplerTexture || descriptor.type == ShaderResourceType::Texture || descriptor.type == ShaderResourceType::Image)
                 {
-                    RecordImageAccess(queue, views[i], layoutStageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
+                    RecordImageAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
                 }
 
                 if (descriptor.type == ShaderResourceType::StorageBuffer)
                 {
-                    RecordMemoryAccess(queue, views[i], layoutStageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
+                    RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
                 }
 
                 if (descriptor.type == ShaderResourceType::ConstantBuffer)
                 {
-                    RecordMemoryAccess(queue, views[i], layoutStageFlags, access | VK_ACCESS_2_UNIFORM_READ_BIT);
+                    RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_UNIFORM_READ_BIT);
                 }
 
                 if (descriptor.type == ShaderResourceType::AccelerationStructure)
                 {
-                    RecordMemoryAccess(queue, views[i], layoutStageFlags, VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
+                    RecordMemoryAccess(queue, views[i], stageFlags, VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
                 }
             }
         }
