@@ -6,11 +6,11 @@
 #pragma pk_material_property float _Occlusion
 #pragma pk_material_property float _NormalAmount
 #pragma pk_material_property float _HeightAmount
-#pragma pk_material_property texture2D _AlbedoTexture
-#pragma pk_material_property texture2D _PBSTexture
-#pragma pk_material_property texture2D _NormalMap
-#pragma pk_material_property texture2D _HeightMap
-#pragma pk_material_property texture2D _EmissionTexture
+#pragma pk_material_property Texture2DRef _AlbedoTexture
+#pragma pk_material_property Texture2DRef _PBSTexture
+#pragma pk_material_property Texture2DRef _NormalMap
+#pragma pk_material_property Texture2DRef _HeightMap
+#pragma pk_material_property Texture2DRef _EmissionTexture
 
 #define SURF_USE_TANGENTS
 #include "includes/SurfaceShaderBase.glsl"
@@ -22,7 +22,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 
     //// GI color test code
 //#if !defined(SHADER_STAGE_MESH_TASK)
-//    float lval = surf.world_pos.x * 0.025f + pk_Time.y * 0.25f;
+//    float lval = surf.world_pos.x * 0.025f + pk_View.Time.y * 0.25f;
 //    lval -= floor(lval);
 //    lval = 1.0f - lval;
 //    lval -= 0.75f;
@@ -31,7 +31,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 //    lval *= pow5(lval);
 //    float3 c = HsvToRgb(0.025f, 0.8f, lval * 20.0f);
 //    
-//    surf.emission = texture(sampler2D(_EmissionTexture, pk_SamplerTrilinearRepeatAniso), uv * 4.0f).xxx * c * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
+//    surf.emission = _EmissionTexture.Sample(pk_SamplerTrilinearRepeatAniso, uv * 4.0f).xxx * c * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
 //#endif
 
     /*
@@ -47,7 +47,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 
         int2 offs = int2(GlobalNoiseBlue(int2(surf.world_pos.yx * 2 + 0.5f)).yz * 256.0f);
 
-        float3 noise0 = GlobalNoiseBlue(int2(surf.world_pos.xz * 0.5f + 0.75f) + int2(pk_Time.xy * 0.1f) + offs);
+        float3 noise0 = GlobalNoiseBlue(int2(surf.world_pos.xz * 0.5f + 0.75f) + int2(pk_View.Time.xy * 0.1f) + offs);
 
         lval *= step(0.6f, noise0.y);
 
@@ -56,7 +56,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
         float3 c = float3(e.x * 0.1f + 0.5f, 1.0f - e.z * 0.5f, lval * noise0.x * 12.0f);
 
         float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-        float3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+        float3 p = abs(frac(c.xxx + K.xyz) * 6.0 - K.www);
         float3 ecolor = c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 
         surf.emission = ecolor;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;

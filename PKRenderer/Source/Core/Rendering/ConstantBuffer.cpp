@@ -39,7 +39,7 @@ namespace PK
     {
         m_layoutHash = layout->GetHash();
         ShaderPropertyWriter::BeginWrite(layout, memory);
-        RHI::ValidateBuffer(m_rhiBuffer, layout->GetStride(), BufferUsage::Vram, name);
+        RHI::ValidateBuffer(m_rhiBuffer, layout->GetStridePadded(), BufferUsage::Vram, name);
     }
 
     void ConstantBufferTransient::EndWrite(RHIGraph* graph, QueueType queue)

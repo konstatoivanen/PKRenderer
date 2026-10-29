@@ -1,7 +1,7 @@
 
 #pragma pk_multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
-#pragma pk_program SHADER_STAGE_COMPUTE ReprojectCs
+#pragma pk_program Compute ReprojectCs
 
 #define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 0
@@ -12,13 +12,13 @@
 float GI_GetAntilag_SubgroupStretch(float2 reproject_coord)
 {
     const uint swapId = QuadSwapIdDiagonal16x2(gl_SubgroupInvocationID);
-    const float2 reproject_coord_n = subgroupShuffle(reproject_coord, swapId);
+    const float2 reproject_coord_n = WaveReadLaneAt(reproject_coord, swapId);
     const float2 coord_diff = abs(reproject_coord_n - reproject_coord);
     const float  min_diff = min(coord_diff.x, coord_diff.y);
     return saturate(pow4(min_diff) / 1.0f);
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void ReprojectCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -26,7 +26,7 @@ void ReprojectCs()
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     const int2 coord_store = int2
     (
-        coord.x / 2 + int(Checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
+        coord.x / 2 + int(Checkerboard(coord, pk_View.FrameIndex.y) * (pk_View.ScreenSize.x / 2)),
         coord.y
     );
 #else
@@ -40,7 +40,7 @@ void ReprojectCs()
 
     // Far clip or new backbuffer
     [[branch]]
-    if (pk_FrameIndex.y != 0u && subgroupAny(is_scene))
+    if (pk_View.FrameIndex.y != 0u && WaveActiveAnyTrue(is_scene))
     {
         GIDiff diff = PK_GI_DIFF_ZERO;
         GISpec spec = PK_GI_SPEC_ZERO;
@@ -61,7 +61,7 @@ void ReprojectCs()
             const float3 view_pos = CoordToViewPos(coord, depth);
             const float3 view_dir = normalize(view_pos);
             const float nv = dot(normal, -view_dir);
-            const float parallax = GI_GetParallax(view_dir, normalize(view_pos - pk_ViewSpaceCameraDelta.xyz));
+            const float parallax = GI_GetParallax(view_dir, normalize(view_pos - pk_View.ViewSpaceCameraDelta.xyz));
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
             discard_spec = roughness >= PK_GI_MAX_ROUGH_SPEC;
@@ -72,7 +72,7 @@ void ReprojectCs()
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
                 const float2 s_fcoord = GI_ViewToPrevScreenUv(view_pos);
                 const int2   s_coord = int2(s_fcoord);
-                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
+                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_View.ScreenParams.zw).wzxy;
 
                 // Drop samples that elongate single pixels (Mitigates strech marks).
                 antilag_diff *= GI_GetAntilag_SubgroupStretch(s_fcoord);
@@ -82,7 +82,7 @@ void ReprojectCs()
                 weights *= SafePositiveRcp(dot(weights, 1.0f.xxxx));
                 weights *= float4(Test_DepthReproject(depth.xxxx, s_depths, depth_bias.xxxx));
                 weights *= float4(Test_DepthIsScene(s_depths));
-                weights *= float(Test_InUv(s_fcoord * pk_ScreenParams.zw));
+                weights *= float(Test_InUv(s_fcoord * pk_View.ScreenParams.zw));
 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)
@@ -92,8 +92,8 @@ void ReprojectCs()
                     const float w_n = pow5(dot(normal, s_nr.xyz));
                     float w_diff = weights[i] * w_n * float(w_n > 0.05f);
                     float w_spec = weights[i] * w_n * exp(-abs(s_nr.w * k_R.x + k_R.y));
-                    w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff));
-                    w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));
+                    w_diff = select(!Test_NaN_EPS6(w_diff), w_diff, 0.0f);
+                    w_spec = select(!Test_NaN_EPS6(w_spec), w_spec, 0.0f);
 
                     // Using spec weight to save registers.
                     diff = GI_Sum(diff, GI_Load_Diff(xy), w_spec);
@@ -121,12 +121,12 @@ void ReprojectCs()
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
                 const float2 s_fcoord = GI_ViewToPrevScreenUv(view_pos + view_dir * s_vdist);
                 const int2   s_coord = int2(s_fcoord);
-                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
+                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_View.ScreenParams.zw).wzxy;
 
                 float4 weights = GI_GetBilinearWeights(s_fcoord - s_coord);
                 weights *= 1.0f.xxxx / (1e-4f + abs(depth.xxxx - s_depths));
                 weights *= float4(Test_DepthIsScene(s_depths));
-                weights *= float(Test_InUv(s_fcoord * pk_ScreenParams.zw));
+                weights *= float(Test_InUv(s_fcoord * pk_View.ScreenParams.zw));
 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)
@@ -136,9 +136,9 @@ void ReprojectCs()
                     float w = weights[i];
                     w *= pow(saturate(dot(normal, s_nr.xyz)), 256.0f);
                     w *= exp(-abs(s_nr.w * k_R.x + k_R.y));
-                    w = lerp(0.0f, w, !Test_NaN_EPS6(w));
+                    w = select(!Test_NaN_EPS6(w), w, 0.0f);
 #if PK_GI_APPROX_ROUGH_SPEC == 1
-                    w = lerp(0.0f, w, s_nr.w < PK_GI_MAX_ROUGH_SPEC);
+                    w = select(s_nr.w < PK_GI_MAX_ROUGH_SPEC, w, 0.0f);
 #endif
                     spec_virt = GI_Sum(spec_virt, GI_Load_Spec(xy), w);
                     wsum_spec_virt += w;

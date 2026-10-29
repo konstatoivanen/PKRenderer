@@ -31,9 +31,9 @@ namespace PK::App
         auto hash = HashCache::Get();
         auto& settings = view->settings.BloomSettings;
         m_bloomLensDirtTexture = settings.LensDirtTextureAsset ? settings.LensDirtTextureAsset->GetRHI() : RHI::GetBuiltInResources()->WhiteTexture2D.get();
-        view->constants.Set<float>(hash->pk_Bloom_Diffusion, settings.Diffusion);
-        view->constants.Set<float>(hash->pk_Bloom_Intensity, math::clamp(math::exp(settings.Intensity) - 1.0f, 0.0f, 1.0f));
-        view->constants.Set<float>(hash->pk_Bloom_DirtIntensity, math::clamp(math::exp(settings.LensDirtIntensity) - 1.0f, 0.0f, 1.0f));
+        view->constants.Set<float>(hash->Bloom_Diffusion, settings.Diffusion);
+        view->constants.Set<float>(hash->Bloom_Intensity, math::clamp(math::exp(settings.Intensity) - 1.0f, 0.0f, 1.0f));
+        view->constants.Set<float>(hash->Bloom_DirtIntensity, math::clamp(math::exp(settings.LensDirtIntensity) - 1.0f, 0.0f, 1.0f));
         RHI::SetTexture(HashCache::Get()->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
     }
 
@@ -60,12 +60,6 @@ namespace PK::App
             descriptor.layers = 1u;
             descriptor.levels = (uint8_t)levelCount;
             descriptor.resolution = resolution;
-            descriptor.sampler.filterMin = FilterMode::Trilinear;
-            descriptor.sampler.filterMag = FilterMode::Trilinear;
-            descriptor.sampler.wrap[0] = view->settings.BloomSettings.BorderClip ? WrapMode::Border : WrapMode::Clamp;
-            descriptor.sampler.wrap[1] = view->settings.BloomSettings.BorderClip ? WrapMode::Border : WrapMode::Clamp;
-            descriptor.sampler.wrap[2] = view->settings.BloomSettings.BorderClip ? WrapMode::Border : WrapMode::Clamp;
-            descriptor.sampler.borderColor = BorderColor::FloatBlack;
             RHI::ValidateTexture(resources->bloomTexture, descriptor, "Bloom.Texture");
         }
         

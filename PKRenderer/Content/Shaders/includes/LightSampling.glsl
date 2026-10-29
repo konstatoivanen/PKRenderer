@@ -38,8 +38,8 @@ float Lights_ApplyIESProfile(float3 L, uint profile)
     if (profile > 0u)
     {
         const float angleH = acos(-L.z) / PK_PI;
-        const float angleV = fma(atan(L.x, L.y), PK_INV_TWO_PI, 0.5f);
-        value = textureLod(pk_IESProfiles, float3(angleH, angleV, profile - 1u), 0).r;
+        const float angleV = mad(atan2(L.x, L.y), PK_INV_TWO_PI, 0.5f);
+        value = pk_IESProfiles.SampleLevel(pk_SamplerBilinearClamped, float3(angleH, angleV, profile - 1u), 0.0f).r;
     }
     
     return value;
@@ -47,14 +47,14 @@ float Lights_ApplyIESProfile(float3 L, uint profile)
 
 float2 Lights_GetClipUv(const float3 world_pos, const uint matrix_index)
 {
-    return ClipToUv((pk_LightMatrices[matrix_index] * float4(world_pos, 1.0f)).xyw);
+    return ClipToUv(mul(pk_LightMatrices[matrix_index], float4(world_pos, 1.0f)).xyw);
 }
 
 float4 Lights_GetClipUvMinMax(const float3 world_pos, const float3 shadow_bias, const uint matrix_index)
 {
     const float4x4 light_matrix = pk_LightMatrices[matrix_index];
-    float3 coord0 = (light_matrix * float4(world_pos + shadow_bias.xyz, 1.0f)).xyw;
-    float3 coord1 = (light_matrix * float4(world_pos - shadow_bias.xyz, 1.0f)).xyw;
+    float3 coord0 = mul(light_matrix, float4(world_pos + shadow_bias.xyz, 1.0f)).xyw;
+    float3 coord1 = mul(light_matrix, float4(world_pos - shadow_bias.xyz, 1.0f)).xyw;
     coord0.xy = (coord0.xy / coord0.z) * 0.5f.xx + 0.5f.xx;
     coord1.xy = (coord1.xy / coord1.z) * 0.5f.xx + 0.5f.xx;
     return float4(coord0.xy, coord1.xy);
@@ -73,10 +73,9 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
     const SceneLight light = Lights_LoadLight(index);
     
     const bool is_directional = light.light_type == LIGHT_TYPE_DIRECTIONAL;
-    
-    const float3 pos_to_light = lerp(light.position - world_pos, -light.position, is_directional.xxx);
-    
-    const float dist_to_light = lerp(length(pos_to_light), 0.0f, is_directional);
+    const float3 pos_to_light = select(is_directional, -light.position, light.position - world_pos);
+    const float dist_to_light = select(is_directional, 0.0f, length(pos_to_light));
+
     const float dist_volumetric = dist_to_light + 1e+4f * uint(is_directional); 
     const float source_radius = light.source_radius / (dist_to_light + uint(is_directional));
     
@@ -91,11 +90,13 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
     float shadow = 1.0f;
     {
         // First Directional light has a screen space shadows.
-        #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
+        #if SHADOW_SAMPLE_SCREENSPACE == 1
         [[branch]]
-        if (light.light_type == LIGHT_TYPE_DIRECTIONAL && light.index_shadow == 1u)
+        if (PK_GetShaderStage() == PKShaderStage::Fragment && 
+            light.light_type == LIGHT_TYPE_DIRECTIONAL && 
+            light.index_shadow == 1u)
         {
-            shadow = texelFetch(pk_ShadowmapScreenSpace, int2(gl_FragCoord.xy), 0).r;
+            shadow = pk_ShadowmapScreenSpace[PK_GetProgramCoord().xy].r;
         }
         else
         #endif
@@ -115,17 +116,17 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
 
             const float shadow_dist_rad = length(shadow_sample_pos - light.position);
             const float shadow_dist_dir = dot(light.position, shadow_sample_pos) + light.radius;
-            const float shadow_dist_fin = lerp(shadow_dist_rad, shadow_dist_dir, is_directional);
+            const float shadow_dist_fin = select(is_directional, shadow_dist_dir, shadow_dist_rad);
 
             #if SHADOW_SAMPLE_VOLUMETRICS == 1
             const float4 shadow_uv_p = Lights_GetOctaUvMinMax(shadow_sample_pos, shadow_bias, light.position);
             const float4 shadow_uv_d = Lights_GetClipUvMinMax(shadow_sample_pos, shadow_bias, index_matrix);
-            const float4 shadow_uv = lerp(shadow_uv_d, shadow_uv_p, (light.light_type == LIGHT_TYPE_POINT).xxxx);
+            const float4 shadow_uv = select(light.light_type == LIGHT_TYPE_POINT, shadow_uv_p, shadow_uv_d);
             shadow = ShadowTest_Volumetrics4(index_shadow, shadow_uv, shadow_dist_fin);
             #else
             const float2 shadow_uv_p = EncodeOctaUv(-L);
             const float2 shadow_uv_d = Lights_GetClipUv(shadow_sample_pos, index_matrix);
-            const float2 shadow_uv = lerp(shadow_uv_d, shadow_uv_p, (light.light_type == LIGHT_TYPE_POINT).xx);
+            const float2 shadow_uv = select(light.light_type == LIGHT_TYPE_POINT, shadow_uv_p, shadow_uv_d);
             shadow = SHADOW_TEST(index_shadow, shadow_uv, shadow_dist_fin);
             #endif
         }

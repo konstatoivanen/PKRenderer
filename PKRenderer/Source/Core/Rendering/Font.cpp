@@ -63,8 +63,6 @@ namespace PK
         descriptor.levels = 1u;
         descriptor.format = PKAssets::PK_FONT_FORMAT;
         descriptor.type = TextureType::Texture2D;
-        descriptor.sampler.filterMin = FilterMode::Bilinear;
-        descriptor.sampler.filterMag = FilterMode::Bilinear;
 
         m_texture = RHI::CreateTexture(descriptor, String::ToFilePathStem<64>(filepath));
 

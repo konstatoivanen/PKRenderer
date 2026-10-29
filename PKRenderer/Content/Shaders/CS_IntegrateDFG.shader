@@ -1,16 +1,16 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
+#pragma pk_program Compute IntegrateCs
 
 #include "includes/Common.glsl"
 #include "includes/BRDF.glsl"
 #include "includes/Noise.glsl"
 
-uniform writeonly restrict image2D pk_Image;
+uniform RWTexture2DRef<float4> pk_Image;
 
-[pk_numthreads(8u, 8u, 1u)]
+[numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
-    const int size = imageSize(pk_Image).x;
+    const int size = int(pk_Image.GetSize().x);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float NoV = (coord.x + 0.5f) / size;
     const float roughness = (coord.y + 0.5f) / size;
@@ -105,5 +105,5 @@ void IntegrateCs()
         }
     }
 
-    imageStore(pk_Image, coord, accum / sample_count);
+    pk_Image[coord] = accum / sample_count;
 }

@@ -32,12 +32,6 @@ namespace PK
         descriptor.layers = texture.layers;
         descriptor.format = texture.format;
         descriptor.type = texture.type;
-        descriptor.sampler.anisotropy = texture.anisotropy;
-        descriptor.sampler.filterMin = texture.filterMin;
-        descriptor.sampler.filterMag = texture.filterMag;
-        descriptor.sampler.wrap[0] = texture.wrap[0];
-        descriptor.sampler.wrap[1] = texture.wrap[1];
-        descriptor.sampler.wrap[2] = texture.wrap[2];
 
         m_texture = RHI::CreateTexture(descriptor, String::ToFilePathStem<64>(filepath));
 

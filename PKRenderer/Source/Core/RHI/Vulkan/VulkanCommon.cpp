@@ -89,6 +89,7 @@ namespace PK
         unifiedLayout.pNext = &deviceAddressCommands;
         deviceAddressCommands.pNext = &raytracingMaintenance1;
         raytracingMaintenance1.pNext = &shaderObject;
+        shaderObject.pNext = &untypedPointers;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -302,6 +303,7 @@ namespace PK
             PK_TEST_FEATURE(raytracingMaintenance1.rayTracingMaintenance1)
             PK_TEST_FEATURE(raytracingMaintenance1.rayTracingPipelineTraceRaysIndirect2)
             PK_TEST_FEATURE(shaderObject.shaderObject)
+            PK_TEST_FEATURE(untypedPointers.shaderUntypedPointers)
         }
 
         #undef PK_TEST_FEATURE
@@ -1556,18 +1558,17 @@ namespace PK
             }
         }
 
-        VkDescriptorType GetDescriptorType(ShaderResourceType type)
+        VkDescriptorType GetDescriptorType(ElementType type)
         {
             switch (type)
             {
-                case ShaderResourceType::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER;
-                case ShaderResourceType::SamplerTexture:
-                case ShaderResourceType::Texture: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                case ShaderResourceType::Image: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-                case ShaderResourceType::ConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                case ShaderResourceType::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                case ShaderResourceType::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-                case ShaderResourceType::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+                case ElementType::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER;
+                case ElementType::Texture: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                case ElementType::Image: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                // @TODO Fix this when slang fixes their shit.
+                case ElementType::ConstantBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;//VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                case ElementType::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                case ElementType::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
                 default: return VK_DESCRIPTOR_TYPE_MAX_ENUM;
             }
         }

@@ -16,25 +16,25 @@ float2 NoiseCell(const int2 p)
 float NoiseUniformToTriangle(float n)
 {
     const float o = n * 2.0 - 1.0;
-    n = max(-1.0f, o * inversesqrt(abs(o))) - sign(o) + 0.5f;
+    n = max(-1.0f, o * rsqrt(abs(o))) - sign(o) + 0.5f;
     return (n / 3.0f) + 0.5f;
 }
 
 float NoiseTriangle(const float3 n)
 {
-    const float t = fract(n.z);
-    const float r = fract(sin(dot(n.xy + 0.07 * t, float2(12.9898, 78.233))) * 43758.5453);
+    const float t = frac(n.z);
+    const float r = frac(sin(dot(n.xy + 0.07 * t, float2(12.9898, 78.233))) * 43758.5453);
     return NoiseUniformToTriangle(r);
 }
 
 float NoiseP(const float3 x)
 {
     float3 p = floor(x);
-    float3 f = fract(x);
+    float3 f = frac(x);
     f = f * f * (3.0f - 2.0f * f);
     float n = p.x + p.y * 157.0f + 113.0f * p.z;
-    float4 na = fract(sin(n + float4(0.0f, 1.0f, 157.0f, 158.0f)) * 753.5453123f); 
-    float4 nb = fract(sin(n + float4(113.0f, 114.0f, 270.0f, 271.0f)) * 753.5453123f); 
+    float4 na = frac(sin(n + float4(0.0f, 1.0f, 157.0f, 158.0f)) * 753.5453123f); 
+    float4 nb = frac(sin(n + float4(113.0f, 114.0f, 270.0f, 271.0f)) * 753.5453123f); 
     na = lerp(na, nb, f.z);
     na.xy = lerp(na.xy, na.zw, f.y);
     return lerp(na.x, na.y, f.x);
@@ -76,7 +76,7 @@ float InterleavedGradientNoise(float2 coord, uint frame)
     frame = frame & 63u; // need to periodically reset frame to avoid numerical issues
     float x = coord.x + 5.588238f * float(frame);
     float y = coord.y + 5.588238f * float(frame);
-    return fract(52.9829189f * fract(0.06711056f * x + 0.00583715f * y));
+    return frac(52.9829189f * frac(0.06711056f * x + 0.00583715f * y));
 }
 
 #endif

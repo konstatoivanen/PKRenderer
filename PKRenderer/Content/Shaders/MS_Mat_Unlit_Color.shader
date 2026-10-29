@@ -8,44 +8,52 @@
 
 #pragma pk_multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
 
-#pragma pk_program SHADER_STAGE_FRAGMENT ForwardFs
-#pragma pk_program SHADER_STAGE_FRAGMENT GBufferFs PK_META_PASS_GBUFFER
-#pragma pk_program SHADER_STAGE_FRAGMENT GIVoxelizeFs PK_META_PASS_GIVOXELIZE
+#pragma pk_program Fragment ForwardFs
+#pragma pk_program Fragment GBufferFs PK_META_PASS_GBUFFER
+#pragma pk_program Fragment GIVoxelizeFs PK_META_PASS_GIVOXELIZE
 
 #define PK_MESHLET_USE_FUNC_CULL 1
 
+#if defined(PK_META_PASS_GBUFFER)
+struct UnlitVertexUserData
+{
+    float3 vs_Normal : NORMAL0;
+};
+#define PK_MESHLET_VERTEX_USER_DATA UnlitVertexUserData
+#endif
+
 #include "includes/GBuffers.glsl"
 #include "includes/Meshlets.glsl"
-
-#if defined(PK_META_PASS_GBUFFER)
-PK_DECLARE_VS_ATTRIB(float3 vs_Normal);
-#endif
-
-#if defined(SHADER_STAGE_MESH_TASK)
-
-bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
-{
-    return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz);
-}
-
-#elif defined(SHADER_STAGE_MESH_ASSEMBLY)
-
-void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_Position)
-{
-    sv_Position = ObjectToClipPos(vertex.position);
-#if defined(PK_META_PASS_GBUFFER)
-    vs_Normal[vertex_index] = ObjectToWorldVec(vertex.normal);
-#endif
-}
-
-#elif defined(SHADER_STAGE_FRAGMENT)
-
 #include "includes/SceneGIVX.glsl"
 
-[pk_local(ForwardFs, GBufferFs)] out float4 SV_Target0;
+bool PK_MESHLET_FUNC_CULL(PKMeshTaskPayload payload, const PKMeshlet meshlet)
+{
+    return Meshlet_Cull_Cone(meshlet, pk_View.ViewWorldOrigin.xyz);
+}
 
-void ForwardFs() { SV_Target0 = _Color; }
-void GBufferFs() { SV_Target0 = EncodeGBufferWorldNR(vs_Normal, 0.0f, 0.0f); }
-void GIVoxelizeFs() { GI_VX_Store(GI_VX_FragToWorld(gl_FragCoord.xyz), _ColorVoxelize); }
-
+void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKMeshTaskPayload payload, PKVertex vertex, inout PKMeshletVertexVaryings outVaryings)
+{
+    outVaryings.sv_Position = ObjectToClipPos(vertex.position);
+#if defined(PK_META_PASS_GBUFFER)
+    outVaryings.userdata.vs_Normal = ObjectToWorldVec(vertex.normal);
 #endif
+}
+
+float4 ForwardFs(PKMeshletVertexVaryings vout) : SV_Target0
+{
+    PK_INSTANCING_ASSIGN_FRAGMENT_LOCALS(vout);
+    return _Color;
+}
+
+#if defined(PK_META_PASS_GBUFFER)
+float4 GBufferFs(PKMeshletVertexVaryings vout) : SV_Target0
+{
+    return EncodeGBufferWorldNR(vout.userdata.vs_Normal, 0.0f, 0.0f);
+}
+#endif
+
+void GIVoxelizeFs(PKMeshletVertexVaryings vout)
+{
+    PK_INSTANCING_ASSIGN_FRAGMENT_LOCALS(vout);
+    GI_VX_Store(GI_VX_FragToWorld(vout.sv_Position.xyz), _ColorVoxelize);
+}

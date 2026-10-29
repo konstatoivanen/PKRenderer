@@ -40,113 +40,120 @@ namespace PK::App
 
         m_constantsLayout = ShaderPropertyLayout(
         {
-            { ElementType::Float3x4, hash->pk_WorldToView },
-            { ElementType::Float3x4, hash->pk_ViewToWorld },
-            { ElementType::Float3x4, hash->pk_ViewToWorldPrev },
+            { ElementType::Float3x4, hash->WorldToView },
+            { ElementType::Float3x4, hash->ViewToWorld },
+            { ElementType::Float3x4, hash->ViewToWorldPrev },
 
-            { ElementType::Float4x4, hash->pk_ViewToClip },
-            { ElementType::Float4x4, hash->pk_WorldToClip },
-            { ElementType::Float4x4, hash->pk_WorldToClip_NoJitter },
-            { ElementType::Float4x4, hash->pk_WorldToClipPrev },
-            { ElementType::Float4x4, hash->pk_WorldToClipPrev_NoJitter },
-            { ElementType::Float4x4, hash->pk_ViewToPrevClip },
-            { ElementType::Float4x4, hash->pk_ClipToPrevClip_NoJitter },
+            { ElementType::Float4x4, hash->ViewToClip },
+            { ElementType::Float4x4, hash->WorldToClip },
+            { ElementType::Float4x4, hash->WorldToClip_NoJitter },
+            { ElementType::Float4x4, hash->WorldToClipPrev },
+            { ElementType::Float4x4, hash->WorldToClipPrev_NoJitter },
+            { ElementType::Float4x4, hash->ViewToPrevClip },
+            { ElementType::Float4x4, hash->ClipToPrevClip_NoJitter },
 
-            { ElementType::Float4, hash->pk_Time },
-            { ElementType::Float4, hash->pk_SinTime },
-            { ElementType::Float4, hash->pk_CosTime },
-            { ElementType::Float4, hash->pk_DeltaTime },
-            { ElementType::Float4, hash->pk_CursorParams },
-            { ElementType::Float4, hash->pk_ViewWorldOrigin },
-            { ElementType::Float4, hash->pk_ViewWorldOriginPrev },
-            { ElementType::Float4, hash->pk_ViewSpaceCameraDelta },
-            { ElementType::Float4, hash->pk_ClipParams },
-            { ElementType::Float4, hash->pk_ClipParamsInv },
-            { ElementType::Float4, hash->pk_ScreenParams },
-            { ElementType::Float4, hash->pk_ProjectionJitter },
-            { ElementType::Uint4, hash->pk_FrameRandom },
-            { ElementType::Uint2, hash->pk_ScreenSize },
-            { ElementType::Uint2, hash->pk_FrameIndex },
+            { ElementType::Float4, hash->Time },
+            { ElementType::Float4, hash->SinTime },
+            { ElementType::Float4, hash->CosTime },
+            { ElementType::Float4, hash->DeltaTime },
+            { ElementType::Float4, hash->CursorParams },
+            { ElementType::Float4, hash->ViewWorldOrigin },
+            { ElementType::Float4, hash->ViewWorldOriginPrev },
+            { ElementType::Float4, hash->ViewSpaceCameraDelta },
+            { ElementType::Float4, hash->ClipParams },
+            { ElementType::Float4, hash->ClipParamsInv },
+            { ElementType::Float4, hash->ScreenParams },
+            { ElementType::Float4, hash->ProjectionJitter },
+            { ElementType::Uint4, hash->FrameRandom },
+            { ElementType::Uint2, hash->ScreenSize },
+            { ElementType::Uint2, hash->FrameIndex },
 
-            { ElementType::Float4, hash->pk_MeshletCullParams },
-            { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
-            { ElementType::Float4, hash->pk_LightTileZParams },
+            { ElementType::Float4, hash->MeshletCullParams },
+            { ElementType::Float4, hash->ShadowCascadeZSplits },
+            { ElementType::Float4, hash->LightTileZParams },
 
-            { ElementType::Uint, hash->pk_ScreenLevels },
+            { ElementType::Uint, hash->ScreenLevels },
 
             // GI Parameters
-            { ElementType::Float3, hash->pk_GI_VX_TexelSize },
-            { ElementType::Float,  hash->pk_GI_VX_StepSize },
-            { ElementType::Uint3,  hash->pk_GI_VX_Swizzle },
-            { ElementType::Float,  hash->pk_GI_VX_LevelScale },
-            { ElementType::Float4, hash->pk_GI_VX_ST },
-            { ElementType::Uint2,  hash->pk_GI_RayDither },
+            { ElementType::Float3, hash->GI_VX_TexelSize },
+            { ElementType::Float,  hash->GI_VX_StepSize },
+            { ElementType::Uint3,  hash->GI_VX_Swizzle },
+            { ElementType::Float,  hash->GI_VX_LevelScale },
+            { ElementType::Float4, hash->GI_VX_ST },
+            { ElementType::Uint2,  hash->GI_RayDither },
 
             // Fog Parameters
-            { ElementType::Float,  hash->pk_Fog_Density_NoiseAmount },
-            { ElementType::Float,  hash->pk_Fog_Density_NoiseScale },
-            { ElementType::Float,  hash->pk_Fog_Density_Amount },
-            { ElementType::Float,  hash->pk_Fog_Phase0 },
-            { ElementType::Float,  hash->pk_Fog_Phase1 },
-            { ElementType::Float,  hash->pk_Fog_PhaseW },
-            { ElementType::Float4, hash->pk_Fog_Albedo },
-            { ElementType::Float4, hash->pk_Fog_ZParams },
-            { ElementType::Float4, hash->pk_Fog_FadeParams },
-            { ElementType::Float4, hash->pk_Fog_Absorption },
-            { ElementType::Float4, hash->pk_Fog_WindDirSpeed },
-            { ElementType::Float4, hash->pk_Fog_Density_ExpParams0 },
-            { ElementType::Float4, hash->pk_Fog_Density_ExpParams1 },
+            { ElementType::Float,  hash->Fog_Density_NoiseAmount },
+            { ElementType::Float,  hash->Fog_Density_NoiseScale },
+            { ElementType::Float,  hash->Fog_Density_Amount },
+            { ElementType::Float,  hash->Fog_Phase0 },
+            { ElementType::Float,  hash->Fog_Phase1 },
+            { ElementType::Float,  hash->Fog_PhaseW },
+            { ElementType::Float4, hash->Fog_Albedo },
+            { ElementType::Float4, hash->Fog_ZParams },
+            { ElementType::Float4, hash->Fog_FadeParams },
+            { ElementType::Float4, hash->Fog_Absorption },
+            { ElementType::Float4, hash->Fog_WindDirSpeed },
+            { ElementType::Float4, hash->Fog_Density_ExpParams0 },
+            { ElementType::Float4, hash->Fog_Density_ExpParams1 },
 
-            { ElementType::Float4, hash->pk_Panini_Projection_Parameters },
+            { ElementType::Float4, hash->Panini_Projection_Parameters },
 
             // Color Grading
-            { ElementType::Float4, hash->pk_CC_WhiteBalance },
-            { ElementType::Float4, hash->pk_CC_Lift },
-            { ElementType::Float4, hash->pk_CC_Gamma },
-            { ElementType::Float4, hash->pk_CC_Gain },
-            { ElementType::Float4, hash->pk_CC_HSV },
-            { ElementType::Float4, hash->pk_CC_MixRed },
-            { ElementType::Float4, hash->pk_CC_MixGreen },
-            { ElementType::Float4, hash->pk_CC_MixBlue },
-
-            { ElementType::Float, hash->pk_CC_LumaContrast },
-            { ElementType::Float, hash->pk_CC_LumaGain },
-            { ElementType::Float, hash->pk_CC_LumaGamma },
-            { ElementType::Float, hash->pk_CC_Vibrance },
-            { ElementType::Float, hash->pk_CC_Contribution },
+            { ElementType::Float4, hash->CC_WhiteBalance },
+            { ElementType::Float4, hash->CC_Lift },
+            { ElementType::Float4, hash->CC_Gamma },
+            { ElementType::Float4, hash->CC_Gain },
+            { ElementType::Float4, hash->CC_HSV },
+            { ElementType::Float4, hash->CC_MixRed },
+            { ElementType::Float4, hash->CC_MixGreen },
+            { ElementType::Float4, hash->CC_MixBlue },
+            { ElementType::Float, hash->CC_LumaContrast },
+            { ElementType::Float, hash->CC_LumaGain },
+            { ElementType::Float, hash->CC_LumaGamma },
+            { ElementType::Float, hash->CC_Vibrance },
+            { ElementType::Float, hash->CC_Contribution },
 
             // Vignette 
-            { ElementType::Float, hash->pk_Vignette_Intensity },
-            { ElementType::Float, hash->pk_Vignette_Power },
+            { ElementType::Float, hash->Vignette_Intensity },
+            { ElementType::Float, hash->Vignette_Power },
 
             // Film grain
-            { ElementType::Float, hash->pk_FilmGrain_Luminance },
-            { ElementType::Float, hash->pk_FilmGrain_Intensity },
-            { ElementType::Float, hash->pk_FilmGrain_ExposureSensitivity },
+            { ElementType::Float, hash->FilmGrain_Luminance },
+            { ElementType::Float, hash->FilmGrain_Intensity },
+            { ElementType::Float, hash->FilmGrain_ExposureSensitivity },
 
             // Auto exposure
-            { ElementType::Float, hash->pk_AutoExposure_LogLumaRange },
-            { ElementType::Float, hash->pk_AutoExposure_Target },
-            { ElementType::Float, hash->pk_AutoExposure_Min },
-            { ElementType::Float, hash->pk_AutoExposure_Max },
-            { ElementType::Float, hash->pk_AutoExposure_Speed },
+            { ElementType::Float, hash->AutoExposure_LogLumaRange },
+            { ElementType::Float, hash->AutoExposure_Target },
+            { ElementType::Float, hash->AutoExposure_Min },
+            { ElementType::Float, hash->AutoExposure_Max },
+            { ElementType::Float, hash->AutoExposure_Speed },
 
             // Bloom
-            { ElementType::Float, hash->pk_Bloom_Diffusion },
-            { ElementType::Float, hash->pk_Bloom_Intensity },
-            { ElementType::Float, hash->pk_Bloom_DirtIntensity },
+            { ElementType::Float, hash->Bloom_Diffusion },
+            { ElementType::Float, hash->Bloom_Intensity },
+            { ElementType::Float, hash->Bloom_DirtIntensity },
 
             // Chromatic aberration
-            { ElementType::Float, hash->pk_Chromatic_Aberration_Amount },
-            { ElementType::Float, hash->pk_Chromatic_Aberration_Power },
+            { ElementType::Float, hash->Chromatic_Aberration_Amount },
+            { ElementType::Float, hash->Chromatic_Aberration_Power },
 
             // Temporal anti aliasing
-            { ElementType::Float, hash->pk_TAA_Sharpness },
-            { ElementType::Float, hash->pk_TAA_BlendingStatic },
-            { ElementType::Float, hash->pk_TAA_BlendingMotion },
-            { ElementType::Float, hash->pk_TAA_MotionAmplification },
+            { ElementType::Float, hash->TAA_Sharpness },
+            { ElementType::Float, hash->TAA_BlendingStatic },
+            { ElementType::Float, hash->TAA_BlendingMotion },
+            { ElementType::Float, hash->TAA_MotionAmplification },
 
-            { ElementType::Uint, hash->pk_PostEffectsFeatureMask}
+            { ElementType::Uint, hash->PostEffectsFeatureMask},
+
+            { ElementType::Sampler, hash->SamplerBilinearRepeat },
+            { ElementType::Sampler, hash->SamplerBilinearMirror },
+            { ElementType::Sampler, hash->SamplerBilinearClamped },
+            { ElementType::Sampler, hash->SamplerTrilinearBorder },
+            { ElementType::Sampler, hash->SamplerTrilinearClamped },
+            { ElementType::Sampler, hash->SamplerTrilinearRepeatAniso },
+            { ElementType::Sampler, hash->SamplerPointClamped }
         });
     }
 
@@ -217,33 +224,40 @@ namespace PK::App
 
             auto viewSpaceCameraDelta = worldToView * float4(viewToWorldPrev[3].xyz, 1.0f);
 
-            constants->Set<float3x4>(hash->pk_WorldToView, math::transpose3x4(worldToView));
-            constants->Set<float3x4>(hash->pk_ViewToWorld, math::transpose3x4(viewToWorld));
-            constants->Set<float3x4>(hash->pk_ViewToWorldPrev, math::transpose3x4(viewToWorldPrev));
-            constants->Set<float4x4>(hash->pk_ViewToClip, viewToClip);
-            constants->Set<float4x4>(hash->pk_WorldToClip, worldToClip);
-            constants->Set<float4x4>(hash->pk_WorldToClip_NoJitter, worldToClipNoJitter);
-            constants->Set<float4x4>(hash->pk_WorldToClipPrev, worldToClipPrev);
-            constants->Set<float4x4>(hash->pk_WorldToClipPrev_NoJitter, worldToClipNoJitterPrev);
-            constants->Set<float4x4>(hash->pk_ViewToPrevClip, worldToClipPrev * viewToWorld);
-            constants->Set<float4x4>(hash->pk_ClipToPrevClip_NoJitter, worldToClipNoJitterPrev * math::inverse(worldToClipNoJitter));
-            constants->Set<float4>(hash->pk_Time, { time / 20.0, time, time * 2.0, time * 3.0 });
-            constants->Set<float4>(hash->pk_SinTime, { math::sin(time / 8.0), math::sin(time / 4.0), math::sin(time / 2.0), math::sin(time) });
-            constants->Set<float4>(hash->pk_CosTime, { math::cos(time / 8.0), math::cos(time / 4.0), math::cos(time / 2.0), math::cos(time) });
-            constants->Set<float4>(hash->pk_DeltaTime, { deltaTime, 1.0 / deltaTime, smoothDeltaTime, 1.0 / smoothDeltaTime });
-            constants->Set<float4>(hash->pk_CursorParams, { view->cursorPosition.x, view->cursorPosition.y, view->cursorPositionDelta.x, view->cursorPositionDelta.y });
-            constants->Set<float4>(hash->pk_ViewWorldOrigin, viewToWorld[3]);
-            constants->Set<float4>(hash->pk_ViewWorldOriginPrev, float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f));
-            constants->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);
-            constants->Set<float4>(hash->pk_ClipParams, { n, f, viewToClip[2][2], viewToClip[3][2] });
-            constants->Set<float4>(hash->pk_ClipParamsInv, { clipToView[0][0], clipToView[1][1], clipToView[2][3], clipToView[3][3] });
-            constants->Set<float4>(hash->pk_ScreenParams, { resolution.x, resolution.y, 1.0f / resolution.x, 1.0f / resolution.y });
-            constants->Set<float4>(hash->pk_ProjectionJitter, projectionJitter);
-            constants->Set<uint4>(hash->pk_FrameRandom, math::murmurhash41((uint32_t)(frameIndex % ~0u)));
-            constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
-            constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
-            constants->Set<int>(hash->pk_ScreenLevels, math::levels(resolution.xy()) - 1u);
-            constants->Set<float4>(hash->pk_MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
+            constants->Set<float3x4>(hash->WorldToView, math::transpose3x4(worldToView));
+            constants->Set<float3x4>(hash->ViewToWorld, math::transpose3x4(viewToWorld));
+            constants->Set<float3x4>(hash->ViewToWorldPrev, math::transpose3x4(viewToWorldPrev));
+            constants->Set<float4x4>(hash->ViewToClip, viewToClip);
+            constants->Set<float4x4>(hash->WorldToClip, worldToClip);
+            constants->Set<float4x4>(hash->WorldToClip_NoJitter, worldToClipNoJitter);
+            constants->Set<float4x4>(hash->WorldToClipPrev, worldToClipPrev);
+            constants->Set<float4x4>(hash->WorldToClipPrev_NoJitter, worldToClipNoJitterPrev);
+            constants->Set<float4x4>(hash->ViewToPrevClip, worldToClipPrev * viewToWorld);
+            constants->Set<float4x4>(hash->ClipToPrevClip_NoJitter, worldToClipNoJitterPrev * math::inverse(worldToClipNoJitter));
+            constants->Set<float4>(hash->Time, { time / 20.0, time, time * 2.0, time * 3.0 });
+            constants->Set<float4>(hash->SinTime, { math::sin(time / 8.0), math::sin(time / 4.0), math::sin(time / 2.0), math::sin(time) });
+            constants->Set<float4>(hash->CosTime, { math::cos(time / 8.0), math::cos(time / 4.0), math::cos(time / 2.0), math::cos(time) });
+            constants->Set<float4>(hash->DeltaTime, { deltaTime, 1.0 / deltaTime, smoothDeltaTime, 1.0 / smoothDeltaTime });
+            constants->Set<float4>(hash->CursorParams, { view->cursorPosition.x, view->cursorPosition.y, view->cursorPositionDelta.x, view->cursorPositionDelta.y });
+            constants->Set<float4>(hash->ViewWorldOrigin, viewToWorld[3]);
+            constants->Set<float4>(hash->ViewWorldOriginPrev, float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f));
+            constants->Set<float4>(hash->ViewSpaceCameraDelta, viewSpaceCameraDelta);
+            constants->Set<float4>(hash->ClipParams, { n, f, viewToClip[2][2], viewToClip[3][2] });
+            constants->Set<float4>(hash->ClipParamsInv, { clipToView[0][0], clipToView[1][1], clipToView[2][3], clipToView[3][3] });
+            constants->Set<float4>(hash->ScreenParams, { resolution.x, resolution.y, 1.0f / resolution.x, 1.0f / resolution.y });
+            constants->Set<float4>(hash->ProjectionJitter, projectionJitter);
+            constants->Set<uint4>(hash->FrameRandom, math::murmurhash41((uint32_t)(frameIndex % ~0u)));
+            constants->Set<uint2>(hash->ScreenSize, { resolution.x, resolution.y });
+            constants->Set<uint2>(hash->FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
+            constants->Set<int>(hash->ScreenLevels, math::levels(resolution.xy()) - 1u);
+            constants->Set<float4>(hash->MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
+            constants->Set<uint8_t>(hash->SamplerBilinearRepeat, (uint8_t)RHI::GetSamplerIndex(FilterMode::Bilinear, WrapMode::Repeat, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerBilinearMirror, (uint8_t)RHI::GetSamplerIndex(FilterMode::Bilinear, WrapMode::Mirror, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerBilinearClamped, (uint8_t)RHI::GetSamplerIndex(FilterMode::Bilinear, WrapMode::Clamp, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerTrilinearBorder, (uint8_t)RHI::GetSamplerIndex(FilterMode::Trilinear, WrapMode::Border, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerTrilinearClamped, (uint8_t)RHI::GetSamplerIndex(FilterMode::Trilinear, WrapMode::Clamp, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerTrilinearRepeatAniso, (uint8_t)RHI::GetSamplerIndex(FilterMode::Trilinear, WrapMode::Repeat, BorderColor::FloatClear, 16.0f));
+            constants->Set<uint8_t>(hash->SamplerPointClamped, (uint8_t)RHI::GetSamplerIndex(FilterMode::Point, WrapMode::Clamp, BorderColor::FloatClear, 0.0f));
 
             m_passHierarchicalDepth.SetViewConstants(view);
             m_passLights.SetViewConstants(view);
@@ -270,7 +284,7 @@ namespace PK::App
         RHI::SetTexture(hash->pk_GB_Previous_Normals, gbuffers.previous.normals);
         RHI::SetTexture(hash->pk_GB_Previous_Depth, gbuffers.previous.depth);
         RHI::SetTexture(hash->pk_GB_Previous_DepthBiased, gbuffers.previous.depthBiased);
-        RHI::SetBuffer(hash->pk_PerFrameConstants, primaryView->constants);
+        RHI::SetBuffer(hash->pk_View, primaryView->constants);
 
         // Clear 'previous' targets if they've been reallocated 
         if (primaryView->IsResizeFrame())

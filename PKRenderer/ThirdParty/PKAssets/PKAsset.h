@@ -6,12 +6,10 @@ namespace PKAssets
     constexpr static const uint64_t PK_ASSET_MAGIC_NUMBER = 16056123332373007180ull;
     constexpr static const uint32_t PK_ASSET_NAME_MAX_LENGTH = 64u;
     constexpr static const uint32_t PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8u;
-    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTORS_PER_SET = 64u;
-    constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 16u;
+    constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 64u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVES = 16u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVE_SIZE = 16u;
-    constexpr static const uint32_t PK_ASSET_MAX_UNBOUNDED_SIZE = 2048u;
 
     constexpr static const char* PK_ASSET_EXTENSION_SHADER = ".pkshader";
     constexpr static const char* PK_ASSET_EXTENSION_MESH = ".pkmesh";
@@ -83,34 +81,24 @@ namespace PKAssets
     };
 
 
-    enum class PKElementType : uint16_t
+    enum class PKElementType : uint8_t
     {
         Invalid = 0,
 
-        Float,
-        Float2,
-        Float3,
-        Float4,
+        Bool,
+        Bool2,
+        Bool3,
+        Bool4,
 
-        Double,
-        Double2,
-        Double3,
-        Double4,
+        Byte,
+        Byte2,
+        Byte3,
+        Byte4,
 
-        Half,
-        Half2,
-        Half3,
-        Half4,
-
-        Int,
-        Int2,
-        Int3,
-        Int4,
-
-        Uint,
-        Uint2,
-        Uint3,
-        Uint4,
+        Sbyte,
+        Sbyte2,
+        Sbyte3,
+        Sbyte4,
 
         Short,
         Short2,
@@ -122,6 +110,26 @@ namespace PKAssets
         Ushort3,
         Ushort4,
 
+        Half,
+        Half2,
+        Half3,
+        Half4,
+
+        Float,
+        Float2,
+        Float3,
+        Float4,
+
+        Int,
+        Int2,
+        Int3,
+        Int4,
+
+        Uint,
+        Uint2,
+        Uint3,
+        Uint4,
+
         Long,
         Long2,
         Long3,
@@ -132,10 +140,20 @@ namespace PKAssets
         Ulong3,
         Ulong4,
 
+        Double,
+        Double2,
+        Double3,
+        Double4,
+
         Float2x2,
+        Float2x3,
+        Float2x4,
+        Float3x2,
         Float3x3,
-        Float4x4,
         Float3x4,
+        Float4x2,
+        Float4x3,
+        Float4x4,
 
         Double2x2,
         Double3x3,
@@ -145,9 +163,12 @@ namespace PKAssets
         Half3x3,
         Half4x4,
 
-        Texture2D,
-        Texture3D,
-        TextureCube,
+        Sampler,
+        Texture,
+        Image,
+        ConstantBuffer,
+        StorageBuffer,
+        AccelerationStructure,
         Keyword
     };
 
@@ -311,20 +332,6 @@ namespace PKAssets
         RayTraceGroupCallable = 0u // Not supported atm
     };
 
-    enum class PKDescriptorType : uint8_t
-    {
-        Invalid,
-        Sampler,
-        SamplerTexture,
-        Texture,
-        Image,
-        ConstantBuffer,
-        StorageBuffer,
-        InputAttachment,
-        AccelerationStructure,
-        EnumCount
-    };
-
     enum class PKComparison : uint8_t
     {
         Off,
@@ -401,8 +408,6 @@ namespace PKAssets
         UnderEstimate,
     };
 
-    constexpr const static char* PK_SHADER_ENTRY_POINT_NAME = "main";
-
     constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#pragma pk_log_verbose";
     constexpr const static char* PK_SHADER_ATTRIB_GENERATEDEBUGINFO = "#pragma pk_generate_debug_info";
     constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#pragma pk_zwrite ";
@@ -418,25 +423,11 @@ namespace PKAssets
     constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_PROP = "#pragma pk_enable_instancing";
     constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_NOFRAG_PROP = "#pragma pk_disable_fragment_instancing";
     constexpr const static char* PK_SHADER_ATTRIB_PROGRAM = "#pragma pk_program ";
-    constexpr const static char* PK_SHADER_ATTRIB_LOCAL_OPEN = "[pk_local(";
-    constexpr const static char* PK_SHADER_ATTRIB_LOCAL_CLOSE = ")]";
-    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_OPEN = "[pk_numthreads(";
-    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_CLOSE = ")]";
     constexpr const static char* PK_SHADER_ATTRIB_ALIAS = "_pkalias";
 
     constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";
     constexpr const static char* PK_SHADER_INSTANCING_INDICES = "pk_Instancing_Indices";
     constexpr const static char* PK_SHADER_INSTANCING_PROPERTIES = "pk_Instancing_Properties";
-    constexpr const static char* PK_SHADER_INSTANCING_TEXTURES2D = "pk_Instancing_Textures2D";
-    constexpr const static char* PK_SHADER_INSTANCING_TEXTURES3D = "pk_Instancing_Textures3D";
-    constexpr const static char* PK_SHADER_INSTANCING_TEXTURESCUBE = "pk_Instancing_TexturesCube";
-    constexpr const static char* PK_SHADER_SET_NAMES[4] =
-    {
-        "GLOBAL",
-        "PASS",
-        "SHADER",
-        "DRAW"
-    };
 
     constexpr const static char* PK_MESH_VS_POSITION = "in_POSITION";
     constexpr const static char* PK_MESH_VS_NORMAL = "in_NORMAL";
@@ -478,33 +469,26 @@ namespace PKAssets
     struct alignas(4) PKVertexInputAttribute
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKElementType type;                  // 66 bytes
-        uint16_t location;                   // 68 bytes
+        uint16_t location;                   // 66 bytes
+        PKElementType type;                  // 67 bytes
+        uint8_t __padding = 0u;              // 68 bytes
     };
 
     struct alignas(4) PKMaterialProperty
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKElementType type;                  // 66 bytes
-
-        uint16_t __padding = 0u;             // 68 bytes
+        PKElementType type;                  // 65 bytes
+        uint8_t __padding[3]{};              // 68 bytes
     };
 
     struct alignas(4) PKConstantVariable
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        uint16_t offset;                     // 66 bytes
-        uint16_t size;                       // 68 bytes
-    };
-
-    struct alignas(4) PKDescriptor
-    {
-        char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKDescriptorType type;               // 65 bytes
-        uint8_t __padding;                   // 66 bytes
-        uint16_t count;                      // 68 bytes
-        PKShaderStageFlags writeMask;        // 70 bytes
-        PKShaderStageFlags accessMask;       // 72 bytes
+        PKShaderStageFlags writeMask;        // 66 bytes
+        PKShaderStageFlags accessMask;       // 68 bytes
+        PKElementType type;                  // 69 bytes
+        uint8_t offset;                      // 70 bytes
+        uint16_t arraySize;                  // 72 bytes
     };
 
     struct alignas(4) PKShaderKeyword
@@ -534,16 +518,14 @@ namespace PKAssets
 
     struct alignas(4) PKShaderVariant
     {
-        uint8_t descriptorCount;                                            // 1 bytes
-        uint8_t vertexAttributeCount;                                       // 2 bytes
-        uint16_t constantCount;                                             // 4 bytes
-        uint16_t constantRange;                                             // 6 bytes
-        uint16_t groupSize[3]{};                                            // 12 bytes
-        RelativePtr<PKDescriptor> descriptors;                              // 20 bytes
-        RelativePtr<PKConstantVariable> constants;                          // 24 bytes
-        RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 28 bytes
-        uint32_t sprivSizes[(int)PKShaderStage::EnumCount];                 // 80 bytes
-        RelativePtr<void> sprivBuffers[(int)PKShaderStage::EnumCount];      // 132 bytes
+        uint16_t vertexAttributeCount;                                 // 2 bytes
+        uint16_t constantCount;                                        // 4 bytes
+        uint16_t constantRange;                                        // 6 bytes
+        uint16_t groupSize[3]{};                                       // 12 bytes
+        RelativePtr<PKConstantVariable> constants;                     // 16 bytes
+        RelativePtr<PKVertexInputAttribute> vertexAttributes;          // 20 bytes
+        uint32_t sprivSizes[(int)PKShaderStage::EnumCount];            // 72 bytes
+        RelativePtr<void> sprivBuffers[(int)PKShaderStage::EnumCount]; // 124 bytes
     };
 
     struct alignas(4) PKShader
@@ -668,6 +650,7 @@ namespace PKAssets
 
 
     // Texture asset type
+    // @TODO deprecate sampler related fields.
     struct alignas(4) PKTexture
     {
         RelativePtr<void> data;             // 4 bytes
@@ -696,7 +679,7 @@ namespace PKAssets
     };
 
     uint32_t PKElementTypeToSize(PKElementType type);
-    uint32_t PKElementTypeToAlignment(PKElementType type);
+    uint32_t PKElementTypeToScalarSize(PKElementType type);
     uint32_t PKElementTypeToComponents(PKElementType type);
     PKElementType PKElementTypeToScalar(PKElementType type);
     bool PKElementTypeIsResourceHandle(PKElementType type);

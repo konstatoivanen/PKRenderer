@@ -1,10 +1,10 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE CompressBC6HCs
+#pragma pk_program Compute CompressBC6HCs
 
-#include "includes/Utilities.glsl"
+#include "includes/Common.glsl"
 
-uniform sampler2D pk_Texture;
-uniform uimage2D pk_Image;
+uniform Texture2DRef pk_Texture; 
+uniform RWTexture2DRef<uint4> pk_Image;
 
 // Whether to use P2 modes (4 endpoints) for compression. Slow, but improves quality.
 #define ENCODE_P2 (QUALITY == 1)
@@ -18,93 +18,6 @@ uniform uimage2D pk_Image;
 
 #define HALF_MAX 65504.0f
 #define PATTERN_NUM 32
-
-uint f32tof16(float val)
-{
-    uint f32 = floatBitsToUint(val);
-    uint f16 = 0u;
-    uint sign = (f32 >> 16) & 0x8000u;
-    int exponent = int((f32 >> 23) & 0xFFu) - 127;
-    uint mantissa = f32 & 0x007FFFFFu;
-    if (exponent == 128)
-    {
-        // Infinity or NaN\n"
-        // NaN bits that are masked out by 0x3FF get discarded.\n"
-        // This can turn some NaNs to infinity, but this is allowed by the spec.\n"
-        f16 = sign | (0x1Fu << 10);
-        f16 |= (mantissa & 0x3FFu);
-    }
-    else if (exponent > 15)
-    {
-        // Overflow - flush to Infinity\n"
-        f16 = sign | (0x1Fu << 10);
-    }
-    else if (exponent > -15)
-    {
-        // Representable value
-        exponent += 15;
-        mantissa >>= 13;
-        f16 = sign | uint(exponent << 10) | mantissa;
-    }
-    else
-    {
-        f16 = sign;
-    }
-    return f16;
-}
-
-float f16tof32(uint val)
-{
-    uint sign = (val & 0x8000u) << 16;
-    int exponent = int((val & 0x7C00u) >> 10);
-    uint mantissa = val & 0x03FFu;
-    float f32 = 0.0;
-
-    if (exponent == 0)
-    {
-        if (mantissa != 0u)
-        {
-            const float scale = 1.0 / (1 << 24);
-            f32 = scale * mantissa;
-        }
-    }
-    else if (exponent == 31)
-    {
-        return uintBitsToFloat(sign | 0x7F800000u | mantissa);
-    }
-    else
-    {
-        exponent -= 15;
-        float scale;
-        if (exponent < 0)
-        {
-            // The negative unary operator is buggy on OSX.\n"
-            // Work around this by using abs instead.\n"
-            scale = 1.0 / (1 << abs(exponent));
-        }
-        else
-        {
-            scale = 1 << exponent;
-        }
-        float decimal = 1.0 + float(mantissa) / float(1 << 10);
-        f32 = scale * decimal;
-    }
-
-    if (sign != 0u)
-    {
-        f32 = -f32;
-    }
-
-    return f32;
-}
-
-uint2 f32tof16(float2 val) { return uint2(f32tof16(val.x), f32tof16(val.y)); }
-uint3 f32tof16(float3 val) { return uint3(f32tof16(val.x), f32tof16(val.y), f32tof16(val.z)); }
-uint4 f32tof16(float4 val) { return uint4(f32tof16(val.x), f32tof16(val.y), f32tof16(val.z), f32tof16(val.w)); }
-
-float2 f16tof32(uint2 val) { return float2(f16tof32(val.x), f16tof32(val.y)); }
-float3 f16tof32(uint3 val) { return float3(f16tof32(val.x), f16tof32(val.y), f16tof32(val.z)); }
-float4 f16tof32(uint4 val) { return float4(f16tof32(val.x), f16tof32(val.y), f16tof32(val.z), f16tof32(val.w)); }
 
 float CalcMSLE(float3 a, float3 b)
 {
@@ -777,7 +690,7 @@ void EncodeP2Pattern(inout uint4 block, inout float blockMSLE, int pattern, floa
     }
 }
 
-[pk_numthreads(8u, 8u, 1u)]
+[numthreads(8u, 8u, 1u)]
 void CompressBC6HCs()
 {
     uint2 blockCoord = gl_GlobalInvocationID.xy;
@@ -794,18 +707,18 @@ void CompressBC6HCs()
     float2 block1UV = uv + float2(2.0f * texelSize.x, 0.0f);
     float2 block2UV = uv + float2(0.0f, 2.0f * texelSize.y);
     float2 block3UV = uv + float2(2.0f * texelSize.x, 2.0f * texelSize.y);
-    float4 block0X = textureGather(pk_Texture, block0UV, 0);
-    float4 block1X = textureGather(pk_Texture, block1UV, 0);
-    float4 block2X = textureGather(pk_Texture, block2UV, 0);
-    float4 block3X = textureGather(pk_Texture, block3UV, 0);
-    float4 block0Y = textureGather(pk_Texture, block0UV, 1);
-    float4 block1Y = textureGather(pk_Texture, block1UV, 1);
-    float4 block2Y = textureGather(pk_Texture, block2UV, 1);
-    float4 block3Y = textureGather(pk_Texture, block3UV, 1);
-    float4 block0Z = textureGather(pk_Texture, block0UV, 2);
-    float4 block1Z = textureGather(pk_Texture, block1UV, 2);
-    float4 block2Z = textureGather(pk_Texture, block2UV, 2);
-    float4 block3Z = textureGather(pk_Texture, block3UV, 2);
+    float4 block0X = pk_Texture.GatherRed(pk_SamplerBilinearClamped, block0UV);
+    float4 block1X = pk_Texture.GatherRed(pk_SamplerBilinearClamped, block1UV);
+    float4 block2X = pk_Texture.GatherRed(pk_SamplerBilinearClamped, block2UV);
+    float4 block3X = pk_Texture.GatherRed(pk_SamplerBilinearClamped, block3UV);
+    float4 block0Y = pk_Texture.GatherGreen(pk_SamplerBilinearClamped, block0UV);
+    float4 block1Y = pk_Texture.GatherGreen(pk_SamplerBilinearClamped, block1UV);
+    float4 block2Y = pk_Texture.GatherGreen(pk_SamplerBilinearClamped, block2UV);
+    float4 block3Y = pk_Texture.GatherGreen(pk_SamplerBilinearClamped, block3UV);
+    float4 block0Z = pk_Texture.GatherBlue(pk_SamplerBilinearClamped, block0UV);
+    float4 block1Z = pk_Texture.GatherBlue(pk_SamplerBilinearClamped, block1UV);
+    float4 block2Z = pk_Texture.GatherBlue(pk_SamplerBilinearClamped, block2UV);
+    float4 block3Z = pk_Texture.GatherBlue(pk_SamplerBilinearClamped, block3UV);
 
     float3 texels[16];
     texels[0] = float3(block0X.w, block0Y.w, block0Z.w);
@@ -849,5 +762,5 @@ void CompressBC6HCs()
     EncodeP2Pattern(block, blockMSLE, bestPattern, texels);
 #endif
 
-    imageStore(pk_Image, int2(blockCoord), block);
+    pk_Image[blockCoord] = block;
 }

@@ -35,8 +35,6 @@ namespace PK::App
         TextureDescriptor hzbDesc{};
         hzbDesc.type = TextureType::Texture2DArray;
         hzbDesc.format = TextureFormat::R16_Float;
-        hzbDesc.sampler.filterMin = FilterMode::Bilinear;
-        hzbDesc.sampler.filterMag = FilterMode::Bilinear;
         hzbDesc.resolution = resolution;
         hzbDesc.levels = (uint8_t)math::min(13u, math::levels(uint2(resolution.x, resolution.y)));
         hzbDesc.layers = 2u;

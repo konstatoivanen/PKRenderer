@@ -10,13 +10,10 @@ namespace PK
     constexpr static const uint32_t PK_RHI_MAX_FRAMES_IN_FLIGHT = 2;
     constexpr static const uint32_t PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT = 16;
     constexpr static const uint32_t PK_RHI_MAX_RENDER_TARGETS = 8;
-    constexpr static const uint32_t PK_RHI_MAX_DESCRIPTORS_PER_SET = PKAssets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
     constexpr static const uint32_t PK_RHI_MAX_PUSH_CONSTANTS = PKAssets::PK_ASSET_MAX_PUSH_CONSTANTS;
     constexpr static const uint32_t PK_RHI_MAX_VERTEX_ATTRIBUTES = PKAssets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
-    constexpr static const uint32_t PK_RHI_MAX_UNBOUNDED_SIZE = PKAssets::PK_ASSET_MAX_UNBOUNDED_SIZE;
     constexpr static const uint32_t PK_RHI_MAX_VIEWPORTS = 16;
 
-    constexpr const static char* PK_RHI_SHADER_ENTRY_POINT_NAME = PKAssets::PK_SHADER_ENTRY_POINT_NAME;
     constexpr const static char* PK_RHI_VS_POSITION = PKAssets::PK_MESH_VS_POSITION;
     constexpr const static char* PK_RHI_VS_NORMAL = PKAssets::PK_MESH_VS_NORMAL;
     constexpr const static char* PK_RHI_VS_TANGENT = PKAssets::PK_MESH_VS_TANGENT;
@@ -536,13 +533,12 @@ namespace PK
         uint8_t levels = 1;
         uint8_t samples = 1;
         uint16_t layers = 1;
-        SamplerDescriptor sampler = {};
     };
 
     namespace RHIEnumConvert
     {
         constexpr auto Size = PKAssets::PKElementTypeToSize;
-        constexpr auto Alignment = PKAssets::PKElementTypeToAlignment;
+        constexpr auto ScalarSize = PKAssets::PKElementTypeToScalarSize;
         constexpr auto Components = PKAssets::PKElementTypeToComponents;
         constexpr auto Scalar = PKAssets::PKElementTypeToScalar;
         constexpr auto IsResourceHandle = PKAssets::PKElementTypeIsResourceHandle;

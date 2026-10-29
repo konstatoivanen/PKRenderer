@@ -1,34 +1,34 @@
 
 #pragma pk_multi_compile PASS_MIP PASS_CLEAR
-#pragma pk_program SHADER_STAGE_COMPUTE VolumeMipmapCs PASS_MIP
-#pragma pk_program SHADER_STAGE_COMPUTE VolumeClearCs PASS_CLEAR
+#pragma pk_program Compute VolumeMipmapCs PASS_MIP
+#pragma pk_program Compute VolumeClearCs PASS_CLEAR
 
 #include "includes/Common.glsl"
 #include "includes/SceneGIVX.glsl"
 
-uniform sampler3D pk_Texture;
-uniform writeonly restrict image3D pk_Image;
-uniform writeonly restrict image3D pk_Image1;
-uniform writeonly restrict image3D pk_Image2;
+uniform Texture3DRef pk_Texture;
+uniform RWTexture3DRef<float4> pk_Image;
+uniform RWTexture3DRef<float4> pk_Image1;
+uniform RWTexture3DRef<float4> pk_Image2;
 
-[pk_local(VolumeMipmapCs)] shared float4 lds_Data[64u];
+groupshared float4 lds_Data[64u];
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void VolumeMipmapCs()
 {
     const uint thread = gl_LocalInvocationIndex;
-    const uint3 size_base = uint3(textureSize(pk_Texture, 0).xyz);
+    const uint3 size_base = pk_Texture.GetSize(0);
     const uint3 size_level = gl_NumWorkGroups.xyz * gl_WorkGroupSize.xyz;
     const int level = int(log2(float(size_base.x)) - log2(float(size_level.x))) - 1;
     const float3 uvw = (gl_GlobalInvocationID + 0.5f.xxx) / size_level;
 
-    float4 local = lds_Data[thread] = textureLod(pk_Texture, uvw, level);
-    imageStore(pk_Image, int3(gl_GlobalInvocationID), local);
+    float4 local = lds_Data[thread] = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvw, level);
+    pk_Image[int3(gl_GlobalInvocationID)] = local;
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     // Cant use binary mask due to 3d coordinates
-    if (All_Equal(gl_LocalInvocationID % 2, uint3(0u)))
+    if (all((gl_LocalInvocationID % 2u) == 0u))
     {
         local += lds_Data[thread + 0x1u];
         local += lds_Data[thread + 0x4u];
@@ -40,10 +40,10 @@ void VolumeMipmapCs()
         local /= 8.0f;
 
         lds_Data[thread] = local;
-        imageStore(pk_Image1, int3(gl_GlobalInvocationID) >> 1, local);
+        pk_Image1[int3(gl_GlobalInvocationID) >> 1] = local;
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     if (thread == 0u)
     {
@@ -55,11 +55,11 @@ void VolumeMipmapCs()
         local += lds_Data[thread + 0x28u];
         local += lds_Data[thread + 0x2au];
         local /= 8.0f;
-        imageStore(pk_Image2, int3(gl_GlobalInvocationID) >> 2, local);
+        pk_Image2[int3(gl_GlobalInvocationID) >> 2] = local;
     }
 }
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void VolumeClearCs()
 {
     const float3 world_position = GI_VX_CoordToWorld(int3(gl_GlobalInvocationID));
@@ -70,11 +70,11 @@ void VolumeClearCs()
         return;
     }
 
-    uint write_count = imageLoad(pk_GI_VX_Mask, int3(gl_GlobalInvocationID)).x;
-    imageStore(pk_GI_VX_Mask, int3(gl_GlobalInvocationID), uint4(0u));
+    uint write_count = pk_GI_VX_Mask[int3(gl_GlobalInvocationID)];
+    pk_GI_VX_Mask[int3(gl_GlobalInvocationID)] = 0u;
 
     if (write_count == 0u)
     {
-        imageStore(pk_Image, int3(gl_GlobalInvocationID), 0.0f.xxxx);
+        pk_Image[int3(gl_GlobalInvocationID)] = 0.0f.xxxx;
     }
 }

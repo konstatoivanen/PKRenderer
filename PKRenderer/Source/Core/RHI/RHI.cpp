@@ -78,24 +78,30 @@ namespace PK
                 features.vk11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
                 features.vk11.storagePushConstant16 = VK_TRUE;
                 features.vk11.multiview = VK_TRUE;
+                features.vk12.storageBuffer8BitAccess = VK_TRUE;
+                features.vk12.uniformAndStorageBuffer8BitAccess = VK_TRUE;
+                features.vk12.storagePushConstant8 = VK_TRUE;
+                features.vk12.shaderFloat16 = VK_TRUE;
+                features.vk12.shaderInt8 = VK_TRUE;
+                features.vk12.scalarBlockLayout = VK_TRUE;
+                features.vk12.shaderSubgroupExtendedTypes = VK_TRUE;
+                features.vk12.vulkanMemoryModel = VK_TRUE;
+                features.vk12.vulkanMemoryModelDeviceScope = VK_TRUE;
                 features.vk12.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
                 features.vk12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
                 features.vk12.runtimeDescriptorArray = VK_TRUE;
                 features.vk12.descriptorBindingVariableDescriptorCount = VK_TRUE;
                 features.vk12.descriptorBindingPartiallyBound = VK_TRUE;
-                features.vk12.scalarBlockLayout = VK_TRUE;
-                features.vk12.shaderFloat16 = VK_TRUE;
-                features.vk12.shaderInt8 = VK_TRUE;
                 features.vk12.shaderOutputViewportIndex = VK_TRUE;
                 features.vk12.shaderOutputLayer = VK_TRUE;
                 features.vk12.bufferDeviceAddress = VK_TRUE;
                 features.vk12.timelineSemaphore = VK_TRUE;
-                features.vk12.storageBuffer8BitAccess = VK_TRUE;
                 features.vk12.hostQueryReset = VK_TRUE;
                 features.vk13.privateData = VK_FALSE;
                 features.vk13.maintenance4 = VK_TRUE;
                 features.vk13.dynamicRendering = VK_TRUE;
                 features.vk13.synchronization2 = VK_TRUE;
+                features.vk13.shaderDemoteToHelperInvocation = VK_TRUE;
                 features.vk14.dynamicRenderingLocalRead = VK_TRUE;
                 features.vk14.smoothLines = VK_TRUE;
                 features.vk14.maintenance5 = VK_TRUE;
@@ -121,6 +127,7 @@ namespace PK
                 features.deviceAddressCommands.deviceAddressCommands = VK_TRUE;
                 features.raytracingMaintenance1.rayTracingMaintenance1 = VK_TRUE;
                 features.shaderObject.shaderObject = VK_TRUE;
+                features.untypedPointers.shaderUntypedPointers = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 const char* PK_INSTANCE_EXTENTIONS[] =
@@ -156,7 +163,8 @@ namespace PK
                     VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME,
                     VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME,
                     VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME,
-                    VK_EXT_SHADER_OBJECT_EXTENSION_NAME
+                    VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
+                    VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanDriverDescriptor
@@ -206,11 +214,6 @@ namespace PK
         {
             inoutTexture = RHI::CreateTexture(descriptor, inoutTexture->GetDebugName());
             return true;
-        }
-
-        if (currentDesc.sampler != descriptor.sampler)
-        {
-            inoutTexture->SetSampler(descriptor.sampler);
         }
 
         return false;
@@ -312,6 +315,19 @@ namespace PK
     void RHI::SetImage(NameID name, RHITexture* image) { SetImage(name, image, {}); }
     void RHI::SetConstant(NameID name, const void* data, uint32_t size) { GetGraph()->SetConstant(name, data, size); }
     void RHI::SetKeyword(NameID name, bool value) { GetGraph()->SetKeyword(name, value); }
+
+    uint8_t RHI::GetSamplerIndex(FilterMode filter, WrapMode wrapMode, BorderColor borderColor, float anisotropy)
+    {
+        SamplerDescriptor sampler{};
+        sampler.borderColor = borderColor;
+        sampler.anisotropy = anisotropy;
+        sampler.filterMin = filter;
+        sampler.filterMag = filter;
+        sampler.wrap[0] = wrapMode;
+        sampler.wrap[1] = wrapMode;
+        sampler.wrap[2] = wrapMode;
+        return (uint8_t)GetGraph()->MakeResident(sampler);
+    }
 
     void RHI::SetBufferArray(NameID name, RHIBuffer** buffers, size_t count) 
     {

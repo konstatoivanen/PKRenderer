@@ -9,55 +9,34 @@ namespace PK
     struct ShaderPushConstant
     {
         NameID name = 0u;
-        uint16_t offset;
-        uint16_t size;
+        ShaderStageFlags accessMask = ShaderStageFlags::None;
+        ShaderStageFlags writeMask = ShaderStageFlags::None;
+        ElementType type = ElementType::Invalid;
+        uint8_t offset = 0u;
+        uint16_t count = 0u;
 
         ShaderPushConstant() = default;
 
-        ShaderPushConstant(NameID name, uint16_t size, uint16_t offset) :
+        ShaderPushConstant(NameID name, ShaderStageFlags accessMask, ShaderStageFlags writeMask, ElementType type, uint8_t offset, uint16_t count) :
             name(name),
+            accessMask(accessMask),
+            writeMask(writeMask),
+            type(type),
             offset(offset),
-            size(size)
+            count(count)
         {
         }
     };
 
     struct ShaderPushConstantLayout : public FixedList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>
     {
+        size_t sizeBytes;
+
         using TBase = FixedList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>;
         ShaderPushConstantLayout() {}
-        ShaderPushConstantLayout(const ShaderPushConstant* variables, size_t count) : TBase(variables, count) {}
-    };
-
-
-    struct ShaderResourceElement
-    {
-        NameID name = 0u;
-        ShaderStageFlags accessMask = ShaderStageFlags::None;
-        ShaderStageFlags writeMask = ShaderStageFlags::None;
-        uint16_t count = 0;
-        ShaderResourceType type = ShaderResourceType::Invalid;
-        uint8_t __padding = 0;
-
-        ShaderResourceElement() = default;
-
-        ShaderResourceElement(ShaderResourceType type, NameID name, ShaderStageFlags accessMask, ShaderStageFlags writeMask, uint16_t count) :
-            name(name),
-            accessMask(accessMask),
-            writeMask(writeMask),
-            count(count),
-            type(type)
-        {
-        }
-    };
-
-    struct ShaderResourceLayout : public FixedList<ShaderResourceElement, PK_RHI_MAX_DESCRIPTORS_PER_SET>
-    {
-        using TBase = FixedList<ShaderResourceElement, PK_RHI_MAX_DESCRIPTORS_PER_SET>;
-        ShaderResourceLayout() {}
-        ShaderResourceLayout(const ShaderResourceElement* elements, size_t count) : TBase(elements, count) {}
-        ShaderResourceLayout(initializer_list<ShaderResourceElement> elements) : TBase(elements) {}
-        const ShaderResourceElement* TryGetElement(NameID name, uint32_t* index) const;
+        ShaderPushConstantLayout(const ShaderPushConstant* elements, size_t count) : TBase(elements, count) {}
+        ShaderPushConstantLayout(initializer_list<ShaderPushConstant> elements) : TBase(elements) {}
+        const ShaderPushConstant* TryGetElement(NameID name, uint32_t* index) const;
     };
 
 
@@ -157,7 +136,6 @@ namespace PK
         uint16_t byteStrides[(uint32_t)RayTracingShaderGroup::EnumCount];
         uint8_t offsets[(uint32_t)RayTracingShaderGroup::EnumCount];
         uint8_t counts[(uint32_t)RayTracingShaderGroup::EnumCount];
-        const ShaderResourceLayout* layouts[(uint32_t)RayTracingShaderGroup::EnumCount];
         uint16_t handleSize;
         uint16_t handleSizeAligned;
         uint16_t tableAlignment;

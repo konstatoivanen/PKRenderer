@@ -1,6 +1,6 @@
 
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
-#pragma pk_program SHADER_STAGE_COMPUTE ShadeHitsCs
+#pragma pk_program Compute ShadeHitsCs
 
 #define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 1
@@ -30,7 +30,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
     return voxel.rgb / max(voxel.a, 1e-2f);
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
 void ShadeHitsCs()
 {
     const int2 coord_ray = int2(gl_GlobalInvocationID.xy);
@@ -49,7 +49,7 @@ void ShadeHitsCs()
         GI_LOAD_RAY_PARAMS(coord, coord_ray, depth, normal_roughness.xyz, normal_roughness.w)
 
         // Convert ray to unbiased space
-        const float3 hitpos = origin + direction_diff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.is_miss);
+        const float3 hitpos = origin + direction_diff * select(hits.diff.is_miss, PK_GI_RAY_TMAX, hits.diff.dist);
         const float3 origin_unbiased = CoordToWorldPos(coord, depth);
         const float4 hitvec_unbiased = NormalizeLength(hitpos - origin_unbiased);
         // assuming lambertian distribution
@@ -73,7 +73,7 @@ void ShadeHitsCs()
         {
             GISpec spec = PK_GI_SPEC_ZERO;
             spec.radiance = SampleRadiance(origin, direction_spec, hits.spec);
-            spec.ao = hits.spec.is_miss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_TMAX);
+            spec.ao = select(hits.spec.is_miss, 1.0f, saturate(hits.spec.dist / PK_GI_RAY_TMAX));
             spec.history = PK_GI_SPEC_MAX_HISTORY;
             packed_spec = GI_Pack_Spec(spec);
         }

@@ -7,133 +7,131 @@ namespace PKAssets
     const static uint8_t PKElementType_SIZES[] =
     {
         0u,  /*Invalid*/
-        1u * 4u, /*Float*/
-        2u * 4u, /*Float2*/
-        3u * 4u, /*Float3*/
-        4u * 4u, /*Float4*/
-        
-        1u * 8u, /*Double*/
-        2u * 8u, /*Double2*/
-        3u * 8u, /*Double3*/
-        4u * 8u, /*Double4*/
-        
-        1u * 2u, /*Half*/
-        2u * 2u, /*Half2*/
-        3u * 2u, /*Half3*/
-        4u * 2u, /*Half4*/
-        
-        1u * 4u, /*Int*/
-        2u * 4u, /*Int2*/
-        3u * 4u, /*Int3*/
-        4u * 4u, /*Int4*/
-        
-        1u * 4u, /*Uint*/
-        2u * 4u, /*Uint2*/
-        3u * 4u, /*Uint3*/
-        4u * 4u, /*Uint4*/
-        
+
+        1u * 4u, /*Bool*/
+        2u * 4u, /*Bool2*/
+        3u * 4u, /*Bool3*/
+        4u * 4u, /*Bool4*/
+
+        1u * 1u, /*Byte*/
+        2u * 1u, /*Byte2*/
+        3u * 1u, /*Byte3*/
+        4u * 1u, /*Byte4*/
+
+        1u * 1u, /*Sbyte*/
+        2u * 1u, /*Sbyte2*/
+        3u * 1u, /*Sbyte3*/
+        4u * 1u, /*Sbyte4*/
+
         1u * 2u, /*Short*/
         2u * 2u, /*Short2*/
         3u * 2u, /*Short3*/
         4u * 2u, /*Short4*/
-        
+
         1u * 2u, /*Ushort*/
         2u * 2u, /*Ushort2*/
         3u * 2u, /*Ushort3*/
         4u * 2u, /*Ushort4*/
-        
+
+        1u * 2u, /*Half*/
+        2u * 2u, /*Half2*/
+        3u * 2u, /*Half3*/
+        4u * 2u, /*Half4*/
+
+        1u * 4u, /*Float*/
+        2u * 4u, /*Float2*/
+        3u * 4u, /*Float3*/
+        4u * 4u, /*Float4*/
+
+        1u * 4u, /*Int*/
+        2u * 4u, /*Int2*/
+        3u * 4u, /*Int3*/
+        4u * 4u, /*Int4*/
+
+        1u * 4u, /*Uint*/
+        2u * 4u, /*Uint2*/
+        3u * 4u, /*Uint3*/
+        4u * 4u, /*Uint4*/
+
         1u * 8u, /*Long*/
         2u * 8u, /*Long2*/
         3u * 8u, /*Long3*/
         4u * 8u, /*Long4*/
-        
+
         1u * 8u, /*Ulong*/
         2u * 8u, /*Ulong2*/
         3u * 8u, /*Ulong3*/
         4u * 8u, /*Ulong4*/
 
-        2u * 2u * 4u,  /*Float2x2*/
-        3u * 3u * 4u,  /*Float3x3*/
-        4u * 4u * 4u,  /*Float4x4*/
-        3u * 4u * 4u,  /*Float3x4*/
-        
-        2u * 2u * 8u,  /*Double2x2*/
-        3u * 3u * 8u,  /*Double3x3*/
-        4u * 4u * 8u,  /*Double4x4*/
-        
-        2u * 2u * 2u,  /*Half2x2*/
-        3u * 3u * 2u,  /*Half3x3*/
-        4u * 4u * 2u,  /*Half4x4*/
-        
-        4u, /*Texture2D*/
-        4u, /*Texture3D*/
-        4u, /*TextureCube*/
+        1u * 8u, /*Double*/
+        2u * 8u, /*Double2*/
+        3u * 8u, /*Double3*/
+        4u * 8u, /*Double4*/
+
+        2u * 2u * 4u, /*Float2x2*/
+        2u * 3u * 4u, /*Float2x3*/
+        2u * 4u * 4u, /*Float2x4*/
+        3u * 2u * 4u, /*Float3x2*/
+        3u * 3u * 4u, /*Float3x3*/
+        3u * 4u * 4u, /*Float3x4*/
+        4u * 2u * 4u, /*Float4x2*/
+        4u * 3u * 4u, /*Float4x3*/
+        4u * 4u * 4u, /*Float4x4*/
+
+        2u * 2u * 8u, /*Double2x2*/
+        3u * 3u * 8u, /*Double3x3*/
+        4u * 4u * 8u, /*Double4x4*/
+
+        2u * 2u * 2u, /*Half2x2*/
+        3u * 3u * 2u, /*Half3x3*/
+        4u * 4u * 2u, /*Half4x4*/
+
+        1u, /*Sampler*/
+        2u, /*Texture*/
+        2u, /*Image*/
+        2u, /*ConstantBuffer*/
+        2u, /*StorageBuffer*/
+        8u, /*AccelerationStructure*/
         1u  /*Keyword*/
     };
 
     const static PKElementType PKElementType_SCALAR[] =
     {
         PKElementType::Invalid,
-        PKElementType::Float,
-        PKElementType::Float,
-        PKElementType::Float,
-        PKElementType::Float,
-        PKElementType::Double,
-        PKElementType::Double,
-        PKElementType::Double,
-        PKElementType::Double,
-        PKElementType::Half,
-        PKElementType::Half,
-        PKElementType::Half,
-        PKElementType::Half,
-        PKElementType::Int,
-        PKElementType::Int,
-        PKElementType::Int,
-        PKElementType::Int,
-        PKElementType::Uint,
-        PKElementType::Uint,
-        PKElementType::Uint,
-        PKElementType::Uint,
-        PKElementType::Short,
-        PKElementType::Short,
-        PKElementType::Short,
-        PKElementType::Short,
-        PKElementType::Ushort,
-        PKElementType::Ushort,
-        PKElementType::Ushort,
-        PKElementType::Ushort,
-        PKElementType::Long,
-        PKElementType::Long,
-        PKElementType::Long,
-        PKElementType::Long,
-        PKElementType::Ulong,
-        PKElementType::Ulong,
-        PKElementType::Ulong,
-        PKElementType::Ulong,
-        PKElementType::Float,
-        PKElementType::Float,
-        PKElementType::Float,
-        PKElementType::Float,
-        PKElementType::Double,
-        PKElementType::Double,
-        PKElementType::Double,
-        PKElementType::Half,
-        PKElementType::Half,
-        PKElementType::Half,
-        PKElementType::Texture2D,
-        PKElementType::Texture3D,
-        PKElementType::TextureCube,
+        PKElementType::Bool,   PKElementType::Bool,   PKElementType::Bool,   PKElementType::Bool,
+        PKElementType::Byte,   PKElementType::Byte,   PKElementType::Byte,   PKElementType::Byte,
+        PKElementType::Sbyte,  PKElementType::Sbyte,  PKElementType::Sbyte,  PKElementType::Sbyte,
+        PKElementType::Short,  PKElementType::Short,  PKElementType::Short,  PKElementType::Short,
+        PKElementType::Ushort, PKElementType::Ushort, PKElementType::Ushort, PKElementType::Ushort,
+        PKElementType::Half,   PKElementType::Half,   PKElementType::Half,   PKElementType::Half,
+        PKElementType::Float,  PKElementType::Float,  PKElementType::Float,  PKElementType::Float,
+        PKElementType::Int,    PKElementType::Int,    PKElementType::Int,    PKElementType::Int,
+        PKElementType::Uint,   PKElementType::Uint,   PKElementType::Uint,   PKElementType::Uint,
+        PKElementType::Long,   PKElementType::Long,   PKElementType::Long,   PKElementType::Long,
+        PKElementType::Ulong,  PKElementType::Ulong,  PKElementType::Ulong,  PKElementType::Ulong,
+        PKElementType::Double, PKElementType::Double, PKElementType::Double, PKElementType::Double,
+        PKElementType::Float,  PKElementType::Float,  PKElementType::Float,
+        PKElementType::Float,  PKElementType::Float,  PKElementType::Float,
+        PKElementType::Float,  PKElementType::Float,  PKElementType::Float,
+        PKElementType::Double, PKElementType::Double, PKElementType::Double,
+        PKElementType::Half,   PKElementType::Half,   PKElementType::Half,
+        PKElementType::Sampler,
+        PKElementType::Texture,
+        PKElementType::Image,
+        PKElementType::ConstantBuffer,
+        PKElementType::StorageBuffer,
+        PKElementType::AccelerationStructure,
         PKElementType::Keyword
     };
 
-    uint32_t PKElementTypeToSize(PKElementType type)
-    {
-        return PKElementType_SIZES[(uint32_t)type];
+    uint32_t PKElementTypeToSize(PKElementType type) 
+    { 
+        return PKElementType_SIZES[(uint32_t)type]; 
     }
 
-    PKElementType PKElementTypeToScalar(PKElementType type)
+    PKElementType PKElementTypeToScalar(PKElementType type) 
     {
-        return PKElementType_SCALAR[(uint32_t)type];
+        return PKElementType_SCALAR[(uint32_t)type]; 
     }
 
     uint32_t PKElementTypeToComponents(PKElementType type)
@@ -141,29 +139,15 @@ namespace PKAssets
         return PKElementType_SIZES[(uint32_t)type] / PKElementType_SIZES[(uint32_t)PKElementType_SCALAR[(uint32_t)type]];
     }
 
-    uint32_t PKElementTypeToAlignment(PKElementType type)
+    uint32_t PKElementTypeToScalarSize(PKElementType type)
     {
-        const auto size = PKElementType_SIZES[(uint32_t)type];
-        const auto scalarSize = PKElementType_SIZES[(uint32_t)PKElementType_SCALAR[(uint32_t)type]];
-        auto components = (size / (scalarSize ? scalarSize : 1u)) - 1u;
-        components |= components >> 1u;
-        components |= components >> 2u;
-        components = (components & 0x3u) + 1u;
-        return scalarSize * components;
+        return PKElementType_SIZES[(uint32_t)PKElementType_SCALAR[(uint32_t)type]];
     }
-
 
     bool PKElementTypeIsResourceHandle(PKElementType type)
     {
-        switch (type)
-        {
-            case PKElementType::Texture2D:
-            case PKElementType::Texture3D:
-            case PKElementType::TextureCube: return true;
-            default: return false;
-        }
+        return type >= PKElementType::Sampler && type <= PKElementType::AccelerationStructure;
     }
-
 
     static uint16_t PackHalf(float v)
     {

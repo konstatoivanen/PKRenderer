@@ -15,7 +15,7 @@ float3 GerstnerWave(float4 wave, float3 p, inout float3 tangent, inout float3 bi
     float k = 2 * PK_PI / wave_length;
     float c = sqrt(9.8 / k);
     float2 d = normalize(wave.xy);
-    float f = k * (dot(d, p.xz) - c * pk_Time.y);
+    float f = k * (dot(d, p.xz) - c * pk_View.Time.y);
     float a = steepness / k;
 
     tangent += float3

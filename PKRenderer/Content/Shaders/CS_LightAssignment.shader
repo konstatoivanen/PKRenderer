@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE LightAssignmentCs
+#pragma pk_program Compute LightAssignmentCs
 
 #define PK_WRITE_LIGHT_CLUSTERS
 #define GROUP_SIZE_X 2
@@ -11,7 +11,7 @@
 #include "includes/Encoding.glsl"
 
 uniform uint pk_LastLightIndex;
-uniform RWBuffer<uint, 1u> pk_LightCounter;
+uniform RWStructuredBufferRef<uint> pk_LightCounter;
 
 struct SharedLight
 {
@@ -29,8 +29,8 @@ struct AABB
     float  radius;
 };
 
-AABB current_cell;
-shared SharedLight lds_Lights[THREAD_COUNT];
+static AABB current_cell;
+groupshared SharedLight lds_Lights[THREAD_COUNT];
 
 bool IntersectPointLight(uint lightIndex)
 {
@@ -69,15 +69,15 @@ bool IntersectionTest(uint lightIndex)
     return false;
 }
 
-[pk_numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, GROUP_SIZE_Z)]
+[numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, GROUP_SIZE_Z)]
 void LightAssignmentCs()
 {
     const uint3 coord = gl_GlobalInvocationID;
     const uint thread = gl_LocalInvocationIndex;
-    const float near = ViewDepthExp(coord.z, pk_LightTileZParams.xyz);
-    const float far = ViewDepthExp(coord.z + 1u, pk_LightTileZParams.xyz);
+    const float near = ViewDepthExp(coord.z, pk_View.LightTileZParams.xyz);
+    const float far = ViewDepthExp(coord.z + 1u, pk_View.LightTileZParams.xyz);
 
-    const float4 uvminmax = saturate(float4(coord.xy, coord.xy + 1.0f) * LIGHT_TILE_SIZE_PX * pk_ScreenParams.zwzw);
+    const float4 uvminmax = saturate(float4(coord.xy, coord.xy + 1.0f) * LIGHT_TILE_SIZE_PX * pk_View.ScreenParams.zwzw);
 
     const float3 min00 = UvToViewPos(uvminmax.xy, near);
     const float3 max00 = UvToViewPos(uvminmax.xy, far);
@@ -111,7 +111,7 @@ void LightAssignmentCs()
         light.type = scene_light.light_type;
         lds_Lights[thread] = light;
 
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
 
         for (uint index = 0; index < THREAD_COUNT; ++index)
         {
@@ -124,16 +124,15 @@ void LightAssignmentCs()
             }
         }
 
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
     }
 
     uint offset = 0u;
 
     [[branch]]
-    if (All_Less(coord.xy, LIGHT_TILE_COUNT_XY))
+    if (all(coord.xy < LIGHT_TILE_COUNT_XY))
     {
-        offset = atomicAdd(pk_LightCounter, visible_count);
-
+        InterlockedAdd(pk_LightCounter[0], visible_count, offset);
         for (uint i = 0; i < visible_count; ++i)
         {
             pk_LightLists[offset + i] = visible_indices[i];
@@ -144,5 +143,5 @@ void LightAssignmentCs()
     base = bitfieldInsert(base, offset, 0, 22);
     base = bitfieldInsert(base, visible_count, 22, 8);
     base = bitfieldInsert(base, GetShadowCascadeIndex(lerp(near, far, 0.5f)), 30, 2);
-    imageStore(pk_LightTiles, int3(coord), uint4(base));
+    pk_LightTiles[int3(coord)] = base;
 }

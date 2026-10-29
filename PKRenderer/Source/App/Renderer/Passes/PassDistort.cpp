@@ -42,9 +42,9 @@ namespace PK::App
         const auto scale = math::lerp(1.0f, math::clamp(scaleF, 0.0f, 1.0f), settings.PaniniProjectionScreenFit);
         const auto paniniParams = float4(viewExtX, viewExtY, distance, scale);
 
-        view->constants.Set<float4>(hash->pk_Panini_Projection_Parameters, paniniParams);
-        view->constants.Set<float>(hash->pk_Chromatic_Aberration_Amount, settings.ChromaticAberrationAmount);
-        view->constants.Set<float>(hash->pk_Chromatic_Aberration_Power, settings.ChromaticAberrationPower);
+        view->constants.Set<float4>(hash->Panini_Projection_Parameters, paniniParams);
+        view->constants.Set<float>(hash->Chromatic_Aberration_Amount, settings.ChromaticAberrationAmount);
+        view->constants.Set<float>(hash->Chromatic_Aberration_Power, settings.ChromaticAberrationPower);
     }
 
     void PassDistort::Render(RenderGraphExt graph, QueueType queue, RenderPipelineContext* ctx)
@@ -73,12 +73,6 @@ namespace PK::App
             descriptor.layers = 1;
             descriptor.levels = 1;
             descriptor.resolution = resolution;
-            descriptor.sampler.filterMin = FilterMode::Trilinear;
-            descriptor.sampler.filterMag = FilterMode::Trilinear;
-            descriptor.sampler.wrap[0] = WrapMode::Clamp;
-            descriptor.sampler.wrap[1] = WrapMode::Clamp;
-            descriptor.sampler.wrap[2] = WrapMode::Clamp;
-            descriptor.sampler.borderColor = BorderColor::FloatBlack;
             RHI::ValidateTexture(resources->distortTexture, descriptor, "Distort.Texture");
         }
 

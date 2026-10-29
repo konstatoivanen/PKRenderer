@@ -22,35 +22,37 @@ namespace PK
 
         // Create resource heap
         {
-            m_resourceHeap.arenaOffset = m_properties.resourceHeapOffset + PK_VK_MAX_DESCRIPTORS * m_properties.maxResourceStride;
-            m_resourceHeap.arenaCapacity = math::align(resourceArenaSize, m_properties.maxResourceStride);
+            const auto descriptorsSize = PK_VK_MAX_DESCRIPTORS * m_properties.maxResourceStride;
+            const auto reservedOffset = math::align(descriptorsSize, m_properties.resourceHeapOffset);
+            const auto reservedSize = properties.descriptorHeap.minResourceHeapReservedRange;
 
             VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-            bufferInfo.size = math::align(m_resourceHeap.arenaOffset + m_resourceHeap.arenaCapacity, m_properties.resourceHeapAlignment);
+            bufferInfo.size = math::align(reservedOffset + reservedSize, m_properties.resourceHeapAlignment);
             bufferInfo.usage = VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
             bufferInfo.queueFamilyIndexCount = queueFamilies.count;
             bufferInfo.pQueueFamilyIndices = queueFamilies.indices;
             PK_FATAL_ASSERT(bufferInfo.size <= m_properties.maxResourceHeapSize, "heap size '%llu' exceeds allowed max size '%llu'!", bufferInfo.size, m_properties.maxResourceHeapSize);
-       
+
             VmaAllocationInfo allocationInfo{};
             VK_ASSERT_RESULT_CTX(vmaCreateBufferWithAlignment(m_allocator, &bufferInfo, &allocInfo, m_properties.resourceHeapAlignment, &m_resourceHeap.buffer, &m_resourceHeap.memory, &allocationInfo), "Failed to create a resource heap buffer!");
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_resourceHeap.buffer, "PK_Resource_Heap");
             m_resourceHeap.mappedPtr = static_cast<uint8_t*>(allocationInfo.pMappedData);
-            
+
             m_resourceHeap.bindInfo.sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT;
             m_resourceHeap.bindInfo.heapRange = { VulkanGetBudderDeviceAddress(m_device, m_resourceHeap.buffer), bufferInfo.size };
-            m_resourceHeap.bindInfo.reservedRangeOffset = 0ull;
-            m_resourceHeap.bindInfo.reservedRangeSize = properties.descriptorHeap.minResourceHeapReservedRange;
+            m_resourceHeap.bindInfo.reservedRangeOffset = reservedOffset;
+            m_resourceHeap.bindInfo.reservedRangeSize = reservedSize;
         }
 
         // Create sampler heap
         {
-            m_samplerHeap.arenaOffset = m_properties.samplerHeapOffset + PK_VK_MAX_SAMPLERS * m_properties.samplerStride;
-            m_samplerHeap.arenaCapacity = PK_VK_MAX_SAMPLERS * 32u * m_properties.samplerStride;
+            const auto samplersSize = PK_VK_MAX_SAMPLERS * m_properties.samplerStride;
+            const auto reservedOffset = math::align(samplersSize, m_properties.samplerHeapOffset);
+            const auto reservedSize = properties.descriptorHeap.minSamplerHeapReservedRange;
 
             VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-            bufferInfo.size = math::align(m_samplerHeap.arenaOffset + m_samplerHeap.arenaCapacity, m_properties.samplerHeapAlignment);
+            bufferInfo.size = math::align(reservedOffset + reservedSize, m_properties.samplerHeapAlignment);
             bufferInfo.usage = VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
             bufferInfo.queueFamilyIndexCount = queueFamilies.count;
@@ -61,11 +63,11 @@ namespace PK
             VK_ASSERT_RESULT_CTX(vmaCreateBufferWithAlignment(m_allocator, &bufferInfo, &allocInfo, m_properties.samplerHeapAlignment, &m_samplerHeap.buffer, &m_samplerHeap.memory, &allocationInfo), "Failed to create a sampler heap buffer!");
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_samplerHeap.buffer, "PK_Sampler_Heap");
             m_samplerHeap.mappedPtr = static_cast<uint8_t*>(allocationInfo.pMappedData);
-        
+
             m_samplerHeap.bindInfo.sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT;
             m_samplerHeap.bindInfo.heapRange = { VulkanGetBudderDeviceAddress(m_device, m_samplerHeap.buffer), bufferInfo.size };
-            m_samplerHeap.bindInfo.reservedRangeOffset = 0ull;
-            m_samplerHeap.bindInfo.reservedRangeSize = properties.descriptorHeap.minSamplerHeapReservedRange;
+            m_samplerHeap.bindInfo.reservedRangeOffset = reservedOffset;
+            m_samplerHeap.bindInfo.reservedRangeSize = reservedSize;
         }
 
         GetSamplerIndex(SamplerDescriptor{});
@@ -80,25 +82,6 @@ namespace PK
 
         vmaDestroyBuffer(m_allocator, m_resourceHeap.buffer, m_resourceHeap.memory);
         vmaDestroyBuffer(m_allocator, m_samplerHeap.buffer, m_samplerHeap.memory);
-    }
-
-
-    void VulkanDescriptorHeap::BeginRange()
-    {
-        m_rangeCounter++;
-    }
-
-    uint64_t VulkanDescriptorHeap::EndRange()
-    {
-        m_resourceHeap.ranges[m_rangeCounter % PK_VK_MAX_DESCRIPTOR_RANGES] = m_resourceHeap.arenaHead;
-        m_samplerHeap.ranges[m_rangeCounter % PK_VK_MAX_DESCRIPTOR_RANGES] = m_samplerHeap.arenaHead;
-        return m_rangeCounter;
-    }
-
-    void VulkanDescriptorHeap::FreeRange(uint64_t rangeIndex)
-    {
-        m_resourceHeap.arenaTail = math::max(m_resourceHeap.arenaTail, m_resourceHeap.ranges[rangeIndex % PK_VK_MAX_DESCRIPTOR_RANGES]);
-        m_samplerHeap.arenaTail = math::max(m_samplerHeap.arenaTail, m_samplerHeap.ranges[rangeIndex % PK_VK_MAX_DESCRIPTOR_RANGES]);
     }
 
     void VulkanDescriptorHeap::Prune()
@@ -186,7 +169,7 @@ namespace PK
             }
 
             auto* cpuAddress = m_samplerCache[index].value.data;
-            auto* gpuAddress = m_samplerHeap.mappedPtr + m_properties.samplerHeapOffset + index * m_properties.samplerStride;
+            auto* gpuAddress = m_samplerHeap.mappedPtr + index * m_properties.samplerStride;
 
             VkHostAddressRangeEXT hostRange{ cpuAddress, PK_VK_MAX_SAMPLER_DESCRIPTOR_SIZE };
             VK_ASSERT_RESULT_CTX(vkWriteSamplerDescriptorsEXT(m_device, 1u, &info, &hostRange), "Failed to write sampler descriptor!");
@@ -200,16 +183,16 @@ namespace PK
     VulkanResourceView VulkanDescriptorHeap::GetSamplerView(const SamplerDescriptor& descriptor)
     {
         VulkanResourceView view{};
-        view.image.samplerIndex = GetSamplerIndex(descriptor);
-        view.UpdateHashImage();
+        view.samplerIndex = GetSamplerIndex(descriptor);
+        view.hash = view.samplerIndex;
         return view;
     }
 
-    uint32_t VulkanDescriptorHeap::GetBindlessIndex(const VulkanResourceView& view, ShaderResourceType type)
+    uint32_t VulkanDescriptorHeap::GetBindlessIndex(const VulkanResourceView& view, ElementType type)
     {
-        if (type == ShaderResourceType::Sampler)
+        if (type == ElementType::Sampler)
         {
-            return view.image.samplerIndex;
+            return view.samplerIndex;
         }
 
         return GetOrCacheResourceView(view, type);
@@ -220,45 +203,10 @@ namespace PK
         return m_resourcePool[bindlessIndex]->resolution;
     }
 
-    uint2 VulkanDescriptorHeap::AllocateDescriptorSet(const VulkanShader* shader, const VulkanDescriptorBinding* bindings, uint32_t count)
-    {
-        const auto resourceOffset = AllocateDescriptorRange(m_resourceHeap, shader->GetResourceSetSize(), m_properties.maxResourceStride);
-        const auto samplerOffset = AllocateDescriptorRange(m_samplerHeap, shader->GetSamplerSetSize(), m_properties.samplerStride);
-        const auto* offsets = shader->GetDescriptorOffsets();
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            const auto& binding = bindings[i];
-            const auto& offset = offsets[i];
-
-            for (auto j = 0u; j < binding.count; ++j)
-            {
-                const auto& view = binding.views[j];
-
-                if (offset.resourceStride)
-                {
-                    const auto index = GetOrCacheResourceView(view, binding.type);
-                    const auto* srcResource = m_resourcePool[index]->data;
-                    memcpy(m_resourceHeap.mappedPtr + resourceOffset + offset.resourceOffset + j * offset.resourceStride, srcResource, offset.resourceStride);
-                }
-
-                if (offset.samplerStride)
-                {
-                    const auto* srcSampler = m_samplerCache[view.image.samplerIndex].value.data;
-                    memcpy(m_samplerHeap.mappedPtr + samplerOffset + offset.samplerOffset + j * offset.samplerStride, srcSampler, offset.samplerStride);
-                }
-            }
-        }
-
-        return { resourceOffset, samplerOffset };
-    }
-
-
-    uint32_t VulkanDescriptorHeap::GetOrCacheResourceView(const VulkanResourceView& view, ShaderResourceType type)
+    uint32_t VulkanDescriptorHeap::GetOrCacheResourceView(const VulkanResourceView& view, ElementType type)
     {
         // Pure resource descriptor: SamplerTexture in legacy shaders uses the exact same SAMPLED_IMAGE resource descriptor as Texture
-        const auto cacheType = type == ShaderResourceType::SamplerTexture ? ShaderResourceType::Texture : type;
-        const auto key = Hash::Mix(view.hash, (uint64_t)cacheType);
+        const auto key = Hash::Mix(view.hash, (uint64_t)type);
         auto mapIndex = 0u;
 
         if (m_resourceCache.AddKey(key, &mapIndex))
@@ -272,19 +220,19 @@ namespace PK
             VkImageDescriptorInfoEXT imageInfo{ VK_STRUCTURE_TYPE_IMAGE_DESCRIPTOR_INFO_EXT };
             VkResourceDescriptorInfoEXT resourceInfo{ VK_STRUCTURE_TYPE_RESOURCE_DESCRIPTOR_INFO_EXT };
 
-            resourceInfo.type = VulkanEnumConvert::GetDescriptorType(cacheType);
+            resourceInfo.type = VulkanEnumConvert::GetDescriptorType(type);
 
-            if (cacheType == ShaderResourceType::Texture || cacheType == ShaderResourceType::Image)
+            if (type == ElementType::Texture || type == ElementType::Image)
             {
                 viewInfo.pNext = &usageInfo;
                 imageInfo.pView = &viewInfo;
                 resourceInfo.data.pImage = &imageInfo;
 
-                usageInfo.usage = cacheType == ShaderResourceType::Image ? VK_IMAGE_USAGE_STORAGE_BIT : VK_IMAGE_USAGE_SAMPLED_BIT;
+                usageInfo.usage = type == ElementType::Image ? VK_IMAGE_USAGE_STORAGE_BIT : VK_IMAGE_USAGE_SAMPLED_BIT;
                 viewInfo.image = view.image.image;
                 viewInfo.viewType = view.image.viewType;
                 viewInfo.format = view.image.format;
-                viewInfo.components = cacheType == ShaderResourceType::Image ? VkComponentMapping{} : VulkanEnumConvert::GetSwizzle(view.image.format);
+                viewInfo.components = type == ElementType::Image ? VkComponentMapping{} : VulkanEnumConvert::GetSwizzle(view.image.format);
                 viewInfo.subresourceRange = view.image.range;
                 imageInfo.layout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -301,34 +249,11 @@ namespace PK
             VkHostAddressRangeEXT hostRange{ entry->data, PK_VK_MAX_RESOURCE_DESCRIPTOR_SIZE };
             VK_ASSERT_RESULT_CTX(vkWriteResourceDescriptorsEXT(m_device, 1u, &resourceInfo, &hostRange), "Failed to write resource descriptor!");
             
-            auto* gpuAddress = m_resourceHeap.mappedPtr + m_properties.resourceHeapOffset + index * m_properties.maxResourceStride;
+            auto* gpuAddress = m_resourceHeap.mappedPtr + index * m_properties.maxResourceStride;
             memcpy(gpuAddress, entry->data, m_properties.maxResourceStride);
         }
 
         m_resourceCache[mapIndex].value.pruneTick = m_currentPruneTick + m_pruneDelay;
         return m_resourceCache[mapIndex].value.index;
-    }
-
-    uint32_t VulkanDescriptorHeap::AllocateDescriptorRange(DescriptorHeap& heap, uint32_t size, uint32_t alignment)
-    {
-        if (size)
-        {
-            size = math::align(size, alignment);
-            PK_DEBUG_FATAL_ASSERT(heap.arenaHead + size - heap.arenaTail <= heap.arenaCapacity, "Descriptor heap arena exhausted!");
-
-            auto offset = heap.arenaHead % heap.arenaCapacity;
-
-            if (offset + size > heap.arenaCapacity)
-            {
-                heap.arenaHead += heap.arenaCapacity - offset;
-                offset = 0u;
-            }
-
-            heap.arenaHead += size;
-
-            return heap.arenaOffset + offset;
-        }
-
-        return 0u;
     }
 }

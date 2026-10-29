@@ -254,18 +254,12 @@ namespace PK
                 meta.AppendFormat("         %s, %u, %u\n", element.name.c_str(), element.location, (uint32_t)element.format);
             }
 
-            meta.Append("       Dynamic Constants:\n");
+            meta.Append("       Push Constants:\n");
 
             for (const auto& element : shader->GetPushConstantLayout())
             {
-                meta.AppendFormat("         %s, %u, %u\n", element.name.c_str(), element.offset, (uint32_t)element.size);
-            }
-
-            meta.Append("       Descriptor Set:\n");
-
-            for (const auto& element : shader->GetResourceLayout())
-            {
-                meta.AppendFormat("         %s, %u\n", element.name.c_str(), (uint32_t)element.type);
+                auto type = ReflectEnum<ElementType>::ToString(element.type);
+                meta.AppendFormat("         %s:%s, %u, %u\n", type, element.name.c_str(), element.offset, element.count);
             }
         }
 

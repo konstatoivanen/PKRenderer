@@ -1,7 +1,7 @@
 
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #pragma pk_multi_compile _ PK_GI_RESTIR
-#pragma pk_program SHADER_STAGE_COMPUTE AccumulateCs
+#pragma pk_program Compute AccumulateCs
 
 #define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 0
@@ -23,7 +23,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
 
     // Temporal Resampling
     {
-        const float2 fcoord_prev = WorldToClipUvPrev(origin) * int2(pk_ScreenSize.xy) + RESTIR_TEXEL_BIAS;
+        const float2 fcoord_prev = WorldToClipUvPrev(origin) * int2(pk_View.ScreenSize.xy) + RESTIR_TEXEL_BIAS;
         const int2 coord_prev = GI_CollapseCheckerboardCoord(fcoord_prev, 1u);
 
         const uint hash = ReSTIR_Hash(seed++);
@@ -76,7 +76,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
             const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
 
             [[branch]]
-            if (Any_NotEqual(xy, coord_base) && Test_DepthSurface(depth, s_depth, depth_bias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
+            if (any(xy != coord_base) && Test_DepthSurface(depth, s_depth, depth_bias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
                 const float s_target_pdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
                 ReSTIR_CombineReservoir(combined, s_reservoir, s_target_pdf, hash);
@@ -95,16 +95,16 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
         const uint shuffle_id = (gl_SubgroupInvocationID + (hash % wave_mask) + 1u) & wave_mask;
 
         Reservoir suffled;
-        suffled.radiance = subgroupShuffle(combined.radiance, shuffle_id);
-        suffled.position = subgroupShuffle(combined.position, shuffle_id);
-        suffled.normal = subgroupShuffle(combined.normal, shuffle_id);
-        suffled.target_pdf = subgroupShuffle(combined.target_pdf, shuffle_id);
-        suffled.weight_sum = subgroupShuffle(combined.weight_sum, shuffle_id);
-        suffled.M = subgroupShuffle(combined.M, shuffle_id);
+        suffled.radiance = WaveReadLaneAt(combined.radiance, shuffle_id);
+        suffled.position = WaveReadLaneAt(combined.position, shuffle_id);
+        suffled.normal = WaveReadLaneAt(combined.normal, shuffle_id);
+        suffled.target_pdf = WaveReadLaneAt(combined.target_pdf, shuffle_id);
+        suffled.weight_sum = WaveReadLaneAt(combined.weight_sum, shuffle_id);
+        suffled.M = WaveReadLaneAt(combined.M, shuffle_id);
 
-        const float s_depth = subgroupShuffle(depth, shuffle_id);
-        const float3 s_origin = subgroupShuffle(origin, shuffle_id);
-        const float3 s_normal = subgroupShuffle(normal, shuffle_id);
+        const float s_depth = WaveReadLaneAt(depth, shuffle_id);
+        const float3 s_origin = WaveReadLaneAt(origin, shuffle_id);
+        const float3 s_normal = WaveReadLaneAt(normal, shuffle_id);
 
         [[branch]]
         if (combined.M < RESTIR_MAX_M + 3 && Test_DepthSurface(depth, s_depth, depth_bias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
@@ -120,10 +120,10 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
         const float filter_strength = 0.2f;
         const float filter_multiplier = 10.0f / clamp(filter_strength, 1e-6f, 1.0f) - 9.0f;
         const float reservoir_weight = combined.target_pdf * combined.weight_sum;
-        const uint4 thread_mask = subgroupBallot(reservoir_weight > 1e-6f);
-        const uint thread_count = subgroupBallotBitCount(thread_mask);
-        const float wave_weight = subgroupAdd(reservoir_weight);
-        const float filter_weight = lerp(0.0f, wave_weight / float(thread_count), thread_count > 0);
+        const uint4 thread_mask = WaveActiveBallot(reservoir_weight > 1e-6f);
+        const uint thread_count = WaveBallotBitCount(thread_mask);
+        const float wave_weight = WaveActiveSum(reservoir_weight);
+        const float filter_weight = select(thread_count > 0, wave_weight / float(thread_count), 0.0f);
         is_boiling = reservoir_weight > filter_weight * filter_multiplier;
     }
 
@@ -138,12 +138,12 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
 
     ReSTIR_Store_Current(coord_base, is_valid && !is_boiling ? combined : initial);
 
-    const float3 radiance = lerp(initial.radiance, combined.radiance * weight, is_valid.xxx);
-    const float3 direction = lerp(SafeNormalize(initial.position - origin), combined_direction, is_valid.xxx);
+    const float3 radiance = select(is_valid, combined.radiance * weight, initial.radiance);
+    const float3 direction = select(is_valid, combined_direction, SafeNormalize(initial.position - origin));
     return SH_Luma_FromRadiance(radiance, direction);
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void AccumulateCs()
 {
     const int2 coord_base = int2(gl_GlobalInvocationID.xy);
@@ -185,7 +185,7 @@ void AccumulateCs()
 #endif
     {
         [[branch]]
-        if (subgroupAny(is_scene))
+        if (WaveActiveAnyTrue(is_scene))
         {
             GISpec history = GI_Load_Spec(coord_base, PK_GI_STORE_LVL);
             GISpec current = GI_Load_Spec(coord_base);

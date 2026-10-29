@@ -43,95 +43,8 @@ namespace PK
             }
         }
 
-        m_resourceLayout.ClearFast();
-        m_resourceSetSize = 0u;
-        m_samplerSetSize = 0u;
-
-        if (variant->descriptorCount)
-        {
-            PK_WARNING_ASSERT(variant->descriptorCount <= PK_RHI_MAX_DESCRIPTORS_PER_SET, "Warning: Shader descriptor count exceeds the maximum count per set!");
-            const auto& descriptorProps = m_driver->physicalDeviceProperties.descriptorHeapDerived;
-            auto* pDescriptors = variant->descriptors.Get(base);
-            bool hasUnbounded = false;
-
-            for (auto j = 0u; j < variant->descriptorCount; ++j)
-            {
-                const auto type = pDescriptors[j].type;
-                const auto count = pDescriptors[j].count;
-                const auto isUnbounded = count >= PK_RHI_MAX_UNBOUNDED_SIZE;
-                const auto isImage = type == ShaderResourceType::SamplerTexture || type == ShaderResourceType::Texture || type == ShaderResourceType::Image || type == ShaderResourceType::InputAttachment;
-                const auto isBuffer = type == ShaderResourceType::ConstantBuffer || type == ShaderResourceType::StorageBuffer || type == ShaderResourceType::AccelerationStructure;
-                const auto isSampler = type == ShaderResourceType::Sampler || type == ShaderResourceType::SamplerTexture;
-                const auto resourceStride = !isImage ? !isBuffer ? 0u : descriptorProps.bufferStride : descriptorProps.imageStride;
-                const auto samplerStride = isSampler ? descriptorProps.samplerStride : 0u;
-
-                PK_FATAL_ASSERT(isUnbounded || !hasUnbounded, "Fixed-size descriptor binding '%s' (binding %u) cannot follow an unbounded bindless array!", pDescriptors[j].name, j);
-                hasUnbounded |= isUnbounded;
-
-                auto& descriptor = m_descriptors[j];
-                descriptor.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_AND_BINDING_MAPPING_EXT;
-                descriptor.pNext = nullptr;
-                descriptor.descriptorSet = 0u;
-                descriptor.firstBinding = j;
-                descriptor.bindingCount = 1u;
-                descriptor.resourceMask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT;
-
-                if (isUnbounded)
-                {
-                    descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-                    descriptor.sourceData.constantOffset.heapOffset = type == ShaderResourceType::Sampler ? descriptorProps.samplerHeapOffset : descriptorProps.resourceHeapOffset;
-                    descriptor.sourceData.constantOffset.heapArrayStride = type == ShaderResourceType::Sampler ? descriptorProps.samplerStride : descriptorProps.maxResourceStride;
-                    continue;
-                }
-
-                descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
-                
-                m_resourceLayout.Add(type, pDescriptors[j].name, pDescriptors[j].accessMask, pDescriptors[j].writeMask, count);
-
-                if (resourceStride)
-                {
-                    m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)resourceStride);
-                }
-
-                m_descriptorOffsets[j].resourceOffset = m_resourceSetSize;
-                m_descriptorOffsets[j].samplerOffset = m_samplerSetSize;
-                m_descriptorOffsets[j].resourceStride = (uint16_t)resourceStride;
-                m_descriptorOffsets[j].samplerStride = (uint16_t)samplerStride;
-
-                if (type == ShaderResourceType::Sampler)
-                {
-                    descriptor.sourceData.pushIndex.heapOffset = m_descriptorOffsets[j].samplerOffset;
-                    descriptor.sourceData.pushIndex.pushOffset = PK_VK_PUSH_OFFSET_SAMPLER_HEAP;
-                    descriptor.sourceData.pushIndex.heapIndexStride = 1u;
-                    descriptor.sourceData.pushIndex.heapArrayStride = samplerStride;
-                }
-                else
-                {
-                    descriptor.sourceData.pushIndex.heapOffset = m_descriptorOffsets[j].resourceOffset;
-                    descriptor.sourceData.pushIndex.pushOffset = PK_VK_PUSH_OFFSET_RESOURCE_HEAP;
-                    descriptor.sourceData.pushIndex.heapIndexStride = 1u;
-                    descriptor.sourceData.pushIndex.heapArrayStride = resourceStride;
-                    descriptor.sourceData.pushIndex.samplerHeapOffset = m_descriptorOffsets[j].samplerOffset;
-                    descriptor.sourceData.pushIndex.samplerPushOffset = PK_VK_PUSH_OFFSET_SAMPLER_HEAP;
-                    descriptor.sourceData.pushIndex.samplerHeapIndexStride = 1u;
-                    descriptor.sourceData.pushIndex.samplerHeapArrayStride = samplerStride;
-                }
-
-                m_resourceSetSize += resourceStride * count;
-                m_samplerSetSize += samplerStride * count;
-            }
-
-            m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)descriptorProps.maxResourceStride);
-            m_samplerSetSize = math::align(m_samplerSetSize, (uint32_t)descriptorProps.samplerStride);
-        }
-
-        m_descriptorLayout.sType = VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT;
-        m_descriptorLayout.pNext = nullptr;
-        m_descriptorLayout.mappingCount = variant->descriptorCount;
-        m_descriptorLayout.pMappings = variant->descriptorCount ? m_descriptors : nullptr;
-
-        m_pushConstantSize = variant->constantRange;
         m_pushConstantLayout.ClearFast();
+        m_pushConstantLayout.sizeBytes = variant->constantRange;
 
         if (variant->constantRange)
         {
@@ -141,8 +54,11 @@ namespace PK
             {
                 auto* constant = m_pushConstantLayout.Add();
                 constant->name = pVariables[i].name;
+                constant->accessMask = pVariables[i].accessMask;
+                constant->writeMask = pVariables[i].writeMask;
+                constant->type = pVariables[i].type;
                 constant->offset = pVariables[i].offset;
-                constant->size = pVariables[i].size;
+                constant->count = pVariables[i].arraySize;
             }
         }
 
@@ -159,7 +75,7 @@ namespace PK
                 {
                     const auto stage = (ShaderStage)i;
                     moduleInfos[stageCount].sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-                    moduleInfos[stageCount].pNext = &m_descriptorLayout;
+                    moduleInfos[stageCount].pNext = nullptr;
                     moduleInfos[stageCount].codeSize = variant->sprivSizes[i];
                     moduleInfos[stageCount].pCode = reinterpret_cast<const uint32_t*>(variant->sprivBuffers[i].Get(base));
 
@@ -184,7 +100,7 @@ namespace PK
                     shaderStages[stageCount].pNext = &moduleInfos[stageCount];
                     shaderStages[stageCount].stage = VulkanEnumConvert::GetShaderStage(stage);
                     shaderStages[stageCount].module = VK_NULL_HANDLE;
-                    shaderStages[stageCount].pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
+                    shaderStages[stageCount].pName = "main";
                     stageCount++;
                 }
             }
@@ -231,14 +147,14 @@ namespace PK
 
                     auto& info = createInfos[stageCount++];
                     info.sType = VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT;
-                    info.pNext = &m_descriptorLayout;
+                    info.pNext = nullptr;
                     info.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT | (stage == ShaderStage::MeshAssembly && hasNoTask ? VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT : 0u);
                     info.stage = vkStage;
                     info.nextStage = 0u;
                     info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
                     info.codeSize = variant->sprivSizes[i];
                     info.pCode = variant->sprivBuffers[i].Get(base);
-                    info.pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
+                    info.pName = "main";
                 }
             }
 
@@ -310,7 +226,6 @@ namespace PK
                     info.byteOffsets[(uint32_t)currentGroup] = info.totalTableSize;
                     info.byteStrides[(uint32_t)currentGroup] = info.handleSizeAligned;
                     info.offsets[(uint32_t)currentGroup] = (uint8_t)info.totalHandleCount;
-                    info.layouts[(uint32_t)currentGroup] = nullptr;
                 }
 
                 info.counts[(uint32_t)currentGroup]++;

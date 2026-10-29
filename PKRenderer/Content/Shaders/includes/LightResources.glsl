@@ -5,7 +5,7 @@
 #define LIGHT_TILE_SIZE_PX 64
 #define LIGHT_TILE_SHIFT_PX 6
 #define LIGHT_TILE_COUNT_Z 32
-#define LIGHT_TILE_COUNT_XY imageSize(pk_LightTiles).xy
+#define LIGHT_TILE_COUNT_XY pk_LightTiles.GetSize().xy
 #define LIGHT_TILE_MAX_LIGHTS 128
 
 #define LIGHT_PARAM_INVALID 0x7FFF
@@ -44,22 +44,22 @@ struct LightTile
     uint cascade;
 };
 
-uniform sampler2DArray pk_IESProfiles;
-uniform Buffer<uint4> pk_Lights;
-uniform Buffer<float4x4> pk_LightMatrices;
+uniform Texture2DArrayRef pk_IESProfiles;
+uniform StructuredBufferRef<uint4> pk_Lights;
+uniform StructuredBufferRef<float4x4> pk_LightMatrices;
 
 #if defined(PK_WRITE_LIGHT_CLUSTERS)
-uniform RWBuffer<ushort> pk_LightLists;
-uniform writeonly uimage3D pk_LightTiles;
+uniform RWStructuredBufferRef<ushort> pk_LightLists;
+uniform RWTexture3DRef<uint> pk_LightTiles;
 #else
-uniform Buffer<ushort> pk_LightLists;
-uniform readonly uimage3D pk_LightTiles;
+uniform StructuredBufferRef<ushort> pk_LightLists;
+uniform RWTexture3DRef<uint> pk_LightTiles;
 #endif
 
 SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)
 {
     SceneLight l;
-    l.position = uintBitsToFloat(packed0.xyz);
+    l.position = asfloat(packed0.xyz);
     l.radius = unpackHalf2x16(packed0.w).x;
     l.light_type = bitfieldExtract(packed0.w, 16, 4);
     l.index_ies = bitfieldExtract(packed0.w, 20, 12);
@@ -93,10 +93,10 @@ LightTile Lights_LoadTile(const int3 coord)
     #if defined(PK_WRITE_LIGHT_CLUSTERS)
         return LightTile(0,0,0);
     #else
-        return Lights_UnpackTile(imageLoad(pk_LightTiles, coord).x);
+        return Lights_UnpackTile(pk_LightTiles[coord]);
     #endif
 }
 
-LightTile Lights_LoadTile_Coord(const int2 coord, const float view_depth) { return Lights_LoadTile(int3(coord, max(0, int(ClipDepthExp(view_depth, pk_LightTileZParams.xyz))))); }
+LightTile Lights_LoadTile_Coord(const int2 coord, const float view_depth) { return Lights_LoadTile(int3(coord, max(0, int(ClipDepthExp(view_depth, pk_View.LightTileZParams.xyz))))); }
 LightTile Lights_LoadTile_Px(const int2 px, const float view_depth) { return Lights_LoadTile_Coord(px >> LIGHT_TILE_SHIFT_PX, view_depth); }
-LightTile Lights_LoadTile_Uv(const float2 uv, const float view_depth) { return Lights_LoadTile_Px(int2(uv * pk_ScreenSize.xy), view_depth); }
+LightTile Lights_LoadTile_Uv(const float2 uv, const float view_depth) { return Lights_LoadTile_Px(int2(uv * pk_View.ScreenSize.xy), view_depth); }

@@ -22,10 +22,10 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto& settings = view->settings.TemporalAntialiasingSettings;
-        view->constants.Set<float>(hash->pk_TAA_Sharpness, settings.Sharpness);
-        view->constants.Set<float>(hash->pk_TAA_BlendingStatic, settings.BlendingStatic);
-        view->constants.Set<float>(hash->pk_TAA_BlendingMotion, settings.BlendingMotion);
-        view->constants.Set<float>(hash->pk_TAA_MotionAmplification, settings.MotionAmplification);
+        view->constants.Set<float>(hash->TAA_Sharpness, settings.Sharpness);
+        view->constants.Set<float>(hash->TAA_BlendingStatic, settings.BlendingStatic);
+        view->constants.Set<float>(hash->TAA_BlendingMotion, settings.BlendingMotion);
+        view->constants.Set<float>(hash->TAA_MotionAmplification, settings.MotionAmplification);
     }
 
     void PassTemporalAntialiasing::Render(RenderGraphExt graph, QueueType queue, RenderView* view, RHITexture* source, RHITexture* destination)
@@ -48,11 +48,6 @@ namespace PK::App
         descriptor.formatAlias = TextureFormat::R32_Uint;
         descriptor.resolution = resolution;
         descriptor.layers = 2;
-        descriptor.sampler.filterMin = FilterMode::Bilinear;
-        descriptor.sampler.filterMag = FilterMode::Bilinear;
-        descriptor.sampler.wrap[0] = WrapMode::Clamp;
-        descriptor.sampler.wrap[1] = WrapMode::Clamp;
-        descriptor.sampler.wrap[2] = WrapMode::Clamp;
         descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
         RHI::ValidateTexture(resources->historyTexture, descriptor, "TAA.HistoryTexture");
 

@@ -7,7 +7,7 @@ float GI_GetParallax(float3 view_dir_cur, float3 view_dir_pre)
 {
     float cosa = saturate(dot(view_dir_cur, view_dir_pre));
     float parallax = sqrt(1.0 - cosa * cosa) / max(cosa, 1e-6);
-    return parallax / pk_DeltaTime.x;
+    return parallax / pk_View.DeltaTime.x;
 }
 
 // Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
@@ -24,9 +24,9 @@ float GI_GetAntilagSpecular(float roughness, float nv, float parallax)
 }
 
 // Add small bias (0.01) to prevent sampling from past root texel.
-float2 GI_ViewToPrevScreenUv(const float3 view_pos) { return ViewToClipUvPrev(view_pos) * int2(pk_ScreenSize.xy) - 0.49f.xx; }
+float2 GI_ViewToPrevScreenUv(const float3 view_pos) { return ViewToClipUvPrev(view_pos) * int2(pk_View.ScreenSize.xy) - 0.49f.xx; }
 
-float2 GI_GetRandomRotation() { return RadianRotation(AsUnorm(pk_FrameRandom.x) * PK_TWO_PI); }
+float2 GI_GetRandomRotation() { return RadianRotation(AsUnorm(pk_View.FrameRandom.x) * PK_TWO_PI); }
 
 float2 GI_GetDiskWeightParams(float radius, float depth) { return float2(1.0f / (0.05f * depth), 1.0f / (2.0f * pow2(radius))); }
 
@@ -55,8 +55,8 @@ float2 GI_GetDiskFilterRadiusAndScale(const float depth, const float variance, c
     scale = lerp(scale, 0.75f + scale * 0.25f, 1.0f / (history + 1.0f));
 
     float radius = PK_GI_DISK_FILTER_RADIUS * (0.25f + 0.75f * near_field);
-    radius *= sqrt(depth / pk_ClipParams.y);
-    radius *= sqrt(3840.0 * pk_ScreenParams.z);	
+    radius *= sqrt(depth / pk_View.ClipParams.y);
+    radius *= sqrt(3840.0 * pk_View.ScreenParams.z);	
 
     return float2(radius, scale);
 }
@@ -87,7 +87,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
         {                                                                                       \
             const int2 xy = SF_COORD + int2(xx, yy);                                            \
             const float s_depth = SampleMinZ(xy, 0);                                            \
-            const float s_w = lerp(0.0f, 1.0f, (abs(SF_DEPTH - s_depth) / SF_DEPTH) < 0.02f);   \
+            const float s_w = select((abs(SF_DEPTH - s_depth) / SF_DEPTH) < 0.02f, 1.0f, 0.0f); \
             const float s_l = GI_LogLuminance(GI_Load_Diff(xy)) * s_w;                          \
             mom += float2(s_l, s_l * s_l);                                                      \
             w_mom += s_w;                                                                       \
@@ -106,15 +106,15 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     const float2 k_D = GI_GetDiskWeightParams(SF_RADIUS, SF_DEPTH);                                             \
                                                                                                                 \
     float wSum = 1.0f;                                                                                          \
-    uint i = lerp(0u, 0xFFFFu, SF_SKIP);                                                                        \
+    uint i = select(SF_SKIP, 0xFFFFu, 0u);                                                                      \
                                                                                                                 \
     [[loop]]                                                                                                    \
     for (; i < 32u; i += SF_STEP)                                                                               \
     {                                                                                                           \
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                        \
-        float2 s_uv = ViewToClipUv(SF_VPOS + basis * MulRotation(s_offs.xy, rotation));                         \
+        float2 s_uv = ViewToClipUv(SF_VPOS + mul(MulRotation(s_offs.xy, rotation), basis));                     \
         s_uv = 1.0f - abs(1.0f - abs(s_uv));                                                                    \
-        const int2   s_gpx = GI_CollapseCheckerboardCoord(s_uv * pk_ScreenSize.xy, 0);                          \
+        const int2   s_gpx = GI_CollapseCheckerboardCoord(s_uv * pk_View.ScreenSize.xy, 0);                     \
         const int2   s_px = GI_ExpandCheckerboardCoord(s_gpx);                                                  \
         const float4 s_nr = SampleViewNormalRoughness(s_px);                                                    \
         const float3 s_ray = SF_VPOS - UvToViewPos(s_uv, SampleMinZ(s_px, 0));                                  \
@@ -124,7 +124,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
         w *= saturate(1.0f - dot(s_ray, s_ray) * k_D.y);                                                        \
         w *= exp(-acos(dot(SF_NORMAL, s_nr.xyz) - 1e-6f) * k_N);                                                \
         w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                \
-        w = lerp(0.0f, w, !Test_NaN_EPS4(w));                                                                   \
+        w = select(Test_NaN_EPS4(w), 0.0f, w);                                                                  \
                                                                                                                 \
         SF_OUT = GI_Sum_NoHistory(SF_OUT, GI_Load_Diff(s_gpx), w);                                              \
         wSum += w;                                                                                              \
@@ -143,14 +143,14 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     const float2 k_R = GI_GetRoughnessWeightParams(SF_ROUGHNESS);                                                               \
                                                                                                                                 \
     float wSum = 1.0f;                                                                                                          \
-    uint i = lerp(0u, 0xFFFFu, SF_SKIP);                                                                                        \
+    uint i = select(SF_SKIP, 0xFFFFu, 0u);                                                                                      \
                                                                                                                                 \
     [[loop]]                                                                                                                    \
     for (; i < 32u; i += SF_STEP)                                                                                               \
     {                                                                                                                           \
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                                        \
-        const float2 s_uv = ViewToClipUv(SF_VPOS + basis * MulRotation(s_offs.xy, rotation));                                   \
-        const int2   s_px = int2(s_uv * pk_ScreenSize.xy);                                                                      \
+        const float2 s_uv = ViewToClipUv(SF_VPOS + mul(MulRotation(s_offs.xy, rotation), basis));                               \
+        const int2   s_px = int2(s_uv * pk_View.ScreenSize.xy);                                                                 \
         const float4 s_nr = SampleViewNormalRoughness(s_px);                                                                    \
         const float3 s_ray = SF_VPOS - UvToViewPos(s_uv, SampleMinZ(s_px, 0));                                                  \
                                                                                                                                 \
@@ -161,7 +161,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
         w *= exp(-abs(s_nr.w * k_R.x + k_R.y));                                                                                 \
         w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                                \
         if (PK_GI_APPROX_ROUGH_SPEC) w *= float(s_nr.w < PK_GI_MAX_ROUGH_SPEC);                                                 \
-        w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                                            \
+        w = select(Test_InScreen(s_px) && !Test_NaN_EPS4(w), w, 0.0f);                                                          \
                                                                                                                                 \
         SF_OUT = GI_Sum_NoHistory(SF_OUT, GI_Load_Spec(s_px), w);                                                               \
         wSum += w;                                                                                                              \

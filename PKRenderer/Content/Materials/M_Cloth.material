@@ -3,13 +3,13 @@ Material:
     ShaderShadow: Content/Shaders/MS_Mat_Shadow_Default.pkshader
     Properties:
         _AlbedoTexture:
-            Type: Texture2D
+            Type: Texture
             Value: Content/Textures/Environment/T_Cloth_D.pktexture
         _PBSTexture:
-            Type: Texture2D
+            Type: Texture
             Value: Content/Textures/Environment/T_Cloth_S.pktexture
         _HeightMap:
-            Type: Texture2D
+            Type: Texture
             Value: Content/Textures/Environment/T_Cloth_H.pktexture
         _Color:
             Type: Float4

@@ -6,8 +6,7 @@
 
 namespace PKAssets
 {
-    enum class PKElementType : uint16_t;
-    enum class PKDescriptorType : uint8_t;
+    enum class PKElementType : uint8_t;
     enum class PKShaderStage : uint8_t;  
     enum class PKShaderStageFlags : uint16_t; 
     enum class PKBlendFactor : uint8_t;  
@@ -54,15 +53,12 @@ namespace PK
 
     struct ShaderPushConstant;
     struct ShaderPushConstantLayout;
-    struct ShaderResourceElement;
-    struct ShaderResourceLayout;
     struct ShaderVertexInputLayout;
     struct VertexStreamElement;
     struct VertexStreamLayout;
     struct ShaderBindingTableInfo;
     
     typedef PKAssets::PKElementType ElementType;
-    typedef PKAssets::PKDescriptorType ShaderResourceType;
     typedef PKAssets::PKShaderStage ShaderStage;
     typedef PKAssets::PKShaderStageFlags ShaderStageFlags;
     typedef PKAssets::PKBlendFactor BlendFactor;
@@ -166,6 +162,8 @@ namespace PK
         void SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure);
         void SetConstant(NameID name, const void* data, uint32_t size);
         void SetKeyword(NameID name, bool value);
+
+        uint8_t GetSamplerIndex(FilterMode filter, WrapMode wrapMode, BorderColor borderColor, float anisotropy);
 
         template<typename T>
         void SetConstant(NameID name, const T& value) { SetConstant(name, &value, (uint32_t)sizeof(T)); }

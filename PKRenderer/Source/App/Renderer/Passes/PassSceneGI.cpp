@@ -34,19 +34,12 @@ namespace PK::App
         TextureDescriptor descr{};
         descr.type = TextureType::Texture3D;
         descr.format = TextureFormat::RGBA16_Float;
-        descr.sampler.filterMin = FilterMode::Trilinear;
-        descr.sampler.filterMag = FilterMode::Trilinear;
-        descr.sampler.wrap[0] = WrapMode::Border;
-        descr.sampler.wrap[1] = WrapMode::Border;
-        descr.sampler.wrap[2] = WrapMode::Border;
-        descr.sampler.borderColor = BorderColor::FloatClear;
         descr.resolution = { 256u, 128u, 256u };
         descr.levels = 7u;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_voxels = RHI::CreateTexture(descr, "GI.VoxelVolume");
 
         descr.format = TextureFormat::R8_Uint;
-        descr.sampler.borderColor = BorderColor::IntClear;
         descr.levels = 1u;
         m_voxelMask = RHI::CreateTexture(descr, "GI.VoxelVolumeMask");
 
@@ -87,12 +80,12 @@ namespace PK::App
         auto frameIndexSinceResize = view->timeRender.frameIndex - view->timeResize.frameIndex;
         m_rasterAxis = frameIndexSinceResize % 3;
 
-        view->constants.Set<float3>(hash->pk_GI_VX_TexelSize, 1.0f / float3(m_voxels->GetResolution()));
-        view->constants.Set<float>(hash->pk_GI_VX_StepSize, stepSize);
-        view->constants.Set<uint3>(hash->pk_GI_VX_Swizzle, swizzles[m_rasterAxis]);
-        view->constants.Set<float>(hash->pk_GI_VX_LevelScale, levelscale);
-        view->constants.Set<float4>(hash->pk_GI_VX_ST, float4(volumeOriginQuantized, 1.0f / voxelSize));
-        view->constants.Set<uint2>(hash->pk_GI_RayDither, math::murmurhash21((uint32_t)frameIndexSinceResize / 64u));
+        view->constants.Set<float3>(hash->GI_VX_TexelSize, 1.0f / float3(m_voxels->GetResolution()));
+        view->constants.Set<float>(hash->GI_VX_StepSize, stepSize);
+        view->constants.Set<uint3>(hash->GI_VX_Swizzle, swizzles[m_rasterAxis]);
+        view->constants.Set<float>(hash->GI_VX_LevelScale, levelscale);
+        view->constants.Set<float4>(hash->GI_VX_ST, float4(volumeOriginQuantized, 1.0f / voxelSize));
+        view->constants.Set<uint2>(hash->GI_RayDither, math::murmurhash21((uint32_t)frameIndexSinceResize / 64u));
 
         RHI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_settings.checkerboardTrace);
         RHI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", m_settings.specularVirtualReproject);
@@ -110,11 +103,6 @@ namespace PK::App
             descr.type = TextureType::Texture2DArray;
             descr.resolution = resolution;
             descr.layers = 2;
-            descr.sampler.filterMin = FilterMode::Point;
-            descr.sampler.filterMag = FilterMode::Point;
-            descr.sampler.wrap[0] = WrapMode::Clamp;
-            descr.sampler.wrap[1] = WrapMode::Clamp;
-            descr.sampler.wrap[2] = WrapMode::Clamp;
             resources->hasResisedTargets |= RHI::ValidateTexture(resources->packedGIDiff, descr, "GI.PackedGI.Diff");
 
             descr.format = TextureFormat::RG32_Uint;

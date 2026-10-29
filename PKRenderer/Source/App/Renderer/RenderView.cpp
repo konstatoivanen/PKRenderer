@@ -20,8 +20,6 @@ namespace PK::App
 
         TextureDescriptor textureDescriptor{};
         textureDescriptor.resolution = { alignedResolution.x, alignedResolution.y, 1 };
-        textureDescriptor.sampler.filterMin = FilterMode::Bilinear;
-        textureDescriptor.sampler.filterMag = FilterMode::Bilinear;
 
         auto isOutOfDate = false;
 

@@ -3,8 +3,8 @@
 #include "Encoding.glsl"
 #include "MortonOrder.glsl"
 
-uniform uimage2DArray pk_Reservoirs0;
-uniform uimage2DArray pk_Reservoirs1;
+uniform RWTexture2DArrayRef<uint4> pk_Reservoirs0;
+uniform RWTexture2DArrayRef<uint2> pk_Reservoirs1;
 
 struct Reservoir 
 { 
@@ -17,8 +17,8 @@ struct Reservoir
 };
 
 #define RESTIR_RESERVOIR_ZERO Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u)
-#define RESTIR_LAYER_CUR int(( pk_FrameIndex.y & 0x1u))
-#define RESTIR_LAYER_PRE int((~pk_FrameIndex.y & 0x1u))
+#define RESTIR_LAYER_CUR int(( pk_View.FrameIndex.y & 0x1u))
+#define RESTIR_LAYER_PRE int((~pk_View.FrameIndex.y & 0x1u))
 #define RESITR_NEARFIELD 0.05f
 #define RESTIR_NORMAL_THRESHOLD 0.6f
 #define RESTIR_SAMPLES_TEMPORAL 6
@@ -33,9 +33,9 @@ struct Reservoir
     // @TODO calculate this correctly
     #define RESTIR_TEXEL_BIAS float2(0.2f, 0.07f)
     #define RESTIR_TEMPORAL_RADIUS int2(1, 2)
-    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_ScreenSize.x / 2, pk_ScreenSize.y) - 1)
+    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_View.ScreenSize.x / 2, pk_View.ScreenSize.y) - 1)
 #else
-    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_ScreenSize.xy) - 1)
+    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_View.ScreenSize.xy) - 1)
     #define RESTIR_TEXEL_BIAS 0.0f.xx
     #define RESTIR_TEMPORAL_RADIUS int2(1, 1)
 #endif
@@ -60,12 +60,12 @@ uint ReSTIR_Hash(uint seed)
 // Stride seed by max number of contiguous offsets in restir pass
 // Wellons hash works well for low entropy input. 
 // By striding the seed we get different values for pixels while keeping low entropy input.
-uint ReSTIR_GetSeed(int2 coord_base) { return ZCurveToIndex2D(coord_base) * RESTIR_SEED_STRIDE + pk_FrameRandom.x; }
+uint ReSTIR_GetSeed(int2 coord_base) { return ZCurveToIndex2D(coord_base) * RESTIR_SEED_STRIDE + pk_View.FrameRandom.x; }
 
 int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
 {
-    int2 offset = int2(pk_FrameRandom.y & 3, (pk_FrameRandom.y >> 2) & 3);
-    return lerp(coord, ((coord + offset) ^ 3) - offset, mask.xx);
+    int2 offset = int2(pk_View.FrameRandom.y & 3, (pk_View.FrameRandom.y >> 2) & 3);
+    return select(mask, ((coord + offset) ^ 3) - offset, coord);
 }
 
 int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, int scale, bool permute)
@@ -111,7 +111,7 @@ float ReSTIR_GetJacobian(const float3 pos_center, const float3 pos_sample, const
     const float cos_senter = saturate(dot(r.normal, vec_center.xyz));
     const float cos_sample = saturate(dot(r.normal, vec_sample.xyz));
     const float jacobian = (cos_senter * pow2(vec_sample.w)) / (cos_sample * pow2(vec_center.w));
-    return lerp(jacobian, 0.0f, isinf(jacobian) || isnan(jacobian));
+    return select(isinf(jacobian) || isnan(jacobian), 0.0f, jacobian);
 }
 
 float ReSTIR_GetTargetPdfNewSurf(const float3 pos_center, const float3 nor_center, const float3 pos_sample, const Reservoir r)
@@ -138,7 +138,7 @@ void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float 
     const float weight = target_pdf * SafePositiveRcp(b.target_pdf) * b.weight_sum;
     
     combined.weight_sum += weight;
-    combined.M += lerp(0u, b.M, target_pdf > 0.0f);
+    combined.M += select(target_pdf > 0.0f, b.M, 0u);
 
     if (random * combined.weight_sum < weight)
     {
@@ -166,8 +166,8 @@ void ReSTIR_CombineReservoirSimple(inout Reservoir combined, const Reservoir b, 
 
 void ReSTIR_StoreZero(const int2 coord)
 {
-    imageStore(pk_Reservoirs0, int3(coord, RESTIR_LAYER_PRE), uint4(0));
-    imageStore(pk_Reservoirs1, int3(coord, RESTIR_LAYER_PRE), uint4(0));
+    pk_Reservoirs0[int3(coord, RESTIR_LAYER_PRE)] = uint4(0);
+    pk_Reservoirs1[int3(coord, RESTIR_LAYER_PRE)] = uint2(0);
 }
 
 void ReSTIR_Store_Current(const int2 coord, const Reservoir r)
@@ -175,30 +175,30 @@ void ReSTIR_Store_Current(const int2 coord, const Reservoir r)
     uint4 packed0;
     const float3 view_pos = WorldToViewPos(r.position);
     packed0.x = packHalf2x16(view_pos.xy);
-    packed0.y = floatBitsToUint(view_pos.z);
+    packed0.y = asuint(view_pos.z);
     packed0.z = EncodeOctaUv2x16(r.normal);
     packed0.w = EncodeE5BGR9(r.radiance);
-    imageStore(pk_Reservoirs0, int3(coord, RESTIR_LAYER_CUR), packed0);
+    pk_Reservoirs0[int3(coord, RESTIR_LAYER_CUR)] = packed0;
 
     uint2 packed1;
-    packed1.x = floatBitsToUint(r.weight_sum);
+    packed1.x = asuint(r.weight_sum);
     packed1.y = packHalf2x16(r.target_pdf.xx) & 0xFFFFu;
     packed1.y |= r.M << 16u; 
-    imageStore(pk_Reservoirs1, int3(coord, RESTIR_LAYER_CUR), packed1.xyxy);
+    pk_Reservoirs1[int3(coord, RESTIR_LAYER_CUR)] = packed1;
 }
 
 Reservoir ReSTIR_Load_Previous(const int2 coord) 
 {
     Reservoir r;
 
-    const uint4 packed0 = imageLoad(pk_Reservoirs0, int3(coord, RESTIR_LAYER_PRE));
-    const float3 view_pos = float3(unpackHalf2x16(packed0.x), uintBitsToFloat(packed0.y));
+    const uint4 packed0 = pk_Reservoirs0[int3(coord, RESTIR_LAYER_PRE)];
+    const float3 view_pos = float3(unpackHalf2x16(packed0.x), asfloat(packed0.y));
     r.position = ViewToWorldPosPrev(view_pos);
     r.normal = DecodeOctaUv2x16(packed0.z);
     r.radiance = DecodeE5BGR9(packed0.w);
 
-    const uint2 packed1 = imageLoad(pk_Reservoirs1, int3(coord, RESTIR_LAYER_PRE)).xy;
-    r.weight_sum = uintBitsToFloat(packed1.x);
+    const uint2 packed1 = pk_Reservoirs1[int3(coord, RESTIR_LAYER_PRE)];
+    r.weight_sum = asfloat(packed1.x);
     r.target_pdf = unpackHalf2x16(packed1.y).x;
     r.M = packed1.y >> 16u;
     return r;

@@ -1,6 +1,6 @@
 
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
-#pragma pk_program SHADER_STAGE_COMPUTE PostFilterCs
+#pragma pk_program Compute PostFilterCs
 
 #define PK_GI_LOAD_LVL 0
 #define PK_GI_STORE_LVL 1
@@ -8,13 +8,13 @@
 #include "includes/SceneGIFiltering.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void PostFilterCs()
 {
     const int2 coord_base = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_base));
     const int2 coord_n = GI_ExpandCheckerboardCoord(uint2(coord_base), 1u);
-    const int2 coord_h = int2(coord_base.x + pk_ScreenSize.x / 2, coord_base.y);
+    const int2 coord_h = int2(coord_base.x + pk_View.ScreenSize.x / 2, coord_base.y);
 
     float depth = SampleMinZ(coord, 0);
     float4 normal_roughness = SampleViewNormalRoughness(coord);
@@ -40,7 +40,7 @@ void PostFilterCs()
             const float scale = radius_scale.y;
             const float radius = radius_scale.x * (scale + 1e-4f);
             const bool skip = diff.history > 30.0f || scale < 0.05f;
-            const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
+            const uint step = select(skip, 0xFFFFu, uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f));
             GI_SF_DISK_DIFF(normal, depth, view_dir, view_pos, diff.history, step, skip, radius, diff)
         }
 
@@ -109,14 +109,14 @@ void PostFilterCs()
         // Shuffle with chb neighbour.
         {
             const uint swapId = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
-            depth = subgroupShuffle(depth, swapId);
-            normal = subgroupShuffle(normal, swapId);
-            roughness = subgroupShuffle(roughness, swapId);
-            diff.sh.Y = subgroupShuffle(diff.sh.Y, swapId);
-            diff.sh.A = subgroupShuffle(diff.sh.A, swapId);
-            diff.ao = subgroupShuffle(diff.ao, swapId);
-            spec.radiance = subgroupShuffle(spec.radiance, swapId);
-            spec.ao = subgroupShuffle(spec.ao, swapId);
+            depth = WaveReadLaneAt(depth, swapId);
+            normal = WaveReadLaneAt(normal, swapId);
+            roughness = WaveReadLaneAt(roughness, swapId);
+            diff.sh.Y = WaveReadLaneAt(diff.sh.Y, swapId);
+            diff.sh.A = WaveReadLaneAt(diff.sh.A, swapId);
+            diff.ao = WaveReadLaneAt(diff.ao, swapId);
+            spec.radiance = WaveReadLaneAt(spec.radiance, swapId);
+            spec.ao = WaveReadLaneAt(spec.ao, swapId);
         }
 
 

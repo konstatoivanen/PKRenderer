@@ -120,9 +120,7 @@ namespace PK
                         case ElementType::Ulong3:    Set(nameId, Serialize::ReadVal<ulong3>(value)); break;
                         case ElementType::Ulong4:    Set(nameId, Serialize::ReadVal<ulong4>(value)); break;
 
-                        case ElementType::Texture2D:
-                        case ElementType::Texture3D:
-                        case ElementType::TextureCube: SetResource(nameId, Serialize::ReadVal<TextureAsset*>(value)->GetRHI()); break;
+                        case ElementType::Texture: SetResource(nameId, Serialize::ReadVal<TextureAsset*>(value)->GetRHI()); break;
 
                         default: PK_LOG_WARNING("Unsupported material parameter type"); break;
                     }
@@ -151,10 +149,10 @@ namespace PK
         {
             switch (element.format)
             {
-                case ElementType::Texture2D:
+                case ElementType::Texture:
                 {
-                    auto texIndex = RHI::GetGraph()->MakeResident(GetResource<RHITexture>(element.name));
-                    memcpy(dst + element.offset, &texIndex, sizeof(int32_t));
+                    auto texIndex = (uint16_t)RHI::GetGraph()->MakeResident(GetResource<RHITexture>(element.name));
+                    memcpy(dst + element.offset, &texIndex, sizeof(uint16_t));
                 }
                 break;
                 default: break;
@@ -179,7 +177,7 @@ namespace PK
         {
             switch (element.format)
             {
-                case ElementType::Texture2D: SetResource(element.name, builtIns->BlackTexture2D.get()); break;
+                case ElementType::Texture: SetResource(element.name, builtIns->BlackTexture2D.get()); break;
                 default: break;
             }
         }

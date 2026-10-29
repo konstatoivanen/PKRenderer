@@ -3,19 +3,19 @@ Material:
     ShaderShadow: Content/Shaders/MS_Mat_Shadow_Default.pkshader
     Properties:
         _AlbedoTexture:
-            Type: Texture2D
+            Type: Texture
             Value: Content/Textures/Environment/T_Asphalt_D.pktexture
         _PBSTexture:
-            Type: Texture2D
+            Type: Texture
             Value: Content/Textures/Environment/T_Asphalt_S.pktexture
         _NormalMap:
-            Type: Texture2D
+            Type: Texture
             Value: Content/Textures/Environment/T_Asphalt_N.pktexture
         _HeightMap:
-            Type: Texture2D
+            Type: Texture
             Value: Content/Textures/Environment/T_Asphalt_H.pktexture
         _EmissionTexture:
-            Type: Texture2D
+            Type: Texture
             Value: Content/Textures/Environment/T_EmissiveTest_E.pktexture
         _Color:
             Type: Float4

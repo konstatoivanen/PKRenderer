@@ -1,6 +1,6 @@
 
 #pragma pk_multi_compile FX_APPLY_ALL FX_APPLY_MASK FX_APPLY_DEBUG
-#pragma pk_program SHADER_STAGE_COMPUTE PostEffectsCompositeCs
+#pragma pk_program Compute PostEffectsCompositeCs
 
 #include "includes/PostFXColorGrading.glsl"
 #include "includes/PostFXFilmGrain.glsl"
@@ -17,16 +17,16 @@
 #include "includes/LightResources.glsl"
 #endif
 
-uniform image2D pk_Image;
+uniform RWTexture2DRef<float4> pk_Image;
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void PostEffectsCompositeCs()
 {
-    const int2 size = imageSize(pk_Image).xy;
+    const int2 size = int2(pk_Image.GetSize());
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     float2 uv = float2(coord + 0.5f.xx) / float2(size);
 
-    float3 color = imageLoad(pk_Image, coord).rgb;
+    float3 color = pk_Image[coord].rgb;
 
     // Remove nans
     color = -min(-color, 0.0f.xxx);
@@ -79,7 +79,7 @@ void PostEffectsCompositeCs()
     // Dither
     {
         float noise = 0.0f;
-        noise = InterleavedGradientNoise(coord, pk_FrameIndex.x);
+        noise = InterleavedGradientNoise(coord, pk_View.FrameIndex.x);
         noise = noise * 2.0f - 1.0f;
         noise = sign(noise) - sign(noise) * sqrt(saturate(1.0f - abs(noise)));
         noise = noise / 255.0f;
@@ -134,5 +134,5 @@ void PostEffectsCompositeCs()
     }
 #endif
 
-    imageStore(pk_Image, coord, float4(color, 1.0f));
+    pk_Image[coord] = float4(color, 1.0f);
 }

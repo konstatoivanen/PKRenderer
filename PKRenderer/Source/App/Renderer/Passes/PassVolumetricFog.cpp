@@ -28,19 +28,19 @@ namespace PK::App
         auto fadeShadowsVolumetric = 1.0f / (settings.ZFar - math::lerp(settings.ZFar, settings.ZNear, settings.FadeShadowsVolumetric));
         auto fadeStatic = 1.0f / (settings.ZFar - math::lerp(settings.ZFar, settings.ZNear, settings.FadeStatic));
 
-        view->constants.Set<float>(hash->pk_Fog_Density_NoiseAmount, settings.DensityNoiseAmount);
-        view->constants.Set<float>(hash->pk_Fog_Density_NoiseScale, settings.DensityNoiseScale);
-        view->constants.Set<float>(hash->pk_Fog_Density_Amount, settings.Density);
-        view->constants.Set<float>(hash->pk_Fog_Phase0, settings.Phase0);
-        view->constants.Set<float>(hash->pk_Fog_Phase1, settings.Phase1);
-        view->constants.Set<float>(hash->pk_Fog_PhaseW, settings.PhaseW);
-        view->constants.Set<float4>(hash->pk_Fog_Albedo, float4(settings.Albedo, 0.0f));
-        view->constants.Set<float4>(hash->pk_Fog_Absorption, float4(settings.Absorption, 0.0f));
-        view->constants.Set<float4>(hash->pk_Fog_WindDirSpeed, float4(settings.WindDirection, settings.WindSpeed));
-        view->constants.Set<float4>(hash->pk_Fog_ZParams, float4(math::exponentialZParams01(settings.ZNear, settings.ZFar, settings.ZDistribution), settings.ZFar));
-        view->constants.Set<float4>(hash->pk_Fog_FadeParams, float4(fadeShadowsDirect, fadeShadowsVolumetric, fadeStatic, settings.FadeGroundOcclusion));
-        view->constants.Set<float4>(hash->pk_Fog_Density_ExpParams0, Memory::BitCast<float, float4>(&settings.Exponential0.Constant));
-        view->constants.Set<float4>(hash->pk_Fog_Density_ExpParams1, Memory::BitCast<float, float4>(&settings.Exponential1.Constant));
+        view->constants.Set<float>(hash->Fog_Density_NoiseAmount, settings.DensityNoiseAmount);
+        view->constants.Set<float>(hash->Fog_Density_NoiseScale, settings.DensityNoiseScale);
+        view->constants.Set<float>(hash->Fog_Density_Amount, settings.Density);
+        view->constants.Set<float>(hash->Fog_Phase0, settings.Phase0);
+        view->constants.Set<float>(hash->Fog_Phase1, settings.Phase1);
+        view->constants.Set<float>(hash->Fog_PhaseW, settings.PhaseW);
+        view->constants.Set<float4>(hash->Fog_Albedo, float4(settings.Albedo, 0.0f));
+        view->constants.Set<float4>(hash->Fog_Absorption, float4(settings.Absorption, 0.0f));
+        view->constants.Set<float4>(hash->Fog_WindDirSpeed, float4(settings.WindDirection, settings.WindSpeed));
+        view->constants.Set<float4>(hash->Fog_ZParams, float4(math::exponentialZParams01(settings.ZNear, settings.ZFar, settings.ZDistribution), settings.ZFar));
+        view->constants.Set<float4>(hash->Fog_FadeParams, float4(fadeShadowsDirect, fadeShadowsVolumetric, fadeStatic, settings.FadeGroundOcclusion));
+        view->constants.Set<float4>(hash->Fog_Density_ExpParams0, Memory::BitCast<float, float4>(&settings.Exponential0.Constant));
+        view->constants.Set<float4>(hash->Fog_Density_ExpParams1, Memory::BitCast<float, float4>(&settings.Exponential1.Constant));
     }
 
     void PassVolumetricFog::ComputeDensity(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)
@@ -59,11 +59,6 @@ namespace PK::App
             TextureDescriptor descriptor{};
             descriptor.type = TextureType::Texture3D;
             descriptor.format = TextureFormat::RGBA16_Float;
-            descriptor.sampler.filterMin = FilterMode::Bilinear;
-            descriptor.sampler.filterMag = FilterMode::Bilinear;
-            descriptor.sampler.wrap[0] = WrapMode::Clamp;
-            descriptor.sampler.wrap[1] = WrapMode::Clamp;
-            descriptor.sampler.wrap[2] = WrapMode::Clamp;
             descriptor.resolution = resolution;
             descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
             hasResized |= RHI::ValidateTexture(resources->volumeScatter, descriptor, "Fog.ScatterVolume");

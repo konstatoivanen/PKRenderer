@@ -13,11 +13,11 @@
 #define PK_GI_STORE_LVL 0
 #endif
 
-uniform uimage2DArray pk_GI_PackedDiff;
-uniform uimage2DArray pk_GI_PackedSpec;
-uniform uimage2D pk_GI_ResolvedWrite;
-uniform image2D pk_GI_ResolvedAOWrite;
-uniform utexture2D pk_GI_ResolvedRead;
+uniform RWTexture2DArrayRef<uint4> pk_GI_PackedDiff;
+uniform RWTexture2DArrayRef<uint2> pk_GI_PackedSpec;
+uniform RWTexture2DRef<uint4> pk_GI_ResolvedWrite;
+uniform RWTexture2DRef<float4> pk_GI_ResolvedAOWrite;
+uniform Texture2DRef<uint4> pk_GI_ResolvedRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
 // Should surface shading approximate sheen & clear coat from diffuse sh
@@ -59,7 +59,7 @@ uniform utexture2D pk_GI_ResolvedRead;
 #endif
 
 #if PK_GI_USE_VOXEL_MIP_BIAS == 1
-#define PK_GI_GET_VX_MI_BIAS(t) (PK_GI_VX_CONE_SIZE * log2(1.0f + t * pk_GI_VX_ST.w))
+#define PK_GI_GET_VX_MI_BIAS(t) (PK_GI_VX_CONE_SIZE * log2(1.0f + t * pk_View.GI_VX_ST.w))
 #else
 // Sample from the first mip for more filtered results.
 #define PK_GI_GET_VX_MI_BIAS(t) 1.0f
@@ -105,21 +105,20 @@ float3 GI_Evaluate_Peak_Direction(const GIResolved r) { return SH_ToPeakDirectio
 // @TODO this is not the best placement for this but its common across usages.
 #define GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(condition, current, history, alpha, scale, out_luma_max)  \
 {                                                                                                 \
-    const uint4 thread_mask = subgroupBallot(condition);                                          \
-    const uint thread_count = max(1u, subgroupBallotBitCount(thread_mask)) - 1u;                  \
+    const uint4 thread_mask = WaveActiveBallot(condition);                                        \
+    const uint thread_count = max(1u, WaveBallotBitCount(thread_mask)) - 1u;                      \
     const float luminance = GI_Luminance(current);                                                \
     const float2 moments = float2(luminance, luminance * luminance);                              \
-    const float2 moments_wave = (subgroupAdd(moments) - moments) / thread_count;                  \
+    const float2 moments_wave = (WaveActiveSum(moments) - moments) / thread_count;                \
     const float variance = pow(abs(moments_wave.y - pow2(moments_wave.x)), 0.25f);                \
     out_luma_max = lerp(GI_Luminance(history), moments_wave.x, alpha) + variance * scale;         \
-}                                                                                                 \
-                                                                                                  \
+}
 
 int2 GI_ExpandCheckerboardCoord(uint2 coord, uint offset)
 {
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     coord.x *= 2;
-    coord.x += Checkerboard(coord, pk_FrameIndex.y + offset);
+    coord.x += Checkerboard(coord, pk_View.FrameIndex.y + offset);
 #endif
     return int2(coord);
 }
@@ -131,7 +130,7 @@ int2 GI_CollapseCheckerboardCoord(const float2 fcoord, const uint offset)
     float2 ddxy = (fcoord - coord) - 0.5f.xx;
     int am = int(step(ddxy.x, ddxy.y));
     int2 xy = int2(am, 1 - am) * int2(sign(ddxy));
-    coord += xy * int(Checkerboard(uint2(coord), pk_FrameIndex.y + offset));
+    coord += xy * int(Checkerboard(uint2(coord), pk_View.FrameIndex.y + offset));
     coord.x /= 2;
 #endif
     return coord;
@@ -157,16 +156,16 @@ GISpec GI_Unpack_Spec(const uint2 p)
 }
 
 //----------LOAD/STORE FUNCTIONS----------//
-uint4 GI_Load_Packed_Diff(const int2 coord, const int l) { return imageLoad(pk_GI_PackedDiff, int3(coord, l)); }
-uint2 GI_Load_Packed_Spec(const int2 coord, const int l) { return imageLoad(pk_GI_PackedSpec, int3(coord, l)).xy; }
+uint4 GI_Load_Packed_Diff(const int2 coord, const int l) { return pk_GI_PackedDiff[int3(coord, l)]; }
+uint2 GI_Load_Packed_Spec(const int2 coord, const int l) { return pk_GI_PackedSpec[int3(coord, l)]; }
 uint4 GI_Load_Packed_Diff(const int2 coord) { return GI_Load_Packed_Diff(coord, PK_GI_LOAD_LVL); }
 uint2 GI_Load_Packed_Spec(const int2 coord) { return GI_Load_Packed_Spec(coord, PK_GI_LOAD_LVL); }
 GIDiff GI_Load_Diff(const int2 coord, int l) { return GI_Unpack_Diff(GI_Load_Packed_Diff(coord, l)); }
 GISpec GI_Load_Spec(const int2 coord, int l) { return GI_Unpack_Spec(GI_Load_Packed_Spec(coord, l)); }
 GIDiff GI_Load_Diff(const int2 coord) { return GI_Unpack_Diff(GI_Load_Packed_Diff(coord)); }
 GISpec GI_Load_Spec(const int2 coord) { return GI_Unpack_Spec(GI_Load_Packed_Spec(coord)); }
-void GI_Store_Packed_Diff(const int2 coord, const int l, const uint4 p) { imageStore(pk_GI_PackedDiff, int3(coord, l), p); }
-void GI_Store_Packed_Spec(const int2 coord, const int l, const uint2 p) { imageStore(pk_GI_PackedSpec, int3(coord, l), p.xyxy); }
+void GI_Store_Packed_Diff(const int2 coord, const int l, const uint4 p) { pk_GI_PackedDiff[int3(coord, l)] = p; }
+void GI_Store_Packed_Spec(const int2 coord, const int l, const uint2 p) { pk_GI_PackedSpec[int3(coord, l)] = p; }
 void GI_Store_Packed_Diff(const int2 coord, const uint4 p) { GI_Store_Packed_Diff(coord, PK_GI_STORE_LVL, p); }
 void GI_Store_Packed_Spec(const int2 coord, const uint2 p) { GI_Store_Packed_Spec(coord, PK_GI_STORE_LVL, p); }
 void GI_Store_Diff(const int2 coord, const int l, const GIDiff u) { GI_Store_Packed_Diff(coord, l, GI_Pack_Diff(u)); }
@@ -176,7 +175,7 @@ void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coor
 
 GIResolved GI_Load_Resolved(const float2 uv) 
 { 
-    const uint4 packed = texelFetch(pk_GI_ResolvedRead, int2(uv * pk_ScreenSize.xy), 0);
+    const uint4 packed = pk_GI_ResolvedRead[int2(uv * pk_View.ScreenSize.xy)];
     GIResolved resolved;
     resolved.diffSH.Y = unpackHalf4x16(packed.xy).xyz;
     resolved.diffSH.A = DecodeE5BGR9(packed.z);
@@ -196,5 +195,5 @@ void GI_Store_Resolved(const int2 coord, const GIDiff diff, const GISpec spec)
     packed.y = bitfieldInsert(packed.y, uint(saturate(final_spec_ao) * 255.0f + 0.5f), 24, 8);
     packed.z = EncodeE5BGR9(diff.sh.A);
     packed.w = EncodeE5BGR9(spec.radiance);
-    imageStore(pk_GI_ResolvedWrite, coord, packed);
+    pk_GI_ResolvedWrite[coord] = packed;
 }

@@ -42,7 +42,7 @@ namespace PK
         m_hash = 0ull;
         m_stride = 0u;
         m_stridePadded = 0u;
-        auto maxAlignment = 0u;
+        auto maxAlignment = 1u;
 
         for (auto i = 0u; i < GetCount(); ++i)
         {
@@ -50,22 +50,17 @@ namespace PK
 
             if (element.format != ElementType::Keyword)
             {
-                auto alignment = RHIEnumConvert::Alignment(element.format);
+                auto alignment = RHIEnumConvert::ScalarSize(element.format);
+                maxAlignment = math::max(alignment, maxAlignment);
 
                 m_stride = math::align(m_stride, (uint16_t)alignment);
                 element.offset = m_stride;
                 element.offsetHandle = 0u;
                 m_stride += element.GetSize();
-
-                if (alignment > maxAlignment)
-                {
-                    maxAlignment = alignment;
-                }
             }
         }
 
-        // As per std140 a structure has a base alignment equal to the largest base alignment of any of its members, rounded up to a multiple of 16.
-        maxAlignment = math::align(maxAlignment, 16u);
+        // In scalar block layout, struct alignment is the largest scalar alignment of its members.
         m_stridePadded = math::align(m_stride, (uint16_t)maxAlignment);
         m_hash = Hash::FNV1AHash(m_values, GetCount() * sizeof(ShaderProperty));
 
@@ -123,6 +118,12 @@ namespace PK
             if (prop && prop->GetSize() >= size)
             {
                 memcpy(m_memory + prop->offset, value, size);
+                return true;
+            }
+
+            if (prop && RHIEnumConvert::IsResourceHandle(prop->format) && prop->count == 1u && size <= sizeof(uint32_t))
+            {
+                memcpy(m_memory + prop->offset, value, prop->GetSize());
                 return true;
             }
         }

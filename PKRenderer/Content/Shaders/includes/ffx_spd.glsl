@@ -1,6 +1,4 @@
 
-#extension GL_KHR_shader_subgroup_quad : require
-
 //_____________________________________________________________/\_______________________________________________________________
 //==============================================================================================================================
 //
@@ -66,9 +64,9 @@ void SpdStoreMip6(int2 coord, SpdFormat v)
 SpdFormat SpdReduceQuad(SpdFormat v)
 {
     SpdFormat v0 = v;
-    SpdFormat v1 = subgroupQuadSwapHorizontal(v);
-    SpdFormat v2 = subgroupQuadSwapVertical(v);
-    SpdFormat v3 = subgroupQuadSwapDiagonal(v);
+    SpdFormat v1 = QuadReadAcrossX(v);
+    SpdFormat v2 = QuadReadAcrossY(v);
+    SpdFormat v3 = QuadReadAcrossDiagonal(v);
     return SpdReduce4(v0, v1, v2, v3);
 }
 
@@ -174,7 +172,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
 
     // Mip 3
     {
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
         
         SpdFormat v = SpdLoadIntermediate(x, y);
         v = SpdReduceQuad(v);
@@ -188,7 +186,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
 
     // Mip 4
     {
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
 
         if (localInvocationIndex < 64)
         {
@@ -205,7 +203,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
 
     // Mip 5
     {
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
 
         if (localInvocationIndex < 16)
         {
@@ -222,7 +220,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
 
     // Mip 6
     {
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
        
         if (localInvocationIndex < 4)
         {
@@ -243,15 +241,21 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
 
     if (localInvocationIndex == 0)
     {
+        DeviceMemoryBarrier();
         SpdIncreaseAtomicCounter();
     }
 
-    barrier();
+    DeviceMemoryBarrierWithGroupSync();
 
     // Only one work group needed for the last mips.
     if (SpdGetAtomicCounter() != (numWorkGroups - 1))
     {
         return;
+    }
+
+    if (localInvocationIndex == 0)
+    {
+        SpdResetAtomicCounter();
     }
 
     // Mips 7-8
@@ -289,7 +293,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
         // No access to intermediate borders at this stage. need to sync so that we can access borders without texture loads.
         // Explicit odd border check required so that we dont sample outside of lds memory.
         #if defined(SPD_SUPPORT_NON_POT_6_TO_12)
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
         const int2 size_7 = int2(resolution >> 7u);
         const bool is_border_x = bool(size_7.x & 0x1) && (x * 2) == size_7.x - 3;
         const bool is_border_y = bool(size_7.y & 0x1) && (y * 2) == size_7.y - 3;
@@ -305,7 +309,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
     // Mip 9
     if (mips > 9)
     {
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
         
         SpdFormat v = SpdLoadIntermediate(x, y);
         v = SpdReduceQuad(v);
@@ -329,7 +333,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
     // Mip 10
     if (mips > 10)
     {
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
 
         if (localInvocationIndex < 64)
         {
@@ -357,7 +361,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
     // Mip 11
     if (mips > 11)
     {
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
 
         if (localInvocationIndex < 16)
         {
@@ -385,7 +389,7 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
     // Mip 12
     if (mips > 12)
     {
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
        
         if (localInvocationIndex < 4)
         {

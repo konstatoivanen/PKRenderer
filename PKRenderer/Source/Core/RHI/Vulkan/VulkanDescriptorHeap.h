@@ -18,12 +18,6 @@ namespace PK
             VmaAllocation memory = nullptr;
             VkBuffer buffer = VK_NULL_HANDLE;
             uint8_t* mappedPtr = nullptr;
-            VkDeviceSize arenaOffset = 0ull;
-            VkDeviceSize arenaCapacity = 0ull;
-
-            VkDeviceSize arenaHead = 0ull;
-            VkDeviceSize arenaTail = 0ull;
-            VkDeviceSize ranges[PK_VK_MAX_DESCRIPTOR_RANGES]{};
         };
 
         struct ResourceView
@@ -56,25 +50,16 @@ namespace PK
         constexpr const VkBindHeapInfoEXT& GetResourceHeapInfo() const { return m_resourceHeap.bindInfo; }
         constexpr const VkBindHeapInfoEXT& GetSamplerHeapInfo() const { return m_samplerHeap.bindInfo; }
 
-        void BeginRange();
-        uint64_t EndRange();
-        void FreeRange(uint64_t rangeIndex);
         void Prune();
 
         VkImageView GetRenderTargetView(const VulkanResourceView& view);
         uint16_t GetSamplerIndex(const SamplerDescriptor& descriptor);
         VulkanResourceView GetSamplerView(const SamplerDescriptor& descriptor);
-        uint32_t GetBindlessIndex(const VulkanResourceView& view, ShaderResourceType type);
+        uint32_t GetBindlessIndex(const VulkanResourceView& view, ElementType type);
         uint3 GetTextureSize(uint32_t bindlessIndex) const;
 
-        uint2 AllocateDescriptorSet(
-            const VulkanShader* shader,
-            const VulkanDescriptorBinding* bindings,
-            uint32_t count);
-
     private:
-        uint32_t GetOrCacheResourceView(const VulkanResourceView& view, ShaderResourceType type);
-        static uint32_t AllocateDescriptorRange(DescriptorHeap& heap, uint32_t size, uint32_t alignment);
+        uint32_t GetOrCacheResourceView(const VulkanResourceView& view, ElementType type);
 
         const VkDevice m_device;
         const VmaAllocator m_allocator;
@@ -82,7 +67,6 @@ namespace PK
         const uint64_t m_pruneDelay;
         uint64_t m_currentPruneTick = 0ull;
 
-        uint64_t m_rangeCounter = 0ull;
         DescriptorHeap m_resourceHeap{};
         DescriptorHeap m_samplerHeap{};
 

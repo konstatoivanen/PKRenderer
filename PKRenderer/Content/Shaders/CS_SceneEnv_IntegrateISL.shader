@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
+#pragma pk_program Compute IntegrateCs
 #pragma pk_multi_compile PASS_INTEGRATE PASS_REDUCE_MIP
 
 #include "includes/Common.glsl"
@@ -9,13 +9,13 @@
 #include "includes/BRDF.glsl"
 #include "includes/Noise.glsl"
 
-uniform writeonly restrict uimage2D pk_Image;
-uniform writeonly restrict uimage2D pk_Image1;
-uniform writeonly restrict uimage2D pk_Image2;
-uniform writeonly restrict uimage2D pk_Image3;
+uniform RWTexture2DRef<uint> pk_Image;
+uniform RWTexture2DRef<uint> pk_Image1;
+uniform RWTexture2DRef<uint> pk_Image2;
+uniform RWTexture2DRef<uint> pk_Image3;
 uniform float pk_SceneEnv_Exposure;
 
-shared float3 lds_scatter;
+groupshared float3 lds_scatter;
 
 float3 GetDirectionSphere(float2 xi)
 {
@@ -40,7 +40,7 @@ float3 GetDirectionHemisphere(float2 xi)
     return float3(x, y, z);
 }
 
-[pk_numthreads(8u, 8u, 1u)]
+[numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -50,7 +50,7 @@ void IntegrateCs()
 
 #if defined(PASS_INTEGRATE)
     const uint sample_count = 20000u;
-    const float2 texel_size = 1.0f.xx / imageSize(pk_Image).xy;
+    const float2 texel_size = 1.0f.xx / float2(pk_Image.GetSize());
     const float3 local_dir = DecodeOctaUv((coord + 0.5f.xx) * texel_size);
 
     for (uint i = 0u; i < sample_count; ++i)
@@ -59,42 +59,40 @@ void IntegrateCs()
         const float3 sample_dir = GetDirectionSphere(xi);
  
         const float2 sample_uv = EncodeOctaUv(sample_dir);
-        const float3 sample_scatter = textureLod(pk_SceneEnv, sample_uv, 0.0f).rgb * pk_SceneEnv_Exposure;
+        const float3 sample_scatter = pk_SceneEnv.SampleLevel(pk_SamplerBilinearMirror, sample_uv, 0.0f).rgb * pk_SceneEnv_Exposure;
 
         const float sample_cosa = dot(local_dir, sample_dir);
-        const float sample_phase = Fp_HenyeyGreensteinDual(sample_cosa, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW);
+        const float sample_phase = Fp_HenyeyGreensteinDual(sample_cosa, pk_View.Fog_Phase0, pk_View.Fog_Phase1, pk_View.Fog_PhaseW);
 
         local_scatter += sample_scatter * sample_phase;
     }
     local_scatter *= PK_FOUR_PI;
     local_scatter /= sample_count;
 #else
-    const float2 texel_size = 1.0f.xx / textureSize(pk_SceneEnv_ISL, 4).xy;
-    local_scatter = texture(pk_SceneEnv_ISL, (coord + 0.5f) * texel_size).rgb;
+    const float2 texel_size = 1.0f.xx / float2(pk_SceneEnv_ISL.GetSize(4));
+    local_scatter = pk_SceneEnv_ISL.SampleLevel(pk_SamplerBilinearMirror, (coord + 0.5f) * texel_size, 0.0f).rgb;
 #endif
 
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(local_scatter)));
+    pk_Image[coord] = EncodeE5BGR9(local_scatter);
 
     // Mip 1
     {
         const uint swap_id_v = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
         const uint swap_id_h = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
         
-        const float3 scatter_v = subgroupShuffle(local_scatter, swap_id_v);
+        const float3 scatter_v = WaveReadLaneAt(local_scatter, swap_id_v);
         local_scatter += scatter_v;
 
-        const float3 scatter_h = subgroupShuffle(local_scatter, swap_id_h);
+        const float3 scatter_h = WaveReadLaneAt(local_scatter, swap_id_h);
         local_scatter += scatter_h;
 
         local_scatter /= 4;
 
         if ((thread & 0x9u) == 0u)
         {
-            imageStore(pk_Image1, coord >> 1, uint4(EncodeE5BGR9(local_scatter)));
+            pk_Image1[coord >> 1] = EncodeE5BGR9(local_scatter);
         }
     }
-
-    subgroupBarrier();
 
     // Mip 3
     {
@@ -105,25 +103,23 @@ void IntegrateCs()
         const uint swap_id_v = wave_coord_swap.y * 8 + wave_coord.x;
         const uint swap_id_h = wave_coord.y * 8 + wave_coord_swap.x;
 
-        const float3 scatter_v = subgroupShuffle(local_scatter, swap_id_v);
+        const float3 scatter_v = WaveReadLaneAt(local_scatter, swap_id_v);
         local_scatter += scatter_v;
 
-        const float3 scatter_h = subgroupShuffle(local_scatter, swap_id_h);
+        const float3 scatter_h = WaveReadLaneAt(local_scatter, swap_id_h);
         local_scatter += scatter_h;
         
         local_scatter /= 4;
 
         if ((thread & 0x1Bu) == 0u)
         {
-            imageStore(pk_Image2, coord >> 2, uint4(EncodeE5BGR9(local_scatter)));
+            pk_Image2[coord >> 2] = EncodeE5BGR9(local_scatter);
         }
     }
 
-    subgroupBarrier();
-
     // Combine subgroups
     {
-        local_scatter = subgroupAdd(local_scatter);
+        local_scatter = WaveActiveSum(local_scatter);
         local_scatter /= gl_SubgroupSize;
 
         if (gl_SubgroupInvocationID == 0 && gl_SubgroupID == 1)
@@ -132,12 +128,12 @@ void IntegrateCs()
         }
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     // Mip 4
     if (thread == 0u)
     {
         local_scatter = (local_scatter + lds_scatter) / 2;
-        imageStore(pk_Image3, coord >> 3, uint4(EncodeE5BGR9(local_scatter)));
+        pk_Image3[coord >> 3] = EncodeE5BGR9(local_scatter);
     }
 }

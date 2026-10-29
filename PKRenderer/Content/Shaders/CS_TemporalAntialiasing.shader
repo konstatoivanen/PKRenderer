@@ -1,45 +1,45 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE TemporalAntialiasCs
+#pragma pk_program Compute TemporalAntialiasCs
 
 #include "includes/GBuffers.glsl"
 #include "includes/PostFXResources.glsl"
 #include "includes/Encoding.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-uniform sampler2D pk_Texture; // Current Screen
-uniform sampler2D pk_Texture1; // History Read
-uniform uimage2D pk_Image; // History Write
-uniform image2D pk_Image1; // Color Write
+uniform Texture2DRef pk_Texture; // Current Screen
+uniform Texture2DRef pk_Texture1; // History Read
+uniform RWTexture2DRef<uint> pk_Image; // History Write
+uniform RWTexture2DRef<float4> pk_Image1; // Color Write
 
 float3 TonemapColor(const float3 c) { return c / (1.0 + cmax(c)); }
 float3 UntonemapColor(const float3 c) { return c / max(1.0f / 65504.0f, 1.0 - cmax(c)); }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void TemporalAntialiasCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const int2 size = int2(pk_ScreenSize.xy * 2u);
+    const int2 size = int2(pk_View.ScreenSize.xy * 2u);
     const float2 texel_size = 2.0f.xx / size;
-    const float2 jitter = pk_ProjectionJitter.xy * texel_size;
+    const float2 jitter = pk_View.ProjectionJitter.xy * texel_size;
     const float2 uv = (coord + 0.5f.xx) / size;
 
     const float depth = SampleClipDepth(uv);
-    const float2 uv_previous = ClipToUvw(pk_ClipToPrevClip_NoJitter * float4(uv * 2 - 1, depth, 1)).xy;
+    const float2 uv_previous = ClipToUvw(mul(pk_View.ClipToPrevClip_NoJitter, float4(uv * 2.0f - 1.0f, depth, 1.0f))).xy;
     const float2 motion = uv - uv_previous;
 
-    const float k_sharpness = pk_TAA_Sharpness;
-    const float k_blend_static = pk_TAA_BlendingStatic;
-    const float k_blend_motion = pk_TAA_BlendingMotion;
-    const float k_motion_mult = pk_TAA_MotionAmplification;
+    const float k_sharpness = pk_View.TAA_Sharpness;
+    const float k_blend_static = pk_View.TAA_BlendingStatic;
+    const float k_blend_motion = pk_View.TAA_BlendingMotion;
+    const float k_motion_mult = pk_View.TAA_MotionAmplification;
     const float k_alpha_mult = 0.0f;
 
     float3 resolved = 0.0f.xxx;
     {
-        float4 color_alpha = texture(pk_Texture, uv);
+        float4 color_alpha = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv, 0);
         float3 color = color_alpha.rgb;
-        float3 history = texture(pk_Texture1, uv - motion).rgb;
-        const float3 color_11 = texture(pk_Texture, uv - texel_size * 0.5f).rgb;
-        const float3 color_00 = texture(pk_Texture, uv + texel_size * 0.5f).rgb;
+        float3 history = pk_Texture1.SampleLevel(pk_SamplerBilinearClamped, uv - motion, 0.0f).rgb;
+        const float3 color_11 = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv - texel_size * 0.5f, 0.0f).rgb;
+        const float3 color_00 = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + texel_size * 0.5f, 0.0f).rgb;
         const float3 corners = 4.0f * (color_11 + color_00) - 2.0f * color;
 
         color += (color - (corners * 0.166667f)) * 2.718282f * k_sharpness;
@@ -80,21 +80,21 @@ void TemporalAntialiasCs()
     }
 
     // @TODO should antialias depth as well or depth of field will have an incorrect coc mask.
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(resolved)));
+    pk_Image[coord] = EncodeE5BGR9(resolved);
 
     const uint swap_id_h = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
     const uint swap_id_v = QuadSwapIdVertical16x2(gl_SubgroupInvocationID);
     const uint swap_id_d = QuadSwapIdDiagonal16x2(gl_SubgroupInvocationID);
 
     float3 downsampled = resolved;
-    downsampled += subgroupShuffle(resolved, swap_id_h);
-    downsampled += subgroupShuffle(resolved, swap_id_v);
-    downsampled += subgroupShuffle(resolved, swap_id_d);
+    downsampled += WaveReadLaneAt(resolved, swap_id_h);
+    downsampled += WaveReadLaneAt(resolved, swap_id_v);
+    downsampled += WaveReadLaneAt(resolved, swap_id_d);
     downsampled *= 0.25f;
 
     [[branch]]
     if ((gl_LocalInvocationID.x & 0x1u) == 0 && (gl_LocalInvocationID.y & 0x1u) == 0)
     {
-        imageStore(pk_Image1, coord / 2, float4(downsampled, 1.0f));
+        pk_Image1[coord / 2] = float4(downsampled, 1.0f);
     }
 }

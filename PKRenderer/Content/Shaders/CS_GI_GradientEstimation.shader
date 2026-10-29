@@ -1,16 +1,16 @@
 
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #pragma pk_multi_compile _ PK_GI_GRADIENT_FILTER
-#pragma pk_program SHADER_STAGE_COMPUTE GradientEstimateCs
+#pragma pk_program Compute GradientEstimateCs
 
 #include "includes/SceneGIGradients.glsl"
 
-[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void GradientEstimateCs()
 {
 #if defined(PK_GI_GRADIENT_FILTER)
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const int2 size = int2(imageSize(pk_Gradients).xy);
+    const int2 size = int2(pk_Gradients.GetSize().xy);
 
     if (coord.x >= size.x || coord.y >= size.y)
     {
@@ -32,7 +32,7 @@ void GradientEstimateCs()
         {
             const int2 xy = coord + int2(xx, yy);
             const float s_gradient = Gradient_Load(xy, 1).gradient;
-            const float s_w = waveletKernel[abs(yy)][abs(xx)] * float(All_InArea(xy, int2(0), size));
+            const float s_w = waveletKernel[abs(yy)][abs(xx)] * float(all(xy >= 0) && all(xy < size));
             gradient.gradient += s_gradient * s_w;
             wSum += s_w;
         }
@@ -42,7 +42,7 @@ void GradientEstimateCs()
 
 #else
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const int2 size = int2(imageSize(pk_GradientInputs).xy);
+    const int2 size = int2(pk_GradientInputs.GetSize().xy);
 
     if (coord.x * GRADIENT_STRATA_SIZE >= size.x || coord.y * GRADIENT_STRATA_SIZE >= size.y)
     {
@@ -68,7 +68,7 @@ void GradientEstimateCs()
 
             const int2 s_coordFull = GI_ExpandCheckerboardCoord(s_coordCur, 1u);
             const float s_depth = SamplePreviousViewDepth(s_coordFull);
-            const float2 s_screenuv = ViewToClipUvPrev(CoordToViewPos(s_coordFull, s_depth)) * int2(pk_ScreenSize.xy);
+            const float2 s_screenuv = ViewToClipUvPrev(CoordToViewPos(s_coordFull, s_depth)) * int2(pk_View.ScreenSize.xy);
 
             const int2 s_coordPre = GI_CollapseCheckerboardCoord(s_screenuv, 1u);
             const float2 s_inputs = Gradient_Load_Input(s_coordPre);
@@ -93,8 +93,8 @@ void GradientEstimateCs()
 
     const float gradSample = inputs.x - inputs.y;
     const float normFactor = max(inputs.x, inputs.y);
-    gradientCur.gradient = normFactor > 0.0001f ? saturate(abs(gradSample) / normFactor) : 0.0;
-    gradientCur.gradient = mix(gradientCur.gradient, gradientPre.gradient, 0.5f);
+    gradientCur.gradient = select(normFactor > 0.0001f, saturate(abs(gradSample) / normFactor), 0.0f);
+    gradientCur.gradient = lerp(gradientCur.gradient, gradientPre.gradient, 0.5f);
     Gradient_Store(coord, 1, gradientCur);
 #endif
 }

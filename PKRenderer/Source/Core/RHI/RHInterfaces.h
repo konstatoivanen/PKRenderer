@@ -31,7 +31,6 @@ namespace PK
     struct RHITexture : public NoCopy
     {
         virtual ~RHITexture() = 0;
-        virtual void SetSampler(const SamplerDescriptor& sampler) = 0;
         virtual const TextureDescriptor& GetDescriptor() const = 0;
         virtual const char* GetDebugName() const = 0;
         virtual const void* GetNativeView() const = 0;
@@ -39,7 +38,6 @@ namespace PK
 
         inline TextureFormat GetFormat() const { return GetDescriptor().format; }
         inline TextureUsage GetUsage() const { return GetDescriptor().usage; }
-        inline const SamplerDescriptor& GetSamplerDescriptor() const { return GetDescriptor().sampler; }
         inline uint4 GetRect() const { return { 0, 0, GetDescriptor().resolution.x, GetDescriptor().resolution.y }; }
         inline uint3 GetResolution() const { return GetDescriptor().resolution; }
         inline float3 GetTexelSize() const { return 1.0f / float3(GetDescriptor().resolution); }
@@ -78,7 +76,6 @@ namespace PK
         virtual ~RHIShader() = 0;
         virtual const ShaderVertexInputLayout& GetVertexLayout() const = 0;
         virtual const ShaderPushConstantLayout& GetPushConstantLayout() const = 0;
-        virtual const ShaderResourceLayout& GetResourceLayout() const = 0;
         virtual ShaderStageFlags GetStageFlags() const = 0;
         virtual const uint3& GetGroupSize() const = 0;
         virtual ShaderBindingTableInfo GetShaderBindingTableInfo() const = 0;

@@ -94,7 +94,6 @@ namespace PK::App
     {
         float Intensity = 0.0f;
         float Diffusion = 1.0f;
-        bool  BorderClip = true;
         float LensDirtIntensity = 0.0f;
         TextureAsset* LensDirtTextureAsset = nullptr;
     };

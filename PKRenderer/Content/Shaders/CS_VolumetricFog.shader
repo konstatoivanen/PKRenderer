@@ -1,10 +1,10 @@
 
 #pragma pk_multi_compile PASS_CLEAR PASS_DENSITY PASS_INJECT PASS_INTEGRATE PASS_COMPOSITE
-#pragma pk_program SHADER_STAGE_COMPUTE ClearCs PASS_CLEAR
-#pragma pk_program SHADER_STAGE_COMPUTE DensityCs PASS_DENSITY
-#pragma pk_program SHADER_STAGE_COMPUTE InjectCs PASS_INJECT
-#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs PASS_INTEGRATE
-#pragma pk_program SHADER_STAGE_COMPUTE CompositeCs PASS_COMPOSITE
+#pragma pk_program Compute ClearCs PASS_CLEAR
+#pragma pk_program Compute DensityCs PASS_DENSITY
+#pragma pk_program Compute InjectCs PASS_INJECT
+#pragma pk_program Compute IntegrateCs PASS_INTEGRATE
+#pragma pk_program Compute CompositeCs PASS_COMPOSITE
 
 #define EARLY_Z_TEST 1
 #define SHADOW_TEST ShadowTest_PCF2x2
@@ -14,7 +14,7 @@
 
 // Hacky way to pass correct prog coord to shadow pass without parameters.
 // Needed as we swizzle the prog coord for wave ops.
-uint2 g_shadow_prog_coord;
+static uint2 g_shadow_prog_coord;
 #define SHADOW_PROG_COORD g_shadow_prog_coord
 
 #include "includes/VolumetricFog.glsl"
@@ -24,32 +24,32 @@ uint2 g_shadow_prog_coord;
 
 float Fog_Fade_FroxelShadows_Direct(float view_dist)
 {
-    return saturate((pk_Fog_ZParams.w - view_dist) * pk_Fog_FadeParams.x);
+    return saturate((pk_View.Fog_ZParams.w - view_dist) * pk_View.Fog_FadeParams.x);
 }
 
 float Fog_Fade_FroxelShadows_Volumetric(float view_dist)
 {
-    return saturate((pk_Fog_ZParams.w - view_dist) * pk_Fog_FadeParams.y);
+    return saturate((pk_View.Fog_ZParams.w - view_dist) * pk_View.Fog_FadeParams.y);
 }
 
 float Fog_GetAccumulation(float3 uvw)
 {
-    return VOLUMEFOG_ACCUMULATION + float(Any_NotEqual(clamp(uvw, 0.0f.xxx, float3(1.0f.xx, 2.0f)), uvw)) * (1.0f - VOLUMEFOG_ACCUMULATION);
+    return VOLUMEFOG_ACCUMULATION + float(any(clamp(uvw, 0.0f.xxx, float3(1.0f.xx, 2.0f)) != uvw)) * (1.0f - VOLUMEFOG_ACCUMULATION);
 }
 
 float3 Fog_WorldToPrevUvw(float3 world_pos)
 {
-    float3 uvw = ClipToUvw(pk_WorldToClipPrev_NoJitter * float4(world_pos, 1.0f));
+    float3 uvw = ClipToUvw(mul(pk_View.WorldToClipPrev_NoJitter, float4(world_pos, 1.0f)));
     uvw.z = Fog_ViewToZ(ViewDepth(uvw.z));
     return uvw;
 }
 
 float Fog_CalculateDensity(float3 pos)
 {
-    float d = pk_Fog_Density_ExpParams0.x;
-    d += min(exp(pk_Fog_Density_ExpParams0.y * (-pos.y + pk_Fog_Density_ExpParams0.z)) * pk_Fog_Density_ExpParams0.w, 1e+3f);
-    d *= NoiseScroll(pos, pk_Time.y * pk_Fog_WindDirSpeed.w, pk_Fog_Density_NoiseScale, pk_Fog_WindDirSpeed.xyz, pk_Fog_Density_NoiseAmount, -0.3, 8.0);
-    return max(d * pk_Fog_Density_Amount, 0.0f);
+    float d = pk_View.Fog_Density_ExpParams0.x;
+    d += min(exp(pk_View.Fog_Density_ExpParams0.y * (-pos.y + pk_View.Fog_Density_ExpParams0.z)) * pk_View.Fog_Density_ExpParams0.w, 1e+3f);
+    d *= NoiseScroll(pos, pk_View.Time.y * pk_View.Fog_WindDirSpeed.w, pk_View.Fog_Density_NoiseScale, pk_View.Fog_WindDirSpeed.xyz, pk_View.Fog_Density_NoiseAmount, -0.3, 8.0);
+    return max(d * pk_View.Fog_Density_Amount, 0.0f);
 }
 
 float3 Fog_MarchTransmittance(const float3 origin, const float3 direction, const float dither, const float t_max, const float fade_static)
@@ -66,7 +66,7 @@ float3 Fog_MarchTransmittance(const float3 origin, const float3 direction, const
         prev_density = density;
     }
 
-    return exp(-extinction * pk_Fog_Absorption.rgb * fade_static);
+    return exp(-extinction * pk_View.Fog_Absorption.rgb * fade_static);
 }
 
 // transmittance estimator for indirect lighting.
@@ -74,24 +74,24 @@ float3 Fog_EstimateTransmittance(const float3 uvw, float fade_static)
 {
     const float depth_min = Fog_ZToView(uvw.z);
     const float depth_max = Fog_ZToView(min(1.0f, uvw.z + VOLUMEFOG_SIZE_Z_INV));
-    const float density = texture(pk_Fog_Density_Read, uvw).x;
+    const float density = pk_Fog_Density_Read.SampleLevel(pk_SamplerBilinearClamped, uvw, 0);
     const float extinction = density * (depth_max - depth_min) * fade_static;
-    return exp(-extinction * pk_Fog_Absorption.rgb);
+    return exp(-extinction * pk_View.Fog_Absorption.rgb);
 }
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void ClearCs()
 {
     const int3 coord = int3(gl_GlobalInvocationID);
-    imageStore(pk_Fog_Density_Write, coord, 0.0f.xxxx);
-    imageStore(pk_Fog_Inject_Write, coord, uint4(0));
+    pk_Fog_Density_Write[coord] = 0.0f;
+    pk_Fog_Inject_Write[coord] = 0u;
 }
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void DensityCs()
 {
     const int3 pos = int3(gl_GlobalInvocationID);
-    const float3 dither = GlobalNoiseBlue(pos.xy, pk_FrameIndex.x);
+    const float3 dither = GlobalNoiseBlue(pos.xy, pk_View.FrameIndex.x);
     const float3 uvw_cur = (pos + dither) / VOLUMEFOG_SIZE;
 
     const float3 world_pos = UvToWorldPos(uvw_cur.xy, Fog_ZToView(uvw_cur.z));
@@ -100,10 +100,10 @@ void DensityCs()
     const float value_cur = Fog_CalculateDensity(world_pos);
     const float value_pre = SAMPLE_TRICUBIC(pk_Fog_Density_Read, uvw_prev).x;
     const float value_out = lerp(value_pre, value_cur, Fog_GetAccumulation(uvw_prev));
-    imageStore(pk_Fog_Density_Write, pos, -min(0.0f, -value_out).xxxx);
+    pk_Fog_Density_Write[pos] = -min(0.0f, -value_out);
 }
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void InjectCs()
 {
     // Subgroups are swizzled into a 2x4x4 pattern
@@ -119,31 +119,31 @@ void InjectCs()
         const uint thread_30 = thread % 30u;
         const int2 wave_z_coord = int2(wave_id.xy) * int2(1, 2) + int2(thread_30 % 5u, thread_30 / 5u) - 2;
         const float lane_zmax = SampleMaxZ(wave_z_coord, 4);
-        const float wave_zmax = subgroupMax(lane_zmax);
+        const float wave_zmax = WaveActiveMax(lane_zmax);
         const float tile_zmax = Fog_ZToView((gl_WorkGroupID.z * 4.0f + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
 
         [[branch]]
-        if (subgroupAll(wave_zmax < tile_zmax))
+        if (WaveActiveAllTrue(wave_zmax < tile_zmax))
         {
-            imageStore(pk_Fog_Inject_Write, int3(coord), uint4(0));
+            pk_Fog_Inject_Write[int3(coord)] = 0u;
             return;
         }
     }
 #endif
 
-    const float3 dither = GlobalNoiseBlue(coord.xy, pk_FrameIndex.x);
+    const float3 dither = GlobalNoiseBlue(coord.xy, pk_View.FrameIndex.x);
     const float3 uvw_cur = (coord + float3(0.5f.xx, dither.z)) / VOLUMEFOG_SIZE;
 
     // Light leak threshold
     const float tile_zmin = Fog_ZToView((coord.z - 1.5f) * VOLUMEFOG_SIZE_Z_INV);
     const float tile_zmax = SampleMaxZ(int2(coord.xy), 3);
     // Clamp cell to surface to prevent light leaks
-    const float depth = min(Fog_ZToView(uvw_cur.z), lerp(1e+38f, tile_zmax, tile_zmin < tile_zmax));
+    const float depth = min(Fog_ZToView(uvw_cur.z), select(tile_zmin < tile_zmax, tile_zmax, 1e+38f));
 
     const float3 world_pos = UvToWorldPos(uvw_cur.xy, depth);
     const float3 uvw_prev = Fog_WorldToPrevUvw(world_pos);
-    const float  view_dist = length(world_pos - pk_ViewWorldOrigin.xyz);
-    const float3 view_dir = (world_pos - pk_ViewWorldOrigin.xyz) / view_dist;
+    const float  view_dist = length(world_pos - pk_View.ViewWorldOrigin.xyz);
+    const float3 view_dir = (world_pos - pk_View.ViewWorldOrigin.xyz) / view_dist;
 
     const float3 gi_static = SceneEnv_Sample_ISL_Dual(EncodeOctaUv(view_dir), pow2(uvw_cur.z));
     const float4 gi_dynamic = GI_VX_SphereTrace_Diffuse(world_pos);
@@ -179,9 +179,9 @@ void InjectCs()
         value_cur += BxDF_Volumetric
         (
             view_dir,
-            pk_Fog_Phase0,
-            pk_Fog_Phase1,
-            pk_Fog_PhaseW,
+            pk_View.Fog_Phase0,
+            pk_View.Fog_Phase1,
+            pk_View.Fog_PhaseW,
             light.Lv,
             light.Rv,
             light.shadow
@@ -193,10 +193,10 @@ void InjectCs()
     const float3 value_pre = SAMPLE_TRICUBIC(pk_Fog_Inject_Read, uvw_prev).rgb;
     const float3 value_out = -min(0.0f.xxx, -lerp(value_pre, value_cur, accumulation));
 
-    imageStore(pk_Fog_Inject_Write, int3(coord), EncodeE5BGR9(value_out).xxxx);
+    pk_Fog_Inject_Write[int3(coord)] = EncodeE5BGR9(value_out);
 }
 
-[pk_numthreads(8u, 8u, 1u)]
+[numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     float4 accum_scatter = float4(0.0f.xxx, 1.0f);
@@ -210,11 +210,11 @@ void IntegrateCs()
         const float depth_max = Fog_ZToView((pos.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
         const float slice_width = depth_max - depth_min;
 
-        const float  density = texelFetch(pk_Fog_Density_Read, pos, 0).x;
-        const float3 irradiance = texelFetch(pk_Fog_Inject_Read, pos, 0).rgb * pk_Fog_Albedo.rgb;
+        const float  density = pk_Fog_Density_Read[pos];
+        const float3 irradiance = pk_Fog_Inject_Read[pos].rgb * pk_View.Fog_Albedo.rgb;
 
         const float  extinction = density * slice_width;
-        const float3 transmittance = exp(-extinction * pk_Fog_Absorption.rgb);
+        const float3 transmittance = exp(-extinction * pk_View.Fog_Absorption.rgb);
         const float3 integral = irradiance * (1.0f - transmittance) * accum_transmittance;
 
         accum_scatter.rgb += integral;
@@ -222,21 +222,21 @@ void IntegrateCs()
         accum_scatter.a *= exp(-extinction);
         accum_transmittance *= transmittance;
 
-        imageStore(pk_Fog_Scatter_Write, pos, accum_scatter);
+        pk_Fog_Scatter_Write[pos] = accum_scatter;
     }
 }
 
-uniform image2D pk_Image;
+uniform RWTexture2DRef<float4> pk_Image;
 
-[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void CompositeCs()
 {
     const int2 coord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 8u));
-    const int2 size = imageSize(pk_Image).xy;
+    const int2 size = pk_Image.GetSize();
     const float2 uv = float2(coord + 0.5f.xx) / float2(size);
 
-    const float3 color = imageLoad(pk_Image, coord).rgb;
+    const float3 color = pk_Image[coord].rgb;
     const float4 color_transmittance = Fog_SampleFroxel(uv, SampleViewDepth(uv), color);
 
-    imageStore(pk_Image, coord, color_transmittance);
+    pk_Image[coord] = color_transmittance;
 }

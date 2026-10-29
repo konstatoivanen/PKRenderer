@@ -2,7 +2,7 @@
 #include "SceneGI.glsl"
 #include "NoiseBlue.glsl"
 
-uniform uimage2D pk_GI_RayHits;
+uniform RWTexture2DRef<uint2> pk_GI_RayHits;
 
 struct GIRayHit { float dist; bool is_miss; bool is_screen; };
 struct GIRayHits { GIRayHit diff; GIRayHit spec; uint diff_normal; };
@@ -32,7 +32,7 @@ bool GI_IsScreenHit(const int2 coord, const float3 world_pos, bool is_miss)
 
     if (Test_InUvw(clip_uvw))
     {
-        const float2 delta_coord = abs(coord - clip_uvw.xy * pk_ScreenParams.xy);
+        const float2 delta_coord = abs(coord - clip_uvw.xy * pk_View.ScreenParams.xy);
         const float depth_r = ViewDepth(clip_uvw.z);
         const float depth_s = SamplePreviousViewDepth(clip_uvw.xy);
         const float3 view_dir = UvToViewDir(clip_uvw.xy);
@@ -70,13 +70,13 @@ float3 GI_ApplyNormalOffset(const float3 origin, const float3 normal, const floa
 
 float2 GI_GetRayXi(int2 coord_ray)
 {
-    const float3 v = GlobalNoiseBlue(coord_ray + pk_GI_RayDither, pk_FrameIndex.y);
+    const float3 v = GlobalNoiseBlue(coord_ray + pk_View.GI_RayDither, pk_View.FrameIndex.y);
     return saturate(v.xy + ((v.z - 0.5f) / 256.0f));
 }
 
 #define GI_LOAD_RAY_PARAMS(COORD, RAYCOORD, DEPTH, NORMAL, ROUGHNESS)                 \
 float3 origin = ViewToWorldPos(GI_GetRayViewOrigin(COORD, DEPTH));                    \
-float3 view_dir = normalize(origin - pk_ViewWorldOrigin.xyz);                         \
+float3 view_dir = normalize(origin - pk_View.ViewWorldOrigin.xyz);                    \
 origin = GI_ApplyNormalOffset(origin, NORMAL, view_dir);                              \
 const float2 Xi = GI_GetRayXi(RAYCOORD);                                              \
 float3 direction_diff = Fd_Inverse_Lambert(Xi, NORMAL);                               \
@@ -85,7 +85,7 @@ float3 direction_spec = Fr_Inverse_GGXVNDF_Full(Xi.yx, NORMAL, view_dir, ROUGHNE
 
 GIRayHits GI_Load_RayHits(const int2 coord)
 {
-    uint2 packed = imageLoad(pk_GI_RayHits, coord).xy;
+    uint2 packed = pk_GI_RayHits[coord].xy;
     const bool is_screen_diff = bitfieldExtract(packed.x, 15, 1) != 0;
     const bool is_screen_spec = bitfieldExtract(packed.x, 31, 1) != 0;
     packed.x &= 0x7FFF7FFFu; // Remove sign bits
@@ -102,5 +102,5 @@ void GI_Store_RayHits(const int2 coord, const GIRayHits u)
     packed = u.spec.is_miss ? bitfieldInsert(packed, 0x7C00u, 16, 16) : packed;
     packed = bitfieldInsert(packed, u.diff.is_screen ? 0x1u : 0x0u, 15, 1);
     packed = bitfieldInsert(packed, u.spec.is_screen ? 0x1u : 0x0u, 31, 1);
-    imageStore(pk_GI_RayHits, coord, uint4(packed, u.diff_normal, 0u, 0u));
+    pk_GI_RayHits[coord] = uint2(packed, u.diff_normal);
 }

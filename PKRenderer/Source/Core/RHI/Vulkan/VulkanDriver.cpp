@@ -264,17 +264,22 @@ namespace PK
             pCallbackData->messageIdNumber == 888844017 ||
             pCallbackData->messageIdNumber == -606804660;
 
+        auto isUntypedPointerTaskPayloadError = 
+            pCallbackData->messageIdNumber == -355546151 ||
+            pCallbackData->messageIdNumber == -923869234 ||
+            pCallbackData->messageIdNumber == -97700645;
+
         messageSeverity = isValidationError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT : messageSeverity;
         messageSeverity = isValidationLayoutError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isValidationSwapchainBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isLoaderMessage ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isLegacyWarning ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isNvidiaWarning ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
+        messageSeverity = isUntypedPointerTaskPayloadError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
             PK_FATAL_ERROR("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
-            //PK_LOG_WARNING("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 

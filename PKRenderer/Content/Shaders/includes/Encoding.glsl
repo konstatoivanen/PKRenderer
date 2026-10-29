@@ -9,7 +9,7 @@ float2 OctaWrap(float2 v)
 float2 EncodeOctaUv(float3 n)
 {
     n /= (abs(n.x) + abs(n.y) + abs(n.z));
-    n.xz = lerp(OctaWrap(n.xz), n.xz, (n.y >= 0.0f).xx);
+    n.xz = select(n.y >= 0.0f, n.xz, OctaWrap(n.xz));
     n.xz = n.xz * 0.5f + 0.5f;
     return n.xz;
 }
@@ -20,8 +20,8 @@ float3 DecodeOctaUv(float2 f)
     f = f * 2.0f - 1.0f;
     float3 n = float3(f.x, 1.0f - abs(f.x) - abs(f.y), f.y);
     float t = max(-n.y, 0.0f);
-    n.x += lerp(t, -t, n.x >= 0.0f);
-    n.z += lerp(t, -t, n.z >= 0.0f);
+    n.x += select(n.x >= 0.0f, -t, t);
+    n.z += select(n.z >= 0.0f, -t, t);
     return normalize(n);
 }
 
@@ -33,7 +33,7 @@ float3 DecodeOctaUv2x16(uint packed) { return DecodeOctaUv(unpackUnorm2x16(packe
 
 float2 EncodeCylinderUv(float3 direction)
 {
-    const float angle_h = (atan(direction.x, direction.z) + 3.14159265359f) * 0.15915494309f;
+    const float angle_h = (atan2(direction.x, direction.z) + 3.14159265359f) * 0.15915494309f;
     const float angle_v = acos(dot(direction, float3(0, 1, 0))) * 0.31830988618f;
     return float2(angle_h, angle_v);
 }
@@ -51,7 +51,7 @@ float3 RgbToHsv(float3 c)
 float3 HsvToRgb(float3 c)
 {
     const float4 k = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    const float3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);
+    const float3 p = abs(frac(c.xxx + k.xyz) * 6.0 - k.www);
     return c.zzz * lerp(k.xxx, saturate(p - k.xxx), c.y);
 }
 
