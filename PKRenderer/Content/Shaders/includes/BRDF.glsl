@@ -110,7 +110,7 @@ void Fsal_MaximumNHLH(float sina, float NoV, float VoL, float NoL, inout float L
         return;
     }
 
-    const float rInvLengthT = sina * inversesqrt(1 - RoL * RoL);
+    const float rInvLengthT = sina * rsqrt(1 - RoL * RoL);
     float NoTr = rInvLengthT * (NoV - RoL * NoL );
     float VoTr = rInvLengthT * (2 * NoV * NoV - 1 - RoL * VoL);
 
@@ -136,7 +136,7 @@ void Fsal_MaximumNHLH(float sina, float NoV, float VoL, float NoL, inout float L
     NoL = NoL * cosa + NoTr; 
     VoL = VoL * cosa + VoTr;
 
-    float invLenH = inversesqrt(2 + 2 * VoL);
+    float invLenH = rsqrt(2 + 2 * VoL);
     NoH = saturate((NoL + NoV ) * invLenH);
     LoH = saturate(invLenH + invLenH * VoL);
 }
@@ -247,7 +247,7 @@ float Fp_HenyeyGreenstein(float cosA, float g)
 {
     const float gsq = pow2(g);
     const float denom = 1.0f + gsq - 2.0f * g * cosA;
-    return PK_INV_FOUR_PI * (1.0f - gsq) * inversesqrt(pow3(denom));
+    return PK_INV_FOUR_PI * (1.0f - gsq) * rsqrt(pow3(denom));
 }
 
 float Fp_HenyeyGreensteinDual(float cosA, float g0, float g1, float w) 
@@ -338,7 +338,7 @@ float D_GGX(float NoH, float alpha)
 // Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF"
 float D_Charlie(float NoH, float alpha)
 {
-    float inv_alpha  = inversesqrt(alpha);
+    float inv_alpha = rsqrt(alpha);
     float cos_2h = NoH * NoH;
     float sin_2h = max(1.0 - cos_2h, 0.0078125);
     return (2.0 + inv_alpha) * pow(sin_2h, inv_alpha * 0.5) * PK_INV_TWO_PI;
@@ -356,7 +356,7 @@ float3 BxDF_SceneGI(const BxDFSurf surf,
 {
     const float nl = max(0.0f, dot(surf.normal, direction));
     const float vl = dot(surf.view_dir, direction);
-    const float ih = inversesqrt(2.0f + 2.0f * vl);
+    const float ih = rsqrt(2.0f + 2.0f * vl);
     const float nh = saturate((nl + surf.nv) * ih);
     const float lh = saturate(ih + ih * vl);
     const float3 integrated_dfg = Futil_SampleIntegratedDFG(surf.nv, surf.alpha).rgb; 
@@ -414,7 +414,7 @@ float3 BxDF_Principled(const BxDFSurf surf, const float3 direction, const float3
 {
     const float nl = max(0.0f, dot(surf.normal, direction));
     const float vl = dot(surf.view_dir, direction);
-    const float ih = inversesqrt(2.0f + 2.0f * vl);
+    const float ih = rsqrt(2.0f + 2.0f * vl);
     float nh = saturate((nl + surf.nv) * ih);
     float lh = saturate(ih + ih * vl);
     const float3 integrated_dfg = Futil_SampleIntegratedDFG(surf.nv, surf.alpha).xyz; 

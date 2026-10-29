@@ -90,7 +90,7 @@ void MainRgs()
             {
                 traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction_spec, PK_GI_RAY_TMAX, 0);
                 hits.spec.is_miss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
-                hits.spec.dist = uintBitsToFloat(payload.HIT_DISTANCE);
+                hits.spec.dist = asfloat(payload.HIT_DISTANCE);
             }
         }
 
@@ -103,7 +103,7 @@ void MainRgs()
             {
                 traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction_diff, PK_GI_RAY_TMAX, 0);
                 hits.diff.is_miss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
-                hits.diff.dist = uintBitsToFloat(payload.HIT_DISTANCE);
+                hits.diff.dist = asfloat(payload.HIT_DISTANCE);
             }
         }
 
@@ -169,5 +169,5 @@ void MainRchs()
     }
 
     payload.HIT_NORMAL = EncodeOctaUv2x16(normal);
-    payload.HIT_DISTANCE = floatBitsToUint(gl_HitTEXT);
+    payload.HIT_DISTANCE = asuint(gl_HitTEXT);
 }

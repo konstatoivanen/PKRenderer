@@ -12,13 +12,13 @@
 float GI_GetAntilag_SubgroupStretch(float2 reproject_coord)
 {
     const uint swapId = QuadSwapIdDiagonal16x2(gl_SubgroupInvocationID);
-    const float2 reproject_coord_n = subgroupShuffle(reproject_coord, swapId);
+    const float2 reproject_coord_n = WaveReadLaneAt(reproject_coord, swapId);
     const float2 coord_diff = abs(reproject_coord_n - reproject_coord);
     const float  min_diff = min(coord_diff.x, coord_diff.y);
     return saturate(pow4(min_diff) / 1.0f);
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void ReprojectCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -40,7 +40,7 @@ void ReprojectCs()
 
     // Far clip or new backbuffer
     [[branch]]
-    if (pk_FrameIndex.y != 0u && subgroupAny(is_scene))
+    if (pk_FrameIndex.y != 0u && WaveActiveAnyTrue(is_scene))
     {
         GIDiff diff = PK_GI_DIFF_ZERO;
         GISpec spec = PK_GI_SPEC_ZERO;

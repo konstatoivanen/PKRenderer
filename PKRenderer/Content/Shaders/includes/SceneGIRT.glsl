@@ -2,7 +2,7 @@
 #include "SceneGI.glsl"
 #include "NoiseBlue.glsl"
 
-uniform uimage2D pk_GI_RayHits;
+uniform RWTexture2D<uint2> pk_GI_RayHits;
 
 struct GIRayHit { float dist; bool is_miss; bool is_screen; };
 struct GIRayHits { GIRayHit diff; GIRayHit spec; uint diff_normal; };

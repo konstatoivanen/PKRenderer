@@ -79,7 +79,7 @@ float3 Fog_EstimateTransmittance(const float3 uvw, float fade_static)
     return exp(-extinction * pk_Fog_Absorption.rgb);
 }
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void ClearCs()
 {
     const int3 coord = int3(gl_GlobalInvocationID);
@@ -87,7 +87,7 @@ void ClearCs()
     imageStore(pk_Fog_Inject_Write, coord, uint4(0));
 }
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void DensityCs()
 {
     const int3 pos = int3(gl_GlobalInvocationID);
@@ -103,7 +103,7 @@ void DensityCs()
     imageStore(pk_Fog_Density_Write, pos, -min(0.0f, -value_out).xxxx);
 }
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void InjectCs()
 {
     // Subgroups are swizzled into a 2x4x4 pattern
@@ -119,11 +119,11 @@ void InjectCs()
         const uint thread_30 = thread % 30u;
         const int2 wave_z_coord = int2(wave_id.xy) * int2(1, 2) + int2(thread_30 % 5u, thread_30 / 5u) - 2;
         const float lane_zmax = SampleMaxZ(wave_z_coord, 4);
-        const float wave_zmax = subgroupMax(lane_zmax);
+        const float wave_zmax = WaveActiveMax(lane_zmax);
         const float tile_zmax = Fog_ZToView((gl_WorkGroupID.z * 4.0f + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
 
         [[branch]]
-        if (subgroupAll(wave_zmax < tile_zmax))
+        if (WaveActiveAllTrue(wave_zmax < tile_zmax))
         {
             imageStore(pk_Fog_Inject_Write, int3(coord), uint4(0));
             return;
@@ -196,7 +196,7 @@ void InjectCs()
     imageStore(pk_Fog_Inject_Write, int3(coord), EncodeE5BGR9(value_out).xxxx);
 }
 
-[pk_numthreads(8u, 8u, 1u)]
+[numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     float4 accum_scatter = float4(0.0f.xxx, 1.0f);
@@ -226,9 +226,9 @@ void IntegrateCs()
     }
 }
 
-uniform image2D pk_Image;
+uniform RWTexture2D<float4> pk_Image;
 
-[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void CompositeCs()
 {
     const int2 coord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 8u));

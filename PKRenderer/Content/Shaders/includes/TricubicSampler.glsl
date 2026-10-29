@@ -28,13 +28,13 @@
         half4 tex101 = half4(textureLod(TVolume, float3(h1.x, h0.y, h1.z), 0.0));       \
         half4 tex011 = half4(textureLod(TVolume, float3(h0.x, h1.y, h1.z), 0.0));       \
         half4 tex111 = half4(textureLod(TVolume, h1, 0.0));                             \
-        tex000 = mix(tex100, tex000, g0.x);                                             \
-        tex010 = mix(tex110, tex010, g0.x);                                             \
-        tex000 = mix(tex010, tex000, g0.y);                                             \
-        tex001 = mix(tex101, tex001, g0.x);                                             \
-        tex011 = mix(tex111, tex011, g0.x);                                             \
-        tex001 = mix(tex011, tex001, g0.y);                                             \
-        return mix(tex001, tex000, g0.z);                                               \
+        tex000 = lerp(tex100, tex000, g0.x);                                            \
+        tex010 = lerp(tex110, tex010, g0.x);                                            \
+        tex000 = lerp(tex010, tex000, g0.y);                                            \
+        tex001 = lerp(tex101, tex001, g0.x);                                            \
+        tex011 = lerp(tex111, tex011, g0.x);                                            \
+        tex001 = lerp(tex011, tex001, g0.y);                                            \
+        return lerp(tex001, tex000, g0.z);                                              \
     }                                                                                   \
                                                                                         \
 

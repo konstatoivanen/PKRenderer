@@ -8,7 +8,7 @@
 #include "includes/SceneGIFiltering.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void PostFilterCs()
 {
     const int2 coord_base = int2(gl_GlobalInvocationID.xy);
@@ -109,14 +109,14 @@ void PostFilterCs()
         // Shuffle with chb neighbour.
         {
             const uint swapId = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
-            depth = subgroupShuffle(depth, swapId);
-            normal = subgroupShuffle(normal, swapId);
-            roughness = subgroupShuffle(roughness, swapId);
-            diff.sh.Y = subgroupShuffle(diff.sh.Y, swapId);
-            diff.sh.A = subgroupShuffle(diff.sh.A, swapId);
-            diff.ao = subgroupShuffle(diff.ao, swapId);
-            spec.radiance = subgroupShuffle(spec.radiance, swapId);
-            spec.ao = subgroupShuffle(spec.ao, swapId);
+            depth = WaveReadLaneAt(depth, swapId);
+            normal = WaveReadLaneAt(normal, swapId);
+            roughness = WaveReadLaneAt(roughness, swapId);
+            diff.sh.Y = WaveReadLaneAt(diff.sh.Y, swapId);
+            diff.sh.A = WaveReadLaneAt(diff.sh.A, swapId);
+            diff.ao = WaveReadLaneAt(diff.ao, swapId);
+            spec.radiance = WaveReadLaneAt(spec.radiance, swapId);
+            spec.ao = WaveReadLaneAt(spec.ao, swapId);
         }
 
 

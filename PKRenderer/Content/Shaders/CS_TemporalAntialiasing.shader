@@ -8,13 +8,13 @@
 
 uniform sampler2D pk_Texture; // Current Screen
 uniform sampler2D pk_Texture1; // History Read
-uniform uimage2D pk_Image; // History Write
-uniform image2D pk_Image1; // Color Write
+uniform RWTexture2D<uint> pk_Image; // History Write
+uniform RWTexture2D<float4> pk_Image1; // Color Write
 
 float3 TonemapColor(const float3 c) { return c / (1.0 + cmax(c)); }
 float3 UntonemapColor(const float3 c) { return c / max(1.0f / 65504.0f, 1.0 - cmax(c)); }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void TemporalAntialiasCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -87,9 +87,9 @@ void TemporalAntialiasCs()
     const uint swap_id_d = QuadSwapIdDiagonal16x2(gl_SubgroupInvocationID);
 
     float3 downsampled = resolved;
-    downsampled += subgroupShuffle(resolved, swap_id_h);
-    downsampled += subgroupShuffle(resolved, swap_id_v);
-    downsampled += subgroupShuffle(resolved, swap_id_d);
+    downsampled += WaveReadLaneAt(resolved, swap_id_h);
+    downsampled += WaveReadLaneAt(resolved, swap_id_v);
+    downsampled += WaveReadLaneAt(resolved, swap_id_d);
     downsampled *= 0.25f;
 
     [[branch]]

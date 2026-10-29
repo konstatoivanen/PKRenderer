@@ -10,10 +10,10 @@
 #include "includes/NoiseBlue.glsl"
 
 uniform sampler2D pk_Texture;
-[pk_local(DistortPaniniCs)] uniform uimage2D pk_Image;
-[pk_local(DistortChromaCs)] uniform image2D pk_Image;
+[pk_local(DistortPaniniCs)] uniform RWTexture2D<uint> pk_Image;
+[pk_local(DistortChromaCs)] uniform RWTexture2D<float4> pk_Image;
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void DistortPaniniCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -35,7 +35,7 @@ void DistortPaniniCs()
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void DistortChromaCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

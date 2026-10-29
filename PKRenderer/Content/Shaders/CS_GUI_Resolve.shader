@@ -4,9 +4,9 @@
 #include "includes/Common.glsl"
 
 uniform Texture2DMS pk_Texture;
-uniform RWTexture2D pk_Image;
+uniform RWTexture2D<float4> pk_Image;
 
-[pk_numthreads(8u, 4u, 1u)]
+[numthreads(8u, 4u, 1u)]
 void GUIResolveCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

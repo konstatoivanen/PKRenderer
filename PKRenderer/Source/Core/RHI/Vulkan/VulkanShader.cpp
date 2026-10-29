@@ -184,7 +184,7 @@ namespace PK
                     shaderStages[stageCount].pNext = &moduleInfos[stageCount];
                     shaderStages[stageCount].stage = VulkanEnumConvert::GetShaderStage(stage);
                     shaderStages[stageCount].module = VK_NULL_HANDLE;
-                    shaderStages[stageCount].pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
+                    shaderStages[stageCount].pName = "main";
                     stageCount++;
                 }
             }
@@ -238,7 +238,7 @@ namespace PK
                     info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
                     info.codeSize = variant->sprivSizes[i];
                     info.pCode = variant->sprivBuffers[i].Get(base);
-                    info.pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
+                    info.pName = "main";
                 }
             }
 

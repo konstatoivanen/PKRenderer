@@ -45,21 +45,21 @@ struct LightTile
 };
 
 uniform sampler2DArray pk_IESProfiles;
-uniform Buffer<uint4> pk_Lights;
-uniform Buffer<float4x4> pk_LightMatrices;
+uniform StructuredBuffer<uint4> pk_Lights;
+uniform StructuredBuffer<float4x4> pk_LightMatrices;
 
 #if defined(PK_WRITE_LIGHT_CLUSTERS)
-uniform RWBuffer<ushort> pk_LightLists;
+uniform RWStructuredBuffer<ushort> pk_LightLists;
 uniform writeonly uimage3D pk_LightTiles;
 #else
-uniform Buffer<ushort> pk_LightLists;
+uniform StructuredBuffer<ushort> pk_LightLists;
 uniform readonly uimage3D pk_LightTiles;
 #endif
 
 SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)
 {
     SceneLight l;
-    l.position = uintBitsToFloat(packed0.xyz);
+    l.position = asfloat(packed0.xyz);
     l.radius = unpackHalf2x16(packed0.w).x;
     l.light_type = bitfieldExtract(packed0.w, 16, 4);
     l.index_ies = bitfieldExtract(packed0.w, 20, 12);

@@ -9,7 +9,7 @@
 
 uniform sampler2D pk_SceneEnv;
 uniform sampler2D pk_SceneEnv_ISL;
-uniform RWBuffer<float4> pk_SceneEnv_SH;
+uniform RWStructuredBuffer<float4> pk_SceneEnv_SH;
 
 float3 SceneEnv_Sample_IBL(float2 uv, float roughness) 
 { 

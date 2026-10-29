@@ -5,7 +5,7 @@
 
 #include "includes/SceneGIGradients.glsl"
 
-[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void GradientEstimateCs()
 {
 #if defined(PK_GI_GRADIENT_FILTER)
@@ -94,7 +94,7 @@ void GradientEstimateCs()
     const float gradSample = inputs.x - inputs.y;
     const float normFactor = max(inputs.x, inputs.y);
     gradientCur.gradient = normFactor > 0.0001f ? saturate(abs(gradSample) / normFactor) : 0.0;
-    gradientCur.gradient = mix(gradientCur.gradient, gradientPre.gradient, 0.5f);
+    gradientCur.gradient = lerp(gradientCur.gradient, gradientPre.gradient, 0.5f);
     Gradient_Store(coord, 1, gradientCur);
 #endif
 }

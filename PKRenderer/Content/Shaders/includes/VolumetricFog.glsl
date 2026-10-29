@@ -16,9 +16,9 @@
 uniform sampler3D pk_Fog_Scatter_Read;
 uniform sampler3D pk_Fog_Inject_Read;
 uniform sampler3D pk_Fog_Density_Read;
-uniform uimage3D pk_Fog_Inject_Write;
-uniform image3D pk_Fog_Density_Write;
-uniform image3D pk_Fog_Scatter_Write;
+uniform RWTexture3D<uint> pk_Fog_Inject_Write;
+uniform RWTexture3D<float> pk_Fog_Density_Write;
+uniform RWTexture3D<float4> pk_Fog_Scatter_Write;
 
 DEFINE_TRICUBIC_SAMPLER(pk_Fog_Scatter_Read, VOLUMEFOG_SIZE)
 

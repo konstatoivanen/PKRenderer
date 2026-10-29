@@ -17,9 +17,9 @@
 #include "includes/LightResources.glsl"
 #endif
 
-uniform image2D pk_Image;
+uniform RWTexture2D<float4> pk_Image;
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void PostEffectsCompositeCs()
 {
     const int2 size = imageSize(pk_Image).xy;

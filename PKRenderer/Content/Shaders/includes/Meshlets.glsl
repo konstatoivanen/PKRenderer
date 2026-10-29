@@ -61,11 +61,11 @@
     #define PK_MESHLET_DEBUG_VISUALIZE(color) color *= 0.1f; color += HsvToRgb(float3((gl_PrimitiveID % 16u) / 16.0f, 1.0f, 1.0f))
 #endif
 
-uniform Buffer<uint2> pk_Meshlet_Tasklets;
-uniform Buffer<uint4> pk_Meshlet_Submeshes;
-uniform Buffer<uint4> pk_Meshlets;
-uniform Buffer<uint4> pk_Meshlet_Vertices;
-uniform Buffer<byte> pk_Meshlet_Indices;
+uniform StructuredBuffer<uint2> pk_Meshlet_Tasklets;
+uniform StructuredBuffer<uint4> pk_Meshlet_Submeshes;
+uniform StructuredBuffer<uint4> pk_Meshlets;
+uniform StructuredBuffer<uint4> pk_Meshlet_Vertices;
+uniform StructuredBuffer<byte> pk_Meshlet_Indices;
 
 struct PKMeshTaskPayload
 {
@@ -146,9 +146,9 @@ PKTasklet Meshlet_Unpack_Tasklet(uint2 packed)
 PKSubmesh Meshlet_Unpack_Submesh(const uint4 packed0, const uint4 packed1)
 {
     PKSubmesh s;
-    s.bbmin = uintBitsToFloat(packed0.xyz);
+    s.bbmin = asfloat(packed0.xyz);
     s.meshlet_first = packed0.w;
-    s.bbmax = uintBitsToFloat(packed1.xyz);
+    s.bbmax = asfloat(packed1.xyz);
     s.meshlet_count = packed1.w;
     return s;
 }
@@ -261,8 +261,8 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
             const float4 center_p = ObjectToClipPos(meshlet.lod_center_error_parent.xyz);
             float error_c = pk_Instancing_UniformScale * meshlet.lod_center_error_current.w;
             float error_p = pk_Instancing_UniformScale * meshlet.lod_center_error_parent.w;
-            error_c *= inversesqrt(max(1e-6f, dot(center_c, center_c) - pow2(error_c)));
-            error_p *= inversesqrt(max(1e-6f, dot(center_p, center_p) - pow2(error_p)));
+            error_c *= rsqrt(max(1e-6f, dot(center_c, center_c) - pow2(error_c)));
+            error_p *= rsqrt(max(1e-6f, dot(center_p, center_p) - pow2(error_p)));
             return error_p > threshold && error_c <= threshold;
         #endif 
     }
@@ -450,14 +450,14 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         uint meshlet_count;
         
         [[branch]]
-        if (subgroupElect())
+        if (WaveIsFirstLane())
         {
             const uint task_index = pk_Meshlet_DispatchOffset + gl_WorkGroupID.x;
             const PKTasklet tasklet = Meshlet_Load_Tasklet(task_index);
             PK_INSTANCING_ASSIGN_LOCALS(tasklet.instance_id);
             const PKSubmesh submesh = Meshlet_Load_Submesh(pk_Instancing_Submesh);
-            payload.packed0.xyz = floatBitsToUint(submesh.bbmin);
-            payload.packed1.xyz = floatBitsToUint(submesh.bbmax);
+            payload.packed0.xyz = asuint(submesh.bbmin);
+            payload.packed1.xyz = asuint(submesh.bbmax);
             payload.packed0.w = tasklet.meshlet_first;
             payload.packed1.w = tasklet.instance_id;
             meshlet_count = tasklet.meshlet_count;
@@ -469,7 +469,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         PK_INSTANCING_BROADCAST_LOCALS_MANUAL();
 
         const uint meshlet_first = payload.packed0.w;
-        meshlet_count = subgroupBroadcastFirst(meshlet_count);
+        meshlet_count = WaveReadFirstLane(meshlet_count);
     
         const uint meshlet_index_local = gl_LocalInvocationID.x;
         const uint meshlet_index = meshlet_first + meshlet_index_local;
@@ -480,8 +480,8 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         is_visible = is_visible && Meshlet_Cull_Lod(meshlet);
         is_visible = is_visible && PK_MESHLET_FUNC_CULL(meshlet);
 
-        const uint4 visible_mask = subgroupBallot(is_visible);
-        const uint visible_count = subgroupBallotBitCount(visible_mask);
+        const uint4 visible_mask = WaveActiveBallot(is_visible);
+        const uint visible_count = countbits(visible_mask.x);
     
         payload.visible_mask = visible_mask;
 
@@ -509,7 +509,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
 
         uint delta_index = subgroupBallotExclusiveBitCount(payload.visible_mask);
         delta_index = lerp(0u, gl_LocalInvocationID.x, delta_index == gl_WorkGroupID.x);
-        delta_index = subgroupMax(delta_index);
+        delta_index = WaveActiveMax(delta_index);
 
         const uint meshlet_index = meshlet_first + delta_index;
         const PKMeshletLite meshlet = Meshlet_Load_MeshletLite(meshlet_index);
@@ -520,8 +520,8 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         const uint vertex_count = meshlet.vertex_count;
         const uint triangle_first = meshlet.triangle_first;
         const uint triangle_count = meshlet.triangle_count;
-        const float3 smb_bmin = uintBitsToFloat(payload.packed0.xyz);
-        const float3 smb_bmax = uintBitsToFloat(payload.packed1.xyz);
+        const float3 smb_bmin = asfloat(payload.packed0.xyz);
+        const float3 smb_bmax = asfloat(payload.packed1.xyz);
 
         SetMeshOutputsEXT(vertex_count, triangle_count);
 

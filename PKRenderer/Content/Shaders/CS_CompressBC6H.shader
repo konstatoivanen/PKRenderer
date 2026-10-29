@@ -4,7 +4,7 @@
 #include "includes/Utilities.glsl"
 
 uniform sampler2D pk_Texture;
-uniform uimage2D pk_Image;
+uniform RWTexture2D<uint4> pk_Image;
 
 // Whether to use P2 modes (4 endpoints) for compression. Slow, but improves quality.
 #define ENCODE_P2 (QUALITY == 1)
@@ -21,7 +21,7 @@ uniform uimage2D pk_Image;
 
 uint f32tof16(float val)
 {
-    uint f32 = floatBitsToUint(val);
+    uint f32 = asuint(val);
     uint f16 = 0u;
     uint sign = (f32 >> 16) & 0x8000u;
     int exponent = int((f32 >> 23) & 0xFFu) - 127;
@@ -70,7 +70,7 @@ float f16tof32(uint val)
     }
     else if (exponent == 31)
     {
-        return uintBitsToFloat(sign | 0x7F800000u | mantissa);
+        return asfloat(sign | 0x7F800000u | mantissa);
     }
     else
     {
@@ -777,7 +777,7 @@ void EncodeP2Pattern(inout uint4 block, inout float blockMSLE, int pattern, floa
     }
 }
 
-[pk_numthreads(8u, 8u, 1u)]
+[numthreads(8u, 8u, 1u)]
 void CompressBC6HCs()
 {
     uint2 blockCoord = gl_GlobalInvocationID.xy;

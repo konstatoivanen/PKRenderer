@@ -13,10 +13,9 @@
 #define PK_GI_STORE_LVL 0
 #endif
 
-uniform uimage2DArray pk_GI_PackedDiff;
-uniform uimage2DArray pk_GI_PackedSpec;
-uniform uimage2D pk_GI_ResolvedWrite;
-uniform image2D pk_GI_ResolvedAOWrite;
+uniform RWTexture2DArray<uint4> pk_GI_PackedDiff;
+uniform RWTexture2DArray<uint2> pk_GI_PackedSpec;
+uniform RWTexture2D<uint4> pk_GI_ResolvedWrite;
 uniform utexture2D pk_GI_ResolvedRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
@@ -105,11 +104,11 @@ float3 GI_Evaluate_Peak_Direction(const GIResolved r) { return SH_ToPeakDirectio
 // @TODO this is not the best placement for this but its common across usages.
 #define GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(condition, current, history, alpha, scale, out_luma_max)  \
 {                                                                                                 \
-    const uint4 thread_mask = subgroupBallot(condition);                                          \
-    const uint thread_count = max(1u, subgroupBallotBitCount(thread_mask)) - 1u;                  \
+    const uint thread_mask = WaveActiveBallot(condition).x;                                       \
+    const uint thread_count = max(1u, countbits(thread_mask)) - 1u;                               \
     const float luminance = GI_Luminance(current);                                                \
     const float2 moments = float2(luminance, luminance * luminance);                              \
-    const float2 moments_wave = (subgroupAdd(moments) - moments) / thread_count;                  \
+    const float2 moments_wave = (WaveActiveSum(moments) - moments) / thread_count;                \
     const float variance = pow(abs(moments_wave.y - pow2(moments_wave.x)), 0.25f);                \
     out_luma_max = lerp(GI_Luminance(history), moments_wave.x, alpha) + variance * scale;         \
 }                                                                                                 \

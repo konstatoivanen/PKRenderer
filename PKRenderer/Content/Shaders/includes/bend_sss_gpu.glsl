@@ -255,7 +255,7 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
         const float edge_skip = 1e20;	// if edge skipping is enabled, apply an extreme value/blend on edge samples to push the value out of range
 
         float2 depths;
-        float bilinear = fract(minor_axis) - 0.5;
+        float bilinear = frac(minor_axis) - 0.5;
 
     #if USE_HALF_PIXEL_OFFSET
         read_xy += 0.5;
@@ -338,12 +338,12 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
             // Doing this can make the worst case (all pixels drawn) a bit more expensive (~15%), but the best-case (all early-out) is typically 2-3x better.
             LdsEarlyOut = true;
 
-            barrier();
+            GroupMemoryBarrierWithGroupSync();
 
             [[branch]] if (early_out == false)
                 LdsEarlyOut = false;
 
-            barrier();
+            GroupMemoryBarrierWithGroupSync();
 
             [[branch]] if (LdsEarlyOut)
                 return;
@@ -369,7 +369,7 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
     }
 
     // Sync wavefronts now groupshared DepthData is written
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     // If the starting depth isn't in depth bounds, then we don't need a shadow
     if (skip_pixel)
@@ -452,7 +452,7 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
         if (inParameters.DebugOutputThreadIndex)
             result = (inGroupThreadID / float(WAVE_SIZE));
         if (inParameters.DebugOutputWaveIndex)			
-            result = fract(inGroupID.x / float(WAVE_SIZE));
+            result = frac(inGroupID.x / float(WAVE_SIZE));
         
         // Asking the GPU to write scattered single-byte pixels isn't great,
         // But thankfully the latency is hidden by all the work we're doing...

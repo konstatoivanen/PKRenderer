@@ -29,10 +29,10 @@ half cmax(half4 x) { return max(max(max(x.x, x.y), x.z), x.w); }
 uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.zw)); }
 float4 unpackHalf4x16(uint2 v) { return float4(unpackHalf2x16(v.x), unpackHalf2x16(v.y)); }
 
-float AsUnorm(uint x) { return uintBitsToFloat(x & 0x007fffffu | 0x3f800000u) - 1.0f; }
+float AsUnorm(uint x) { return asfloat(x & 0x007fffffu | 0x3f800000u) - 1.0f; }
 uint Checkerboard(uint2 coord, uint offset) { return ((coord.x ^ coord.y) ^ offset) & 0x1u; }
 
-float SafePositiveRcp(float f) { return mix(1.0f / f, 0.0f, f <= 1e-12f); }
+float SafePositiveRcp(float f) { return lerp(1.0f / f, 0.0f, f <= 1e-12f); }
 float3 SafeNormalize(float3 v) { return v * SafePositiveRcp(length(v)); }
 float4 NormalizeLength(float3 v) { float l = length(v); return float4(v.xyz * SafePositiveRcp(l), l); }
 
@@ -57,7 +57,7 @@ void CreateTBN(const float3 n, out float3 b1, out float3 b2)
 float2x3 CreateTB(const float3 n, float scale) { float3 t, b; CreateTBN(n, t, b); return float2x3(t * scale, b * scale); }
 float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float3x3(t, b, n); }
 
-#define lerp_sat(a,b,c) mix(a,b,clamp(c,0,1))
+#define lerp_sat(a,b,c) lerp(a,b,clamp(c,0,1))
 #define lerp_outquad(a,b,c) (-((b) - (a)) * (c) * ((c) - 2) + (a))
 #define lerp_inquad(a,b,c) (((b) - (a)) * (c) * (c) + (a))
 #define unlerp(a,b,value) (((value) - (a)) / ((b) - (a)))

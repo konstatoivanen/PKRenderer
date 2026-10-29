@@ -1,8 +1,8 @@
 #pragma once
 #include "SceneGI.glsl"
 
-uniform uimage3D pk_GI_VX_Mask;
-uniform image3D pk_GI_VX_RadianceWrite;
+uniform RWTexture3D<uint> pk_GI_VX_Mask;
+uniform RWTexture3D<float4> pk_GI_VX_RadianceWrite;
 uniform texture3D pk_GI_VX_RadianceRead;
 
 #define PK_GI_VX_MIP_COUNT 7

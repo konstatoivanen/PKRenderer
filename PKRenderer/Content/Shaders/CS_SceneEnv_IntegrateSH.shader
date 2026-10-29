@@ -15,7 +15,7 @@ shared float4 lds_SH_B[GROUP_SIZE * GROUP_SIZE];
 
 uniform float pk_SceneEnv_Exposure;
 
-[pk_numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
 void IntegrateCs()
 {
     const uint2 coord = gl_LocalInvocationID.xy * uint2(4u);
@@ -42,7 +42,7 @@ void IntegrateCs()
     lds_SH_G[thread] = local_SH_G;
     lds_SH_B[thread] = local_SH_B;
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     if ((thread & 0x9u) == 0u)
     {
@@ -63,7 +63,7 @@ void IntegrateCs()
         lds_SH_B[thread] = local_SH_B;
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     if ((thread & 0x1Bu) == 0u)
     {
@@ -84,7 +84,7 @@ void IntegrateCs()
         lds_SH_B[thread] = local_SH_B;
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     if (thread == 0u)
     {

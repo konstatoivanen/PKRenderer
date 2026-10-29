@@ -9,10 +9,10 @@
 #include "includes/LightSampling.glsl"
 #include "includes/Kernels.glsl"
 
-uniform image2D pk_Image;
+uniform RWTexture2D<float> pk_Image;
 uniform sampler2D pk_Texture;
 
-[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void ShadowmapCs()
 {
     // This is only run on the first light.
@@ -93,11 +93,11 @@ void ShadowmapCs()
     half shadow = 0.0hf;
 
     [[branch]]
-    if (subgroupAll(validSamples == 0u))
+    if (WaveActiveAllTrue(validSamples == 0u))
     {
         shadow = 1.0hf;
     }
-    else [[branch]] if (subgroupAll(validSamples == 16u))
+    else [[branch]] if (WaveActiveAllTrue(validSamples == 16u))
     {
         shadow = 0.0hf;
     }
@@ -123,7 +123,7 @@ void ShadowmapCs()
 [pk_local(ShadowmapUpsampleCs)] shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
 [pk_local(ShadowmapUpsampleCs)] shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
 
-[pk_numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
 void ShadowmapUpsampleCs()
 {
     const int thread = int(gl_LocalInvocationIndex);
@@ -165,13 +165,13 @@ void ShadowmapUpsampleCs()
         s_indices += s_coord.xxxx;
         s_indices += byte4(0, 1, 0, 1);
 
-        half2 f = fract(s_uv);
+        half2 f = frac(s_uv);
         half4 fw = half4(f.xy, 1.0hf - f.xy);
         weights[i] = fw.zxzx * fw.wwyy;
         indices[i] = s_indices;
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     const float depth = SampleViewDepth(int2(gl_GlobalInvocationID.xy));
     const float k_depth = 20.0f / sqrt(depth);
@@ -217,7 +217,7 @@ void ShadowmapUpsampleCs()
 [pk_local(ScreenSpaceShadowsCs)] uniform float4 pk_LightCoordinate;
 [pk_local(ScreenSpaceShadowsCs)] uniform int2 pk_WaveOffset;
 
-[pk_numthreads(WAVE_SIZE, 1u, 1u)]
+[numthreads(WAVE_SIZE, 1u, 1u)]
 void ScreenSpaceShadowsCs()
 {
     DispatchParameters dispatch_params;

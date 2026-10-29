@@ -5,9 +5,9 @@
 #include "includes/Encoding.glsl"
 
 uniform samplerCubeArray pk_Texture;
-uniform image2DArray pk_Image;
+uniform RWTexture2DArray<float> pk_Image;
 
-[pk_numthreads(8u, 8u, 1u)]
+[numthreads(8u, 8u, 1u)]
 void CopyCubeShadowCs()
 {
     const int2 size = imageSize(pk_Image).xy;

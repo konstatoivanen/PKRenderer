@@ -3,8 +3,8 @@
 #include "Encoding.glsl"
 #include "MortonOrder.glsl"
 
-uniform uimage2DArray pk_Reservoirs0;
-uniform uimage2DArray pk_Reservoirs1;
+uniform RWTexture2DArray<uint4> pk_Reservoirs0;
+uniform RWTexture2DArray<uint2> pk_Reservoirs1;
 
 struct Reservoir 
 { 
@@ -175,13 +175,13 @@ void ReSTIR_Store_Current(const int2 coord, const Reservoir r)
     uint4 packed0;
     const float3 view_pos = WorldToViewPos(r.position);
     packed0.x = packHalf2x16(view_pos.xy);
-    packed0.y = floatBitsToUint(view_pos.z);
+    packed0.y = asuint(view_pos.z);
     packed0.z = EncodeOctaUv2x16(r.normal);
     packed0.w = EncodeE5BGR9(r.radiance);
     imageStore(pk_Reservoirs0, int3(coord, RESTIR_LAYER_CUR), packed0);
 
     uint2 packed1;
-    packed1.x = floatBitsToUint(r.weight_sum);
+    packed1.x = asuint(r.weight_sum);
     packed1.y = packHalf2x16(r.target_pdf.xx) & 0xFFFFu;
     packed1.y |= r.M << 16u; 
     imageStore(pk_Reservoirs1, int3(coord, RESTIR_LAYER_CUR), packed1.xyxy);
@@ -192,13 +192,13 @@ Reservoir ReSTIR_Load_Previous(const int2 coord)
     Reservoir r;
 
     const uint4 packed0 = imageLoad(pk_Reservoirs0, int3(coord, RESTIR_LAYER_PRE));
-    const float3 view_pos = float3(unpackHalf2x16(packed0.x), uintBitsToFloat(packed0.y));
+    const float3 view_pos = float3(unpackHalf2x16(packed0.x), asfloat(packed0.y));
     r.position = ViewToWorldPosPrev(view_pos);
     r.normal = DecodeOctaUv2x16(packed0.z);
     r.radiance = DecodeE5BGR9(packed0.w);
 
     const uint2 packed1 = imageLoad(pk_Reservoirs1, int3(coord, RESTIR_LAYER_PRE)).xy;
-    r.weight_sum = uintBitsToFloat(packed1.x);
+    r.weight_sum = asfloat(packed1.x);
     r.target_pdf = unpackHalf2x16(packed1.y).x;
     r.M = packed1.y >> 16u;
     return r;

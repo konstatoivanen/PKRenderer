@@ -40,7 +40,7 @@ float3 GetDirectionHemisphere(float2 xi)
     return float3(x, y, z);
 }
 
-[pk_numthreads(8u, 8u, 1u)]
+[numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -80,10 +80,10 @@ void IntegrateCs()
         const uint swap_id_v = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
         const uint swap_id_h = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
         
-        const float3 scatter_v = subgroupShuffle(local_scatter, swap_id_v);
+        const float3 scatter_v = WaveReadLaneAt(local_scatter, swap_id_v);
         local_scatter += scatter_v;
 
-        const float3 scatter_h = subgroupShuffle(local_scatter, swap_id_h);
+        const float3 scatter_h = WaveReadLaneAt(local_scatter, swap_id_h);
         local_scatter += scatter_h;
 
         local_scatter /= 4;
@@ -105,10 +105,10 @@ void IntegrateCs()
         const uint swap_id_v = wave_coord_swap.y * 8 + wave_coord.x;
         const uint swap_id_h = wave_coord.y * 8 + wave_coord_swap.x;
 
-        const float3 scatter_v = subgroupShuffle(local_scatter, swap_id_v);
+        const float3 scatter_v = WaveReadLaneAt(local_scatter, swap_id_v);
         local_scatter += scatter_v;
 
-        const float3 scatter_h = subgroupShuffle(local_scatter, swap_id_h);
+        const float3 scatter_h = WaveReadLaneAt(local_scatter, swap_id_h);
         local_scatter += scatter_h;
         
         local_scatter /= 4;
@@ -123,7 +123,7 @@ void IntegrateCs()
 
     // Combine subgroups
     {
-        local_scatter = subgroupAdd(local_scatter);
+        local_scatter = WaveActiveSum(local_scatter);
         local_scatter /= gl_SubgroupSize;
 
         if (gl_SubgroupInvocationID == 0 && gl_SubgroupID == 1)
@@ -132,7 +132,7 @@ void IntegrateCs()
         }
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     // Mip 4
     if (thread == 0u)

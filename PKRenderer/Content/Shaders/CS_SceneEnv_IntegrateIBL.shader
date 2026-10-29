@@ -20,7 +20,7 @@ uniform float4 pk_SceneEnv_Origin;
 shared float3 lds_irrad;
 shared float3 lds_trans;
 
-[pk_numthreads(8u, 8u, 1u)]
+[numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -63,13 +63,13 @@ void IntegrateCs()
         const uint swap_id_v = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
         const uint swap_id_h = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
         
-        const float3 irrad_v = subgroupShuffle(local_irrad, swap_id_v);
-        const float3 trans_v = subgroupShuffle(local_trans, swap_id_v);
+        const float3 irrad_v = WaveReadLaneAt(local_irrad, swap_id_v);
+        const float3 trans_v = WaveReadLaneAt(local_trans, swap_id_v);
         local_irrad += irrad_v;
         local_trans += trans_v;
 
-        const float3 irrad_h = subgroupShuffle(local_irrad, swap_id_h);
-        const float3 trans_h = subgroupShuffle(local_trans, swap_id_h);
+        const float3 irrad_h = WaveReadLaneAt(local_irrad, swap_id_h);
+        const float3 trans_h = WaveReadLaneAt(local_trans, swap_id_h);
         local_irrad += irrad_h;
         local_trans += trans_h;
 
@@ -96,13 +96,13 @@ void IntegrateCs()
         const uint swap_id_v = wave_coord_swap.y * 8 + wave_coord.x;
         const uint swap_id_h = wave_coord.y * 8 + wave_coord_swap.x;
 
-        const float3 irrad_v = subgroupShuffle(local_irrad, swap_id_v);
-        const float3 trans_v = subgroupShuffle(local_trans, swap_id_v);
+        const float3 irrad_v = WaveReadLaneAt(local_irrad, swap_id_v);
+        const float3 trans_v = WaveReadLaneAt(local_trans, swap_id_v);
         local_irrad += irrad_v;
         local_trans += trans_v;
 
-        const float3 irrad_h = subgroupShuffle(local_irrad, swap_id_h);
-        const float3 trans_h = subgroupShuffle(local_trans, swap_id_h);
+        const float3 irrad_h = WaveReadLaneAt(local_irrad, swap_id_h);
+        const float3 trans_h = WaveReadLaneAt(local_trans, swap_id_h);
         local_irrad += irrad_h;
         local_trans += trans_h;
         
@@ -122,8 +122,8 @@ void IntegrateCs()
 
     // Combine subgroups
     {
-        local_irrad = subgroupAdd(local_irrad);
-        local_trans = subgroupAdd(local_trans);
+        local_irrad = WaveActiveSum(local_irrad);
+        local_trans = WaveActiveSum(local_trans);
         local_irrad /= gl_SubgroupSize;
         local_trans /= gl_SubgroupSize;
 
@@ -134,7 +134,7 @@ void IntegrateCs()
         }
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     // Mip 4
     if (thread == 0u)

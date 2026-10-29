@@ -27,9 +27,9 @@ float4 EncodeGBufferViewNR(const float3 normal, const float roughness, const flo
     #if defined(SHADER_STAGE_FRAGMENT) && GBUFFER_NORMALS_10BIT == 1
         // Low precision normals cause visible snapping. 
         // Dither them by generating some deterministic triangle noise.
-        const float n = fract(52.9829189f * fract(0.06711056f * gl_FragCoord.x + 0.00583715f * gl_FragCoord.y));
+        const float n = frac(52.9829189f * frac(0.06711056f * gl_FragCoord.x + 0.00583715f * gl_FragCoord.y));
         const float d = n * 2.0f - 1.0f;
-        const float t = max(-1.0f, d * inversesqrt(abs(d))) - sign(d) + 0.5f;
+        const float t = max(-1.0f, d * rsqrt(abs(d))) - sign(d) + 0.5f;
         xy = saturate(xy + t * 9.775171065493646e-4f); // t / 1023.0f
     #endif
 

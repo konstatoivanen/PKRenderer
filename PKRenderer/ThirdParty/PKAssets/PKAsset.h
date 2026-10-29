@@ -401,8 +401,6 @@ namespace PKAssets
         UnderEstimate,
     };
 
-    constexpr const static char* PK_SHADER_ENTRY_POINT_NAME = "main";
-
     constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#pragma pk_log_verbose";
     constexpr const static char* PK_SHADER_ATTRIB_GENERATEDEBUGINFO = "#pragma pk_generate_debug_info";
     constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#pragma pk_zwrite ";
@@ -420,7 +418,7 @@ namespace PKAssets
     constexpr const static char* PK_SHADER_ATTRIB_PROGRAM = "#pragma pk_program ";
     constexpr const static char* PK_SHADER_ATTRIB_LOCAL_OPEN = "[pk_local(";
     constexpr const static char* PK_SHADER_ATTRIB_LOCAL_CLOSE = ")]";
-    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_OPEN = "[pk_numthreads(";
+    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_OPEN = "[numthreads(";
     constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_CLOSE = ")]";
     constexpr const static char* PK_SHADER_ATTRIB_ALIAS = "_pkalias";
 

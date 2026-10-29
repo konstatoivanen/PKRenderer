@@ -13,7 +13,7 @@
 #define PK_GUI_SHADING_MODE_FONT 1
 #define PK_FONT_MSDF_UNIT 4.0f // keep upto date with definition in PKAsset.h
 
-uniform Buffer<uint4> pk_GUI_Vertices;
+uniform StructuredBuffer<uint4> pk_GUI_Vertices;
 uniform Texture2D pk_GUI_Textures[];
 uniform float4 pk_GUI_ScreenTransform;
 

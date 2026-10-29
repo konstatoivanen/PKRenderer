@@ -228,7 +228,7 @@ struct SurfaceData
         const float3 dp1perp = cross(normal, dp1);
         const float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
         const float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-        const float invmax = inversesqrt(max(dot(T,T), dot(B,B)));
+        const float invmax = rsqrt(max(dot(T,T), dot(B,B)));
         return float3x3(-T * invmax, -B * invmax, normal);
     }
     

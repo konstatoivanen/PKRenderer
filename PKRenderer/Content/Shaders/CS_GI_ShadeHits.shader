@@ -30,7 +30,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
     return voxel.rgb / max(voxel.a, 1e-2f);
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
 void ShadeHitsCs()
 {
     const int2 coord_ray = int2(gl_GlobalInvocationID.xy);

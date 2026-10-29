@@ -6,7 +6,7 @@
 // Backbuffer is 64px aligned. check alignment for mips 6-12
 uniform writeonly restrict image2DArray pk_ImageArray[13];
 uniform coherent image2DArray pk_Image6; // Load store for last mips.
-uniform RWBuffer<uint, 1u> pk_HZB_WorkgroupCounter;
+uniform RWStructuredBuffer<uint> pk_HZB_WorkgroupCounter;
 uniform uint4 pk_HZB_Parameters;
 
 #define SpdFormat float2
@@ -32,8 +32,8 @@ float2 SpdReduce2(float2 v0, float2 v1)
 
 float2 SpdLoadIntermediate(uint x, uint y) { return float2(lds_Depth_Min[x][y], lds_Depth_Max[x][y]);  }
 void SpdStoreIntermediate(uint x, uint y, float2 value) { lds_Depth_Min[x][y] = value.x; lds_Depth_Max[x][y] = value.y; }
-void SpdIncreaseAtomicCounter() { atomicAdd(pk_HZB_WorkgroupCounter, 1u); }
-uint SpdGetAtomicCounter() {  return pk_HZB_WorkgroupCounter; }
+void SpdIncreaseAtomicCounter() { atomicAdd(pk_HZB_WorkgroupCounter[0], 1u); }
+uint SpdGetAtomicCounter() {  return pk_HZB_WorkgroupCounter[0]; }
 
 float2 SpdReduceLoadSourceImage4(int2 base)
 {
@@ -60,7 +60,7 @@ void SpdStoreMip(int mip, int2 coord, float2 v) { imageStore(pk_ImageArray[mip],
 
 #include "includes/ffx_spd.glsl"
 
-[pk_numthreads(256, 1u, 1u)]
+[numthreads(256, 1u, 1u)]
 void HierarchicalDepthCs()
 {
     SpdDownsample(gl_WorkGroupID.xy, gl_LocalInvocationIndex, pk_HZB_Parameters.x, pk_HZB_Parameters.y, pk_HZB_Parameters.zw);

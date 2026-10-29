@@ -15,7 +15,7 @@ PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
 
 void MainVs()
 {
-    gl_Position = pk_WorldToClip_NoJitter * float4(uintBitsToFloat(in_POSITION.xyz), 1.0f);
+    gl_Position = pk_WorldToClip_NoJitter * float4(asfloat(in_POSITION.xyz), 1.0f);
     vs_COLOR = unpackUnorm4x8(in_POSITION.w);
 };
 

@@ -5,12 +5,12 @@
 
 #define GIZMOS_MAX_VERTICES 16384u
 
-uniform RWBuffer<uint4> pk_Gizmos_IndirectVertices;
-uniform RWBuffer<uint4, 1u> pk_Gizmos_IndirectArguments;
+uniform RWStructuredBuffer<uint4> pk_Gizmos_IndirectVertices;
+uniform RWStructuredBuffer<uint4> pk_Gizmos_IndirectArguments;
 
 void Gizmos_DrawPacked(uint4 v0, uint4 v1)
 {
-    uint vertexIndex = atomicAdd(pk_Gizmos_IndirectArguments.x, 2u);
+    uint vertexIndex = atomicAdd(pk_Gizmos_IndirectArguments[0].x, 2u);
     vertexIndex %= GIZMOS_MAX_VERTICES;
     pk_Gizmos_IndirectVertices[vertexIndex + 0u] = v0;
     pk_Gizmos_IndirectVertices[vertexIndex + 1u] = v1;
@@ -18,7 +18,7 @@ void Gizmos_DrawPacked(uint4 v0, uint4 v1)
 
 void Gizmos_DrawWorldLine(float3 start, float3 end, float4 color)
 {
-    Gizmos_DrawPacked(uint4(floatBitsToUint(start), packUnorm4x8(color)), uint4(floatBitsToUint(end), packUnorm4x8(color)));
+    Gizmos_DrawPacked(uint4(asuint(start), packUnorm4x8(color)), uint4(asuint(end), packUnorm4x8(color)));
 }
 
 void Gizmos_DrawWorldRay(float3 origin, float3 vector, float4 color)

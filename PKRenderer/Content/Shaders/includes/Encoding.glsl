@@ -51,7 +51,7 @@ float3 RgbToHsv(float3 c)
 float3 HsvToRgb(float3 c)
 {
     const float4 k = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    const float3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);
+    const float3 p = abs(frac(c.xxx + k.xyz) * 6.0 - k.www);
     return c.zzz * lerp(k.xxx, saturate(p - k.xxx), c.y);
 }
 

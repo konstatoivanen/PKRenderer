@@ -13,7 +13,7 @@ uniform writeonly restrict image3D pk_Image2;
 
 [pk_local(VolumeMipmapCs)] shared float4 lds_Data[64u];
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void VolumeMipmapCs()
 {
     const uint thread = gl_LocalInvocationIndex;
@@ -25,7 +25,7 @@ void VolumeMipmapCs()
     float4 local = lds_Data[thread] = textureLod(pk_Texture, uvw, level);
     imageStore(pk_Image, int3(gl_GlobalInvocationID), local);
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     // Cant use binary mask due to 3d coordinates
     if (All_Equal(gl_LocalInvocationID % 2, uint3(0u)))
@@ -43,7 +43,7 @@ void VolumeMipmapCs()
         imageStore(pk_Image1, int3(gl_GlobalInvocationID) >> 1, local);
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     if (thread == 0u)
     {
@@ -59,7 +59,7 @@ void VolumeMipmapCs()
     }
 }
 
-[pk_numthreads(4u, 4u, 4u)]
+[numthreads(4u, 4u, 4u)]
 void VolumeClearCs()
 {
     const float3 world_position = GI_VX_CoordToWorld(int3(gl_GlobalInvocationID));

@@ -11,7 +11,7 @@
 #include "includes/Encoding.glsl"
 
 uniform uint pk_LastLightIndex;
-uniform RWBuffer<uint, 1u> pk_LightCounter;
+uniform RWStructuredBuffer<uint> pk_LightCounter;
 
 struct SharedLight
 {
@@ -69,7 +69,7 @@ bool IntersectionTest(uint lightIndex)
     return false;
 }
 
-[pk_numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, GROUP_SIZE_Z)]
+[numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, GROUP_SIZE_Z)]
 void LightAssignmentCs()
 {
     const uint3 coord = gl_GlobalInvocationID;
@@ -111,7 +111,7 @@ void LightAssignmentCs()
         light.type = scene_light.light_type;
         lds_Lights[thread] = light;
 
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
 
         for (uint index = 0; index < THREAD_COUNT; ++index)
         {
@@ -124,7 +124,7 @@ void LightAssignmentCs()
             }
         }
 
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
     }
 
     uint offset = 0u;
@@ -132,7 +132,7 @@ void LightAssignmentCs()
     [[branch]]
     if (All_Less(coord.xy, LIGHT_TILE_COUNT_XY))
     {
-        offset = atomicAdd(pk_LightCounter, visible_count);
+        offset = atomicAdd(pk_LightCounter[0], visible_count);
 
         for (uint i = 0; i < visible_count; ++i)
         {

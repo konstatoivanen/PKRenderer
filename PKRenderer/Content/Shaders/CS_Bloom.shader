@@ -13,7 +13,7 @@
 
 uniform float pk_Bloom_UpsampleWeight;
 uniform sampler2D pk_Texture;
-uniform uimage2D pk_Image;
+uniform RWTexture2D<uint> pk_Image;
 
 float GetLumaWeight(float3 s)
 {
@@ -26,7 +26,7 @@ float GetLumaWeight(float3 s)
 #endif
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void Downsample0Cs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -38,7 +38,7 @@ void Downsample0Cs()
     // 3x3 gaussian filter with 4 linear samples
     const float2 scoord = (uv / tx_src) + 0.5f.xx;
     const float2 base = (floor(scoord) - 0.5f.xx) * tx_src;
-    const float2 st = fract(scoord);
+    const float2 st = frac(scoord);
     const float4 uwvw = float4(3.0f - 2.0f * st, 1.0f + 2.0f * st);
     const float4 uvs = base.xyxy + float4((2.0f - st) / uwvw.xy - 1.0f, st / uwvw.zw + 1.0f) * tx_src.xyxy;
 
@@ -58,7 +58,7 @@ void Downsample0Cs()
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color.rgb)));
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void Downsample1Cs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -92,7 +92,7 @@ void Downsample1Cs()
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void UpsampleCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

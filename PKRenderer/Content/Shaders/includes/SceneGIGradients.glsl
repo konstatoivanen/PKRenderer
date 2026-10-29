@@ -3,8 +3,8 @@
 #include "SceneGI.glsl"
 
 // Cant combine due to different res (well, can but shouldn't)
-uniform image2D pk_GradientInputs;
-uniform uimage2DArray pk_Gradients;
+uniform RWTexture2D<float2> pk_GradientInputs;
+uniform RWTexture2DArray<uint> pk_Gradients;
 
 #define GRADIENT_STRATA_SIZE 3
 

@@ -17,15 +17,15 @@ uniform sampler2D pk_Texture;
 // Source: http://www.alextardif.com/HistogramLuminance.html
 shared uint lds_Histogram[NUM_HISTOGRAM_BINS];
 
-void SetAutoExposure(float exposure) { pk_AutoExposure_Histogram[256] = floatBitsToUint(exposure); }
-void SetLogLuminanceMin(float value) { pk_AutoExposure_Histogram[257] = floatBitsToUint(value); }
-float GetLogLuminanceMin() { return ReplaceIfResized(uintBitsToFloat(pk_AutoExposure_Histogram[257]), DEFAULT_LOG_LUMINANCE_MIN); }
+void SetAutoExposure(float exposure) { pk_AutoExposure_Histogram[256] = asuint(exposure); }
+void SetLogLuminanceMin(float value) { pk_AutoExposure_Histogram[257] = asuint(value); }
+float GetLogLuminanceMin() { return ReplaceIfResized(asfloat(pk_AutoExposure_Histogram[257]), DEFAULT_LOG_LUMINANCE_MIN); }
 
-[pk_numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
+[numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
 void HistogramCs()
 {
     lds_Histogram[gl_LocalInvocationIndex] = 0;
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     const float2 resolution = textureSize(pk_Texture, 0).xy >> 1;
     const float2 uv = (gl_GlobalInvocationID.xy + 0.5f) / resolution;
@@ -42,11 +42,11 @@ void HistogramCs()
 
     atomicAdd(lds_Histogram[bin_index], 1);
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
     atomicAdd(pk_AutoExposure_Histogram[gl_LocalInvocationIndex], lds_Histogram[gl_LocalInvocationIndex]);
 }
 
-[pk_numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
+[numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
 void AverageCs()
 {
     const uint thread = gl_LocalInvocationIndex;
@@ -55,7 +55,7 @@ void AverageCs()
     lds_Histogram[thread] = local_bin_val * thread;
     pk_AutoExposure_Histogram[thread] = 0;
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     for (uint bin_index = (NUM_HISTOGRAM_BINS >> 1); bin_index > 0; bin_index >>= 1)
     {
@@ -64,7 +64,7 @@ void AverageCs()
             lds_Histogram[thread] += lds_Histogram[thread + bin_index];
         }
 
-        barrier();
+        GroupMemoryBarrierWithGroupSync();
     }
 
     if (thread == 0)

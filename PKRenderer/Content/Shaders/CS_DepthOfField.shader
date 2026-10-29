@@ -12,14 +12,14 @@
 uniform sampler2D pk_Texture;
 
 // Screen color full res. same as above but as image output.
-uniform image2D pk_Image;
+uniform RWTexture2D<float4> pk_Image;
 
 uniform sampler2DArray pk_DoF_ColorRead;
 uniform sampler2DArray pk_DoF_AlphaRead;
-uniform uimage2DArray pk_DoF_ColorWrite;
-uniform image2DArray pk_DoF_AlphaWrite;
+uniform RWTexture2DArray<uint> pk_DoF_ColorWrite;
+uniform RWTexture2DArray<float> pk_DoF_AlphaWrite;
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
 void PrefilterCs()
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
@@ -41,7 +41,7 @@ void PrefilterCs()
     imageStore(pk_DoF_AlphaWrite, int3(coord, 0), dot(cocs, 0.25f.xxxx).xxxx);
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
 void DiskBlurCs()
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
@@ -92,7 +92,7 @@ void DiskBlurCs()
     imageStore(pk_DoF_AlphaWrite, int3(coord, 1), foreground.aaaa);
 }
 
-[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
 void UpsampleCs()
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
@@ -115,8 +115,8 @@ void UpsampleCs()
 
     const half alpha = (1.0hf - foreground.a) * (1.0hf - background.a);
 
-    const uint4 thread_mask = subgroupBallot(alpha < 0.85f);
-    const uint thread_count = subgroupBallotBitCount(thread_mask);
+    const uint thread_mask = WaveActiveBallot(alpha < 0.85f).x;
+    const uint thread_count = countbits(thread_mask);
 
     [[branch]]
     if (thread_count > 0u)

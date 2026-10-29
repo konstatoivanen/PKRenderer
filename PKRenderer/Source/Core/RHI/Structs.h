@@ -16,7 +16,6 @@ namespace PK
     constexpr static const uint32_t PK_RHI_MAX_UNBOUNDED_SIZE = PKAssets::PK_ASSET_MAX_UNBOUNDED_SIZE;
     constexpr static const uint32_t PK_RHI_MAX_VIEWPORTS = 16;
 
-    constexpr const static char* PK_RHI_SHADER_ENTRY_POINT_NAME = PKAssets::PK_SHADER_ENTRY_POINT_NAME;
     constexpr const static char* PK_RHI_VS_POSITION = PKAssets::PK_MESH_VS_POSITION;
     constexpr const static char* PK_RHI_VS_NORMAL = PKAssets::PK_MESH_VS_NORMAL;
     constexpr const static char* PK_RHI_VS_TANGENT = PKAssets::PK_MESH_VS_TANGENT;
