@@ -89,6 +89,7 @@ namespace PK
         unifiedLayout.pNext = &deviceAddressCommands;
         deviceAddressCommands.pNext = &raytracingMaintenance1;
         raytracingMaintenance1.pNext = &shaderObject;
+        shaderObject.pNext = &untypedPointers;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -302,6 +303,7 @@ namespace PK
             PK_TEST_FEATURE(raytracingMaintenance1.rayTracingMaintenance1)
             PK_TEST_FEATURE(raytracingMaintenance1.rayTracingPipelineTraceRaysIndirect2)
             PK_TEST_FEATURE(shaderObject.shaderObject)
+            PK_TEST_FEATURE(untypedPointers.shaderUntypedPointers)
         }
 
         #undef PK_TEST_FEATURE
