@@ -79,7 +79,7 @@ void PostEffectsCompositeCs()
     // Dither
     {
         float noise = 0.0f;
-        noise = InterleavedGradientNoise(coord, pk_FrameIndex.x);
+        noise = InterleavedGradientNoise(coord, pk_View.FrameIndex.x);
         noise = noise * 2.0f - 1.0f;
         noise = sign(noise) - sign(noise) * sqrt(saturate(1.0f - abs(noise)));
         noise = noise / 255.0f;

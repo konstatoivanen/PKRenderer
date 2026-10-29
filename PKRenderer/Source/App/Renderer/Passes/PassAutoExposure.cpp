@@ -23,11 +23,11 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto& settings = view->settings.AutoExposureSettings;
-        view->constants.Set<float>(hash->pk_AutoExposure_LogLumaRange, settings.LogLuminanceRange);
-        view->constants.Set<float>(hash->pk_AutoExposure_Min, settings.ExposureMin);
-        view->constants.Set<float>(hash->pk_AutoExposure_Max, settings.ExposureMax);
-        view->constants.Set<float>(hash->pk_AutoExposure_Target, settings.ExposureTarget);
-        view->constants.Set<float>(hash->pk_AutoExposure_Speed, settings.ExposureSpeed);
+        view->constants.Set<float>(hash->AutoExposure_LogLumaRange, settings.LogLuminanceRange);
+        view->constants.Set<float>(hash->AutoExposure_Min, settings.ExposureMin);
+        view->constants.Set<float>(hash->AutoExposure_Max, settings.ExposureMax);
+        view->constants.Set<float>(hash->AutoExposure_Target, settings.ExposureTarget);
+        view->constants.Set<float>(hash->AutoExposure_Speed, settings.ExposureSpeed);
     }
 
     void PassAutoExposure::Render(RenderGraphExt graph, QueueType queue, RenderPipelineContext* context)

@@ -37,7 +37,7 @@ uint SpdGetAtomicCounter() {  return pk_HZB_WorkgroupCounter[0]; }
 
 float2 SpdReduceLoadSourceImage4(int2 base)
 {
-    const float4 depths = GatherViewDepths((base + 1.0f.xx) / pk_ScreenSize.xy);
+    const float4 depths = GatherViewDepths((base + 1.0f.xx) / pk_View.ScreenSize.xy);
 
     // Copy source values to first image
     [[unroll]]

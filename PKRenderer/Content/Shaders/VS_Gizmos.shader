@@ -15,7 +15,7 @@ PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
 
 void MainVs()
 {
-    gl_Position = pk_WorldToClip_NoJitter * float4(asfloat(in_POSITION.xyz), 1.0f);
+    gl_Position = pk_View.WorldToClip_NoJitter * float4(asfloat(in_POSITION.xyz), 1.0f);
     vs_COLOR = unpackUnorm4x8(in_POSITION.w);
 };
 
@@ -24,7 +24,7 @@ void MainVs()
 void MainFs()
 {
     const float view_depth = ViewDepth(gl_FragCoord.z);
-    const float scene_depth = SampleViewDepth(gl_FragCoord.xy * pk_ScreenParams.zw);
+    const float scene_depth = SampleViewDepth(gl_FragCoord.xy * pk_View.ScreenParams.zw);
     const float fade_alpha = 0.3f * exp((-view_depth + scene_depth) * 0.125f);
 
     float4 color = vs_COLOR;

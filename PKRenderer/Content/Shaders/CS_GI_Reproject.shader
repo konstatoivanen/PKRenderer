@@ -26,7 +26,7 @@ void ReprojectCs()
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     const int2 coord_store = int2
     (
-        coord.x / 2 + int(Checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
+        coord.x / 2 + int(Checkerboard(coord, pk_View.FrameIndex.y) * (pk_View.ScreenSize.x / 2)),
         coord.y
     );
 #else
@@ -40,7 +40,7 @@ void ReprojectCs()
 
     // Far clip or new backbuffer
     [[branch]]
-    if (pk_FrameIndex.y != 0u && WaveActiveAnyTrue(is_scene))
+    if (pk_View.FrameIndex.y != 0u && WaveActiveAnyTrue(is_scene))
     {
         GIDiff diff = PK_GI_DIFF_ZERO;
         GISpec spec = PK_GI_SPEC_ZERO;
@@ -61,7 +61,7 @@ void ReprojectCs()
             const float3 view_pos = CoordToViewPos(coord, depth);
             const float3 view_dir = normalize(view_pos);
             const float nv = dot(normal, -view_dir);
-            const float parallax = GI_GetParallax(view_dir, normalize(view_pos - pk_ViewSpaceCameraDelta.xyz));
+            const float parallax = GI_GetParallax(view_dir, normalize(view_pos - pk_View.ViewSpaceCameraDelta.xyz));
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
             discard_spec = roughness >= PK_GI_MAX_ROUGH_SPEC;
@@ -72,7 +72,7 @@ void ReprojectCs()
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
                 const float2 s_fcoord = GI_ViewToPrevScreenUv(view_pos);
                 const int2   s_coord = int2(s_fcoord);
-                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
+                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_View.ScreenParams.zw).wzxy;
 
                 // Drop samples that elongate single pixels (Mitigates strech marks).
                 antilag_diff *= GI_GetAntilag_SubgroupStretch(s_fcoord);
@@ -82,7 +82,7 @@ void ReprojectCs()
                 weights *= SafePositiveRcp(dot(weights, 1.0f.xxxx));
                 weights *= float4(Test_DepthReproject(depth.xxxx, s_depths, depth_bias.xxxx));
                 weights *= float4(Test_DepthIsScene(s_depths));
-                weights *= float(Test_InUv(s_fcoord * pk_ScreenParams.zw));
+                weights *= float(Test_InUv(s_fcoord * pk_View.ScreenParams.zw));
 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)
@@ -121,12 +121,12 @@ void ReprojectCs()
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
                 const float2 s_fcoord = GI_ViewToPrevScreenUv(view_pos + view_dir * s_vdist);
                 const int2   s_coord = int2(s_fcoord);
-                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
+                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_View.ScreenParams.zw).wzxy;
 
                 float4 weights = GI_GetBilinearWeights(s_fcoord - s_coord);
                 weights *= 1.0f.xxxx / (1e-4f + abs(depth.xxxx - s_depths));
                 weights *= float4(Test_DepthIsScene(s_depths));
-                weights *= float(Test_InUv(s_fcoord * pk_ScreenParams.zw));
+                weights *= float(Test_InUv(s_fcoord * pk_View.ScreenParams.zw));
 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)

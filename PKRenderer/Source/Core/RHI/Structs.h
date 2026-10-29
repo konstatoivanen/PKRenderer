@@ -477,7 +477,6 @@ namespace PK
         bool enableDebugLabels;
         bool enableDebugShaderPrint;
         bool enableDebugLogging;
-        bool enablePipelineCache;
     };
 
     struct SwapchainDescriptor

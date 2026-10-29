@@ -17,8 +17,8 @@ struct Reservoir
 };
 
 #define RESTIR_RESERVOIR_ZERO Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u)
-#define RESTIR_LAYER_CUR int(( pk_FrameIndex.y & 0x1u))
-#define RESTIR_LAYER_PRE int((~pk_FrameIndex.y & 0x1u))
+#define RESTIR_LAYER_CUR int(( pk_View.FrameIndex.y & 0x1u))
+#define RESTIR_LAYER_PRE int((~pk_View.FrameIndex.y & 0x1u))
 #define RESITR_NEARFIELD 0.05f
 #define RESTIR_NORMAL_THRESHOLD 0.6f
 #define RESTIR_SAMPLES_TEMPORAL 6
@@ -33,9 +33,9 @@ struct Reservoir
     // @TODO calculate this correctly
     #define RESTIR_TEXEL_BIAS float2(0.2f, 0.07f)
     #define RESTIR_TEMPORAL_RADIUS int2(1, 2)
-    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_ScreenSize.x / 2, pk_ScreenSize.y) - 1)
+    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_View.ScreenSize.x / 2, pk_View.ScreenSize.y) - 1)
 #else
-    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_ScreenSize.xy) - 1)
+    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_View.ScreenSize.xy) - 1)
     #define RESTIR_TEXEL_BIAS 0.0f.xx
     #define RESTIR_TEMPORAL_RADIUS int2(1, 1)
 #endif
@@ -60,11 +60,11 @@ uint ReSTIR_Hash(uint seed)
 // Stride seed by max number of contiguous offsets in restir pass
 // Wellons hash works well for low entropy input. 
 // By striding the seed we get different values for pixels while keeping low entropy input.
-uint ReSTIR_GetSeed(int2 coord_base) { return ZCurveToIndex2D(coord_base) * RESTIR_SEED_STRIDE + pk_FrameRandom.x; }
+uint ReSTIR_GetSeed(int2 coord_base) { return ZCurveToIndex2D(coord_base) * RESTIR_SEED_STRIDE + pk_View.FrameRandom.x; }
 
 int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
 {
-    int2 offset = int2(pk_FrameRandom.y & 3, (pk_FrameRandom.y >> 2) & 3);
+    int2 offset = int2(pk_View.FrameRandom.y & 3, (pk_View.FrameRandom.y >> 2) & 3);
     return lerp(coord, ((coord + offset) ^ 3) - offset, mask.xx);
 }
 

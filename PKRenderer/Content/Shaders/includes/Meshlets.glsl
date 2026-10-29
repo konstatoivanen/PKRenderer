@@ -256,7 +256,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         #if PK_MESHLET_MAX_LOD_ONLY == 1
             return meshlet.lod_center_error_parent.w > MESHLET_MAX_ERROR;
         #else
-            const float threshold = PK_MESHLET_LOD_SCALE * pk_MeshletCullParams.x;
+            const float threshold = PK_MESHLET_LOD_SCALE * pk_View.MeshletCullParams.x;
             const float4 center_c = ObjectToClipPos(meshlet.lod_center_error_current.xyz);
             const float4 center_p = ObjectToClipPos(meshlet.lod_center_error_parent.xyz);
             float error_c = pk_Instancing_UniformScale * meshlet.lod_center_error_current.w;

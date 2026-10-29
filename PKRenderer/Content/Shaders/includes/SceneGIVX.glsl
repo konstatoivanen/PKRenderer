@@ -10,24 +10,24 @@ uniform texture3D pk_GI_VX_RadianceRead;
 #define PK_GI_VX_CONE_SIZE 0.25f
 
 //----------UTILITIES----------//
-float3 GI_VX_CoordToWorld(int3 coord) { return (coord + 0.5f.xxx) / pk_GI_VX_ST.www + pk_GI_VX_ST.xyz; }
-int3   GI_VX_WorldToCoord(float3 world_pos) { return int3((world_pos - pk_GI_VX_ST.xyz) * pk_GI_VX_ST.www); }
-float3 GI_VX_WorldToUvw(float3 world_pos) { return (world_pos - pk_GI_VX_ST.xyz) * pk_GI_VX_ST.www * pk_GI_VX_TexelSize;  }
+float3 GI_VX_CoordToWorld(int3 coord) { return (coord + 0.5f.xxx) / pk_View.GI_VX_ST.www + pk_View.GI_VX_ST.xyz; }
+int3   GI_VX_WorldToCoord(float3 world_pos) { return int3((world_pos - pk_View.GI_VX_ST.xyz) * pk_View.GI_VX_ST.www); }
+float3 GI_VX_WorldToUvw(float3 world_pos) { return (world_pos - pk_View.GI_VX_ST.xyz) * pk_View.GI_VX_ST.www * pk_View.GI_VX_TexelSize;  }
 
 float4 GI_VX_WorldToNdc(float3 world_pos) 
 { 
     const float3 clippos = GI_VX_WorldToUvw(world_pos) * 2.0f - 1.0f;
-    return float4(clippos[pk_GI_VX_Swizzle.x], clippos[pk_GI_VX_Swizzle.y], clippos[pk_GI_VX_Swizzle.z] * 0.5f + 0.5f, 1);
+    return float4(clippos[pk_View.GI_VX_Swizzle.x], clippos[pk_View.GI_VX_Swizzle.y], clippos[pk_View.GI_VX_Swizzle.z] * 0.5f + 0.5f, 1);
 }
 
 float3 GI_VX_FragToWorld(float3 fcoord)
 {
-    fcoord.z /= pk_GI_VX_TexelSize[pk_GI_VX_Swizzle.z];
+    fcoord.z /= pk_View.GI_VX_TexelSize[pk_View.GI_VX_Swizzle.z];
     float3 coord = fcoord;
-    coord[pk_GI_VX_Swizzle.x] = fcoord.x;
-    coord[pk_GI_VX_Swizzle.y] = fcoord.y;
-    coord[pk_GI_VX_Swizzle.z] = fcoord.z;
-    return coord / pk_GI_VX_ST.www + pk_GI_VX_ST.xyz;
+    coord[pk_View.GI_VX_Swizzle.x] = fcoord.x;
+    coord[pk_View.GI_VX_Swizzle.y] = fcoord.y;
+    coord[pk_View.GI_VX_Swizzle.z] = fcoord.z;
+    return coord / pk_View.GI_VX_ST.www + pk_View.GI_VX_ST.xyz;
 }
 
 //----------LOAD/STORE FUNCTIONS----------//
@@ -51,7 +51,7 @@ bool GI_VX_Test_HasValue(float3 world_pos)
 bool GI_VX_Test_Normal(float3 normal)
 {
     normal = abs(normal);
-    return normal[pk_GI_VX_Swizzle.z] > normal[pk_GI_VX_Swizzle.x] && normal[pk_GI_VX_Swizzle.z] > normal[pk_GI_VX_Swizzle.y];
+    return normal[pk_View.GI_VX_Swizzle.z] > normal[pk_View.GI_VX_Swizzle.x] && normal[pk_View.GI_VX_Swizzle.z] > normal[pk_View.GI_VX_Swizzle.y];
 }
 
 //----------VOXEL TRACING FUNCTIONS----------//
@@ -75,9 +75,9 @@ half4 GI_VX_SphereTrace_Diffuse(float3 position)
 half4 GI_VX_ConeTrace_Diffuse(const float3 origin, const float3 normal) 
 {
     half3x3 basis = half3x3(CreateTBN(normal));
-    basis[0] *= half3(pk_GI_VX_ST.www * pk_GI_VX_TexelSize);
-    basis[1] *= half3(pk_GI_VX_ST.www * pk_GI_VX_TexelSize);
-    basis[2] *= half3(pk_GI_VX_ST.www * pk_GI_VX_TexelSize);
+    basis[0] *= half3(pk_View.GI_VX_ST.www * pk_View.GI_VX_TexelSize);
+    basis[1] *= half3(pk_View.GI_VX_ST.www * pk_View.GI_VX_TexelSize);
+    basis[2] *= half3(pk_View.GI_VX_ST.www * pk_View.GI_VX_TexelSize);
 
     const half3 uvw_start = half3(GI_VX_WorldToUvw(origin));
 
@@ -92,14 +92,14 @@ half4 GI_VX_ConeTrace_Diffuse(const float3 origin, const float3 normal)
         
         half4 value = 0.0hf.xxxx;
         half occlusion = 1.0hf;
-        half t = half(pk_GI_VX_StepSize) * 2.0hf;
+        half t = half(pk_View.GI_VX_StepSize) * 2.0hf;
 
         [[unroll]]
         for (uint j = 0u; j < 11u; ++j)
         {
-            half level = max(1.0hf, log2(half(pk_GI_VX_LevelScale) * t));
+            half level = max(1.0hf, log2(half(pk_View.GI_VX_LevelScale) * t));
             half4 voxel = half4(GI_VX_Load_Uvw(uvw_start + direction * t, level));
-            t += half(pk_GI_VX_StepSize) * level;
+            t += half(pk_View.GI_VX_StepSize) * level;
             value += (1.0hf - value.a) * voxel;
             occlusion *= max(0.0hf, 1.0hf - voxel.a * (1.0hf + level * 0.5hf));
         }

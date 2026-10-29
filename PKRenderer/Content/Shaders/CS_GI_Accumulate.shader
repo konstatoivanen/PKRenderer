@@ -23,7 +23,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
 
     // Temporal Resampling
     {
-        const float2 fcoord_prev = WorldToClipUvPrev(origin) * int2(pk_ScreenSize.xy) + RESTIR_TEXEL_BIAS;
+        const float2 fcoord_prev = WorldToClipUvPrev(origin) * int2(pk_View.ScreenSize.xy) + RESTIR_TEXEL_BIAS;
         const int2 coord_prev = GI_CollapseCheckerboardCoord(fcoord_prev, 1u);
 
         const uint hash = ReSTIR_Hash(seed++);

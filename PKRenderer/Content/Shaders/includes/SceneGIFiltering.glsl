@@ -7,7 +7,7 @@ float GI_GetParallax(float3 view_dir_cur, float3 view_dir_pre)
 {
     float cosa = saturate(dot(view_dir_cur, view_dir_pre));
     float parallax = sqrt(1.0 - cosa * cosa) / max(cosa, 1e-6);
-    return parallax / pk_DeltaTime.x;
+    return parallax / pk_View.DeltaTime.x;
 }
 
 // Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
@@ -24,9 +24,9 @@ float GI_GetAntilagSpecular(float roughness, float nv, float parallax)
 }
 
 // Add small bias (0.01) to prevent sampling from past root texel.
-float2 GI_ViewToPrevScreenUv(const float3 view_pos) { return ViewToClipUvPrev(view_pos) * int2(pk_ScreenSize.xy) - 0.49f.xx; }
+float2 GI_ViewToPrevScreenUv(const float3 view_pos) { return ViewToClipUvPrev(view_pos) * int2(pk_View.ScreenSize.xy) - 0.49f.xx; }
 
-float2 GI_GetRandomRotation() { return RadianRotation(AsUnorm(pk_FrameRandom.x) * PK_TWO_PI); }
+float2 GI_GetRandomRotation() { return RadianRotation(AsUnorm(pk_View.FrameRandom.x) * PK_TWO_PI); }
 
 float2 GI_GetDiskWeightParams(float radius, float depth) { return float2(1.0f / (0.05f * depth), 1.0f / (2.0f * pow2(radius))); }
 
@@ -55,8 +55,8 @@ float2 GI_GetDiskFilterRadiusAndScale(const float depth, const float variance, c
     scale = lerp(scale, 0.75f + scale * 0.25f, 1.0f / (history + 1.0f));
 
     float radius = PK_GI_DISK_FILTER_RADIUS * (0.25f + 0.75f * near_field);
-    radius *= sqrt(depth / pk_ClipParams.y);
-    radius *= sqrt(3840.0 * pk_ScreenParams.z);	
+    radius *= sqrt(depth / pk_View.ClipParams.y);
+    radius *= sqrt(3840.0 * pk_View.ScreenParams.z);	
 
     return float2(radius, scale);
 }
@@ -114,7 +114,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                        \
         float2 s_uv = ViewToClipUv(SF_VPOS + basis * MulRotation(s_offs.xy, rotation));                         \
         s_uv = 1.0f - abs(1.0f - abs(s_uv));                                                                    \
-        const int2   s_gpx = GI_CollapseCheckerboardCoord(s_uv * pk_ScreenSize.xy, 0);                          \
+        const int2   s_gpx = GI_CollapseCheckerboardCoord(s_uv * pk_View.ScreenSize.xy, 0);                     \
         const int2   s_px = GI_ExpandCheckerboardCoord(s_gpx);                                                  \
         const float4 s_nr = SampleViewNormalRoughness(s_px);                                                    \
         const float3 s_ray = SF_VPOS - UvToViewPos(s_uv, SampleMinZ(s_px, 0));                                  \
@@ -150,7 +150,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     {                                                                                                                           \
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                                        \
         const float2 s_uv = ViewToClipUv(SF_VPOS + basis * MulRotation(s_offs.xy, rotation));                                   \
-        const int2   s_px = int2(s_uv * pk_ScreenSize.xy);                                                                      \
+        const int2   s_px = int2(s_uv * pk_View.ScreenSize.xy);                                                                 \
         const float4 s_nr = SampleViewNormalRoughness(s_px);                                                                    \
         const float3 s_ray = SF_VPOS - UvToViewPos(s_uv, SampleMinZ(s_px, 0));                                                  \
                                                                                                                                 \

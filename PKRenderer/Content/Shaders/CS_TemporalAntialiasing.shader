@@ -18,19 +18,19 @@ float3 UntonemapColor(const float3 c) { return c / max(1.0f / 65504.0f, 1.0 - cm
 void TemporalAntialiasCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const int2 size = int2(pk_ScreenSize.xy * 2u);
+    const int2 size = int2(pk_View.ScreenSize.xy * 2u);
     const float2 texel_size = 2.0f.xx / size;
-    const float2 jitter = pk_ProjectionJitter.xy * texel_size;
+    const float2 jitter = pk_View.ProjectionJitter.xy * texel_size;
     const float2 uv = (coord + 0.5f.xx) / size;
 
     const float depth = SampleClipDepth(uv);
-    const float2 uv_previous = ClipToUvw(pk_ClipToPrevClip_NoJitter * float4(uv * 2 - 1, depth, 1)).xy;
+    const float2 uv_previous = ClipToUvw(pk_View.ClipToPrevClip_NoJitter * float4(uv * 2 - 1, depth, 1)).xy;
     const float2 motion = uv - uv_previous;
 
-    const float k_sharpness = pk_TAA_Sharpness;
-    const float k_blend_static = pk_TAA_BlendingStatic;
-    const float k_blend_motion = pk_TAA_BlendingMotion;
-    const float k_motion_mult = pk_TAA_MotionAmplification;
+    const float k_sharpness = pk_View.TAA_Sharpness;
+    const float k_blend_static = pk_View.TAA_BlendingStatic;
+    const float k_blend_motion = pk_View.TAA_BlendingMotion;
+    const float k_motion_mult = pk_View.TAA_MotionAmplification;
     const float k_alpha_mult = 0.0f;
 
     float3 resolved = 0.0f.xxx;

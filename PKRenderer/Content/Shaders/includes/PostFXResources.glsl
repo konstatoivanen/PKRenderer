@@ -24,6 +24,6 @@ uniform sampler3D pk_Tonemap_LutTex;
 #define IF_FX_FEATURE_ENABLED(feature)
 #define IS_FX_FEATURE_ENABLED(feature)
 #else
-#define IF_FX_FEATURE_ENABLED(feature) if ((pk_PostEffectsFeatureMask & feature) != 0u)
-#define IS_FX_FEATURE_ENABLED(feature) ((pk_PostEffectsFeatureMask & feature) != 0u)
+#define IF_FX_FEATURE_ENABLED(feature) if ((pk_View.PostEffectsFeatureMask & feature) != 0u)
+#define IS_FX_FEATURE_ENABLED(feature) ((pk_View.PostEffectsFeatureMask & feature) != 0u)
 #endif

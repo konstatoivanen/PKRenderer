@@ -68,7 +68,7 @@ void GradientEstimateCs()
 
             const int2 s_coordFull = GI_ExpandCheckerboardCoord(s_coordCur, 1u);
             const float s_depth = SamplePreviousViewDepth(s_coordFull);
-            const float2 s_screenuv = ViewToClipUvPrev(CoordToViewPos(s_coordFull, s_depth)) * int2(pk_ScreenSize.xy);
+            const float2 s_screenuv = ViewToClipUvPrev(CoordToViewPos(s_coordFull, s_depth)) * int2(pk_View.ScreenSize.xy);
 
             const int2 s_coordPre = GI_CollapseCheckerboardCoord(s_screenuv, 1u);
             const float2 s_inputs = Gradient_Load_Input(s_coordPre);

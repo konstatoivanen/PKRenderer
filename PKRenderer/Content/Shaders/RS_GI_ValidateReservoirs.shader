@@ -18,7 +18,7 @@ layout(location = 0) rayPayloadEXT float2 payload;
 void MainRgs()
 {
     // Only validate half of the reservervoirs each frame. saves performance.
-    const int2 coord_ray = int2(gl_LaunchIDEXT.xy) * int2(1, 2) + int2(0, (pk_FrameIndex.y / 2u) & 0x1u);
+    const int2 coord_ray = int2(gl_LaunchIDEXT.xy) * int2(1, 2) + int2(0, (pk_View.FrameIndex.y / 2u) & 0x1u);
     const int2 coord = GI_ExpandCheckerboardCoord(coord_ray, 1u);
     const float depth = PK_GI_SAMPLE_PREV_DEPTH(coord);
 
@@ -29,7 +29,7 @@ void MainRgs()
     {
         const float3 normal = SamplePreviousWorldNormal(coord);
         const float3 view_pos = GI_GetRayViewOrigin(coord, depth);
-        const float3 view_dir = normalize(view_pos) * float3x3(pk_ViewToWorldPrev);
+        const float3 view_dir = normalize(view_pos) * float3x3(pk_View.ViewToWorldPrev);
         const float3 normal_offset = GI_GetRayOriginNormalOffset(normal, view_dir);
         const float3 origin = ViewToWorldPosPrev(view_pos) + normal_offset;
 
@@ -49,7 +49,7 @@ void MainRgs()
         invalid_luma = abs(log_luma - payload.HIT_LOGLUMINANCE) > max_error_luma;
     }
 
-    if (invalid_dist || invalid_luma || pk_FrameIndex.y < 1u)
+    if (invalid_dist || invalid_luma || pk_View.FrameIndex.y < 1u)
     {
         ReSTIR_StoreZero(coord_ray);
     }

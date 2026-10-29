@@ -21,7 +21,7 @@ bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 di
     const float3 view_pos = WorldToViewPos(origin);
     const float3 view_dir = WorldToViewVec(direction);
     const float max_t = 0.05f * view_pos.z;
-    const float2 resolution = pk_ScreenParams.xy;
+    const float2 resolution = pk_View.ScreenParams.xy;
 
     float samples;
     {

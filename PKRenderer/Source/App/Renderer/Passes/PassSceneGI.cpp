@@ -87,12 +87,12 @@ namespace PK::App
         auto frameIndexSinceResize = view->timeRender.frameIndex - view->timeResize.frameIndex;
         m_rasterAxis = frameIndexSinceResize % 3;
 
-        view->constants.Set<float3>(hash->pk_GI_VX_TexelSize, 1.0f / float3(m_voxels->GetResolution()));
-        view->constants.Set<float>(hash->pk_GI_VX_StepSize, stepSize);
-        view->constants.Set<uint3>(hash->pk_GI_VX_Swizzle, swizzles[m_rasterAxis]);
-        view->constants.Set<float>(hash->pk_GI_VX_LevelScale, levelscale);
-        view->constants.Set<float4>(hash->pk_GI_VX_ST, float4(volumeOriginQuantized, 1.0f / voxelSize));
-        view->constants.Set<uint2>(hash->pk_GI_RayDither, math::murmurhash21((uint32_t)frameIndexSinceResize / 64u));
+        view->constants.Set<float3>(hash->GI_VX_TexelSize, 1.0f / float3(m_voxels->GetResolution()));
+        view->constants.Set<float>(hash->GI_VX_StepSize, stepSize);
+        view->constants.Set<uint3>(hash->GI_VX_Swizzle, swizzles[m_rasterAxis]);
+        view->constants.Set<float>(hash->GI_VX_LevelScale, levelscale);
+        view->constants.Set<float4>(hash->GI_VX_ST, float4(volumeOriginQuantized, 1.0f / voxelSize));
+        view->constants.Set<uint2>(hash->GI_RayDither, math::murmurhash21((uint32_t)frameIndexSinceResize / 64u));
 
         RHI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_settings.checkerboardTrace);
         RHI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", m_settings.specularVirtualReproject);

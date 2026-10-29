@@ -62,7 +62,7 @@ void IntegrateCs()
         const float3 sample_scatter = textureLod(pk_SceneEnv, sample_uv, 0.0f).rgb * pk_SceneEnv_Exposure;
 
         const float sample_cosa = dot(local_dir, sample_dir);
-        const float sample_phase = Fp_HenyeyGreensteinDual(sample_cosa, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW);
+        const float sample_phase = Fp_HenyeyGreensteinDual(sample_cosa, pk_View.Fog_Phase0, pk_View.Fog_Phase1, pk_View.Fog_PhaseW);
 
         local_scatter += sample_scatter * sample_phase;
     }

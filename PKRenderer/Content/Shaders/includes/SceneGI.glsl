@@ -58,7 +58,7 @@ uniform utexture2D pk_GI_ResolvedRead;
 #endif
 
 #if PK_GI_USE_VOXEL_MIP_BIAS == 1
-#define PK_GI_GET_VX_MI_BIAS(t) (PK_GI_VX_CONE_SIZE * log2(1.0f + t * pk_GI_VX_ST.w))
+#define PK_GI_GET_VX_MI_BIAS(t) (PK_GI_VX_CONE_SIZE * log2(1.0f + t * pk_View.GI_VX_ST.w))
 #else
 // Sample from the first mip for more filtered results.
 #define PK_GI_GET_VX_MI_BIAS(t) 1.0f
@@ -118,7 +118,7 @@ int2 GI_ExpandCheckerboardCoord(uint2 coord, uint offset)
 {
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     coord.x *= 2;
-    coord.x += Checkerboard(coord, pk_FrameIndex.y + offset);
+    coord.x += Checkerboard(coord, pk_View.FrameIndex.y + offset);
 #endif
     return int2(coord);
 }
@@ -130,7 +130,7 @@ int2 GI_CollapseCheckerboardCoord(const float2 fcoord, const uint offset)
     float2 ddxy = (fcoord - coord) - 0.5f.xx;
     int am = int(step(ddxy.x, ddxy.y));
     int2 xy = int2(am, 1 - am) * int2(sign(ddxy));
-    coord += xy * int(Checkerboard(uint2(coord), pk_FrameIndex.y + offset));
+    coord += xy * int(Checkerboard(uint2(coord), pk_View.FrameIndex.y + offset));
     coord.x /= 2;
 #endif
     return coord;
@@ -175,7 +175,7 @@ void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coor
 
 GIResolved GI_Load_Resolved(const float2 uv) 
 { 
-    const uint4 packed = texelFetch(pk_GI_ResolvedRead, int2(uv * pk_ScreenSize.xy), 0);
+    const uint4 packed = texelFetch(pk_GI_ResolvedRead, int2(uv * pk_View.ScreenSize.xy), 0);
     GIResolved resolved;
     resolved.diffSH.Y = unpackHalf4x16(packed.xy).xyz;
     resolved.diffSH.A = DecodeE5BGR9(packed.z);

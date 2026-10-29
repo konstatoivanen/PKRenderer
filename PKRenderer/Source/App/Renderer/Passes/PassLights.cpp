@@ -151,8 +151,8 @@ namespace PK::App
         auto hash = HashCache::Get();
         const auto tileZParams = math::exponentialZParams<float>(view->znear, view->zfar, m_tileZDistribution, LightGridSizeZ);
         const auto shadowCascadeZSplits = math::cascadeDepths4<float>(view->znear, view->zfar, m_cascadeDistribution, tileZParams);
-        view->constants.Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
-        view->constants.Set<float4>(hash->pk_LightTileZParams, float4(tileZParams, 0.0f));
+        view->constants.Set<float4>(hash->ShadowCascadeZSplits, shadowCascadeZSplits);
+        view->constants.Set<float4>(hash->LightTileZParams, float4(tileZParams, 0.0f));
         RHI::GetGraph()->Clear(QueueType::Transfer, m_lightsCounter.get(), 0, sizeof(uint32_t), 0u);
     }
 

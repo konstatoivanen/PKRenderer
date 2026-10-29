@@ -22,7 +22,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 
     //// GI color test code
 //#if !defined(SHADER_STAGE_MESH_TASK)
-//    float lval = surf.world_pos.x * 0.025f + pk_Time.y * 0.25f;
+//    float lval = surf.world_pos.x * 0.025f + pk_View.Time.y * 0.25f;
 //    lval -= floor(lval);
 //    lval = 1.0f - lval;
 //    lval -= 0.75f;
@@ -47,7 +47,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 
         int2 offs = int2(GlobalNoiseBlue(int2(surf.world_pos.yx * 2 + 0.5f)).yz * 256.0f);
 
-        float3 noise0 = GlobalNoiseBlue(int2(surf.world_pos.xz * 0.5f + 0.75f) + int2(pk_Time.xy * 0.1f) + offs);
+        float3 noise0 = GlobalNoiseBlue(int2(surf.world_pos.xz * 0.5f + 0.75f) + int2(pk_View.Time.xy * 0.1f) + offs);
 
         lval *= step(0.6f, noise0.y);
 

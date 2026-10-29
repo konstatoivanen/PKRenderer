@@ -34,9 +34,9 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto& settings = view->settings.FilmGrainSettings;
-        view->constants.Set<float>(hash->pk_FilmGrain_Luminance, settings.Luminance);
-        view->constants.Set<float>(hash->pk_FilmGrain_Intensity, settings.Intensity);
-        view->constants.Set<float>(hash->pk_FilmGrain_ExposureSensitivity, settings.ExposureSensitivity);
+        view->constants.Set<float>(hash->FilmGrain_Luminance, settings.Luminance);
+        view->constants.Set<float>(hash->FilmGrain_Intensity, settings.Intensity);
+        view->constants.Set<float>(hash->FilmGrain_ExposureSensitivity, settings.ExposureSensitivity);
     }
 
     void PassFilmGrain::Compute(RenderGraphExt graph, QueueType queue)

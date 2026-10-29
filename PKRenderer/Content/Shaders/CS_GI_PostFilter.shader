@@ -14,7 +14,7 @@ void PostFilterCs()
     const int2 coord_base = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_base));
     const int2 coord_n = GI_ExpandCheckerboardCoord(uint2(coord_base), 1u);
-    const int2 coord_h = int2(coord_base.x + pk_ScreenSize.x / 2, coord_base.y);
+    const int2 coord_h = int2(coord_base.x + pk_View.ScreenSize.x / 2, coord_base.y);
 
     float depth = SampleMinZ(coord, 0);
     float4 normal_roughness = SampleViewNormalRoughness(coord);

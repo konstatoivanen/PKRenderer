@@ -33,7 +33,7 @@ void HistogramCs()
     const float3 color = texture(pk_Texture, uv).rgb;
     
     const float luma_log_min = GetLogLuminanceMin();
-    const float luma_log_range = pk_AutoExposure_LogLumaRange;
+    const float luma_log_range = pk_View.AutoExposure_LogLumaRange;
 
     const float luma = dot(PK_LUMA_BT709, color);
     const float luma_log = saturate((log2(luma) - luma_log_min) / luma_log_range);
@@ -70,7 +70,7 @@ void AverageCs()
     if (thread == 0)
     {
         const float luma_log_min = GetLogLuminanceMin();
-        const float luma_log_range = pk_AutoExposure_LogLumaRange;
+        const float luma_log_range = pk_View.AutoExposure_LogLumaRange;
 
         const float2 resolution = textureSize(pk_Texture, 0).xy >> 1;
         const float pixel_count = resolution.x * resolution.y;
@@ -78,12 +78,12 @@ void AverageCs()
         const float luma_log_avg = (lds_Histogram[0] / max(pixel_count - local_bin_val, 1.0f)) - 1.0f;
         const float luma_avg = exp2((luma_log_avg / 254.0) * luma_log_range + luma_log_min);
 
-        const float interpolant = ReplaceIfResized(pk_DeltaTime.x * pk_AutoExposure_Speed, 0.0f);
+        const float interpolant = ReplaceIfResized(pk_View.DeltaTime.x * pk_View.AutoExposure_Speed, 0.0f);
 
         // Source: https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/course-notes-moving-frostbite-to-pbr-v2.pdf
         // Simplified factor for luminance to exposure.
         const float exposure_current = GetAutoExposure();
-        const float exposure_target = clamp(pk_AutoExposure_Target * (0.104167f / luma_avg), pk_AutoExposure_Min, pk_AutoExposure_Max);
+        const float exposure_target = clamp(pk_View.AutoExposure_Target * (0.104167f / luma_avg), pk_View.AutoExposure_Min, pk_View.AutoExposure_Max);
         const float exposure_final = lerp_sat(exposure_current, exposure_target, 1.0f - exp(-interpolant));
 
         const float white_point_bias = (floor(luma_log_avg) - 128.0f) / 255.0f;

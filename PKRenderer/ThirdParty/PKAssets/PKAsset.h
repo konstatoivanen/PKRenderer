@@ -425,16 +425,6 @@ namespace PKAssets
     constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";
     constexpr const static char* PK_SHADER_INSTANCING_INDICES = "pk_Instancing_Indices";
     constexpr const static char* PK_SHADER_INSTANCING_PROPERTIES = "pk_Instancing_Properties";
-    constexpr const static char* PK_SHADER_INSTANCING_TEXTURES2D = "pk_Instancing_Textures2D";
-    constexpr const static char* PK_SHADER_INSTANCING_TEXTURES3D = "pk_Instancing_Textures3D";
-    constexpr const static char* PK_SHADER_INSTANCING_TEXTURESCUBE = "pk_Instancing_TexturesCube";
-    constexpr const static char* PK_SHADER_SET_NAMES[4] =
-    {
-        "GLOBAL",
-        "PASS",
-        "SHADER",
-        "DRAW"
-    };
 
     constexpr const static char* PK_MESH_VS_POSITION = "in_POSITION";
     constexpr const static char* PK_MESH_VS_NORMAL = "in_NORMAL";

@@ -69,7 +69,7 @@
     #define SURF_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
     #define SURF_EVALUATE_BxDF BxDF_Principled
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_Main
-    #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = UvToWorldPos(gl_FragCoord.xy * pk_ScreenParams.zw, ViewDepth(gl_FragCoord.z));
+    #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = UvToWorldPos(gl_FragCoord.xy * pk_View.ScreenParams.zw, ViewDepth(gl_FragCoord.z));
 #endif
 
 #if defined(SURF_USE_TANGENTS)
@@ -148,11 +148,11 @@ struct SurfaceData
         #if defined(PK_META_PASS_GIVOXELIZE)
         return true;
         #elif defined(PK_META_PASS_GBUFFER)
-        return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz) && 
-               Meshlet_Cull_Frustum_Perspective(meshlet, pk_WorldToClip);
+        return Meshlet_Cull_Cone(meshlet, pk_View.ViewWorldOrigin.xyz) && 
+               Meshlet_Cull_Frustum_Perspective(meshlet, pk_View.WorldToClip);
         #else
-        return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz) && 
-               Meshlet_Cull_Depth_Perspective(meshlet, pk_WorldToClip, pk_ViewToClip, int2(pk_ScreenSize), pk_ScreenLevels);
+        return Meshlet_Cull_Cone(meshlet, pk_View.ViewWorldOrigin.xyz) && 
+               Meshlet_Cull_Depth_Perspective(meshlet, pk_View.WorldToClip, pk_View.ViewToClip, int2(pk_View.ScreenSize), pk_View.ScreenLevels);
         #endif
     }
 
@@ -337,7 +337,7 @@ struct SurfaceData
         SURF_FS_ASSIGN_TBN
 
         SurfaceData surf = SurfaceData_Default;
-        surf.view_dir = normalize(pk_ViewWorldOrigin.xyz - vs_WORLDPOSITION);
+        surf.view_dir = normalize(pk_View.ViewWorldOrigin.xyz - vs_WORLDPOSITION);
         surf.world_pos = vs_WORLDPOSITION;
         surf.normal = float3(0,0,1);
         surf.albedo = 1.0f.xxx;
@@ -354,9 +354,9 @@ struct SurfaceData
             }
 
             surf.clip_uvw.xy = ClampBilinearViewUv(surf.clip_uvw.xy);
-            int2 coord_screen = int2(surf.clip_uvw.xy * pk_ScreenSize.xy);
+            int2 coord_screen = int2(surf.clip_uvw.xy * pk_View.ScreenSize.xy);
         #else
-            surf.clip_uvw = float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
+            surf.clip_uvw = float3(gl_FragCoord.xy * pk_View.ScreenParams.zw, gl_FragCoord.z);
             int2 coord_screen = int2(gl_FragCoord.xy);
         #endif
 

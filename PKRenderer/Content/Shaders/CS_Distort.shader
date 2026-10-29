@@ -18,7 +18,7 @@ void DistortPaniniCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 texel = 1.0f.xx / textureSize(pk_Texture, 0).xy;
-    const float4 params = pk_Panini_Projection_Parameters;
+    const float4 params = pk_View.Panini_Projection_Parameters;
 
     const float2 uv = float2(coord + 0.5f.xx) * texel;
     const float2 view_pos = (uv * 2.0f - 1.0f) * params.xy * params.w;
@@ -45,13 +45,13 @@ void DistortChromaCs()
     const float2 screen_pos = uv * 2.0f - 1.0f;
 
     float2 offset = 1.0f.xx;
-    offset *= pow(1.0f - abs(screen_pos), pk_Chromatic_Aberration_Power.xx);
+    offset *= pow(1.0f - abs(screen_pos), pk_View.Chromatic_Aberration_Power.xx);
     offset = 1.0f - offset;
     offset *= sign(screen_pos);
     offset = (offset - screen_pos) * 0.5f;
-    offset *= pk_Chromatic_Aberration_Amount;
+    offset *= pk_View.Chromatic_Aberration_Amount;
 
-    const float noise = GlobalNoiseBlue(coord, pk_FrameIndex.y).r;
+    const float noise = GlobalNoiseBlue(coord, pk_View.FrameIndex.y).r;
 
     float3 color = 0.0f.xxx;
     float3 wsum = 0.0f.xxx;

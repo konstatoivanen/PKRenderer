@@ -74,10 +74,10 @@ void LightAssignmentCs()
 {
     const uint3 coord = gl_GlobalInvocationID;
     const uint thread = gl_LocalInvocationIndex;
-    const float near = ViewDepthExp(coord.z, pk_LightTileZParams.xyz);
-    const float far = ViewDepthExp(coord.z + 1u, pk_LightTileZParams.xyz);
+    const float near = ViewDepthExp(coord.z, pk_View.LightTileZParams.xyz);
+    const float far = ViewDepthExp(coord.z + 1u, pk_View.LightTileZParams.xyz);
 
-    const float4 uvminmax = saturate(float4(coord.xy, coord.xy + 1.0f) * LIGHT_TILE_SIZE_PX * pk_ScreenParams.zwzw);
+    const float4 uvminmax = saturate(float4(coord.xy, coord.xy + 1.0f) * LIGHT_TILE_SIZE_PX * pk_View.ScreenParams.zwzw);
 
     const float3 min00 = UvToViewPos(uvminmax.xy, near);
     const float3 max00 = UvToViewPos(uvminmax.xy, far);

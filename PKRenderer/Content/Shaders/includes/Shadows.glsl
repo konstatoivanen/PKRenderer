@@ -73,7 +73,7 @@ half ShadowTest_PCF3x3Gaussian(const uint index, const float2 uv, const float z)
 
 half ShadowTest_Dither16(const uint index, const float2 uv, const float z)
 {
-    const half dither_angle = half(InterleavedGradientNoise(SHADOW_PROG_COORD, pk_FrameRandom.y) * PK_TWO_PI);
+    const half dither_angle = half(InterleavedGradientNoise(SHADOW_PROG_COORD, pk_View.FrameRandom.y) * PK_TWO_PI);
     const half scale = 2.5hf / half(SHADOW_SIZE.x);
     const half sina = sin(dither_angle) * scale;
     const half cosa = cos(dither_angle) * scale;
@@ -94,7 +94,7 @@ half ShadowTest_Volumetrics4(const uint index, const float4 uvrange, const float
 {
     half shadow = 0.0hf;
 
-    const float dither = InterleavedGradientNoise(SHADOW_PROG_COORD, pk_FrameIndex.y);
+    const float dither = InterleavedGradientNoise(SHADOW_PROG_COORD, pk_View.FrameIndex.y);
 
     // Volumetrics pcf by super sampling along view axis. More stable than single random offset on the shadow plane.
     for (uint i = 0u; i < 4u; ++i)

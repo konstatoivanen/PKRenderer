@@ -23,7 +23,7 @@ float4 PK_BLIT_VERTEX_POSITIONS[3] =
 void MainVs()
 {
     gl_Position = PK_BLIT_VERTEX_POSITIONS[gl_VertexIndex];
-    vs_TEXCOORD0 = float4(gl_Position.xy * pk_ClipParamsInv.xy, 1.0f, 0.0f) * pk_ViewToWorld;
+    vs_TEXCOORD0 = float4(gl_Position.xy * pk_View.ClipParamsInv.xy, 1.0f, 0.0f) * pk_View.ViewToWorld;
 }
 
 void MainFs()

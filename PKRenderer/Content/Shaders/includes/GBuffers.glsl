@@ -56,7 +56,7 @@ float EncodeBiasedDepth(float clip_depth, float factor, float bias)
     bias *= exp(-factor * 0.5f);
     bias /= clip_depth + 0.01f;
 
-    const float view_depth_biased = max(pk_ClipParams.x, view_depth - bias);
+    const float view_depth_biased = max(pk_View.ClipParams.x, view_depth - bias);
     float clip_depth_biased = ClipDepth(view_depth_biased);
     // Only allow bias towards camera as forward bias will cause clipping issues.
     //return clipDepth;
@@ -102,9 +102,9 @@ float SampleRoughness(const int2 coord) { return texelFetch(pk_GB_Current_Normal
 float SampleRoughness(const float2 uv) { return GBUFFER_SAMPLE(pk_GB_Current_Normals, uv).y; }
 
 float4 SampleViewNormalRoughness(const int2 coord) { return DecodeGBufferViewNR(texelFetch(pk_GB_Current_Normals, coord, 0)); }
-float4 SampleWorldNormalRoughness(const int2 coord) { return Mul3x3(SampleViewNormalRoughness(coord), float3x3(pk_ViewToWorld)); }
+float4 SampleWorldNormalRoughness(const int2 coord) { return Mul3x3(SampleViewNormalRoughness(coord), float3x3(pk_View.ViewToWorld)); }
 float4 SampleViewNormalRoughness(const float2 uv) { return DecodeGBufferViewNR(GBUFFER_SAMPLE(pk_GB_Current_Normals, uv)); }
-float4 SampleWorldNormalRoughness(const float2 uv) { return Mul3x3(SampleViewNormalRoughness(uv), float3x3(pk_ViewToWorld)); }
+float4 SampleWorldNormalRoughness(const float2 uv) { return Mul3x3(SampleViewNormalRoughness(uv), float3x3(pk_View.ViewToWorld)); }
 
 float3 SampleViewNormal(const int2 coord) { return SampleViewNormalRoughness(coord).xyz; }
 float3 SampleWorldNormal(const int2 coord) { return ViewToWorldVec(SampleViewNormal(coord)); }
@@ -115,13 +115,13 @@ float SamplePreviousRoughness(const int2 coord) { return texelFetch(pk_GB_Previo
 float SamplePreviousRoughness(const float2 uv) { return GBUFFER_SAMPLE(pk_GB_Previous_Normals, uv).y; }
 
 float4 SamplePreviousViewNormalRoughness(const int2 coord) { return DecodeGBufferViewNR(texelFetch(pk_GB_Previous_Normals, coord, 0)); }
-float4 SamplePreviousWorldNormalRoughness(const int2 coord) { return Mul3x3(SamplePreviousViewNormalRoughness(coord), float3x3(pk_ViewToWorldPrev)); }
+float4 SamplePreviousWorldNormalRoughness(const int2 coord) { return Mul3x3(SamplePreviousViewNormalRoughness(coord), float3x3(pk_View.ViewToWorldPrev)); }
 float4 SamplePreviousViewNormalRoughness(const float2 uv) { return DecodeGBufferViewNR(GBUFFER_SAMPLE(pk_GB_Previous_Normals, uv)); }
-float4 SamplePreviousWorldNormalRoughness(const float2 uv) { return Mul3x3(SamplePreviousViewNormalRoughness(uv), float3x3(pk_ViewToWorldPrev)); }
+float4 SamplePreviousWorldNormalRoughness(const float2 uv) { return Mul3x3(SamplePreviousViewNormalRoughness(uv), float3x3(pk_View.ViewToWorldPrev)); }
 
 float3 SamplePreviousViewNormal(const int2 coord) { return SamplePreviousViewNormalRoughness(coord).xyz; }
-float3 SamplePreviousWorldNormal(const int2 coord) { return SamplePreviousViewNormal(coord) * float3x3(pk_ViewToWorldPrev); }
+float3 SamplePreviousWorldNormal(const int2 coord) { return SamplePreviousViewNormal(coord) * float3x3(pk_View.ViewToWorldPrev); }
 float3 SamplePreviousViewNormal(const float2 uv) { return SamplePreviousViewNormalRoughness(uv).xyz; }
-float3 SamplePreviousWorldNormal(const float2 uv) { return SamplePreviousViewNormal(uv) * float3x3(pk_ViewToWorldPrev); }
+float3 SamplePreviousWorldNormal(const float2 uv) { return SamplePreviousViewNormal(uv) * float3x3(pk_View.ViewToWorldPrev); }
 
 #endif

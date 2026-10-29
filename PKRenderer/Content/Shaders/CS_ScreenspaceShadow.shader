@@ -29,7 +29,7 @@ void ShadowmapCs()
 
     //@TODO this causes bad bias vectors in corners as they average towards view which can offset out of shadow unintentionally.
     // Perhaps solve this in the upsampling by eliminating outliers
-    const float2 uv_gather = (coord + 1.0f) * pk_ScreenParams.zw;
+    const float2 uv_gather = (coord + 1.0f) * pk_View.ScreenParams.zw;
     const float4 gz_gather = GBUFFER_GATHER(pk_GB_Current_Normals, uv_gather, 2) - 0.5f;
     const float4 gw_gather = GBUFFER_GATHER(pk_GB_Current_Normals, uv_gather, 3) - 0.5f;
 
@@ -52,8 +52,8 @@ void ShadowmapCs()
 
     const SceneLight light = Lights_LoadLight(light_index);
 
-    const half dither_angle = half(InterleavedGradientNoise(float2(coord_base), pk_FrameIndex.y) * PK_TWO_PI);
-    const half dither_scale = half(InterleavedGradientNoise(float2(coord_base), pk_FrameIndex.y + 1u));
+    const half dither_angle = half(InterleavedGradientNoise(float2(coord_base), pk_View.FrameIndex.y) * PK_TWO_PI);
+    const half dither_scale = half(InterleavedGradientNoise(float2(coord_base), pk_View.FrameIndex.y + 1u));
 
     const float source_angle = light.source_radius;
     const half max_radius = half(source_angle * 2.0f);
@@ -130,12 +130,12 @@ void ShadowmapUpsampleCs()
     const int2 coord_base = int2(gl_WorkGroupID.xy) * GROUP_SIZE - int2(4);
     const int2 coord_load = coord_base + int2(thread % GROUP_SIZE, thread / GROUP_SIZE) * 2;
 
-    const float4 base_depths = GatherViewDepths((coord_load + 1.0f.xx) * pk_ScreenParams.zw);
-    const bool far_clip = Any_GEqual(base_depths, pk_ClipParams.yyyy - 1e-2f);
-    const float base_depth = lerp(cmin(base_depths), -pk_ClipParams.y * 2.0f, far_clip);
+    const float4 base_depths = GatherViewDepths((coord_load + 1.0f.xx) * pk_View.ScreenParams.zw);
+    const bool far_clip = Any_GEqual(base_depths, pk_View.ClipParams.yyyy - 1e-2f);
+    const float base_depth = lerp(cmin(base_depths), -pk_View.ClipParams.y * 2.0f, far_clip);
     lds_depth[thread] = base_depth;
 
-    const half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_FrameIndex.y).xy) * 2.0hf - 1.0hf;
+    const half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_View.FrameIndex.y).xy) * 2.0hf - 1.0hf;
     const half2 uv_base = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 1.5hf.xx + offset;
 
     half2 offsets[4] =
@@ -210,7 +210,7 @@ void ShadowmapUpsampleCs()
     #define SAMPLE_COUNT 60         // Number of shadow samples per-pixel.
     #define HARD_SHADOW_SAMPLES 4   // Number of initial shadow samples that will produce a hard shadow, and not perform sample-averaging.
     #define FADE_OUT_SAMPLES 8      // Number of samples that will fade out at the end of the shadow (for a minor cost).
-    float BEND_SAMPLE_DEPTH(float2 uv) { return SampleClipDepthBiased(int2(uv * pk_ScreenSize.xy)); }
+    float BEND_SAMPLE_DEPTH(float2 uv) { return SampleClipDepthBiased(int2(uv * pk_View.ScreenSize.xy)); }
     #include "includes/bend_sss_gpu.glsl"
 #endif
 
@@ -225,7 +225,7 @@ void ScreenSpaceShadowsCs()
     dispatch_params.WaveOffset = pk_WaveOffset;					// Values stored in DispatchData::WaveOffset_Shader by BuildDispatchList()
     dispatch_params.FarDepthValue = 0.0f;				        // Set to the Depth Buffer Value for the far clip plane, as determined by renderer projection matrix setup (typically 0).
     dispatch_params.NearDepthValue = 1.0f;				        // Set to the Depth Buffer Value for the near clip plane, as determined by renderer projection matrix setup (typically 1).
-    dispatch_params.InvDepthTextureSize = pk_ScreenParams.zw;	// Inverse of the texture dimensions for 'DepthTexture' (used to convert from pixel coordinates to UVs)
+    dispatch_params.InvDepthTextureSize = pk_View.ScreenParams.zw;	// Inverse of the texture dimensions for 'DepthTexture' (used to convert from pixel coordinates to UVs)
     dispatch_params.SurfaceThickness = 0.01;
     dispatch_params.BilinearThreshold = 0.04;
     dispatch_params.ShadowContrast = 4;

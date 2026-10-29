@@ -24,8 +24,8 @@ float3 Bloom(float3 color, float2 uv)
 
     const float lens_dirt = texture(pk_Bloom_LensDirtTex, uv).r;
 
-    color = lerp(color, bloom, pk_Bloom_Intensity.xxx);
-    color = lerp(color, bloom_lens, lens_dirt * pk_Bloom_DirtIntensity.xxx);
+    color = lerp(color, bloom, pk_View.Bloom_Intensity.xxx);
+    color = lerp(color, bloom_lens, lens_dirt * pk_View.Bloom_DirtIntensity.xxx);
 
     return color;
 }
