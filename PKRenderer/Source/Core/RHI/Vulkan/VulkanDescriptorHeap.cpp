@@ -200,8 +200,7 @@ namespace PK
     VulkanResourceView VulkanDescriptorHeap::GetSamplerView(const SamplerDescriptor& descriptor)
     {
         VulkanResourceView view{};
-        view.image.samplerIndex = GetSamplerIndex(descriptor);
-        view.UpdateHashImage();
+        view.hash = GetSamplerIndex(descriptor);
         return view;
     }
 
@@ -209,7 +208,7 @@ namespace PK
     {
         if (type == ShaderResourceType::Sampler)
         {
-            return view.image.samplerIndex;
+            return view.hash;
         }
 
         return GetOrCacheResourceView(view, type);
@@ -244,7 +243,7 @@ namespace PK
 
                 if (offset.samplerStride)
                 {
-                    const auto* srcSampler = m_samplerCache[view.image.samplerIndex].value.data;
+                    const auto* srcSampler = m_samplerCache[view.hash].value.data;
                     memcpy(m_samplerHeap.mappedPtr + samplerOffset + offset.samplerOffset + j * offset.samplerStride, srcSampler, offset.samplerStride);
                 }
             }
@@ -257,8 +256,7 @@ namespace PK
     uint32_t VulkanDescriptorHeap::GetOrCacheResourceView(const VulkanResourceView& view, ShaderResourceType type)
     {
         // Pure resource descriptor: SamplerTexture in legacy shaders uses the exact same SAMPLED_IMAGE resource descriptor as Texture
-        const auto cacheType = type == ShaderResourceType::SamplerTexture ? ShaderResourceType::Texture : type;
-        const auto key = Hash::Mix(view.hash, (uint64_t)cacheType);
+        const auto key = Hash::Mix(view.hash, (uint64_t)type);
         auto mapIndex = 0u;
 
         if (m_resourceCache.AddKey(key, &mapIndex))
@@ -272,19 +270,19 @@ namespace PK
             VkImageDescriptorInfoEXT imageInfo{ VK_STRUCTURE_TYPE_IMAGE_DESCRIPTOR_INFO_EXT };
             VkResourceDescriptorInfoEXT resourceInfo{ VK_STRUCTURE_TYPE_RESOURCE_DESCRIPTOR_INFO_EXT };
 
-            resourceInfo.type = VulkanEnumConvert::GetDescriptorType(cacheType);
+            resourceInfo.type = VulkanEnumConvert::GetDescriptorType(type);
 
-            if (cacheType == ShaderResourceType::Texture || cacheType == ShaderResourceType::Image)
+            if (type == ShaderResourceType::Texture || type == ShaderResourceType::Image)
             {
                 viewInfo.pNext = &usageInfo;
                 imageInfo.pView = &viewInfo;
                 resourceInfo.data.pImage = &imageInfo;
 
-                usageInfo.usage = cacheType == ShaderResourceType::Image ? VK_IMAGE_USAGE_STORAGE_BIT : VK_IMAGE_USAGE_SAMPLED_BIT;
+                usageInfo.usage = type == ShaderResourceType::Image ? VK_IMAGE_USAGE_STORAGE_BIT : VK_IMAGE_USAGE_SAMPLED_BIT;
                 viewInfo.image = view.image.image;
                 viewInfo.viewType = view.image.viewType;
                 viewInfo.format = view.image.format;
-                viewInfo.components = cacheType == ShaderResourceType::Image ? VkComponentMapping{} : VulkanEnumConvert::GetSwizzle(view.image.format);
+                viewInfo.components = type == ShaderResourceType::Image ? VkComponentMapping{} : VulkanEnumConvert::GetSwizzle(view.image.format);
                 viewInfo.subresourceRange = view.image.range;
                 imageInfo.layout = VK_IMAGE_LAYOUT_GENERAL;
 

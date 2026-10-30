@@ -27,8 +27,6 @@ namespace PK
             desc.levels = 1u;
             desc.samples = 1u;
             desc.layers = (uint16_t)capacity;
-            desc.sampler.filterMin = FilterMode::Bilinear;
-            desc.sampler.filterMag = FilterMode::Bilinear;
             auto newTexture = RHI::CreateTexture(desc, "IESProfile.Atlas");
             auto graph = RHI::GetGraph();
 

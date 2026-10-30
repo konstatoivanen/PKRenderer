@@ -334,7 +334,6 @@ namespace PK
                 VkImage image = VK_NULL_HANDLE;
                 VkFormat format = VK_FORMAT_UNDEFINED;
                 VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
-                uint16_t samplerIndex = 0u;
                 uint16_t samples = (uint16_t)VK_SAMPLE_COUNT_1_BIT;
                 VkExtent3D extent = { 0u, 0u, 0u };
                 VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
@@ -356,13 +355,12 @@ namespace PK
 
         inline void UpdateHashImage(uint64_t version = 0ull)
         {
-            auto h2 = 0ull;
-            h2 |= ((uint64_t)image.range.baseMipLevel) << 48ull;
-            h2 |= ((uint64_t)(image.range.levelCount & 0xFFFFu)) << 32ull;
-            h2 |= ((uint64_t)image.range.baseArrayLayer) << 16ull;
-            h2 |= ((uint64_t)(image.range.layerCount & 0xFFFFu));
-            const auto h0 = Hash::Mix((uint64_t)image.image, version ^ ((uint64_t)image.format << 16) ^ (uint64_t)image.viewType);
-            const auto h1 = Hash::Mix((uint64_t)image.samplerIndex, h2);
+            auto h0 = 0ull;
+            h0 |= ((uint64_t)image.range.baseMipLevel) << 48ull;
+            h0 |= ((uint64_t)(image.range.levelCount & 0xFFFFu)) << 32ull;
+            h0 |= ((uint64_t)image.range.baseArrayLayer) << 16ull;
+            h0 |= ((uint64_t)(image.range.layerCount & 0xFFFFu));
+            const auto h1 = Hash::Mix((uint64_t)image.image, version ^ ((uint64_t)image.format << 16) ^ (uint64_t)image.viewType);
             hash = Hash::Mix(h0, h1);
         }
     };

@@ -1563,7 +1563,6 @@ namespace PK
             switch (type)
             {
                 case ShaderResourceType::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER;
-                case ShaderResourceType::SamplerTexture:
                 case ShaderResourceType::Texture: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                 case ShaderResourceType::Image: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
                 case ShaderResourceType::ConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

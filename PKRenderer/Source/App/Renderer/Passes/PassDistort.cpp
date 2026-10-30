@@ -73,12 +73,6 @@ namespace PK::App
             descriptor.layers = 1;
             descriptor.levels = 1;
             descriptor.resolution = resolution;
-            descriptor.sampler.filterMin = FilterMode::Trilinear;
-            descriptor.sampler.filterMag = FilterMode::Trilinear;
-            descriptor.sampler.wrap[0] = WrapMode::Clamp;
-            descriptor.sampler.wrap[1] = WrapMode::Clamp;
-            descriptor.sampler.wrap[2] = WrapMode::Clamp;
-            descriptor.sampler.borderColor = BorderColor::FloatBlack;
             RHI::ValidateTexture(resources->distortTexture, descriptor, "Distort.Texture");
         }
 

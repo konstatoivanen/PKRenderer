@@ -20,11 +20,6 @@ namespace PK::App
         descriptor.format = TextureFormat::RGBA8_Unorm;
         descriptor.resolution.x = 256;
         descriptor.resolution.y = 256;
-        descriptor.sampler.filterMin = FilterMode::Bilinear;
-        descriptor.sampler.filterMag = FilterMode::Bilinear;
-        descriptor.sampler.wrap[0] = WrapMode::Repeat;
-        descriptor.sampler.wrap[1] = WrapMode::Repeat;
-        descriptor.sampler.wrap[2] = WrapMode::Repeat;
         descriptor.usage = TextureUsage::DefaultStorage;
         m_filmGrainTexture = RHI::CreateTexture(descriptor, "FilmGrain.Texture");
         RHI::SetTexture(HashCache::Get()->pk_FilmGrain_Texture, m_filmGrainTexture.get());

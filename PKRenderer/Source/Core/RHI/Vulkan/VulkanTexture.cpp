@@ -72,7 +72,6 @@ namespace PK
         VK_ASSERT_RESULT_CTX(vmaCreateImage(m_driver->allocator, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_memory, nullptr), "Failed to create a VkImage!");
         VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)m_image, name);
 
-        m_samplerIndex = m_driver->descriptorHeap->GetSamplerIndex(m_descriptor.sampler);
         m_defaultView = GetResourceView({}, TextureViewMode::SRV);
         m_driver->graph->RegisterImage(m_image, VulkanEnumConvert::GetFormatAspect(m_format));
     }
@@ -96,17 +95,6 @@ namespace PK
         m_driver->graph->UnregisterImage(m_image);
     }
 
-    void VulkanTexture::SetSampler(const SamplerDescriptor& sampler)
-    {
-        if (m_descriptor.sampler != sampler)
-        {
-            m_descriptor.sampler = sampler;
-            m_samplerIndex = m_driver->descriptorHeap->GetSamplerIndex(m_descriptor.sampler);
-            m_defaultView.image.samplerIndex = m_samplerIndex;
-            m_defaultView.UpdateHashImage(Version());
-        }
-    }
-
     VulkanResourceView VulkanTexture::GetResourceView(const TextureViewRange& range, TextureViewMode mode) const
     {
         const auto normalizedRange = NormalizeViewRange(range);
@@ -116,7 +104,6 @@ namespace PK
         view.image.image = m_image;
         view.image.format = useAlias ? m_formatAlias : m_format;
         view.image.viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
-        view.image.samplerIndex = mode == TextureViewMode::SRV ? m_samplerIndex : 0u;
         view.image.samples = (uint16_t)VulkanEnumConvert::GetSampleCountFlags(m_descriptor.samples);
         view.image.extent = { m_descriptor.resolution.x, m_descriptor.resolution.y, m_descriptor.resolution.z };
         view.image.range = 

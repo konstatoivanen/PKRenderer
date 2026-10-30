@@ -59,9 +59,9 @@ namespace PK
                 const auto type = pDescriptors[j].type;
                 const auto count = pDescriptors[j].count;
                 const auto isUnbounded = count >= PK_RHI_MAX_UNBOUNDED_SIZE;
-                const auto isImage = type == ShaderResourceType::SamplerTexture || type == ShaderResourceType::Texture || type == ShaderResourceType::Image || type == ShaderResourceType::InputAttachment;
+                const auto isImage = type == ShaderResourceType::Texture || type == ShaderResourceType::Image || type == ShaderResourceType::InputAttachment;
                 const auto isBuffer = type == ShaderResourceType::ConstantBuffer || type == ShaderResourceType::StorageBuffer || type == ShaderResourceType::AccelerationStructure;
-                const auto isSampler = type == ShaderResourceType::Sampler || type == ShaderResourceType::SamplerTexture;
+                const auto isSampler = type == ShaderResourceType::Sampler;
                 const auto resourceStride = !isImage ? !isBuffer ? 0u : descriptorProps.bufferStride : descriptorProps.imageStride;
                 const auto samplerStride = isSampler ? descriptorProps.samplerStride : 0u;
 

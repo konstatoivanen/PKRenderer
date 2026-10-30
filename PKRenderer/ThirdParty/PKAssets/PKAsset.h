@@ -315,7 +315,6 @@ namespace PKAssets
     {
         Invalid,
         Sampler,
-        SamplerTexture,
         Texture,
         Image,
         ConstantBuffer,
@@ -656,6 +655,7 @@ namespace PKAssets
 
 
     // Texture asset type
+    // @TODO deprecate sampler values.
     struct alignas(4) PKTexture
     {
         RelativePtr<void> data;             // 4 bytes

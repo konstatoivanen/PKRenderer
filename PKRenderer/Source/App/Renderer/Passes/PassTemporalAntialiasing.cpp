@@ -48,11 +48,6 @@ namespace PK::App
         descriptor.formatAlias = TextureFormat::R32_Uint;
         descriptor.resolution = resolution;
         descriptor.layers = 2;
-        descriptor.sampler.filterMin = FilterMode::Bilinear;
-        descriptor.sampler.filterMag = FilterMode::Bilinear;
-        descriptor.sampler.wrap[0] = WrapMode::Clamp;
-        descriptor.sampler.wrap[1] = WrapMode::Clamp;
-        descriptor.sampler.wrap[2] = WrapMode::Clamp;
         descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
         RHI::ValidateTexture(resources->historyTexture, descriptor, "TAA.HistoryTexture");
 

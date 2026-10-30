@@ -216,11 +216,6 @@ namespace PK
             return true;
         }
 
-        if (currentDesc.sampler != descriptor.sampler)
-        {
-            inoutTexture->SetSampler(descriptor.sampler);
-        }
-
         return false;
     }
 

@@ -66,8 +66,6 @@ namespace PK::App
             descriptor.resolution = quarterres;
             descriptor.layers = 3;
             descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
-            descriptor.sampler.filterMin = FilterMode::Bilinear;
-            descriptor.sampler.filterMag = FilterMode::Bilinear;
             RHI::ValidateTexture(resources->colorTarget, descriptor, "DepthOfField.Target.Color");
 
             descriptor.format = TextureFormat::R16_Float;

@@ -534,7 +534,6 @@ namespace PK
         uint8_t levels = 1;
         uint8_t samples = 1;
         uint16_t layers = 1;
-        SamplerDescriptor sampler = {};
     };
 
     namespace RHIEnumConvert

@@ -105,11 +105,6 @@ namespace PK::App
         depthDesc.resolution = { shadowCubeFaceSize , shadowCubeFaceSize , 1u };
         depthDesc.format = TextureFormat::Depth16;
         depthDesc.layers = 6u * ShadowCascadeCount;
-        depthDesc.sampler.wrap[0] = WrapMode::Mirror;
-        depthDesc.sampler.wrap[1] = WrapMode::Mirror;
-        depthDesc.sampler.wrap[2] = WrapMode::Mirror;
-        depthDesc.sampler.filterMin = FilterMode::Bilinear;
-        depthDesc.sampler.filterMag = FilterMode::Bilinear;
         depthDesc.usage = TextureUsage::RTDepth | TextureUsage::Transient;
         m_depthTargetCube = RHI::CreateTexture(depthDesc, "Lights.DepthTarget.Cube");
 
@@ -130,11 +125,6 @@ namespace PK::App
         atlasDesc.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
         atlasDesc.layers = ShadowCascadeCount * 2u; // initial size assume 1 active directional light.
         atlasDesc.resolution = { m_shadowmapSize.Value, m_shadowmapSize.Value, 1u };
-        atlasDesc.sampler.wrap[0] = WrapMode::Clamp;
-        atlasDesc.sampler.wrap[1] = WrapMode::Clamp;
-        atlasDesc.sampler.wrap[2] = WrapMode::Clamp;
-        atlasDesc.sampler.filterMin = FilterMode::Bilinear;
-        atlasDesc.sampler.filterMag = FilterMode::Bilinear;
         m_shadowmaps = RHI::CreateTexture(atlasDesc, "Lights.Shadowmap.Atlas");
 
         m_lightsBuffer = RHI::CreateBuffer<PackedLight>(1024ull, BufferUsage::Vram, "Lights");
@@ -414,11 +404,6 @@ namespace PK::App
             screenSpaceDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
             screenSpaceDesc.layers = 1u;
             screenSpaceDesc.resolution = resolution;
-            screenSpaceDesc.sampler.wrap[0] = WrapMode::Clamp;
-            screenSpaceDesc.sampler.wrap[1] = WrapMode::Clamp;
-            screenSpaceDesc.sampler.wrap[2] = WrapMode::Clamp;
-            screenSpaceDesc.sampler.filterMin = FilterMode::Bilinear;
-            screenSpaceDesc.sampler.filterMag = FilterMode::Bilinear;
             RHI::ValidateTexture(resources->screenSpaceShadowmap, screenSpaceDesc, "Lights.Shadowmap.ScreenSpace");
 
             screenSpaceDesc.resolution = quarterResolution;
@@ -485,11 +470,6 @@ namespace PK::App
         imageDescriptor.format = TextureFormat::R32_Uint;
         imageDescriptor.usage = TextureUsage::Storage;
         imageDescriptor.resolution = resolution;
-        imageDescriptor.sampler.filterMin = FilterMode::Point;
-        imageDescriptor.sampler.filterMag = FilterMode::Point;
-        imageDescriptor.sampler.wrap[0] = WrapMode::Clamp;
-        imageDescriptor.sampler.wrap[1] = WrapMode::Clamp;
-        imageDescriptor.sampler.wrap[2] = WrapMode::Clamp;
 
         if (RHI::ValidateTexture(resources->lightTiles, imageDescriptor, "Lights.Tiles"))
         {

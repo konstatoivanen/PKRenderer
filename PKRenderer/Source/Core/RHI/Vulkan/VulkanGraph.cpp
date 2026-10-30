@@ -1455,7 +1455,7 @@ namespace PK
 
             for (auto i = 0u; i < count; ++i)
             {
-                if (descriptor.type == ShaderResourceType::SamplerTexture || descriptor.type == ShaderResourceType::Texture || descriptor.type == ShaderResourceType::Image)
+                if (descriptor.type == ShaderResourceType::Texture || descriptor.type == ShaderResourceType::Image)
                 {
                     RecordImageAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
                 }

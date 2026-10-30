@@ -72,11 +72,6 @@ namespace PK::App
         {
             resources->captureIsDirty = true;
             resources->sourceTexture = texture;
-            auto sampler = texture->GetSamplerDescriptor();
-            sampler.wrap[0] = WrapMode::Mirror;
-            sampler.wrap[1] = WrapMode::Mirror;
-            sampler.wrap[2] = WrapMode::Mirror;
-            texture->SetSampler(sampler);
 
             auto descriptor = texture->GetDescriptor();
             descriptor.format = TextureFormat::RGB9E5_Float;

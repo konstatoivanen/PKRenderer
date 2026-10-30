@@ -59,11 +59,6 @@ namespace PK::App
             TextureDescriptor descriptor{};
             descriptor.type = TextureType::Texture3D;
             descriptor.format = TextureFormat::RGBA16_Float;
-            descriptor.sampler.filterMin = FilterMode::Bilinear;
-            descriptor.sampler.filterMag = FilterMode::Bilinear;
-            descriptor.sampler.wrap[0] = WrapMode::Clamp;
-            descriptor.sampler.wrap[1] = WrapMode::Clamp;
-            descriptor.sampler.wrap[2] = WrapMode::Clamp;
             descriptor.resolution = resolution;
             descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
             hasResized |= RHI::ValidateTexture(resources->volumeScatter, descriptor, "Fog.ScatterVolume");

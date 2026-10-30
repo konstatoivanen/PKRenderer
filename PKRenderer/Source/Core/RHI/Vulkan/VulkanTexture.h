@@ -12,7 +12,6 @@ namespace PK
         VulkanTexture(struct VulkanDriver* driver, const TextureDescriptor& descriptor, const char* name);
         ~VulkanTexture();
 
-        void SetSampler(const SamplerDescriptor& sampler) final;
         const TextureDescriptor& GetDescriptor() const final { return m_descriptor; }
         const char* GetDebugName() const final { return m_name.c_str(); }
         const void* GetNativeView() const final { return &m_defaultView; }
@@ -26,7 +25,6 @@ namespace PK
         const VkFormat m_format;
         const VkFormat m_formatAlias;
         TextureDescriptor m_descriptor;
-        uint16_t m_samplerIndex = 0u;
         VmaAllocation m_memory = nullptr;
         VkImage m_image = VK_NULL_HANDLE;
         VulkanResourceView m_defaultView{};

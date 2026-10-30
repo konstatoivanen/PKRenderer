@@ -32,13 +32,6 @@ namespace PK::App
         if (m_colorgradingLut != newCCLut && newCCLut != nullptr)
         {
             m_colorgradingLut = newCCLut;
-            auto smp = m_colorgradingLut->GetSamplerDescriptor();
-            smp.wrap[0] = WrapMode::Clamp;
-            smp.wrap[1] = WrapMode::Clamp;
-            smp.wrap[2] = WrapMode::Clamp;
-            smp.filterMin = FilterMode::Trilinear;
-            smp.filterMag = FilterMode::Trilinear;
-            m_colorgradingLut->SetSampler(smp);
             RHI::SetTexture(hash->pk_CC_LutTex, m_colorgradingLut);
         }
 
@@ -47,13 +40,6 @@ namespace PK::App
         if (m_colorgradingLut != newTonemapLut && newTonemapLut != nullptr)
         {
             m_tonemappingLut = newTonemapLut;
-            auto smp = m_tonemappingLut->GetSamplerDescriptor();
-            smp.wrap[0] = WrapMode::Clamp;
-            smp.wrap[1] = WrapMode::Clamp;
-            smp.wrap[2] = WrapMode::Clamp;
-            smp.filterMin = FilterMode::Trilinear;
-            smp.filterMag = FilterMode::Trilinear;
-            m_tonemappingLut->SetSampler(smp);
             RHI::SetTexture(hash->pk_Tonemap_LutTex, m_tonemappingLut);
         }
 
