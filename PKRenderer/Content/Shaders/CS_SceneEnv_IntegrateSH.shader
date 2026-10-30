@@ -31,7 +31,7 @@ void IntegrateCs()
         const float2 uv = (coord + uint2(xx, yy) + 0.5f.xx) / TEXTURE_DIM;
 
         const float4 basis = SH_GetBasis(DecodeOctaUv(uv));
-        const float3 radiance = textureLod(pk_SceneEnv, uv, PK_SCENE_ENV_IBL_MAX_MIP).rgb * pk_SceneEnv_Exposure;
+        const float3 radiance = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv, PK_SCENE_ENV_IBL_MAX_MIP).rgb * pk_SceneEnv_Exposure;
 
         local_SH_R += basis * radiance.r;
         local_SH_G += basis * radiance.g;

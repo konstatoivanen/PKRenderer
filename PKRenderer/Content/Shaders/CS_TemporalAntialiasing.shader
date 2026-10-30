@@ -6,8 +6,8 @@
 #include "includes/Encoding.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-uniform sampler2D pk_Texture; // Current Screen
-uniform sampler2D pk_Texture1; // History Read
+uniform texture2D pk_Texture; // Current Screen
+uniform texture2D pk_Texture1; // History Read
 uniform RWTexture2D<uint> pk_Image; // History Write
 uniform RWTexture2D<float4> pk_Image1; // Color Write
 
@@ -35,11 +35,11 @@ void TemporalAntialiasCs()
 
     float3 resolved = 0.0f.xxx;
     {
-        float4 color_alpha = texture(pk_Texture, uv);
+        float4 color_alpha = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv);
         float3 color = color_alpha.rgb;
-        float3 history = texture(pk_Texture1, uv - motion).rgb;
-        const float3 color_11 = texture(pk_Texture, uv - texel_size * 0.5f).rgb;
-        const float3 color_00 = texture(pk_Texture, uv + texel_size * 0.5f).rgb;
+        float3 history = TMP_SMP_2D(pk_Texture1, pk_SamplerBilinearClamped, uv - motion).rgb;
+        const float3 color_11 = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv - texel_size * 0.5f).rgb;
+        const float3 color_00 = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + texel_size * 0.5f).rgb;
         const float3 corners = 4.0f * (color_11 + color_00) - 2.0f * color;
 
         color += (color - (corners * 0.166667f)) * 2.718282f * k_sharpness;

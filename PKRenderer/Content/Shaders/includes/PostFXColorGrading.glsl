@@ -155,7 +155,7 @@ float3 Tonemap_LUT(float3 color, float exposure)
     const float3 stimulus = color * exposure;
     const float3 encoded = stimulus / (stimulus + 1.0);
     const float3 size = textureSize(pk_Tonemap_LutTex, 0).xyz;
-    return texture(pk_Tonemap_LutTex, encoded * ((size - 1.0) / size) + 0.5f / size).rgb;
+    return TMP_SMP_LEVEL_3D(pk_Tonemap_LutTex, pk_SamplerBilinearClamped, encoded * ((size - 1.0) / size) + 0.5f / size, 0.0f).rgb;
 }
 
 float3 Saturate_BT2100(float3 color, float amount) { return lerp(dot(color, PK_LUMA_BT2100).xxx, color, amount); }
@@ -229,7 +229,7 @@ float3 ApplyColorGrading(float3 color)
 float3 ApplyLutColorGrading(float3 color)
 {
     const float3 uvw = saturate(color);
-    const float3 final = texture(pk_CC_LutTex, uvw).rgb;
+    const float3 final = TMP_SMP_LEVEL_3D(pk_CC_LutTex, pk_SamplerBilinearClamped, uvw, 0.0f).rgb;
     const float contribution = pk_View.CC_Contribution;
     return lerp(color, final, contribution);
 }

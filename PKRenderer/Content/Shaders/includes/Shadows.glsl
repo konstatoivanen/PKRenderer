@@ -3,8 +3,8 @@
 #include "Kernels.glsl"
 #include "Noise.glsl"
 
-uniform sampler2DArray pk_ShadowmapAtlas;
-uniform sampler2D pk_ShadowmapScreenSpace;
+uniform texture2DArray pk_ShadowmapAtlas;
+uniform texture2D pk_ShadowmapScreenSpace;
 
 #ifndef SHADOW_PROG_COORD
 #if defined(SHADER_STAGE_FRAGMENT)
@@ -34,7 +34,7 @@ float2 Shadow_GetBiasFactors(const float3 normal, const float3 light_direction)
 
 half2 Shadow_GatherMax(const uint index, const float2 uv, const float z)
 {
-    const float4 depths = textureGather(pk_ShadowmapAtlas, float3(uv, index), 0);
+    const float4 depths = TMP_SMP_GATHER_2DArray(pk_ShadowmapAtlas, pk_SamplerBilinearClamped, float3(uv, index), 0);
     const half delta_depth = half(z - max(max(max(depths.x, depths.y), depths.z), depths.w));
     const half shadow_fade = -delta_depth * SHADOW_HARD_EDGE_FADE_FACTOR + 1.0hf;
     return half2(delta_depth, 1.0f) * step(shadow_fade, 0.0hf);
@@ -44,7 +44,7 @@ half ShadowTest_PCF2x2(const uint index, const float2 uv, const float z)
 { 
     const float2 f = frac(uv * SHADOW_SIZE.xx - 0.5f.xx).xy;
     const float4 fw = float4(f.xy, 1.0hf - f.xy);
-    half4 s = half4(textureGather(pk_ShadowmapAtlas, float3(uv, index), 0) - z.xxxx);
+    half4 s = half4(TMP_SMP_GATHER_2DArray(pk_ShadowmapAtlas, pk_SamplerBilinearClamped, float3(uv, index), 0) - z.xxxx);
     s = clamp(s * SHADOW_HARD_EDGE_FADE_FACTOR + 1.0hf, 0.0hf, 1.0hf);
     return dot(s, half4(fw.zxxz * fw.wwyy));
 }

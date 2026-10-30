@@ -31,9 +31,9 @@ float3 GI_VX_FragToWorld(float3 fcoord)
 }
 
 //----------LOAD/STORE FUNCTIONS----------//
-float4 GI_VX_Load_Uvw(const half3 uvw, float lvl) { return textureLod(sampler3D(pk_GI_VX_RadianceRead, pk_SamplerTrilinearBorder), float3(uvw), lvl); }
-float4 GI_VX_Load(const float3 world_pos, float lvl) { return textureLod(sampler3D(pk_GI_VX_RadianceRead, pk_SamplerTrilinearBorder), GI_VX_WorldToUvw(world_pos), lvl); }
-float4 GI_VX_Load_Point(const float3 world_pos, float lvl) { return textureLod(sampler3D(pk_GI_VX_RadianceRead, pk_SamplerPointClamped), GI_VX_WorldToUvw(world_pos), lvl); }
+float4 GI_VX_Load_Uvw(const half3 uvw, float lvl) { return TMP_SMP_LEVEL_3D(pk_GI_VX_RadianceRead, pk_SamplerTrilinearBorder, float3(uvw), lvl); }
+float4 GI_VX_Load(const float3 world_pos, float lvl) { return TMP_SMP_LEVEL_3D(pk_GI_VX_RadianceRead, pk_SamplerTrilinearBorder, GI_VX_WorldToUvw(world_pos), lvl); }
+float4 GI_VX_Load_Point(const float3 world_pos, float lvl) { return TMP_SMP_LEVEL_3D(pk_GI_VX_RadianceRead, pk_SamplerPointClamped, GI_VX_WorldToUvw(world_pos), lvl); }
 
 void GI_VX_Store(float3 world_pos, float4 color) 
 { 

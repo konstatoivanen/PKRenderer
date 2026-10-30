@@ -121,10 +121,31 @@ uniform cbuffer pk_ModelMatrices
 #endif
 
 uniform sampler pk_SamplerBilinearRepeat;
+uniform sampler pk_SamplerBilinearMirror;
 uniform sampler pk_SamplerBilinearClamped;
 uniform sampler pk_SamplerTrilinearBorder;
-uniform sampler pk_SamplerPointClamped;
+uniform sampler pk_SamplerTrilinearClamped;
 uniform sampler pk_SamplerTrilinearRepeatAniso;
+uniform sampler pk_SamplerPointClamped;
+
+// @TODO TEMP UTILITIES FOR TEXTURE SAMPLING.
+#define TMP_SMP_2D(tex, smp, uv) texture(sampler2D(tex, smp), uv)
+#define TMP_SMP_2DArray(tex, smp, uv) texture(sampler2DArray(tex, smp), uv)
+#define TMP_SMP_3D(tex, smp, uv) texture(sampler3D(tex, smp), uv)
+#define TMP_SMP_CubeArray(tex, smp, uv) texture(samplerCubeArray(tex, smp), uv)
+
+#define TMP_SMP_BIAS_2D(tex, smp, uv, bias) texture(sampler2D(tex, smp), uv, bias)
+
+#define TMP_SMP_LEVEL_2D(tex, smp, uv, level) textureLod(sampler2D(tex, smp), uv, level)
+#define TMP_SMP_LEVEL_2DArray(tex, smp, uv, level) textureLod(sampler2DArray(tex, smp), uv, level)
+#define TMP_SMP_LEVEL_3D(tex, smp, uv, level) textureLod(sampler3D(tex, smp), uv, level)
+#define TMP_SMP_LEVEL_CubeArray(tex, smp, uv, level) textureLod(samplerCubeArray(tex, smp), uv, level)
+
+#define TMP_SMP_OFFSET_2D(tex, smp, uv, offs) textureOffset(sampler2D(tex, smp), uv, offs)
+#define TMP_SMP_GATHER_2D(tex, smp, uv, cmp) textureGather(sampler2D(tex, smp), uv, cmp)
+#define TMP_SMP_GATHER_2DArray(tex, smp, uv, cmp) textureGather(sampler2DArray(tex, smp), uv, cmp)
+#define TMP_SMP_GATHER_OFFSETS_2D(tex, smp, uv, offs) textureGatherOffsets(sampler2D(tex, smp), uv, offs)
+
 uniform accelerationStructureEXT pk_SceneStructure;
 
 uint GetShadowCascadeIndex(float view_depth)

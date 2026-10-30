@@ -59,7 +59,7 @@ void IntegrateCs()
         const float3 sample_dir = GetDirectionSphere(xi);
  
         const float2 sample_uv = EncodeOctaUv(sample_dir);
-        const float3 sample_scatter = textureLod(pk_SceneEnv, sample_uv, 0.0f).rgb * pk_SceneEnv_Exposure;
+        const float3 sample_scatter = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, sample_uv, 0.0f).rgb * pk_SceneEnv_Exposure;
 
         const float sample_cosa = dot(local_dir, sample_dir);
         const float sample_phase = Fp_HenyeyGreensteinDual(sample_cosa, pk_View.Fog_Phase0, pk_View.Fog_Phase1, pk_View.Fog_PhaseW);
@@ -70,7 +70,7 @@ void IntegrateCs()
     local_scatter /= sample_count;
 #else
     const float2 texel_size = 1.0f.xx / textureSize(pk_SceneEnv_ISL, 4).xy;
-    local_scatter = texture(pk_SceneEnv_ISL, (coord + 0.5f) * texel_size).rgb;
+    local_scatter = TMP_SMP_2D(pk_SceneEnv_ISL, pk_SamplerBilinearMirror, (coord + 0.5f) * texel_size).rgb;
 #endif
 
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(local_scatter)));

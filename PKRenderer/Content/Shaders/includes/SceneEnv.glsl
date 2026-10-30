@@ -1,30 +1,30 @@
 #pragma once
 
-#include "Utilities.glsl"
+#include "Common.glsl"
 #include "SHL1.glsl"
 
 #define PK_SCENE_ENV_IBL_MAX_MIP 4
 #define PK_SCENE_ENV_ISL_MAX_MIP 7
 #define PK_SCENE_ENV_MIN_SIZE 32
 
-uniform sampler2D pk_SceneEnv;
-uniform sampler2D pk_SceneEnv_ISL;
+uniform texture2D pk_SceneEnv;
+uniform texture2D pk_SceneEnv_ISL;
 uniform RWStructuredBuffer<float4> pk_SceneEnv_SH;
 
 float3 SceneEnv_Sample_IBL(float2 uv, float roughness) 
 { 
-    return textureLod(pk_SceneEnv, uv, roughness * PK_SCENE_ENV_IBL_MAX_MIP).rgb; 
+    return TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv, roughness * PK_SCENE_ENV_IBL_MAX_MIP).rgb; 
 }
 
 float3 SceneEnv_Sample_ISL(float2 uv, float level)
 {
-    return textureLod(pk_SceneEnv_ISL, uv, level).rgb; 
+    return TMP_SMP_LEVEL_2D(pk_SceneEnv_ISL, pk_SamplerBilinearMirror, uv, level).rgb; 
 }
 
 float3 SceneEnv_Sample_ISL_Dual(float2 uv, float directionality)
 {
-    const float3 directional = textureLod(pk_SceneEnv_ISL, uv, 0.0f).rgb;
-    const float3 ambient = textureLod(pk_SceneEnv_ISL, uv, PK_SCENE_ENV_ISL_MAX_MIP).rgb;
+    const float3 directional = TMP_SMP_LEVEL_2D(pk_SceneEnv_ISL, pk_SamplerBilinearMirror, uv, 0.0f).rgb;
+    const float3 ambient = TMP_SMP_LEVEL_2D(pk_SceneEnv_ISL, pk_SamplerBilinearMirror, uv, PK_SCENE_ENV_ISL_MAX_MIP).rgb;
     return lerp(ambient, directional, directionality);
 }
 

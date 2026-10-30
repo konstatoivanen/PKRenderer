@@ -62,6 +62,16 @@ namespace PK::App
             SamplerDescriptor sampler{};
             sampler.filterMin = FilterMode::Bilinear;
             sampler.filterMag = FilterMode::Bilinear;
+            sampler.wrap[0] = WrapMode::Mirror;
+            sampler.wrap[1] = WrapMode::Mirror;
+            sampler.wrap[2] = WrapMode::Mirror;
+            RHI::SetSampler(hash->pk_SamplerBilinearMirror, sampler);
+        }
+
+        {
+            SamplerDescriptor sampler{};
+            sampler.filterMin = FilterMode::Bilinear;
+            sampler.filterMag = FilterMode::Bilinear;
             sampler.wrap[0] = WrapMode::Clamp;
             sampler.wrap[1] = WrapMode::Clamp;
             sampler.wrap[2] = WrapMode::Clamp;
@@ -81,12 +91,12 @@ namespace PK::App
 
         {
             SamplerDescriptor sampler{};
-            sampler.filterMin = FilterMode::Point;
-            sampler.filterMag = FilterMode::Point;
+            sampler.filterMin = FilterMode::Trilinear;
+            sampler.filterMag = FilterMode::Trilinear;
             sampler.wrap[0] = WrapMode::Clamp;
             sampler.wrap[1] = WrapMode::Clamp;
             sampler.wrap[2] = WrapMode::Clamp;
-            RHI::SetSampler(hash->pk_SamplerPointClamped, sampler);
+            RHI::SetSampler(hash->pk_SamplerTrilinearClamped, sampler);
         }
 
         {
@@ -99,6 +109,17 @@ namespace PK::App
             sampler.wrap[2] = WrapMode::Repeat;
             RHI::SetSampler(hash->pk_SamplerTrilinearRepeatAniso, sampler);
         }
+
+        {
+            SamplerDescriptor sampler{};
+            sampler.filterMin = FilterMode::Point;
+            sampler.filterMag = FilterMode::Point;
+            sampler.wrap[0] = WrapMode::Clamp;
+            sampler.wrap[1] = WrapMode::Clamp;
+            sampler.wrap[2] = WrapMode::Clamp;
+            RHI::SetSampler(hash->pk_SamplerPointClamped, sampler);
+        }
+
 
         // Pre integrate DFG texture for ibl shading.
         {

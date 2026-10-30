@@ -33,7 +33,7 @@ float3 DecodeOctaUv2x16(uint packed) { return DecodeOctaUv(unpackUnorm2x16(packe
 
 float2 EncodeCylinderUv(float3 direction)
 {
-    const float angle_h = (atan(direction.x, direction.z) + 3.14159265359f) * 0.15915494309f;
+    const float angle_h = (atan2(direction.x, direction.z) + 3.14159265359f) * 0.15915494309f;
     const float angle_v = acos(dot(direction, float3(0, 1, 0))) * 0.31830988618f;
     return float2(angle_h, angle_v);
 }

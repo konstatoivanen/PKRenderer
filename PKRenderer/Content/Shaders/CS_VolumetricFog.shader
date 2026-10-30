@@ -74,7 +74,7 @@ float3 Fog_EstimateTransmittance(const float3 uvw, float fade_static)
 {
     const float depth_min = Fog_ZToView(uvw.z);
     const float depth_max = Fog_ZToView(min(1.0f, uvw.z + VOLUMEFOG_SIZE_Z_INV));
-    const float density = texture(pk_Fog_Density_Read, uvw).x;
+    const float density = TMP_SMP_3D(pk_Fog_Density_Read, pk_SamplerBilinearClamped, uvw).x;
     const float extinction = density * (depth_max - depth_min) * fade_static;
     return exp(-extinction * pk_View.Fog_Absorption.rgb);
 }

@@ -21,11 +21,11 @@ void Gradient_Store_Input(const int2 coord, float new_input)
 Gradient Gradient_Load(const int2 coord, const int layer) 
 {
     const uint packed = imageLoad(pk_Gradients, int3(coord, layer)).x;
-    return Gradient(uint16BitsToFloat16(ushort(packed & 0xFFFFu)), packed >> 16u);
+    return Gradient(f16tof32(packed & 0xFFFFu), packed >> 16u);
 }
 
 void Gradient_Store(const int2 coord, const int layer, const Gradient g)
 {
-    const uint packed = uint(float16BitsToUint16(half(g.gradient))) | (g.index << 16u);
+    const uint packed = (f32tof16(g.gradient) & 0xFFFFu) | (g.index << 16u);
     imageStore(pk_Gradients, int3(coord, layer), uint4(packed));
 }

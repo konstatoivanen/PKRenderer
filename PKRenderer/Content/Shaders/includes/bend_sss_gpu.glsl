@@ -322,7 +322,7 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
         skip_pixel = EarlyOutPixel(inParameters, int2(write_xy), sampling_depth[0]);
 
         // are all threads in this wave out of bounds?
-        bool early_out = subgroupAny(!skip_pixel) == false;
+        bool early_out = WaveActiveAnyTrue(!skip_pixel) == false;
 
         // WaveGetLaneCount returns the hardware wave size
         if (gl_SubgroupSize == WAVE_SIZE)

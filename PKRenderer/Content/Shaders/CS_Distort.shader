@@ -9,7 +9,7 @@
 #include "includes/Common.glsl"
 #include "includes/NoiseBlue.glsl"
 
-uniform sampler2D pk_Texture;
+uniform texture2D pk_Texture;
 [pk_local(DistortPaniniCs)] uniform RWTexture2D<uint> pk_Image;
 [pk_local(DistortChromaCs)] uniform RWTexture2D<float4> pk_Image;
 
@@ -31,7 +31,7 @@ void DistortPaniniCs()
     const float2 pos_screen = pos_cyl / (dist_c - params.z) / params.xy;
     const float2 panini_uv = pos_screen * 0.5f + 0.5f;
 
-    const float3 color = texture(pk_Texture, panini_uv).rgb;
+    const float3 color = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, panini_uv).rgb;
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }
 
@@ -61,7 +61,7 @@ void DistortChromaCs()
         const float s_interp = (i + noise) / 5.0f;
         const float s_theta = 3.0 * s_interp - 1.5;
         const float3 s_weight = saturate(float3(-s_theta, 1.0 - abs(s_theta), s_theta));
-        const float3 s_sample = texture(pk_Texture, uv + offset * s_interp).rgb;
+        const float3 s_sample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + offset * s_interp).rgb;
         wsum += s_weight;
         color += s_sample * s_weight;
     }

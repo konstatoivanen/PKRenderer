@@ -38,8 +38,8 @@ float Lights_ApplyIESProfile(float3 L, uint profile)
     if (profile > 0u)
     {
         const float angleH = acos(-L.z) / PK_PI;
-        const float angleV = fma(atan(L.x, L.y), PK_INV_TWO_PI, 0.5f);
-        value = textureLod(pk_IESProfiles, float3(angleH, angleV, profile - 1u), 0).r;
+        const float angleV = mad(atan2(L.x, L.y), PK_INV_TWO_PI, 0.5f);
+        value = TMP_SMP_LEVEL_2DArray(pk_IESProfiles, pk_SamplerBilinearClamped, float3(angleH, angleV, profile - 1u), 0.0f).r;
     }
     
     return value;

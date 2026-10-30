@@ -6,7 +6,7 @@
 #include "includes/Common.glsl"
 #include "includes/SceneGIVX.glsl"
 
-uniform sampler3D pk_Texture;
+uniform texture3D pk_Texture;
 uniform writeonly restrict image3D pk_Image;
 uniform writeonly restrict image3D pk_Image1;
 uniform writeonly restrict image3D pk_Image2;
@@ -22,7 +22,7 @@ void VolumeMipmapCs()
     const int level = int(log2(float(size_base.x)) - log2(float(size_level.x))) - 1;
     const float3 uvw = (gl_GlobalInvocationID + 0.5f.xxx) / size_level;
 
-    float4 local = lds_Data[thread] = textureLod(pk_Texture, uvw, level);
+    float4 local = lds_Data[thread] = TMP_SMP_LEVEL_3D(pk_Texture, pk_SamplerBilinearClamped, uvw, level);
     imageStore(pk_Image, int3(gl_GlobalInvocationID), local);
 
     GroupMemoryBarrierWithGroupSync();

@@ -43,7 +43,7 @@ void IntegrateCs()
         local_irrad += irrad;
         local_trans += trans;
 
-        float3 color = textureLod(pk_SceneEnv, uv, 0.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv, 0.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(irrad, color, trans);
         imageStore(pk_Image, coord * 2 + int2(xx, yy), uint4(EncodeE5BGR9(color)));
     }
@@ -53,7 +53,7 @@ void IntegrateCs()
         local_irrad /= 4;
         local_trans /= 4;
 
-        float3 color = textureLod(pk_SceneEnv, uv_base, 1.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv_base, 1.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
         imageStore(pk_Image1, coord, uint4(EncodeE5BGR9(color)));
     }
@@ -76,7 +76,7 @@ void IntegrateCs()
         local_irrad /= 4;
         local_trans /= 4;
 
-        float3 color = textureLod(pk_SceneEnv, uv_base, 2.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv_base, 2.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
         if ((thread & 0x9u) == 0u)
@@ -109,7 +109,7 @@ void IntegrateCs()
         local_irrad /= 4;
         local_trans /= 4;
 
-        float3 color = textureLod(pk_SceneEnv, uv_base, 3.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv_base, 3.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
         if ((thread & 0x1Bu) == 0u)
@@ -142,7 +142,7 @@ void IntegrateCs()
         local_irrad = (local_irrad + lds_irrad) / 2;
         local_trans = (local_trans + lds_trans) / 2;
 
-        float3 color = textureLod(pk_SceneEnv, uv_base, 4.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv_base, 4.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
         imageStore(pk_Image4, coord >> 3, uint4(EncodeE5BGR9(color)));

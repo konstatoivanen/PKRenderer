@@ -12,19 +12,8 @@
 #include "includes/Common.glsl"
 
 uniform float pk_Bloom_UpsampleWeight;
-uniform sampler2D pk_Texture;
+uniform texture2D pk_Texture;
 uniform RWTexture2D<uint> pk_Image;
-
-float GetLumaWeight(float3 s)
-{
-// Luma filtering not needed when using good enough antialiasing.
-// Removes highlights & energy unnecesarily.
-#if 0
-    return 1.0f / (1.0f + cmax(s));
-#else
-    return 1.0f;
-#endif
-}
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void Downsample0Cs()
@@ -44,14 +33,14 @@ void Downsample0Cs()
 
     float4 color = 0.0f.xxxx;
     float3 bisample = 0.0f.xxx;
-    bisample = texture(pk_Texture, uvs.xy).rgb;
-    color += float4(bisample, 1.0f) * uwvw.x * uwvw.y * (1.0 / 16.0) * GetLumaWeight(bisample);
-    bisample = texture(pk_Texture, uvs.zy).rgb;
-    color += float4(bisample, 1.0f) * uwvw.z * uwvw.y * (1.0 / 16.0) * GetLumaWeight(bisample);
-    bisample = texture(pk_Texture, uvs.xw).rgb;
-    color += float4(bisample, 1.0f) * uwvw.x * uwvw.w * (1.0 / 16.0) * GetLumaWeight(bisample);
-    bisample = texture(pk_Texture, uvs.zw).rgb;
-    color += float4(bisample, 1.0f) * uwvw.z * uwvw.w * (1.0 / 16.0) * GetLumaWeight(bisample);
+    bisample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.xy).rgb;
+    color += float4(bisample, 1.0f) * uwvw.x * uwvw.y * (1.0 / 16.0);
+    bisample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.zy).rgb;
+    color += float4(bisample, 1.0f) * uwvw.z * uwvw.y * (1.0 / 16.0);
+    bisample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.xw).rgb;
+    color += float4(bisample, 1.0f) * uwvw.x * uwvw.w * (1.0 / 16.0);
+    bisample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.zw).rgb;
+    color += float4(bisample, 1.0f) * uwvw.z * uwvw.w * (1.0 / 16.0);
     color.rgb /= color.w;
     color.rgb = -min(-color.rgb, 0.0f.xxx);
     
@@ -79,15 +68,15 @@ void Downsample1Cs()
 
     float3 color = 0.0f.xxx;
 
-    color += texture(pk_Texture, uv).rgb * w0;
-    color += texture(pk_Texture, uv + float2(-1.0, +0.0) * oa2).rgb * a;
-    color += texture(pk_Texture, uv + float2(+1.0, +0.0) * oa2).rgb * a;
-    color += texture(pk_Texture, uv + float2(+0.0, -1.0) * oa2).rgb * a;
-    color += texture(pk_Texture, uv + float2(+0.0, +1.0) * oa2).rgb * a;
-    color += texture(pk_Texture, uv + float2(-1.0, -1.0) * ob2).rgb * b;
-    color += texture(pk_Texture, uv + float2(+1.0, -1.0) * ob2).rgb * b;
-    color += texture(pk_Texture, uv + float2(-1.0, +1.0) * ob2).rgb * b;
-    color += texture(pk_Texture, uv + float2(+1.0, +1.0) * ob2).rgb * b;
+    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv).rgb * w0;
+    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(-1.0, +0.0) * oa2).rgb * a;
+    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+1.0, +0.0) * oa2).rgb * a;
+    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+0.0, -1.0) * oa2).rgb * a;
+    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+0.0, +1.0) * oa2).rgb * a;
+    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(-1.0, -1.0) * ob2).rgb * b;
+    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+1.0, -1.0) * ob2).rgb * b;
+    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(-1.0, +1.0) * ob2).rgb * b;
+    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+1.0, +1.0) * ob2).rgb * b;
 
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }
@@ -103,10 +92,10 @@ void UpsampleCs()
 
     float4 color = 0.0f.xxxx;
 
-    color.rgb += texture(pk_Texture, uvs.zw).rgb;
-    color.rgb += texture(pk_Texture, uvs.zy).rgb;
-    color.rgb += texture(pk_Texture, uvs.xy).rgb;
-    color.rgb += texture(pk_Texture, uvs.xw).rgb;
+    color.rgb += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.zw).rgb;
+    color.rgb += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.zy).rgb;
+    color.rgb += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.xy).rgb;
+    color.rgb += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.xw).rgb;
     color.rgb *= 0.25f;
 
     const float upsample_weight = pk_Bloom_UpsampleWeight;

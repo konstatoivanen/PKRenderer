@@ -44,7 +44,7 @@ struct LightTile
     uint cascade;
 };
 
-uniform sampler2DArray pk_IESProfiles;
+uniform texture2DArray pk_IESProfiles;
 uniform StructuredBuffer<uint4> pk_Lights;
 uniform StructuredBuffer<float4x4> pk_LightMatrices;
 

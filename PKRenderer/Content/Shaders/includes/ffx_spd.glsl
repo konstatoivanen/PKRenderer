@@ -66,9 +66,9 @@ void SpdStoreMip6(int2 coord, SpdFormat v)
 SpdFormat SpdReduceQuad(SpdFormat v)
 {
     SpdFormat v0 = v;
-    SpdFormat v1 = subgroupQuadSwapHorizontal(v);
-    SpdFormat v2 = subgroupQuadSwapVertical(v);
-    SpdFormat v3 = subgroupQuadSwapDiagonal(v);
+    SpdFormat v1 = QuadReadAcrossX(v);
+    SpdFormat v2 = QuadReadAcrossY(v);
+    SpdFormat v3 = QuadReadAcrossDiagonal(v);
     return SpdReduce4(v0, v1, v2, v3);
 }
 

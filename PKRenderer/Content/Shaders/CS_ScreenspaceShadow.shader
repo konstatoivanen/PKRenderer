@@ -10,7 +10,7 @@
 #include "includes/Kernels.glsl"
 
 uniform RWTexture2D<float> pk_Image;
-uniform sampler2D pk_Texture;
+uniform texture2D pk_Texture;
 
 [numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void ShadowmapCs()

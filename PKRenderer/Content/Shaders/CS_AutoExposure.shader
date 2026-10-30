@@ -12,7 +12,7 @@
 #define DEFAULT_LOG_LUMINANCE_MIN -8.0f
 
 // Source texture
-uniform sampler2D pk_Texture;
+uniform texture2D pk_Texture;
 
 // Source: http://www.alextardif.com/HistogramLuminance.html
 shared uint lds_Histogram[NUM_HISTOGRAM_BINS];
@@ -30,7 +30,7 @@ void HistogramCs()
     const float2 resolution = textureSize(pk_Texture, 0).xy >> 1;
     const float2 uv = (gl_GlobalInvocationID.xy + 0.5f) / resolution;
     
-    const float3 color = texture(pk_Texture, uv).rgb;
+    const float3 color = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv).rgb;
     
     const float luma_log_min = GetLogLuminanceMin();
     const float luma_log_range = pk_View.AutoExposure_LogLumaRange;

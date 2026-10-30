@@ -45,13 +45,13 @@ void MainVs()
 
 void MainFs()
 {
-    const float4 value = texture(sampler2D(pk_GUI_Textures[vs_TEXTURE_INDEX], pk_SamplerBilinearRepeat), vs_TEXCOORD);
+    const float4 value = TMP_SMP_2D(pk_GUI_Textures[vs_TEXTURE_INDEX], pk_SamplerBilinearRepeat, vs_TEXCOORD);
     float4 color = vs_COLOR;
 
     if (vs_SHADING_MODE == PK_GUI_SHADING_MODE_FONT)
     {
         const float sd_center = max(min(value.r, value.g), min(max(value.r, value.g), value.b)) - 0.5f;
-        const float sd_subpx = dFdx(sd_center) / 3.0f;
+        const float sd_subpx = ddx(sd_center) / 3.0f;
         const float3 sd_rgb = sd_center + float3(-sd_subpx, 0.0f, +sd_subpx);
         const float px_range = PK_FONT_MSDF_UNIT / length(fwidth(vs_TEXCOORD));
         const float3 px_mask = saturate(sd_rgb * px_range + 0.5f);

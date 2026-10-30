@@ -13,10 +13,10 @@ uniform texture2D pk_GB_Previous_Normals;
 uniform texture2D pk_GB_Previous_Depth;
 uniform texture2D pk_GB_Previous_DepthBiased;
 
-#define GBUFFER_SAMPLE(t, uv) texture(sampler2D(t, pk_SamplerBilinearClamped), uv)
-#define GBUFFER_SAMPLE_OFFSET(t, uv, offs) textureOffset(sampler2D(t, pk_SamplerBilinearClamped), uv, offs)
-#define GBUFFER_GATHER(t, uv, cmp) textureGather(sampler2D(t, pk_SamplerBilinearClamped), uv, cmp)
-#define GBUFFER_GATHER_OFFSETS(t, uv, offs) textureGatherOffsets(sampler2D(t, pk_SamplerBilinearClamped), uv, offs)
+#define GBUFFER_SAMPLE(t, uv) TMP_SMP_2D(t, pk_SamplerBilinearClamped, uv)
+#define GBUFFER_SAMPLE_OFFSET(t, uv, offs) TMP_SMP_OFFSET_2D(t, pk_SamplerBilinearClamped, uv, offs)
+#define GBUFFER_GATHER(t, uv, cmp) TMP_SMP_GATHER_2D(t, pk_SamplerBilinearClamped, uv, cmp)
+#define GBUFFER_GATHER_OFFSETS(t, uv, offs) TMP_SMP_GATHER_OFFSETS_2D(t, pk_SamplerBilinearClamped, uv, offs)
 #define GBUFFER_NORMALS_10BIT 1
 
 // Source: https://aras-p.info/texts/CompactNormalStorage.html
@@ -68,8 +68,8 @@ float3 SamplePreviousColor(const int2 coord) { return texelFetch(pk_GB_Previous_
 
 float SampleMinZ(const int2 coord, const int l) { return texelFetch(pk_GB_Current_DepthMips, int3(coord, 0), l).x; }
 float SampleMaxZ(const int2 coord, const int l) { return texelFetch(pk_GB_Current_DepthMips, int3(coord, 1), l).x; }
-float SampleMinZ(const float2 uv, const float l) { return textureLod(sampler2DArray(pk_GB_Current_DepthMips, pk_SamplerPointClamped), float3(uv, 0), l).x; }
-float SampleMaxZ(const float2 uv, const float l) { return textureLod(sampler2DArray(pk_GB_Current_DepthMips, pk_SamplerPointClamped), float3(uv, 1), l).x; }
+float SampleMinZ(const float2 uv, const float l) { return TMP_SMP_LEVEL_2DArray(pk_GB_Current_DepthMips, pk_SamplerPointClamped, float3(uv, 0), l).x; }
+float SampleMaxZ(const float2 uv, const float l) { return TMP_SMP_LEVEL_2DArray(pk_GB_Current_DepthMips, pk_SamplerPointClamped, float3(uv, 1), l).x; }
 
 float SampleClipDepthBiased(const int2 coord) { return texelFetch(pk_GB_Current_DepthBiased, coord, 0).x; }
 float SampleViewDepthBiased(const int2 coord) { return ViewDepth(texelFetch(pk_GB_Current_DepthBiased, coord, 0).x); }

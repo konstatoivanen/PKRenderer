@@ -1,10 +1,9 @@
 #pragma once
-#include "Utilities.glsl"
-#include "Constants.glsl"
+#include "Common.glsl"
 
 #define PK_DFG_USE_MULTIPLE_SCATTER 1
 
-uniform sampler2D pk_PreIntegratedDFG;
+uniform texture2D pk_PreIntegratedDFG;
 
 struct BxDFSurf
 {
@@ -60,7 +59,7 @@ float Futil_SpecularLobeHalfAngle(const float roughness, const float volume_fact
 
 float4 Futil_SampleIntegratedDFG(const float NoV, const float alpha) 
 { 
-    return texture(pk_PreIntegratedDFG, float2(NoV, sqrt(alpha))); 
+    return TMP_SMP_LEVEL_2D(pk_PreIntegratedDFG, pk_SamplerBilinearClamped, float2(NoV, sqrt(alpha)), 0.0f);
 }
 
 float3 Futil_ComputeF0(const float3 albedo, const float metallic, const float clear_coat) 
