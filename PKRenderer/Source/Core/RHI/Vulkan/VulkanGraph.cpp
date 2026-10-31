@@ -1671,10 +1671,9 @@ namespace PK
 
                 if (state->vertexBuffers[element.stream].hash && vertexLayout.TryGetElement(element.name, &elementIdx))
                 {
-                    auto inputRate = VulkanEnumConvert::GetInputRate(element.inputRate);
                     --remainingAttributes;
 
-                    if (prevElement && (prevElement->stream != element.stream || prevElement->inputRate != element.inputRate || prevElement->stride != element.stride))
+                    if (prevElement && (prevElement->stream != element.stream || prevElement->stride != element.stride))
                     {
                         ++streamIndex;
                     }
@@ -1683,20 +1682,17 @@ namespace PK
                     activeBuffers[streamIndex] = state->vertexBuffers[element.stream];
                     reallocateBuffers |= state->resolvedVertexViews[streamIndex] != activeBuffers[streamIndex];
 
-                    if (state->vertexStreams[streamIndex].binding != streamIndex ||
-                        state->vertexStreams[streamIndex].inputRate != inputRate ||
-                        state->vertexStreams[streamIndex].stride != element.stride)
+                    if (state->vertexStreams[streamIndex].binding != streamIndex || state->vertexStreams[streamIndex].stride != element.stride)
                     {
                         state->dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
                         state->vertexStreams[streamIndex].sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT;
                         state->vertexStreams[streamIndex].binding = streamIndex;
-                        state->vertexStreams[streamIndex].inputRate = inputRate;
+                        state->vertexStreams[streamIndex].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
                         state->vertexStreams[streamIndex].stride = element.stride;
                         state->vertexStreams[streamIndex].divisor = 1u;
                     }
 
-                    if (state->vertexAttributes[elementIdx].binding != streamIndex ||
-                        state->vertexAttributes[elementIdx].offset != element.offset)
+                    if (state->vertexAttributes[elementIdx].binding != streamIndex || state->vertexAttributes[elementIdx].offset != element.offset)
                     {
                         state->dirtyFlags |= STATE_DIRTY_DYNAMIC_STATE;
                         state->vertexAttributes[elementIdx].sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT;

@@ -479,7 +479,6 @@ namespace PK
         VkDescriptorType GetDescriptorType(ShaderResourceType type);
         VkShaderStageFlagBits GetShaderStage(ShaderStage stage);
         VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples);
-        VkVertexInputRate GetInputRate(InputRate inputRate);
         VkPolygonMode GetPolygonMode(PolygonMode mode);
         VkBlendOp GetBlendOp(BlendOp op);
         VkBlendFactor GetBlendFactor(BlendFactor factor, VkBlendFactor fallback);

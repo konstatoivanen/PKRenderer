@@ -1621,16 +1621,6 @@ namespace PK
             return (VkSampleCountFlagBits)bit;
         }
 
-        VkVertexInputRate GetInputRate(InputRate inputRate)
-        {
-            switch (inputRate)
-            {
-                case InputRate::PerVertex: return VK_VERTEX_INPUT_RATE_VERTEX;
-                case InputRate::PerInstance: return VK_VERTEX_INPUT_RATE_INSTANCE;
-                default: return VK_VERTEX_INPUT_RATE_MAX_ENUM;
-            }
-        }
-
         VkPolygonMode GetPolygonMode(PolygonMode mode)
         {
             switch (mode)

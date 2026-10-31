@@ -119,12 +119,6 @@ namespace PK
         Discard,
     };
 
-    enum class InputRate : uint8_t
-    {
-        PerVertex,
-        PerInstance
-    };
-
     enum class BufferUsage : uint32_t
     {
         None = 0,

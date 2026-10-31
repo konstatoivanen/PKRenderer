@@ -220,7 +220,6 @@ namespace PK
             auto stream = streamLayout.Add();
             stream->name = pAttributes[i].name;
             stream->stream = pAttributes[i].stream;
-            stream->inputRate = InputRate::PerVertex;
             stream->stride = 0u;
             stream->offset = pAttributes[i].offset;
             stream->format = pAttributes[i].format;
@@ -327,7 +326,6 @@ namespace PK
         {
             auto attribute = descriptor.streamLayout.Add();
             attribute->stream = pAttributes[i].stream;
-            attribute->inputRate = InputRate::PerVertex;
             attribute->stride = 0u;
             attribute->offset = pAttributes[i].offset;
             attribute->format = pAttributes[i].format;

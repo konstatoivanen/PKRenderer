@@ -177,7 +177,6 @@ namespace PK::MeshUtilities
 
                 if (vsrc.name == vdst.name)
                 {
-                    PK_FATAL_ASSERT(vsrc.inputRate == vdst.inputRate, "Element '%s' input rate missmatch '%i' & '%i'", vdst.name.c_str(), (int)vdst.inputRate, (int)vsrc.inputRate);
                     needsAlignment |= vsrc.format != vdst.format || vsrc.stream != vdst.stream || vsrc.offset != vdst.offset || vsrc.stride != vdst.stride;
                     remap[i] = j;
                     break;

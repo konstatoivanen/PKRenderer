@@ -98,17 +98,15 @@ namespace PK
     {
         NameID name = 0u;
         Uniform format = Uniform::Invalid;
-        InputRate inputRate = InputRate::PerVertex;
         uint8_t stream = 0u;
         uint16_t stride = 0u;
         uint16_t offset = 0u;
         
         VertexStreamElement() = default;
 
-        VertexStreamElement(Uniform format, NameID name, uint8_t stream = 0u, InputRate inputRate = InputRate::PerVertex) :
+        VertexStreamElement(Uniform format, NameID name, uint8_t stream = 0u) :
             name(name),
             format(format),
-            inputRate(inputRate),
             stream(stream),
             stride(0u),
             offset(0u)

@@ -31,7 +31,6 @@ namespace PK::App
 
         m_gizmos_vertexStreamElement.name = PK_RHI_VS_POSITION;
         m_gizmos_vertexStreamElement.stream = 0u;
-        m_gizmos_vertexStreamElement.inputRate = InputRate::PerVertex;
         m_gizmos_vertexStreamElement.stride = sizeof(uint4);
         m_gizmos_vertexStreamElement.offset = 0u;
         m_gizmos_vertexStreamElement.format = Uniform::Uint4;
