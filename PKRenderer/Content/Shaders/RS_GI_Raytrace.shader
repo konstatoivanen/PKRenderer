@@ -1,9 +1,9 @@
 
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #pragma pk_multi_compile _ PK_GI_SSRT_PRETRACE
-#pragma pk_program SHADER_STAGE_RAY_GENERATION MainRgs
-#pragma pk_program SHADER_STAGE_RAY_MISS MainRms
-#pragma pk_program SHADER_STAGE_RAY_CLOSEST_HIT MainRchs
+#pragma pk_program RayGeneration MainRgs
+#pragma pk_program RayMiss MainRms
+#pragma pk_program RayClosestHit MainRchs
 
 #include "includes/GBuffers.glsl"
 #include "includes/SceneGI.glsl"

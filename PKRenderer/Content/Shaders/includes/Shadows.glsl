@@ -7,11 +7,11 @@ uniform texture2DArray pk_ShadowmapAtlas;
 uniform texture2D pk_ShadowmapScreenSpace;
 
 #ifndef SHADOW_PROG_COORD
-#if defined(SHADER_STAGE_FRAGMENT)
+#if defined(SHADER_FRAGMENT)
     #define SHADOW_PROG_COORD int2(gl_FragCoord.xy)
-#elif defined(SHADER_STAGE_COMPUTE)
+#elif defined(SHADER_COMPUTE)
     #define SHADOW_PROG_COORD int2(gl_GlobalInvocationID.xy)
-#elif defined(SHADER_STAGE_RAY_GENERATION)
+#elif defined(SHADER_RAY_GENERATION)
     #define SHADOW_PROG_COORD int2(gl_LaunchIDEXT.xy)
 #else
     #define SHADOW_PROG_COORD int2(0)

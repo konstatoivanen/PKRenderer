@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
+#pragma pk_program Compute IntegrateCs
 
 #include "includes/Common.glsl"
 #include "includes/BRDF.glsl"

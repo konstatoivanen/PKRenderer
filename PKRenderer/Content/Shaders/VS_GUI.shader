@@ -4,8 +4,8 @@
 #pragma pk_ztest Off
 #pragma pk_zwrite False
 #pragma pk_cull Off
-#pragma pk_program SHADER_STAGE_VERTEX MainVs
-#pragma pk_program SHADER_STAGE_FRAGMENT MainFs
+#pragma pk_program Vertex MainVs
+#pragma pk_program Fragment MainFs
 
 #include "includes/Common.glsl"
 

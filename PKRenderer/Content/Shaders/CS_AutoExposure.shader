@@ -1,7 +1,7 @@
 
 #pragma pk_multi_compile PASS_HISTOGRAM PASS_AVG
-#pragma pk_program SHADER_STAGE_COMPUTE HistogramCs PASS_HISTOGRAM
-#pragma pk_program SHADER_STAGE_COMPUTE AverageCs PASS_AVG
+#pragma pk_program Compute HistogramCs PASS_HISTOGRAM
+#pragma pk_program Compute AverageCs PASS_AVG
 
 #include "includes/Common.glsl"
 #include "includes/PostFXResources.glsl"

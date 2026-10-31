@@ -1,10 +1,10 @@
 
 #pragma pk_multi_compile PASS_CLEAR PASS_DENSITY PASS_INJECT PASS_INTEGRATE PASS_COMPOSITE
-#pragma pk_program SHADER_STAGE_COMPUTE ClearCs PASS_CLEAR
-#pragma pk_program SHADER_STAGE_COMPUTE DensityCs PASS_DENSITY
-#pragma pk_program SHADER_STAGE_COMPUTE InjectCs PASS_INJECT
-#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs PASS_INTEGRATE
-#pragma pk_program SHADER_STAGE_COMPUTE CompositeCs PASS_COMPOSITE
+#pragma pk_program Compute ClearCs PASS_CLEAR
+#pragma pk_program Compute DensityCs PASS_DENSITY
+#pragma pk_program Compute InjectCs PASS_INJECT
+#pragma pk_program Compute IntegrateCs PASS_INTEGRATE
+#pragma pk_program Compute CompositeCs PASS_COMPOSITE
 
 #define EARLY_Z_TEST 1
 #define SHADOW_TEST ShadowTest_PCF2x2

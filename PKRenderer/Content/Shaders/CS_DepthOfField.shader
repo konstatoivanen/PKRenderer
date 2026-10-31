@@ -1,8 +1,8 @@
 
 #pragma pk_multi_compile PASS_PREFILTER PASS_DISKBLUR PASS_UPSAMPLE
-#pragma pk_program SHADER_STAGE_COMPUTE PrefilterCs PASS_PREFILTER
-#pragma pk_program SHADER_STAGE_COMPUTE DiskBlurCs PASS_DISKBLUR
-#pragma pk_program SHADER_STAGE_COMPUTE UpsampleCs PASS_UPSAMPLE
+#pragma pk_program Compute PrefilterCs PASS_PREFILTER
+#pragma pk_program Compute DiskBlurCs PASS_DISKBLUR
+#pragma pk_program Compute UpsampleCs PASS_UPSAMPLE
 
 #include "includes/PostFXDepthOfField.glsl"
 #include "includes/Kernels.glsl"

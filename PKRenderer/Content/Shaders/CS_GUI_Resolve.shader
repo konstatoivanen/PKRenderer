@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE GUIResolveCs
+#pragma pk_program Compute GUIResolveCs
 
 #include "includes/Common.glsl"
 

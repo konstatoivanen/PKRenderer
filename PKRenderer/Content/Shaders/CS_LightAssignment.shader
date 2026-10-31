@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE LightAssignmentCs
+#pragma pk_program Compute LightAssignmentCs
 
 #define PK_WRITE_LIGHT_CLUSTERS
 #define GROUP_SIZE_X 2

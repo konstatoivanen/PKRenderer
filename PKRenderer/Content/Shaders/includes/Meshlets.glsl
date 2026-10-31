@@ -1,7 +1,7 @@
 #pragma once
 
-#pragma pk_program SHADER_STAGE_MESH_TASK MainMeshTask
-#pragma pk_program SHADER_STAGE_MESH_ASSEMBLY MainMeshAssembly
+#pragma pk_program MeshTask MainMeshTask
+#pragma pk_program MeshAssembly MainMeshAssembly
 
 #include "Common.glsl"
 #include "Encoding.glsl"
@@ -249,7 +249,7 @@ PKMeshlet Meshlet_Load_Meshlet(const uint index)
 
 PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const float3 sm_bbmax) { return Meshlet_Unpack_Vertex(pk_Meshlet_Vertices[index], sm_bbmin, sm_bbmax); }
 
-#if defined(SHADER_STAGE_MESH_TASK)
+#if defined(SHADER_MESH_TASK)
 
     bool Meshlet_Cull_Lod(const PKMeshlet meshlet)
     {
@@ -488,7 +488,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         EmitMeshTasksEXT(visible_count, 1, 1);
     }
 
-#elif defined(SHADER_STAGE_MESH_ASSEMBLY)
+#elif defined(SHADER_MESH_ASSEMBLY)
 
     void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_Position);
 

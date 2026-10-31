@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
+#pragma pk_program Compute IntegrateCs
 #pragma pk_multi_compile PASS_INTEGRATE PASS_REDUCE_MIP
 
 #include "includes/Common.glsl"

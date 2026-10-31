@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE HierarchicalDepthCs
+#pragma pk_program Compute HierarchicalDepthCs
 
 #include "includes/GBuffers.glsl"
 

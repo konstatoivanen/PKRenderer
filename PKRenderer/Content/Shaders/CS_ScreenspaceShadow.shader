@@ -1,8 +1,8 @@
 
 #pragma pk_multi_compile PASS_SHADOWMAP PASS_SHADOWMAP_UPSAMPLE PASS_SCREEN_DEPTH
-#pragma pk_program SHADER_STAGE_COMPUTE ShadowmapCs PASS_SHADOWMAP
-#pragma pk_program SHADER_STAGE_COMPUTE ShadowmapUpsampleCs PASS_SHADOWMAP_UPSAMPLE
-#pragma pk_program SHADER_STAGE_COMPUTE ScreenSpaceShadowsCs PASS_SCREEN_DEPTH
+#pragma pk_program Compute ShadowmapCs PASS_SHADOWMAP
+#pragma pk_program Compute ShadowmapUpsampleCs PASS_SHADOWMAP_UPSAMPLE
+#pragma pk_program Compute ScreenSpaceShadowsCs PASS_SCREEN_DEPTH
 
 #include "includes/GBuffers.glsl"
 #include "includes/NoiseBlue.glsl"

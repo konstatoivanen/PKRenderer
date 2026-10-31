@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE CopyCubeShadowCs
+#pragma pk_program Compute CopyCubeShadowCs
 
 #include "includes/Common.glsl"
 #include "includes/Encoding.glsl"

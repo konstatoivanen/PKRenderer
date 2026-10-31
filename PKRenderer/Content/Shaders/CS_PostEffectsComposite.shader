@@ -1,6 +1,6 @@
 
 #pragma pk_multi_compile FX_APPLY_ALL FX_APPLY_MASK FX_APPLY_DEBUG
-#pragma pk_program SHADER_STAGE_COMPUTE PostEffectsCompositeCs
+#pragma pk_program Compute PostEffectsCompositeCs
 
 #include "includes/PostFXColorGrading.glsl"
 #include "includes/PostFXFilmGrain.glsl"

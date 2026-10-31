@@ -1,7 +1,7 @@
 
 #pragma pk_multi_compile PASS_MIP PASS_CLEAR
-#pragma pk_program SHADER_STAGE_COMPUTE VolumeMipmapCs PASS_MIP
-#pragma pk_program SHADER_STAGE_COMPUTE VolumeClearCs PASS_CLEAR
+#pragma pk_program Compute VolumeMipmapCs PASS_MIP
+#pragma pk_program Compute VolumeClearCs PASS_CLEAR
 
 #include "includes/Common.glsl"
 #include "includes/SceneGIVX.glsl"

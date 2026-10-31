@@ -2,9 +2,9 @@
 //Source: http://advances.realtimerendering.com/s2014/sledgehammer/Next-Generation-Post-Processing-in-Call-of-Duty-Advanced-Warfare-v17.pptx (page 139)
 
 #pragma pk_multi_compile PASS_DOWNSAMPLE0 PASS_DOWNSAMPLE1 PASS_UPSAMPLE
-#pragma pk_program SHADER_STAGE_COMPUTE Downsample0Cs PASS_DOWNSAMPLE0
-#pragma pk_program SHADER_STAGE_COMPUTE Downsample1Cs PASS_DOWNSAMPLE1
-#pragma pk_program SHADER_STAGE_COMPUTE UpsampleCs PASS_UPSAMPLE
+#pragma pk_program Compute Downsample0Cs PASS_DOWNSAMPLE0
+#pragma pk_program Compute Downsample1Cs PASS_DOWNSAMPLE1
+#pragma pk_program Compute UpsampleCs PASS_UPSAMPLE
 
 #include "includes/Utilities.glsl"
 #include "includes/Constants.glsl"

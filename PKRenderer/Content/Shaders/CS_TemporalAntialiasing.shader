@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE TemporalAntialiasCs
+#pragma pk_program Compute TemporalAntialiasCs
 
 #include "includes/GBuffers.glsl"
 #include "includes/PostFXResources.glsl"

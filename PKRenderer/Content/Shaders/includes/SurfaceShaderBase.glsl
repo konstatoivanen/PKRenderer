@@ -27,7 +27,7 @@
 #include "GBuffers.glsl"
 #include "Meshlets.glsl"
 
-#if !defined(SHADER_STAGE_MESH_TASK)
+#if !defined(SHADER_MESH_TASK)
 #include "BRDF.glsl"
 #include "LightSampling.glsl"
 #include "SceneEnv.glsl"
@@ -43,7 +43,7 @@
 #pragma pk_zwrite False
 #pragma pk_cull Back
 #pragma pk_multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
-#pragma pk_program SHADER_STAGE_FRAGMENT SurfaceShaderMainFs
+#pragma pk_program Fragment SurfaceShaderMainFs
 
 #if defined(PK_META_PASS_GIVOXELIZE)
     #undef SURF_USE_TANGENTS
@@ -97,7 +97,7 @@
 #endif
 
 // Unsupported outside of fragment stage but need to be defined inorder to avoid compilation errors.
-#if !defined(SHADER_STAGE_FRAGMENT)
+#if !defined(SHADER_FRAGMENT)
     #undef SURF_MESH_NORMAL
     #undef SURF_SAMPLE_NORMAL
     #undef SURF_SAMPLE_NORMAL_TRIPLANAR
@@ -141,7 +141,7 @@ struct SurfaceData
     float depth_bias;
 };
 
-#if defined(SHADER_STAGE_MESH_TASK)
+#if defined(SHADER_MESH_TASK)
 
     bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
     {
@@ -157,7 +157,7 @@ struct SurfaceData
     }
 
 //// ---------- VERTEX STAGE ---------- ////
-#elif defined(SHADER_STAGE_MESH_ASSEMBLY)
+#elif defined(SHADER_MESH_ASSEMBLY)
 
     // Use these to modify surface values in vertex stage
     #if defined(SURF_USE_VERTEX_FUNCTION)
@@ -206,7 +206,7 @@ struct SurfaceData
     }
 
 //// ---------- FRAGMENT STAGE ---------- ////
-#elif defined(SHADER_STAGE_FRAGMENT)
+#elif defined(SHADER_FRAGMENT)
    
     #define SurfaceData_Default SurfaceData(0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f)
 

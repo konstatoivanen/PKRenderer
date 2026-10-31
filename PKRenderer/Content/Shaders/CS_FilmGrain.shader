@@ -1,4 +1,5 @@
-#pragma pk_program SHADER_STAGE_COMPUTE FilmGrainCs
+
+#pragma pk_program Compute FilmGrainCs
 #include "includes/Common.glsl"
 
 uniform RWTexture2D<float3> pk_Image;

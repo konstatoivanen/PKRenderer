@@ -8,9 +8,9 @@
 
 #pragma pk_multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
 
-#pragma pk_program SHADER_STAGE_FRAGMENT ForwardFs
-#pragma pk_program SHADER_STAGE_FRAGMENT GBufferFs PK_META_PASS_GBUFFER
-#pragma pk_program SHADER_STAGE_FRAGMENT GIVoxelizeFs PK_META_PASS_GIVOXELIZE
+#pragma pk_program Fragment ForwardFs
+#pragma pk_program Fragment GBufferFs PK_META_PASS_GBUFFER
+#pragma pk_program Fragment GIVoxelizeFs PK_META_PASS_GIVOXELIZE
 
 #define PK_MESHLET_USE_FUNC_CULL 1
 
@@ -21,14 +21,14 @@
 PK_DECLARE_VS_ATTRIB(float3 vs_Normal);
 #endif
 
-#if defined(SHADER_STAGE_MESH_TASK)
+#if defined(SHADER_MESH_TASK)
 
 bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
 {
     return Meshlet_Cull_Cone(meshlet, pk_View.ViewWorldOrigin.xyz);
 }
 
-#elif defined(SHADER_STAGE_MESH_ASSEMBLY)
+#elif defined(SHADER_MESH_ASSEMBLY)
 
 void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_Position)
 {
@@ -38,7 +38,7 @@ void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_
 #endif
 }
 
-#elif defined(SHADER_STAGE_FRAGMENT)
+#elif defined(SHADER_FRAGMENT)
 
 #include "includes/SceneGIVX.glsl"
 

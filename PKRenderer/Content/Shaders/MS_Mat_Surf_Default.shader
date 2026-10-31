@@ -21,7 +21,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     uv += SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.view_dir);
 
     //// GI color test code
-//#if !defined(SHADER_STAGE_MESH_TASK)
+//#if !defined(SHADER_MESH_TASK)
 //    float lval = surf.world_pos.x * 0.025f + pk_View.Time.y * 0.25f;
 //    lval -= floor(lval);
 //    lval = 1.0f - lval;

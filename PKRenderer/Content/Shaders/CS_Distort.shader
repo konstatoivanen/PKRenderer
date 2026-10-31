@@ -1,7 +1,7 @@
 
 #pragma pk_multi_compile PASS_BARREL PASS_CHROMA
-#pragma pk_program SHADER_STAGE_COMPUTE DistortPaniniCs PASS_BARREL
-#pragma pk_program SHADER_STAGE_COMPUTE DistortChromaCs PASS_CHROMA
+#pragma pk_program Compute DistortPaniniCs PASS_BARREL
+#pragma pk_program Compute DistortChromaCs PASS_CHROMA
 
 #include "includes/Utilities.glsl"
 #include "includes/Constants.glsl"

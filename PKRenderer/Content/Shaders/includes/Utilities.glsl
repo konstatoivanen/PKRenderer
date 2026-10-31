@@ -68,20 +68,9 @@ float2 f16tof32(uint2 v) { return float2(uint16BitsToFloat16(ushort2(v & 0xFFFFu
 float3 f16tof32(uint3 v) { return float3(uint16BitsToFloat16(ushort3(v & 0xFFFFu))); }
 float4 f16tof32(uint4 v) { return float4(uint16BitsToFloat16(ushort4(v & 0xFFFFu))); }
 
-#define atan2 atan
 #define mad fma
 #define ddx dFdx
 #define ddy dFdy
-#define ddx_fine dFdxFine
-#define ddy_fine dFdyFine
-#define ddx_coarse dFdxCoarse
-#define ddy_coarse dFdyCoarse
-
-#define QuadReadAcrossX subgroupQuadSwapHorizontal
-#define QuadReadAcrossY subgroupQuadSwapVertical
-#define QuadReadAcrossDiagonal subgroupQuadSwapDiagonal
-#define QuadAll subgroupQuadAll
-#define QuadAny subgroupQuadAny
 
 #define lerp_sat(a,b,c) lerp(a,b,clamp(c,0,1))
 #define lerp_outquad(a,b,c) (-((b) - (a)) * (c) * ((c) - 2) + (a))
@@ -113,17 +102,17 @@ float4 f16tof32(uint4 v) { return float4(uint16BitsToFloat16(ushort4(v & 0xFFFFu
 #define Test_EPS4(v) (v <= 1e-4f)
 #define Test_EPS6(v) (v <= 1e-6f)
 
-#if defined(SHADER_STAGE_MESH_ASSEMBLY)
+#if defined(SHADER_MESH_ASSEMBLY)
     #define PK_DECLARE_FS_OUT(variable) variable
     #define PK_DECLARE_VS_ATTRIB(variable) out variable[]
     #define PK_DECLARE_VS_MSAA_ATTRIB(variable) out variable[]
     #define PK_SET_VS_ATTRIB(variable, index, value) variable[index] = value
-#elif defined(SHADER_STAGE_VERTEX)
+#elif defined(SHADER_VERTEX)
     #define PK_DECLARE_FS_OUT(variable) variable
     #define PK_DECLARE_VS_ATTRIB(variable) out variable
     #define PK_DECLARE_VS_MSAA_ATTRIB(variable) out variable
     #define PK_SET_VS_ATTRIB(variable, index, value) variable = value
-#elif defined(SHADER_STAGE_FRAGMENT)
+#elif defined(SHADER_FRAGMENT)
     #define PK_DECLARE_FS_OUT(variable) out variable
     #define PK_DECLARE_VS_ATTRIB(variable) in variable
     #define PK_DECLARE_VS_MSAA_ATTRIB(variable) sample in variable

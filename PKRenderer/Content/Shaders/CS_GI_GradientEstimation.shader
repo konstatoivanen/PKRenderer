@@ -1,7 +1,7 @@
 
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #pragma pk_multi_compile _ PK_GI_GRADIENT_FILTER
-#pragma pk_program SHADER_STAGE_COMPUTE GradientEstimateCs
+#pragma pk_program Compute GradientEstimateCs
 
 #include "includes/SceneGIGradients.glsl"
 

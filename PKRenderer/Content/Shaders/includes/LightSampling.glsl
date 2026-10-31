@@ -91,7 +91,7 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
     float shadow = 1.0f;
     {
         // First Directional light has a screen space shadows.
-        #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
+        #if defined(SHADER_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
         [[branch]]
         if (light.light_type == LIGHT_TYPE_DIRECTIONAL && light.index_shadow == 1u)
         {

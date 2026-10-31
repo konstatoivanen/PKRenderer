@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE AutoFocusCs
+#pragma pk_program Compute AutoFocusCs
 
 #include "includes/PostFXDepthOfField.glsl"
 

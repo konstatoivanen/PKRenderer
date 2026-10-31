@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE CompressBC6HCs
+#pragma pk_program Compute CompressBC6HCs
 
 #include "includes/Common.glsl"
 
