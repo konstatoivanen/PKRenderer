@@ -42,8 +42,6 @@ uniform cbuffer PKRenderView
     float4 MeshletCullParams;    // Meshlet Error Scale Factor, Horizontal Fov, Vertical Fov, Unused.
     float4 ShadowCascadeZSplits; // view space z axis splits for directional light shadow cascades
     float4 LightTileZParams;     // exponential depth conversion params for light grid z coordinates
-
-    int ScreenLevels; // Maximum mip level of current screen dimensions.
     
     // GI Parameters
     float3 GI_VX_TexelSize;
@@ -109,6 +107,8 @@ uniform cbuffer PKRenderView
     float TAA_BlendingStatic;
     float TAA_BlendingMotion;
     float TAA_MotionAmplification;
+    
+    int ScreenLevels; // Maximum mip level of current screen dimensions.
 
     uint PostEffectsFeatureMask;
 } pk_View;

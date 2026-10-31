@@ -72,8 +72,6 @@ namespace PK::App
             { ElementType::Float4, hash->ShadowCascadeZSplits },
             { ElementType::Float4, hash->LightTileZParams },
 
-            { ElementType::Uint, hash->ScreenLevels },
-
             // GI Parameters
             { ElementType::Float3, hash->GI_VX_TexelSize },
             { ElementType::Float,  hash->GI_VX_StepSize },
@@ -146,6 +144,7 @@ namespace PK::App
             { ElementType::Float, hash->TAA_BlendingMotion },
             { ElementType::Float, hash->TAA_MotionAmplification },
 
+            { ElementType::Uint, hash->ScreenLevels },
             { ElementType::Uint, hash->PostEffectsFeatureMask}
         });
     }

@@ -1,7 +1,5 @@
 #pragma once
 
-#extension GL_EXT_shader_quad_control : require
-
 // needs to be declared before lighting & meshlets include.
 #define PK_MESHLET_USE_FUNC_CULL 1
 #define PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP SampleMaxZ

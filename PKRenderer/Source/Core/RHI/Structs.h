@@ -539,7 +539,7 @@ namespace PK
     namespace RHIEnumConvert
     {
         constexpr auto Size = PKAssets::PKElementTypeToSize;
-        constexpr auto Alignment = PKAssets::PKElementTypeToAlignment;
+        constexpr auto ScalarSize = PKAssets::PKElementTypeToScalarSize;
         constexpr auto Components = PKAssets::PKElementTypeToComponents;
         constexpr auto Scalar = PKAssets::PKElementTypeToScalar;
         constexpr auto IsResourceHandle = PKAssets::PKElementTypeIsResourceHandle;

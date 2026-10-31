@@ -2,6 +2,21 @@
 #ifndef PK_UTILITIES
 #define PK_UTILITIES
 
+// @TODO TEMP HLSL compatibility functions
+uint  f32tof16(float  v) { return uint(float16BitsToUint16(half(v))); }
+uint2 f32tof16(float2 v) { return uint2(float16BitsToUint16(half2(v))); }
+uint3 f32tof16(float3 v) { return uint3(float16BitsToUint16(half3(v))); }
+uint4 f32tof16(float4 v) { return uint4(float16BitsToUint16(half4(v))); }
+
+float  f16tof32(uint  v) { return float(uint16BitsToFloat16(ushort(v & 0xFFFFu))); }
+float2 f16tof32(uint2 v) { return float2(uint16BitsToFloat16(ushort2(v & 0xFFFFu))); }
+float3 f16tof32(uint3 v) { return float3(uint16BitsToFloat16(ushort3(v & 0xFFFFu))); }
+float4 f16tof32(uint4 v) { return float4(uint16BitsToFloat16(ushort4(v & 0xFFFFu))); }
+
+#define mad fma
+#define ddx dFdx
+#define ddy dFdy
+
 float pow2(float x) { return x * x; }
 float pow3(float x) { return x * x * x; }
 float pow4(float x) { return x * x * x * x; }
@@ -57,20 +72,6 @@ void CreateTBN(const float3 n, out float3 b1, out float3 b2)
 float2x3 CreateTB(const float3 n, float scale) { float3 t, b; CreateTBN(n, t, b); return float2x3(t * scale, b * scale); }
 float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float3x3(t, b, n); }
 
-// @TODO TEMP HLSL compatibility functions
-uint  f32tof16(float  v) { return uint(float16BitsToUint16(half(v))); }
-uint2 f32tof16(float2 v) { return uint2(float16BitsToUint16(half2(v))); }
-uint3 f32tof16(float3 v) { return uint3(float16BitsToUint16(half3(v))); }
-uint4 f32tof16(float4 v) { return uint4(float16BitsToUint16(half4(v))); }
-
-float  f16tof32(uint  v) { return float(uint16BitsToFloat16(ushort(v & 0xFFFFu))); }
-float2 f16tof32(uint2 v) { return float2(uint16BitsToFloat16(ushort2(v & 0xFFFFu))); }
-float3 f16tof32(uint3 v) { return float3(uint16BitsToFloat16(ushort3(v & 0xFFFFu))); }
-float4 f16tof32(uint4 v) { return float4(uint16BitsToFloat16(ushort4(v & 0xFFFFu))); }
-
-#define mad fma
-#define ddx dFdx
-#define ddy dFdy
 
 #define lerp_sat(a,b,c) lerp(a,b,clamp(c,0,1))
 #define lerp_outquad(a,b,c) (-((b) - (a)) * (c) * ((c) - 2) + (a))

@@ -684,7 +684,7 @@ namespace PKAssets
     };
 
     uint32_t PKElementTypeToSize(PKElementType type);
-    uint32_t PKElementTypeToAlignment(PKElementType type);
+    uint32_t PKElementTypeToScalarSize(PKElementType type);
     uint32_t PKElementTypeToComponents(PKElementType type);
     PKElementType PKElementTypeToScalar(PKElementType type);
     bool PKElementTypeIsResourceHandle(PKElementType type);

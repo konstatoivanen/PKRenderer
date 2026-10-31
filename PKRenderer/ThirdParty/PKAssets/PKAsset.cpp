@@ -11,42 +11,42 @@ namespace PKAssets
         2u * 4u, /*Float2*/
         3u * 4u, /*Float3*/
         4u * 4u, /*Float4*/
-        
+
         1u * 8u, /*Double*/
         2u * 8u, /*Double2*/
         3u * 8u, /*Double3*/
         4u * 8u, /*Double4*/
-        
+
         1u * 2u, /*Half*/
         2u * 2u, /*Half2*/
         3u * 2u, /*Half3*/
         4u * 2u, /*Half4*/
-        
+
         1u * 4u, /*Int*/
         2u * 4u, /*Int2*/
         3u * 4u, /*Int3*/
         4u * 4u, /*Int4*/
-        
+
         1u * 4u, /*Uint*/
         2u * 4u, /*Uint2*/
         3u * 4u, /*Uint3*/
         4u * 4u, /*Uint4*/
-        
+
         1u * 2u, /*Short*/
         2u * 2u, /*Short2*/
         3u * 2u, /*Short3*/
         4u * 2u, /*Short4*/
-        
+
         1u * 2u, /*Ushort*/
         2u * 2u, /*Ushort2*/
         3u * 2u, /*Ushort3*/
         4u * 2u, /*Ushort4*/
-        
+
         1u * 8u, /*Long*/
         2u * 8u, /*Long2*/
         3u * 8u, /*Long3*/
         4u * 8u, /*Long4*/
-        
+
         1u * 8u, /*Ulong*/
         2u * 8u, /*Ulong2*/
         3u * 8u, /*Ulong3*/
@@ -56,11 +56,11 @@ namespace PKAssets
         3u * 3u * 4u,  /*Float3x3*/
         4u * 4u * 4u,  /*Float4x4*/
         3u * 4u * 4u,  /*Float3x4*/
-        
+
         2u * 2u * 8u,  /*Double2x2*/
         3u * 3u * 8u,  /*Double3x3*/
         4u * 4u * 8u,  /*Double4x4*/
-        
+
         2u * 2u * 2u,  /*Half2x2*/
         3u * 3u * 2u,  /*Half3x3*/
         4u * 4u * 2u,  /*Half4x4*/
@@ -141,17 +141,10 @@ namespace PKAssets
         return PKElementType_SIZES[(uint32_t)type] / PKElementType_SIZES[(uint32_t)PKElementType_SCALAR[(uint32_t)type]];
     }
 
-    uint32_t PKElementTypeToAlignment(PKElementType type)
+    uint32_t PKElementTypeToScalarSize(PKElementType type)
     {
-        const auto size = PKElementType_SIZES[(uint32_t)type];
-        const auto scalarSize = PKElementType_SIZES[(uint32_t)PKElementType_SCALAR[(uint32_t)type]];
-        auto components = (size / (scalarSize ? scalarSize : 1u)) - 1u;
-        components |= components >> 1u;
-        components |= components >> 2u;
-        components = (components & 0x3u) + 1u;
-        return scalarSize * components;
+        return PKElementType_SIZES[(uint32_t)PKElementType_SCALAR[(uint32_t)type]];
     }
-
 
     bool PKElementTypeIsResourceHandle(PKElementType type)
     {
