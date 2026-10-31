@@ -22,35 +22,41 @@ namespace PK
 
         // Create resource heap
         {
-            m_resourceHeap.arenaOffset = m_properties.resourceHeapOffset + PK_VK_MAX_DESCRIPTORS * m_properties.maxResourceStride;
+            PK_FATAL_ASSERT(m_properties.imageStride == m_properties.maxResourceStride, "Image descriptor stride must match maxResourceStride for default descriptor_heap indexing!");
+
+            m_resourceHeap.arenaOffset = PK_VK_MAX_DESCRIPTORS * m_properties.maxResourceStride;
             m_resourceHeap.arenaCapacity = math::align(resourceArenaSize, m_properties.maxResourceStride);
 
+            const VkDeviceSize reservedOffset = math::align(m_resourceHeap.arenaOffset + m_resourceHeap.arenaCapacity, m_properties.resourceHeapOffset);
+            const VkDeviceSize reservedSize = properties.descriptorHeap.minResourceHeapReservedRange;
+
             VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-            bufferInfo.size = math::align(m_resourceHeap.arenaOffset + m_resourceHeap.arenaCapacity, m_properties.resourceHeapAlignment);
+            bufferInfo.size = math::align(reservedOffset + reservedSize, m_properties.resourceHeapAlignment);
             bufferInfo.usage = VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
             bufferInfo.queueFamilyIndexCount = queueFamilies.count;
             bufferInfo.pQueueFamilyIndices = queueFamilies.indices;
             PK_FATAL_ASSERT(bufferInfo.size <= m_properties.maxResourceHeapSize, "heap size '%llu' exceeds allowed max size '%llu'!", bufferInfo.size, m_properties.maxResourceHeapSize);
-       
+
             VmaAllocationInfo allocationInfo{};
             VK_ASSERT_RESULT_CTX(vmaCreateBufferWithAlignment(m_allocator, &bufferInfo, &allocInfo, m_properties.resourceHeapAlignment, &m_resourceHeap.buffer, &m_resourceHeap.memory, &allocationInfo), "Failed to create a resource heap buffer!");
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_resourceHeap.buffer, "PK_Resource_Heap");
             m_resourceHeap.mappedPtr = static_cast<uint8_t*>(allocationInfo.pMappedData);
-            
+
             m_resourceHeap.bindInfo.sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT;
             m_resourceHeap.bindInfo.heapRange = { VulkanGetBudderDeviceAddress(m_device, m_resourceHeap.buffer), bufferInfo.size };
-            m_resourceHeap.bindInfo.reservedRangeOffset = 0ull;
-            m_resourceHeap.bindInfo.reservedRangeSize = properties.descriptorHeap.minResourceHeapReservedRange;
+            m_resourceHeap.bindInfo.reservedRangeOffset = reservedOffset;
+            m_resourceHeap.bindInfo.reservedRangeSize = reservedSize;
         }
 
         // Create sampler heap
         {
-            m_samplerHeap.arenaOffset = m_properties.samplerHeapOffset + PK_VK_MAX_SAMPLERS * m_properties.samplerStride;
-            m_samplerHeap.arenaCapacity = PK_VK_MAX_SAMPLERS * 32u * m_properties.samplerStride;
+            const VkDeviceSize samplersSize = PK_VK_MAX_SAMPLERS * m_properties.samplerStride;
+            const VkDeviceSize reservedOffset = math::align(samplersSize, m_properties.samplerHeapOffset);
+            const VkDeviceSize reservedSize = properties.descriptorHeap.minSamplerHeapReservedRange;
 
             VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-            bufferInfo.size = math::align(m_samplerHeap.arenaOffset + m_samplerHeap.arenaCapacity, m_properties.samplerHeapAlignment);
+            bufferInfo.size = math::align(reservedOffset + reservedSize, m_properties.samplerHeapAlignment);
             bufferInfo.usage = VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
             bufferInfo.queueFamilyIndexCount = queueFamilies.count;
@@ -61,11 +67,11 @@ namespace PK
             VK_ASSERT_RESULT_CTX(vmaCreateBufferWithAlignment(m_allocator, &bufferInfo, &allocInfo, m_properties.samplerHeapAlignment, &m_samplerHeap.buffer, &m_samplerHeap.memory, &allocationInfo), "Failed to create a sampler heap buffer!");
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_samplerHeap.buffer, "PK_Sampler_Heap");
             m_samplerHeap.mappedPtr = static_cast<uint8_t*>(allocationInfo.pMappedData);
-        
+
             m_samplerHeap.bindInfo.sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT;
             m_samplerHeap.bindInfo.heapRange = { VulkanGetBudderDeviceAddress(m_device, m_samplerHeap.buffer), bufferInfo.size };
-            m_samplerHeap.bindInfo.reservedRangeOffset = 0ull;
-            m_samplerHeap.bindInfo.reservedRangeSize = properties.descriptorHeap.minSamplerHeapReservedRange;
+            m_samplerHeap.bindInfo.reservedRangeOffset = reservedOffset;
+            m_samplerHeap.bindInfo.reservedRangeSize = reservedSize;
         }
 
         GetSamplerIndex(SamplerDescriptor{});
@@ -186,7 +192,7 @@ namespace PK
             }
 
             auto* cpuAddress = m_samplerCache[index].value.data;
-            auto* gpuAddress = m_samplerHeap.mappedPtr + m_properties.samplerHeapOffset + index * m_properties.samplerStride;
+            auto* gpuAddress = m_samplerHeap.mappedPtr + index * m_properties.samplerStride;
 
             VkHostAddressRangeEXT hostRange{ cpuAddress, PK_VK_MAX_SAMPLER_DESCRIPTOR_SIZE };
             VK_ASSERT_RESULT_CTX(vkWriteSamplerDescriptorsEXT(m_device, 1u, &info, &hostRange), "Failed to write sampler descriptor!");
@@ -197,63 +203,7 @@ namespace PK
         return index;
     }
 
-    VulkanResourceView VulkanDescriptorHeap::GetSamplerView(const SamplerDescriptor& descriptor)
-    {
-        VulkanResourceView view{};
-        view.hash = GetSamplerIndex(descriptor);
-        return view;
-    }
-
-    uint32_t VulkanDescriptorHeap::GetBindlessIndex(const VulkanResourceView& view, ShaderResourceType type)
-    {
-        if (type == ShaderResourceType::Sampler)
-        {
-            return view.hash;
-        }
-
-        return GetOrCacheResourceView(view, type);
-    }
-
-    uint3 VulkanDescriptorHeap::GetTextureSize(uint32_t bindlessIndex) const
-    {
-        return m_resourcePool[bindlessIndex]->resolution;
-    }
-
-    uint2 VulkanDescriptorHeap::AllocateDescriptorSet(const VulkanShader* shader, const VulkanDescriptorBinding* bindings, uint32_t count)
-    {
-        const auto resourceOffset = AllocateDescriptorRange(m_resourceHeap, shader->GetResourceSetSize(), m_properties.maxResourceStride);
-        const auto samplerOffset = AllocateDescriptorRange(m_samplerHeap, shader->GetSamplerSetSize(), m_properties.samplerStride);
-        const auto* offsets = shader->GetDescriptorOffsets();
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            const auto& binding = bindings[i];
-            const auto& offset = offsets[i];
-
-            for (auto j = 0u; j < binding.count; ++j)
-            {
-                const auto& view = binding.views[j];
-
-                if (offset.resourceStride)
-                {
-                    const auto index = GetOrCacheResourceView(view, binding.type);
-                    const auto* srcResource = m_resourcePool[index]->data;
-                    memcpy(m_resourceHeap.mappedPtr + resourceOffset + offset.resourceOffset + j * offset.resourceStride, srcResource, offset.resourceStride);
-                }
-
-                if (offset.samplerStride)
-                {
-                    const auto* srcSampler = m_samplerCache[view.hash].value.data;
-                    memcpy(m_samplerHeap.mappedPtr + samplerOffset + offset.samplerOffset + j * offset.samplerStride, srcSampler, offset.samplerStride);
-                }
-            }
-        }
-
-        return { resourceOffset, samplerOffset };
-    }
-
-
-    uint32_t VulkanDescriptorHeap::GetOrCacheResourceView(const VulkanResourceView& view, ShaderResourceType type)
+    uint32_t VulkanDescriptorHeap::GetResourceIndex(const VulkanResourceView& view, ShaderResourceType type)
     {
         // Pure resource descriptor: SamplerTexture in legacy shaders uses the exact same SAMPLED_IMAGE resource descriptor as Texture
         const auto key = Hash::Mix(view.hash, (uint64_t)type);
@@ -298,13 +248,44 @@ namespace PK
 
             VkHostAddressRangeEXT hostRange{ entry->data, PK_VK_MAX_RESOURCE_DESCRIPTOR_SIZE };
             VK_ASSERT_RESULT_CTX(vkWriteResourceDescriptorsEXT(m_device, 1u, &resourceInfo, &hostRange), "Failed to write resource descriptor!");
-            
-            auto* gpuAddress = m_resourceHeap.mappedPtr + m_properties.resourceHeapOffset + index * m_properties.maxResourceStride;
+
+            auto* gpuAddress = m_resourceHeap.mappedPtr + index * m_properties.maxResourceStride;
             memcpy(gpuAddress, entry->data, m_properties.maxResourceStride);
         }
 
         m_resourceCache[mapIndex].value.pruneTick = m_currentPruneTick + m_pruneDelay;
         return m_resourceCache[mapIndex].value.index;
+    }
+
+    uint3 VulkanDescriptorHeap::GetTextureSize(uint32_t bindlessIndex) const
+    {
+        return m_resourcePool[bindlessIndex]->resolution;
+    }
+
+    uint32_t VulkanDescriptorHeap::AllocateDescriptorSet(const VulkanShader* shader, const VulkanDescriptorBinding* bindings, uint32_t count)
+    {
+        const auto offset = AllocateDescriptorRange(m_resourceHeap, shader->GetResourceSetSize(), m_properties.maxResourceStride);
+        const auto* descriptors = shader->GetDescriptorOffsets();
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            const auto& binding = bindings[i];
+            const auto& descriptor = descriptors[i];
+
+            for (auto j = 0u; j < binding.count; ++j)
+            {
+                const auto& view = binding.views[j];
+
+                if (descriptor.stride)
+                {
+                    const auto index = GetResourceIndex(view, binding.type);
+                    const auto* srcResource = m_resourcePool[index]->data;
+                    memcpy(m_resourceHeap.mappedPtr + offset + descriptor.offset + j * descriptor.stride, srcResource, descriptor.stride);
+                }
+            }
+        }
+
+        return offset;
     }
 
     uint32_t VulkanDescriptorHeap::AllocateDescriptorRange(DescriptorHeap& heap, uint32_t size, uint32_t alignment)

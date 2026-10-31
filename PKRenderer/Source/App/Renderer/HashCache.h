@@ -111,7 +111,6 @@ namespace PK::App
         DECLARE_HASH(TAA_BlendingMotion)
         DECLARE_HASH(TAA_MotionAmplification)
         DECLARE_HASH(PostEffectsFeatureMask)
-        /*
         DECLARE_HASH(SamplerBilinearRepeat)
         DECLARE_HASH(SamplerBilinearMirror)
         DECLARE_HASH(SamplerBilinearClamped)
@@ -119,17 +118,7 @@ namespace PK::App
         DECLARE_HASH(SamplerTrilinearClamped)
         DECLARE_HASH(SamplerTrilinearRepeatAniso)
         DECLARE_HASH(SamplerPointClamped)
-        */
         DECLARE_HASH(pk_View)
-
-        DECLARE_HASH(pk_SamplerBilinearRepeat)
-        DECLARE_HASH(pk_SamplerBilinearMirror)
-        DECLARE_HASH(pk_SamplerBilinearClamped)
-        DECLARE_HASH(pk_SamplerTrilinearBorder)
-        DECLARE_HASH(pk_SamplerTrilinearClamped)
-        DECLARE_HASH(pk_SamplerTrilinearRepeatAniso)
-        DECLARE_HASH(pk_SamplerPointClamped)
-
 
         DECLARE_HASH(pk_SceneStructure)
         DECLARE_HASH(pk_ObjectToWorld)

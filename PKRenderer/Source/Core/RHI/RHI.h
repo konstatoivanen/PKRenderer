@@ -146,6 +146,8 @@ namespace PK
         template<typename T> 
         inline bool ValidateBuffer(RHIBufferRef& inoutBuffer, size_t count) { return ValidateBuffer(inoutBuffer, sizeof(T) * count); }
 
+        uint8_t GetSamplerIndex(FilterMode filter, WrapMode wrapMode, BorderColor borderColor, float anisotropy);
+
         void SetBufferArray(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count);
         void SetBufferArray(NameID name, RHIBuffer** buffers, size_t count);
         void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range);
@@ -160,8 +162,6 @@ namespace PK
         void SetImage(NameID name, RHITexture* image, const TextureViewRange& range);
         void SetImage(NameID name, RHITexture* image, uint16_t level, uint16_t layer);
         void SetImage(NameID name, RHITexture* image);
-        void SetSamplerArray(NameID name, const SamplerDescriptor* samplers, size_t count);
-        void SetSampler(NameID name, const SamplerDescriptor& sampler);
         void SetAccelerationStructureArray(NameID name, RHIAccelerationStructure** structures, size_t count);
         void SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure);
         void SetConstant(NameID name, const void* data, uint32_t size);

@@ -14,7 +14,6 @@
 #define PK_FONT_MSDF_UNIT 4.0f // keep upto date with definition in PKAsset.h
 
 uniform StructuredBuffer<uint4> pk_GUI_Vertices;
-uniform Texture2D pk_GUI_Textures[];
 uniform float4 pk_GUI_ScreenTransform;
 
 PK_DECLARE_VS_MSAA_ATTRIB(float2 vs_TEXCOORD);
@@ -45,7 +44,7 @@ void MainVs()
 
 void MainFs()
 {
-    const float4 value = TMP_SMP_2D(pk_GUI_Textures[vs_TEXTURE_INDEX], pk_SamplerBilinearRepeat, vs_TEXCOORD);
+    const float4 value = TMP_SMP_2D(pk_Heap_Textures2D[vs_TEXTURE_INDEX], pk_SamplerBilinearRepeat, vs_TEXCOORD);
     float4 color = vs_COLOR;
 
     if (vs_SHADING_MODE == PK_GUI_SHADING_MODE_FONT)

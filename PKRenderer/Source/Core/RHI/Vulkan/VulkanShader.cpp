@@ -45,28 +45,22 @@ namespace PK
 
         m_resourceLayout.ClearFast();
         m_resourceSetSize = 0u;
-        m_samplerSetSize = 0u;
 
         if (variant->descriptorCount)
         {
             PK_WARNING_ASSERT(variant->descriptorCount <= PK_RHI_MAX_DESCRIPTORS_PER_SET, "Warning: Shader descriptor count exceeds the maximum count per set!");
             const auto& descriptorProps = m_driver->physicalDeviceProperties.descriptorHeapDerived;
             auto* pDescriptors = variant->descriptors.Get(base);
-            bool hasUnbounded = false;
 
             for (auto j = 0u; j < variant->descriptorCount; ++j)
             {
                 const auto type = pDescriptors[j].type;
                 const auto count = pDescriptors[j].count;
                 const auto isUnbounded = count >= PK_RHI_MAX_UNBOUNDED_SIZE;
+                const auto isSampler = type == ShaderResourceType::Sampler;
                 const auto isImage = type == ShaderResourceType::Texture || type == ShaderResourceType::Image || type == ShaderResourceType::InputAttachment;
                 const auto isBuffer = type == ShaderResourceType::ConstantBuffer || type == ShaderResourceType::StorageBuffer || type == ShaderResourceType::AccelerationStructure;
-                const auto isSampler = type == ShaderResourceType::Sampler;
-                const auto resourceStride = !isImage ? !isBuffer ? 0u : descriptorProps.bufferStride : descriptorProps.imageStride;
-                const auto samplerStride = isSampler ? descriptorProps.samplerStride : 0u;
-
-                PK_FATAL_ASSERT(isUnbounded || !hasUnbounded, "Fixed-size descriptor binding '%s' (binding %u) cannot follow an unbounded bindless array!", pDescriptors[j].name, j);
-                hasUnbounded |= isUnbounded;
+                const auto resourceStride = isImage ? descriptorProps.imageStride : (isBuffer ? descriptorProps.bufferStride : 0u);
 
                 auto& descriptor = m_descriptors[j];
                 descriptor.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_AND_BINDING_MAPPING_EXT;
@@ -78,51 +72,33 @@ namespace PK
 
                 if (isUnbounded)
                 {
+                    m_descriptorOffsets[j].offset = 0u;
+                    m_descriptorOffsets[j].stride = 0u;
                     descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-                    descriptor.sourceData.constantOffset.heapOffset = type == ShaderResourceType::Sampler ? descriptorProps.samplerHeapOffset : descriptorProps.resourceHeapOffset;
-                    descriptor.sourceData.constantOffset.heapArrayStride = type == ShaderResourceType::Sampler ? descriptorProps.samplerStride : descriptorProps.maxResourceStride;
-                    continue;
-                }
-
-                descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
-                
-                m_resourceLayout.Add(type, pDescriptors[j].name, pDescriptors[j].accessMask, pDescriptors[j].writeMask, count);
-
-                if (resourceStride)
-                {
-                    m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)resourceStride);
-                }
-
-                m_descriptorOffsets[j].resourceOffset = m_resourceSetSize;
-                m_descriptorOffsets[j].samplerOffset = m_samplerSetSize;
-                m_descriptorOffsets[j].resourceStride = (uint16_t)resourceStride;
-                m_descriptorOffsets[j].samplerStride = (uint16_t)samplerStride;
-
-                if (type == ShaderResourceType::Sampler)
-                {
-                    descriptor.sourceData.pushIndex.heapOffset = m_descriptorOffsets[j].samplerOffset;
-                    descriptor.sourceData.pushIndex.pushOffset = PK_VK_PUSH_OFFSET_SAMPLER_HEAP;
-                    descriptor.sourceData.pushIndex.heapIndexStride = 1u;
-                    descriptor.sourceData.pushIndex.heapArrayStride = samplerStride;
+                    descriptor.sourceData.constantOffset.heapOffset = 0u;
+                    descriptor.sourceData.constantOffset.heapArrayStride = isSampler ? descriptorProps.samplerStride : resourceStride;
                 }
                 else
                 {
-                    descriptor.sourceData.pushIndex.heapOffset = m_descriptorOffsets[j].resourceOffset;
+                    PK_FATAL_ASSERT(!isSampler, "Bounded sampler descriptors are deprecated; use pk_Samplers[]!");
+                    PK_FATAL_ASSERT(resourceStride > 0u, "Unsupported descriptor set resource type for '%s'!", pDescriptors[j].name);
+
+                    m_resourceLayout.Add(type, pDescriptors[j].name, pDescriptors[j].accessMask, pDescriptors[j].writeMask, count);
+                    m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)resourceStride);
+
+                    m_descriptorOffsets[j].offset = m_resourceSetSize;
+                    m_descriptorOffsets[j].stride = (uint16_t)resourceStride;
+                    m_resourceSetSize += resourceStride * count;
+
+                    descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+                    descriptor.sourceData.pushIndex.heapOffset = m_descriptorOffsets[j].offset;
                     descriptor.sourceData.pushIndex.pushOffset = PK_VK_PUSH_OFFSET_RESOURCE_HEAP;
                     descriptor.sourceData.pushIndex.heapIndexStride = 1u;
                     descriptor.sourceData.pushIndex.heapArrayStride = resourceStride;
-                    descriptor.sourceData.pushIndex.samplerHeapOffset = m_descriptorOffsets[j].samplerOffset;
-                    descriptor.sourceData.pushIndex.samplerPushOffset = PK_VK_PUSH_OFFSET_SAMPLER_HEAP;
-                    descriptor.sourceData.pushIndex.samplerHeapIndexStride = 1u;
-                    descriptor.sourceData.pushIndex.samplerHeapArrayStride = samplerStride;
                 }
-
-                m_resourceSetSize += resourceStride * count;
-                m_samplerSetSize += samplerStride * count;
             }
 
             m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)descriptorProps.maxResourceStride);
-            m_samplerSetSize = math::align(m_samplerSetSize, (uint32_t)descriptorProps.samplerStride);
         }
 
         m_descriptorLayout.sType = VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT;

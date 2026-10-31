@@ -145,7 +145,15 @@ namespace PK::App
             { Uniform::Float, hash->TAA_MotionAmplification },
 
             { Uniform::Uint, hash->ScreenLevels },
-            { Uniform::Uint, hash->PostEffectsFeatureMask}
+            { Uniform::Uint, hash->PostEffectsFeatureMask},
+
+            { Uniform::Byte, hash->SamplerBilinearRepeat },
+            { Uniform::Byte, hash->SamplerBilinearMirror },
+            { Uniform::Byte, hash->SamplerBilinearClamped },
+            { Uniform::Byte, hash->SamplerTrilinearBorder },
+            { Uniform::Byte, hash->SamplerTrilinearClamped },
+            { Uniform::Byte, hash->SamplerPointClamped },
+            { Uniform::Byte, hash->SamplerTrilinearRepeatAniso }
         });
     }
 
@@ -243,6 +251,14 @@ namespace PK::App
             constants->Set<uint2>(hash->FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
             constants->Set<int>(hash->ScreenLevels, math::levels(resolution.xy()) - 1u);
             constants->Set<float4>(hash->MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
+
+            constants->Set<uint8_t>(hash->SamplerBilinearRepeat, (uint8_t)RHI::GetSamplerIndex(FilterMode::Bilinear, WrapMode::Repeat, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerBilinearMirror, (uint8_t)RHI::GetSamplerIndex(FilterMode::Bilinear, WrapMode::Mirror, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerBilinearClamped, (uint8_t)RHI::GetSamplerIndex(FilterMode::Bilinear, WrapMode::Clamp, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerTrilinearBorder, (uint8_t)RHI::GetSamplerIndex(FilterMode::Trilinear, WrapMode::Border, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerTrilinearClamped, (uint8_t)RHI::GetSamplerIndex(FilterMode::Trilinear, WrapMode::Clamp, BorderColor::FloatClear, 0.0f));
+            constants->Set<uint8_t>(hash->SamplerTrilinearRepeatAniso, (uint8_t)RHI::GetSamplerIndex(FilterMode::Trilinear, WrapMode::Repeat, BorderColor::FloatClear, 16.0f));
+            constants->Set<uint8_t>(hash->SamplerPointClamped, (uint8_t)RHI::GetSamplerIndex(FilterMode::Point, WrapMode::Clamp, BorderColor::FloatClear, 0.0f));
 
             m_passHierarchicalDepth.SetViewConstants(view);
             m_passLights.SetViewConstants(view);

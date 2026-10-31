@@ -297,14 +297,25 @@ namespace PK
         return true;
     }
 
+    uint8_t RHI::GetSamplerIndex(FilterMode filter, WrapMode wrapMode, BorderColor borderColor, float anisotropy)
+    {
+        SamplerDescriptor sampler{};
+        sampler.borderColor = borderColor;
+        sampler.anisotropy = anisotropy;
+        sampler.filterMin = filter;
+        sampler.filterMag = filter;
+        sampler.wrap[0] = wrapMode;
+        sampler.wrap[1] = wrapMode;
+        sampler.wrap[2] = wrapMode;
+        return (uint8_t)GetGraph()->MakeResident(sampler);
+    }
+
     void RHI::SetBufferArray(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { GetGraph()->SetBuffers(name, buffers, ranges, count); }
     void RHI::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { GetGraph()->SetBuffers(name, &buffer, &range, 1u); }
     void RHI::SetTextureArray(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { GetGraph()->SetTextures(name, textures, ranges, count); }
     void RHI::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { GetGraph()->SetTextures(name, &texture, &range, 1u); }
     void RHI::SetImageArray(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { GetGraph()->SetImages(name, images, ranges, count); }
     void RHI::SetImage(NameID name, RHITexture* image, const TextureViewRange& range) { GetGraph()->SetImages(name, &image, &range, 1u); }
-    void RHI::SetSamplerArray(NameID name, const SamplerDescriptor* samplers, size_t count) { GetGraph()->SetSamplers(name, samplers, count); }
-    void RHI::SetSampler(NameID name, const SamplerDescriptor& sampler) { GetGraph()->SetSamplers(name, &sampler, 1u); }
     void RHI::SetAccelerationStructureArray(NameID name, RHIAccelerationStructure** structures, size_t count) { GetGraph()->SetAccelerationStructures(name, structures, count); }
     void RHI::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { GetGraph()->SetAccelerationStructures(name, &structure, 1u); }
 

@@ -111,6 +111,14 @@ uniform cbuffer PKRenderView
     int ScreenLevels; // Maximum mip level of current screen dimensions.
 
     uint PostEffectsFeatureMask;
+
+    uint8_t SamplerBilinearRepeat;
+    uint8_t SamplerBilinearMirror;
+    uint8_t SamplerBilinearClamped;
+    uint8_t SamplerTrilinearBorder;
+    uint8_t SamplerTrilinearClamped;
+    uint8_t SamplerPointClamped;
+    uint8_t SamplerTrilinearRepeatAniso;
 } pk_View;
 
 #if !defined(PK_INSTANCING_ENABLED)
@@ -120,31 +128,31 @@ uniform cbuffer pk_ModelMatrices
 };
 #endif
 
-uniform sampler pk_SamplerBilinearRepeat;
-uniform sampler pk_SamplerBilinearMirror;
-uniform sampler pk_SamplerBilinearClamped;
-uniform sampler pk_SamplerTrilinearBorder;
-uniform sampler pk_SamplerTrilinearClamped;
-uniform sampler pk_SamplerTrilinearRepeatAniso;
-uniform sampler pk_SamplerPointClamped;
+#define pk_SamplerBilinearRepeat       pk_Heap_Samplers[uint(pk_View.SamplerBilinearRepeat)]
+#define pk_SamplerBilinearMirror       pk_Heap_Samplers[uint(pk_View.SamplerBilinearMirror)]
+#define pk_SamplerBilinearClamped      pk_Heap_Samplers[uint(pk_View.SamplerBilinearClamped)]
+#define pk_SamplerTrilinearBorder      pk_Heap_Samplers[uint(pk_View.SamplerTrilinearBorder)]
+#define pk_SamplerTrilinearClamped     pk_Heap_Samplers[uint(pk_View.SamplerTrilinearClamped)]
+#define pk_SamplerPointClamped         pk_Heap_Samplers[uint(pk_View.SamplerPointClamped)]
+#define pk_SamplerTrilinearRepeatAniso pk_Heap_Samplers[uint(pk_View.SamplerTrilinearRepeatAniso)]
 
 // @TODO TEMP UTILITIES FOR TEXTURE SAMPLING.
-#define TMP_SMP_2D(tex, smp, uv) texture(sampler2D(tex, smp), uv)
-#define TMP_SMP_2DArray(tex, smp, uv) texture(sampler2DArray(tex, smp), uv)
-#define TMP_SMP_3D(tex, smp, uv) texture(sampler3D(tex, smp), uv)
-#define TMP_SMP_CubeArray(tex, smp, uv) texture(samplerCubeArray(tex, smp), uv)
+#define TMP_SMP_2D(tex, smp, uv) texture(nonuniformEXT(sampler2D(tex, smp)), uv)
+#define TMP_SMP_2DArray(tex, smp, uv) texture(nonuniformEXT(sampler2DArray(tex, smp)), uv)
+#define TMP_SMP_3D(tex, smp, uv) texture(nonuniformEXT(sampler3D(tex, smp)), uv)
+#define TMP_SMP_CubeArray(tex, smp, uv) texture(nonuniformEXT(samplerCubeArray(tex, smp)), uv)
 
-#define TMP_SMP_BIAS_2D(tex, smp, uv, bias) texture(sampler2D(tex, smp), uv, bias)
+#define TMP_SMP_BIAS_2D(tex, smp, uv, bias) texture(nonuniformEXT(sampler2D(tex, smp)), uv, bias)
 
-#define TMP_SMP_LEVEL_2D(tex, smp, uv, level) textureLod(sampler2D(tex, smp), uv, level)
-#define TMP_SMP_LEVEL_2DArray(tex, smp, uv, level) textureLod(sampler2DArray(tex, smp), uv, level)
-#define TMP_SMP_LEVEL_3D(tex, smp, uv, level) textureLod(sampler3D(tex, smp), uv, level)
-#define TMP_SMP_LEVEL_CubeArray(tex, smp, uv, level) textureLod(samplerCubeArray(tex, smp), uv, level)
+#define TMP_SMP_LEVEL_2D(tex, smp, uv, level) textureLod(nonuniformEXT(sampler2D(tex, smp)), uv, level)
+#define TMP_SMP_LEVEL_2DArray(tex, smp, uv, level) textureLod(nonuniformEXT(sampler2DArray(tex, smp)), uv, level)
+#define TMP_SMP_LEVEL_3D(tex, smp, uv, level) textureLod(nonuniformEXT(sampler3D(tex, smp)), uv, level)
+#define TMP_SMP_LEVEL_CubeArray(tex, smp, uv, level) textureLod(nonuniformEXT(samplerCubeArray(tex, smp)), uv, level)
 
-#define TMP_SMP_OFFSET_2D(tex, smp, uv, offs) textureOffset(sampler2D(tex, smp), uv, offs)
-#define TMP_SMP_GATHER_2D(tex, smp, uv, cmp) textureGather(sampler2D(tex, smp), uv, cmp)
-#define TMP_SMP_GATHER_2DArray(tex, smp, uv, cmp) textureGather(sampler2DArray(tex, smp), uv, cmp)
-#define TMP_SMP_GATHER_OFFSETS_2D(tex, smp, uv, offs) textureGatherOffsets(sampler2D(tex, smp), uv, offs)
+#define TMP_SMP_OFFSET_2D(tex, smp, uv, offs) textureOffset(nonuniformEXT(sampler2D(tex, smp)), uv, offs)
+#define TMP_SMP_GATHER_2D(tex, smp, uv, cmp) textureGather(nonuniformEXT(sampler2D(tex, smp)), uv, cmp)
+#define TMP_SMP_GATHER_2DArray(tex, smp, uv, cmp) textureGather(nonuniformEXT(sampler2DArray(tex, smp)), uv, cmp)
+#define TMP_SMP_GATHER_OFFSETS_2D(tex, smp, uv, offs) textureGatherOffsets(nonuniformEXT(sampler2D(tex, smp)), uv, offs)
 
 uniform accelerationStructureEXT pk_SceneStructure;
 

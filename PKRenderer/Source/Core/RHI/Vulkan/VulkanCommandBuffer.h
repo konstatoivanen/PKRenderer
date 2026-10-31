@@ -9,7 +9,7 @@ namespace PK
         inline bool IsRecording() const { return m_isRecording; }
         inline bool IsExecuting() const { return m_commandBuffer != VK_NULL_HANDLE; }
 
-        void SetShaderState(const struct VulkanShader* shader, uint16_t excludeStageMask, uint2 descriptorHeapOffsets, const void* pushConstants, uint32_t pushConstantSize);
+        void SetShaderState(const struct VulkanShader* shader, uint16_t excludeStageMask, uint32_t descriptorHeapOffset, const void* pushConstants, uint32_t pushConstantSize);
         void SetRasterState(const VkRenderingInfo* renderingInfo, const VulkanDynamicState* dynamicState);
         void SetVertexBuffers(const VkBindVertexBuffer3InfoKHR* infos, uint32_t count);
         void SetIndexBuffer(const VkBindIndexBuffer3InfoKHR& info);
@@ -43,7 +43,7 @@ namespace PK
         // Shader cmd state
         const struct VulkanShader* m_shader = nullptr;
         uint16_t m_excludeStageMask = 0u;
-        uint2 m_descriptorHeapOffsets = { ~0u, ~0u };
+        uint32_t m_descriptorHeapOffset = ~0u;
         const void* m_pushConstants = nullptr;
 
         // Raster cmd state

@@ -56,7 +56,6 @@ namespace PK
     void VulkanGraph::SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<const VulkanBuffer*>(buffers[i])->GetResourceView(ranges[i]), count); }
     void VulkanGraph::SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<const VulkanTexture*>(textures[i])->GetResourceView(ranges[i], TextureViewMode::SRV), count); }
     void VulkanGraph::SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<const VulkanTexture*>(images[i])->GetResourceView(ranges[i], TextureViewMode::UAV), count); }
-    void VulkanGraph::SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) { PK_VK_BIND_VIEWS(name, m_descriptorHeap->GetSamplerView(samplers[i]), count); }
     void VulkanGraph::SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<VulkanAccelerationStructure*>(structures[i])->GetResourceView(), count); }
     void VulkanGraph::SetConstant(NameID name, const void* data, uint32_t size) { m_globalResources.Set<char>(name, static_cast<const char*>(data), size); }
     void VulkanGraph::SetKeyword(NameID name, bool value) { m_globalResources.Set<bool>(name, value); }
@@ -68,7 +67,7 @@ namespace PK
         const auto& view = *texture->GetNativeView<VulkanResourceView>();
         AddResidencyBarrierPass();
         RecordImageAccess(QueueType::EnumCount, view, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT);
-        return m_descriptorHeap->GetBindlessIndex(view, ShaderResourceType::Texture);
+        return m_descriptorHeap->GetResourceIndex(view, ShaderResourceType::Texture);
     }
 
     uint32_t VulkanGraph::MakeResident(RHIBuffer* buffer)
@@ -76,7 +75,7 @@ namespace PK
         const auto& view = *buffer->GetNativeView<VulkanResourceView>();
         AddResidencyBarrierPass();
         RecordMemoryAccess(QueueType::EnumCount, view, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_UNIFORM_READ_BIT);
-        return m_descriptorHeap->GetBindlessIndex(view, ShaderResourceType::StorageBuffer);
+        return m_descriptorHeap->GetResourceIndex(view, ShaderResourceType::StorageBuffer);
     }
 
     uint32_t VulkanGraph::MakeResident(const SamplerDescriptor& sampler) { return m_descriptorHeap->GetSamplerIndex(sampler); }
@@ -266,7 +265,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDraw(*ctx->cmb, cmd->vertexCount, cmd->instanceCount, cmd->firstVertex, cmd->firstInstance);
         });
@@ -284,7 +283,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDrawIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
@@ -304,7 +303,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
             vkCmdDrawIndexed(*ctx->cmb, cmd->indexCount, cmd->instanceCount, cmd->firstIndex, cmd->vertexOffset, cmd->firstInstance);
@@ -324,7 +323,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
             vkCmdDrawIndexedIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
@@ -345,7 +344,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksEXT(*ctx->cmb, cmd->dimensions.x, cmd->dimensions.y, cmd->dimensions.z);
         });
 
@@ -359,7 +358,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksIndirect2EXT(*ctx->cmb, &cmd->indirectInfo);
         });
 
@@ -378,7 +377,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCountCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksIndirectCount2EXT(*ctx->cmb, &cmd->indirectCountInfo);
         });
 
@@ -400,7 +399,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchCmd* cmd)
         {
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDispatch(*ctx->cmb, cmd->groupCounts.x, cmd->groupCounts.y, cmd->groupCounts.z);
         });
 
@@ -416,7 +415,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchIndirectCmd* cmd)
         {
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDispatchIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
 
@@ -433,7 +432,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchRaysCmd* cmd)
         {
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffsets, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdTraceRaysKHR(*ctx->cmb, &cmd->addressRayGen, &cmd->addressMiss, &cmd->addressHit, &cmd->addressCallable, cmd->dimensions.x, cmd->dimensions.y, cmd->dimensions.z);
         });
 
@@ -1485,14 +1484,14 @@ namespace PK
 
         if (state->dirtyFlags & STATE_DIRTY_DESCRIPTORS)
         {
-            state->descriptorHeapOffsets = m_descriptorHeap->AllocateDescriptorSet(shader.value, state->descriptors, state->descriptorCount);
+            state->descriptorHeapOffset = m_descriptorHeap->AllocateDescriptorSet(shader.value, state->descriptors, state->descriptorCount);
         }
 
         state->dirtyFlags &= ~(STATE_DIRTY_DESCRIPTORS | STATE_DIRTY_SHADER);
 
         cmd->shader = shader.value;
         cmd->excludeStageMask = state->excludeStageMask;
-        cmd->descriptorHeapOffsets = state->descriptorHeapOffsets;
+        cmd->descriptorHeapOffset = state->descriptorHeapOffset;
         cmd->pushConstantSize = shader->GetPushConstantSize();
         cmd->pushConstants = Allocate<uint8_t>(cmd->pushConstantSize);
 

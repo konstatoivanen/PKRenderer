@@ -63,17 +63,15 @@ namespace PK
 
         VkImageView GetRenderTargetView(const VulkanResourceView& view);
         uint16_t GetSamplerIndex(const SamplerDescriptor& descriptor);
-        VulkanResourceView GetSamplerView(const SamplerDescriptor& descriptor);
-        uint32_t GetBindlessIndex(const VulkanResourceView& view, ShaderResourceType type);
+        uint32_t GetResourceIndex(const VulkanResourceView& view, ShaderResourceType type);
         uint3 GetTextureSize(uint32_t bindlessIndex) const;
 
-        uint2 AllocateDescriptorSet(
+        uint32_t AllocateDescriptorSet(
             const VulkanShader* shader,
             const VulkanDescriptorBinding* bindings,
             uint32_t count);
 
     private:
-        uint32_t GetOrCacheResourceView(const VulkanResourceView& view, ShaderResourceType type);
         static uint32_t AllocateDescriptorRange(DescriptorHeap& heap, uint32_t size, uint32_t alignment);
 
         const VkDevice m_device;
