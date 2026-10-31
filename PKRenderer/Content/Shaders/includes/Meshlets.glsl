@@ -208,9 +208,9 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 sm_bbmin, const 
         );
 
         quat = swizzled_quat;
-        quat = lerp(quat, swizzled_quat.wxyz, bool(swizzle_index == 1).xxxx);
-        quat = lerp(quat, swizzled_quat.zwxy, bool(swizzle_index == 2).xxxx);
-        quat = lerp(quat, swizzled_quat.yzwx, bool(swizzle_index == 3).xxxx);
+        quat = select(bool(swizzle_index == 1).xxxx, swizzled_quat.wxyz, quat);
+        quat = select(bool(swizzle_index == 2).xxxx, swizzled_quat.zwxy, quat);
+        quat = select(bool(swizzle_index == 3).xxxx, swizzled_quat.yzwx, quat);
         quat = normalize(quat);
     }
 
@@ -508,7 +508,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         const uint instance_id = payload.packed1.w;
 
         uint delta_index = subgroupBallotExclusiveBitCount(payload.visible_mask);
-        delta_index = lerp(0u, gl_LocalInvocationID.x, delta_index == gl_WorkGroupID.x);
+        delta_index = select(delta_index == gl_WorkGroupID.x, gl_LocalInvocationID.x, 0u);
         delta_index = WaveActiveMax(delta_index);
 
         const uint meshlet_index = meshlet_first + delta_index;

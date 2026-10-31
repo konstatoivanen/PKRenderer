@@ -12,7 +12,7 @@
 #define DEFAULT_LOG_LUMINANCE_MIN -8.0f
 
 // Source texture
-uniform texture2D pk_Texture;
+uniform Texture2D<float3> pk_Texture;
 
 // Source: http://www.alextardif.com/HistogramLuminance.html
 shared uint lds_Histogram[NUM_HISTOGRAM_BINS];

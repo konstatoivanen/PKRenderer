@@ -6,8 +6,8 @@
 #include "includes/Encoding.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-uniform texture2D pk_Texture; // Current Screen
-uniform texture2D pk_Texture1; // History Read
+uniform Texture2D<float4> pk_Texture; // Current Screen
+uniform Texture2D<float3> pk_Texture1; // History Read
 uniform RWTexture2D<uint> pk_Image; // History Write
 uniform RWTexture2D<float4> pk_Image1; // Color Write
 

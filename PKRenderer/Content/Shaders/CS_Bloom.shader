@@ -12,7 +12,7 @@
 #include "includes/Common.glsl"
 
 uniform float pk_Bloom_UpsampleWeight;
-uniform texture2D pk_Texture;
+uniform Texture2D<float3> pk_Texture;
 uniform RWTexture2D<uint> pk_Image;
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]

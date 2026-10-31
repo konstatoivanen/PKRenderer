@@ -3,7 +3,7 @@
 
 #define PK_DFG_USE_MULTIPLE_SCATTER 1
 
-uniform texture2D pk_PreIntegratedDFG;
+uniform Texture2D pk_PreIntegratedDFG;
 
 struct BxDFSurf
 {

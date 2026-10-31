@@ -13,9 +13,9 @@
 #define VOLUMEFOG_SIZE_XY uint2(pk_View.ScreenSize.xy / VOLUMEFOG_XY_ALIGNMENT)
 #define VOLUMEFOG_SIZE uint3(pk_View.ScreenSize.xy / VOLUMEFOG_XY_ALIGNMENT, 128)
 
-uniform texture3D pk_Fog_Scatter_Read;
-uniform texture3D pk_Fog_Inject_Read;
-uniform texture3D pk_Fog_Density_Read;
+uniform Texture3D<float4> pk_Fog_Scatter_Read;
+uniform Texture3D<float3> pk_Fog_Inject_Read;
+uniform Texture3D<float> pk_Fog_Density_Read;
 uniform RWTexture3D<uint> pk_Fog_Inject_Write;
 uniform RWTexture3D<float> pk_Fog_Density_Write;
 uniform RWTexture3D<float4> pk_Fog_Scatter_Write;

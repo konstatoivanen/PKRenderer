@@ -10,7 +10,7 @@
 #include "includes/Kernels.glsl"
 
 uniform RWTexture2D<float> pk_Image;
-uniform texture2D pk_Texture;
+uniform Texture2D<float> pk_Texture;
 
 [numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void ShadowmapCs()
@@ -132,7 +132,7 @@ void ShadowmapUpsampleCs()
 
     const float4 base_depths = GatherViewDepths((coord_load + 1.0f.xx) * pk_View.ScreenParams.zw);
     const bool far_clip = Any_GEqual(base_depths, pk_View.ClipParams.yyyy - 1e-2f);
-    const float base_depth = lerp(cmin(base_depths), -pk_View.ClipParams.y * 2.0f, far_clip);
+    const float base_depth = select(far_clip, -pk_View.ClipParams.y * 2.0f, cmin(base_depths));
     lds_depth[thread] = base_depth;
 
     const half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_View.FrameIndex.y).xy) * 2.0hf - 1.0hf;

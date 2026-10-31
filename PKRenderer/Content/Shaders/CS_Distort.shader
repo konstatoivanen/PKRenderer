@@ -9,7 +9,7 @@
 #include "includes/Common.glsl"
 #include "includes/NoiseBlue.glsl"
 
-uniform texture2D pk_Texture;
+uniform Texture2D<float3> pk_Texture;
 [pk_local(DistortPaniniCs)] uniform RWTexture2D<uint> pk_Image;
 [pk_local(DistortChromaCs)] uniform RWTexture2D<float4> pk_Image;
 

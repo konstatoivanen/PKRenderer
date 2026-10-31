@@ -3,8 +3,8 @@
 #include "Kernels.glsl"
 #include "Noise.glsl"
 
-uniform texture2DArray pk_ShadowmapAtlas;
-uniform texture2D pk_ShadowmapScreenSpace;
+uniform Texture2DArray<float> pk_ShadowmapAtlas;
+uniform Texture2D<float> pk_ShadowmapScreenSpace;
 
 #ifndef SHADOW_PROG_COORD
 #if defined(SHADER_FRAGMENT)

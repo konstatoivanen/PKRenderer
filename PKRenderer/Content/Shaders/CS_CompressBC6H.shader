@@ -3,7 +3,7 @@
 
 #include "includes/Common.glsl"
 
-uniform texture2D pk_Texture;
+uniform Texture2D<float3> pk_Texture;
 uniform RWTexture2D<uint4> pk_Image;
 
 // Whether to use P2 modes (4 endpoints) for compression. Slow, but improves quality.

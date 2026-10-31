@@ -34,7 +34,7 @@ namespace PK::App
         m_gizmos_vertexStreamElement.inputRate = InputRate::PerVertex;
         m_gizmos_vertexStreamElement.stride = sizeof(uint4);
         m_gizmos_vertexStreamElement.offset = 0u;
-        m_gizmos_vertexStreamElement.format = ElementType::Uint4;
+        m_gizmos_vertexStreamElement.format = Uniform::Uint4;
 
         auto hash = HashCache::Get();
         RHI::SetBuffer(hash->pk_Gizmos_IndirectVertices, m_gizmos_indirectVertexBuffer.get());

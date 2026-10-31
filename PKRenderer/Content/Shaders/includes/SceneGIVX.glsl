@@ -3,7 +3,7 @@
 
 uniform RWTexture3D<uint> pk_GI_VX_Mask;
 uniform RWTexture3D<float4> pk_GI_VX_RadianceWrite;
-uniform texture3D pk_GI_VX_RadianceRead;
+uniform Texture3D<float4> pk_GI_VX_RadianceRead;
 
 #define PK_GI_VX_MIP_COUNT 7
 #define PK_GI_VX_MIN_HISTORY 4.0f

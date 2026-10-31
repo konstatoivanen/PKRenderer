@@ -454,7 +454,7 @@ namespace PK
 
     namespace VulkanEnumConvert
     {
-        VkFormat GetFormat(ElementType format);
+        VkFormat GetFormat(Uniform format);
         VkColorSpaceKHR GetColorSpace(ColorSpace colorSpace);
         VkPresentModeKHR GetPresentMode(VSyncMode vsyncMode);
         ColorSpace GetColorSpace(VkColorSpaceKHR colorSpace);

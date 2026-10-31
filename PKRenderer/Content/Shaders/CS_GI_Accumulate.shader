@@ -123,7 +123,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
         const uint thread_mask = WaveActiveBallot(reservoir_weight > 1e-6f).x;
         const uint thread_count = countbits(thread_mask);
         const float wave_weight = WaveActiveSum(reservoir_weight);
-        const float filter_weight = lerp(0.0f, wave_weight / float(thread_count), thread_count > 0);
+        const float filter_weight = select(thread_count > 0, wave_weight / float(thread_count), 0.0f);
         is_boiling = reservoir_weight > filter_weight * filter_multiplier;
     }
 
@@ -138,8 +138,8 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
 
     ReSTIR_Store_Current(coord_base, is_valid && !is_boiling ? combined : initial);
 
-    const float3 radiance = lerp(initial.radiance, combined.radiance * weight, is_valid.xxx);
-    const float3 direction = lerp(SafeNormalize(initial.position - origin), combined_direction, is_valid.xxx);
+    const float3 radiance = select(is_valid.xxx, combined.radiance * weight, initial.radiance);
+    const float3 direction = select(is_valid.xxx, combined_direction, SafeNormalize(initial.position - origin));
     return SH_Luma_FromRadiance(radiance, direction);
 }
 

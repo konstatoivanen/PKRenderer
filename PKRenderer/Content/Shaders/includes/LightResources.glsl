@@ -44,16 +44,16 @@ struct LightTile
     uint cascade;
 };
 
-uniform texture2DArray pk_IESProfiles;
+uniform Texture2DArray<float> pk_IESProfiles;
 uniform StructuredBuffer<uint4> pk_Lights;
 uniform StructuredBuffer<float4x4> pk_LightMatrices;
 
 #if defined(PK_WRITE_LIGHT_CLUSTERS)
 uniform RWStructuredBuffer<ushort> pk_LightLists;
-uniform writeonly uimage3D pk_LightTiles;
+uniform writeonly RWTexture3D<uint> pk_LightTiles;
 #else
 uniform StructuredBuffer<ushort> pk_LightLists;
-uniform readonly uimage3D pk_LightTiles;
+uniform readonly RWTexture3D<uint> pk_LightTiles;
 #endif
 
 SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)

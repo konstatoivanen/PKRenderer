@@ -1,8 +1,8 @@
 #pragma once
 #include "Common.glsl"
 
-uniform texture3D pk_CC_LutTex;
-uniform texture3D pk_Tonemap_LutTex;
+uniform Texture3D<float3> pk_CC_LutTex;
+uniform Texture3D<float3> pk_Tonemap_LutTex;
 
 #define FX_FEAT_VIGNETTE 0x1u
 #define FX_FEAT_BLOOM 0x2u

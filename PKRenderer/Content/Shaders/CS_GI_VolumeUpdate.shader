@@ -6,10 +6,10 @@
 #include "includes/Common.glsl"
 #include "includes/SceneGIVX.glsl"
 
-uniform texture3D pk_Texture;
-uniform writeonly restrict image3D pk_Image;
-uniform writeonly restrict image3D pk_Image1;
-uniform writeonly restrict image3D pk_Image2;
+uniform Texture3D<float4> pk_Texture;
+uniform writeonly restrict RWTexture3D<float4> pk_Image;
+uniform writeonly restrict RWTexture3D<float4> pk_Image1;
+uniform writeonly restrict RWTexture3D<float4> pk_Image2;
 
 [pk_local(VolumeMipmapCs)] shared float4 lds_Data[64u];
 

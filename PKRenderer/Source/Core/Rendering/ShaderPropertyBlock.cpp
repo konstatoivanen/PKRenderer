@@ -48,7 +48,7 @@ namespace PK
         {
             auto& element = (*this)[i];
 
-            if (element.format != ElementType::Keyword)
+            if (element.format != Uniform::Keyword)
             {
                 auto alignment = RHIEnumConvert::ScalarSize(element.format);
                 maxAlignment = math::max(alignment, maxAlignment);
@@ -71,7 +71,7 @@ namespace PK
         {
             auto& element = (*this)[i];
 
-            if (element.format == ElementType::Keyword)
+            if (element.format == Uniform::Keyword)
             {
                 keywordsStride = math::align(keywordsStride, (uint16_t)1u);
                 element.offset = keywordsStride;

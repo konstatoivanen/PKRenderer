@@ -4,14 +4,14 @@
 
 #include "Common.glsl"
 
-uniform texture2D pk_GB_Current_Normals;
-uniform texture2D pk_GB_Current_Depth;
-uniform texture2D pk_GB_Current_DepthBiased;
-uniform texture2DArray pk_GB_Current_DepthMips;
-uniform texture2D pk_GB_Previous_Color;
-uniform texture2D pk_GB_Previous_Normals;
-uniform texture2D pk_GB_Previous_Depth;
-uniform texture2D pk_GB_Previous_DepthBiased;
+uniform Texture2D<float4> pk_GB_Current_Normals;
+uniform Texture2D<float> pk_GB_Current_Depth;
+uniform Texture2D<float> pk_GB_Current_DepthBiased;
+uniform Texture2DArray<float> pk_GB_Current_DepthMips;
+uniform Texture2D<float4> pk_GB_Previous_Color;
+uniform Texture2D<float4> pk_GB_Previous_Normals;
+uniform Texture2D<float> pk_GB_Previous_Depth;
+uniform Texture2D<float> pk_GB_Previous_DepthBiased;
 
 #define GBUFFER_SAMPLE(t, uv) TMP_SMP_2D(t, pk_SamplerBilinearClamped, uv)
 #define GBUFFER_SAMPLE_OFFSET(t, uv, offs) TMP_SMP_OFFSET_2D(t, pk_SamplerBilinearClamped, uv, offs)

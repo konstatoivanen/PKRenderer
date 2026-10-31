@@ -41,8 +41,7 @@ float SH_EvaluateDiffuseGeometrics(float4 sh, float3 d)
     float p = 1.0f + 2.0f * lenR1 / R0;
     float a = (1.0f - lenR1 / R0) / (1.0f + lenR1 / R0);
     float R2 = R0 * (a + (1.0f - a) * (p + 1.0f) * pow(q, p));
-    R2 = lerp(R2, R0, bool(lenR1 == 0));
-    return R2;
+    return select(bool(lenR1 == 0), R0, R2);
 }
 
 float SH_EvaluateDiffuseBasis(float4 sh, float3 d)

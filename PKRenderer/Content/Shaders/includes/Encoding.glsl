@@ -9,7 +9,7 @@ float2 OctaWrap(float2 v)
 float2 EncodeOctaUv(float3 n)
 {
     n /= (abs(n.x) + abs(n.y) + abs(n.z));
-    n.xz = lerp(OctaWrap(n.xz), n.xz, (n.y >= 0.0f).xx);
+    n.xz = select((n.y >= 0.0f).xx, n.xz, OctaWrap(n.xz));
     n.xz = n.xz * 0.5f + 0.5f;
     return n.xz;
 }
@@ -20,8 +20,8 @@ float3 DecodeOctaUv(float2 f)
     f = f * 2.0f - 1.0f;
     float3 n = float3(f.x, 1.0f - abs(f.x) - abs(f.y), f.y);
     float t = max(-n.y, 0.0f);
-    n.x += lerp(t, -t, n.x >= 0.0f);
-    n.z += lerp(t, -t, n.z >= 0.0f);
+    n.x += select(n.x >= 0.0f, -t, t);
+    n.z += select(n.z >= 0.0f, -t, t);
     return normalize(n);
 }
 

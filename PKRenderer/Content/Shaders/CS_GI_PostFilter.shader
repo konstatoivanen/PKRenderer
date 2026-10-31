@@ -40,7 +40,7 @@ void PostFilterCs()
             const float scale = radius_scale.y;
             const float radius = radius_scale.x * (scale + 1e-4f);
             const bool skip = diff.history > 30.0f || scale < 0.05f;
-            const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
+            const uint step = select(skip, 0xFFFFu, uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f));
             GI_SF_DISK_DIFF(normal, depth, view_dir, view_pos, diff.history, step, skip, radius, diff)
         }
 

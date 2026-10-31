@@ -5,7 +5,7 @@
 #include "includes/BRDF.glsl"
 #include "includes/Noise.glsl"
 
-uniform writeonly restrict image2D pk_Image;
+uniform writeonly restrict RWTexture2D<float4> pk_Image;
 
 [numthreads(8u, 8u, 1u)]
 void IntegrateCs()

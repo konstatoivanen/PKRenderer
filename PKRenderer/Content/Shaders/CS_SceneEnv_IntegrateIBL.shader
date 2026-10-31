@@ -9,11 +9,11 @@
 
 #define PK_STATIC_FOG_VIRTUAL_DISTANCE 14000.0f
 
-uniform writeonly restrict uimage2D pk_Image;
-uniform writeonly restrict uimage2D pk_Image1;
-uniform writeonly restrict uimage2D pk_Image2;
-uniform writeonly restrict uimage2D pk_Image3;
-uniform writeonly restrict uimage2D pk_Image4;
+uniform writeonly restrict RWTexture2D<uint> pk_Image;
+uniform writeonly restrict RWTexture2D<uint> pk_Image1;
+uniform writeonly restrict RWTexture2D<uint> pk_Image2;
+uniform writeonly restrict RWTexture2D<uint> pk_Image3;
+uniform writeonly restrict RWTexture2D<uint> pk_Image4;
 uniform float pk_SceneEnv_Exposure;
 
 uniform float4 pk_SceneEnv_Origin;

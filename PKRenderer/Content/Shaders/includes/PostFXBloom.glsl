@@ -1,8 +1,8 @@
 #pragma once
 #include "PostFXResources.glsl"
 
-uniform texture2D pk_Bloom_Texture;
-uniform texture2D pk_Bloom_LensDirtTex;
+uniform Texture2D<float3> pk_Bloom_Texture;
+uniform Texture2D<float> pk_Bloom_LensDirtTex;
 
 float3 Bloom(float3 color, float2 uv)
 {

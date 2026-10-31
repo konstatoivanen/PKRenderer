@@ -4,7 +4,7 @@
 #include "includes/Common.glsl"
 #include "includes/Encoding.glsl"
 
-uniform textureCubeArray pk_Texture;
+uniform TextureCubeArray<float> pk_Texture;
 uniform RWTexture2DArray<float> pk_Image;
 
 [numthreads(8u, 8u, 1u)]

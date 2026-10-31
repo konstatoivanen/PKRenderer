@@ -9,13 +9,13 @@
 #include "includes/Encoding.glsl"
 
 // Screen Color full res.
-uniform texture2D pk_Texture;
+uniform Texture2D<float3> pk_Texture;
 
 // Screen color full res. same as above but as image output.
 uniform RWTexture2D<float4> pk_Image;
 
-uniform texture2DArray pk_DoF_ColorRead;
-uniform texture2DArray pk_DoF_AlphaRead;
+uniform Texture2DArray<float3> pk_DoF_ColorRead;
+uniform Texture2DArray<float> pk_DoF_AlphaRead;
 uniform RWTexture2DArray<uint> pk_DoF_ColorWrite;
 uniform RWTexture2DArray<float> pk_DoF_AlphaWrite;
 

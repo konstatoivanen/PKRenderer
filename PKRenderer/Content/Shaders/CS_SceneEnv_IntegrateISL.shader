@@ -9,10 +9,10 @@
 #include "includes/BRDF.glsl"
 #include "includes/Noise.glsl"
 
-uniform writeonly restrict uimage2D pk_Image;
-uniform writeonly restrict uimage2D pk_Image1;
-uniform writeonly restrict uimage2D pk_Image2;
-uniform writeonly restrict uimage2D pk_Image3;
+uniform writeonly restrict RWTexture2D<uint> pk_Image;
+uniform writeonly restrict RWTexture2D<uint> pk_Image1;
+uniform writeonly restrict RWTexture2D<uint> pk_Image2;
+uniform writeonly restrict RWTexture2D<uint> pk_Image3;
 uniform float pk_SceneEnv_Exposure;
 
 shared float3 lds_scatter;

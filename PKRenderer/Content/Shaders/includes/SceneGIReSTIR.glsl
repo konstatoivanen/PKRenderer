@@ -65,7 +65,7 @@ uint ReSTIR_GetSeed(int2 coord_base) { return ZCurveToIndex2D(coord_base) * REST
 int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
 {
     int2 offset = int2(pk_View.FrameRandom.y & 3, (pk_View.FrameRandom.y >> 2) & 3);
-    return lerp(coord, ((coord + offset) ^ 3) - offset, mask.xx);
+    return select(mask.xx, ((coord + offset) ^ 3) - offset, coord);
 }
 
 int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, int scale, bool permute)
@@ -111,7 +111,7 @@ float ReSTIR_GetJacobian(const float3 pos_center, const float3 pos_sample, const
     const float cos_senter = saturate(dot(r.normal, vec_center.xyz));
     const float cos_sample = saturate(dot(r.normal, vec_sample.xyz));
     const float jacobian = (cos_senter * pow2(vec_sample.w)) / (cos_sample * pow2(vec_center.w));
-    return lerp(jacobian, 0.0f, isinf(jacobian) || isnan(jacobian));
+    return select(isinf(jacobian) || isnan(jacobian), 0.0f, jacobian);
 }
 
 float ReSTIR_GetTargetPdfNewSurf(const float3 pos_center, const float3 nor_center, const float3 pos_sample, const Reservoir r)
@@ -138,7 +138,7 @@ void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float 
     const float weight = target_pdf * SafePositiveRcp(b.target_pdf) * b.weight_sum;
     
     combined.weight_sum += weight;
-    combined.M += lerp(0u, b.M, target_pdf > 0.0f);
+    combined.M += select(target_pdf > 0.0f, b.M, 0u);
 
     if (random * combined.weight_sum < weight)
     {

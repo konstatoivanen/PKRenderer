@@ -138,7 +138,7 @@ void InjectCs()
     const float tile_zmin = Fog_ZToView((coord.z - 1.5f) * VOLUMEFOG_SIZE_Z_INV);
     const float tile_zmax = SampleMaxZ(int2(coord.xy), 3);
     // Clamp cell to surface to prevent light leaks
-    const float depth = min(Fog_ZToView(uvw_cur.z), lerp(1e+38f, tile_zmax, tile_zmin < tile_zmax));
+    const float depth = min(Fog_ZToView(uvw_cur.z), select(tile_zmin < tile_zmax, tile_zmax, 1e+38f));
 
     const float3 world_pos = UvToWorldPos(uvw_cur.xy, depth);
     const float3 uvw_prev = Fog_WorldToPrevUvw(world_pos);

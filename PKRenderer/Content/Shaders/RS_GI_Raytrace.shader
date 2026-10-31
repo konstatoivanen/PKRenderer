@@ -112,7 +112,7 @@ void MainRgs()
         if (normal_roughness.w < PK_GI_MAX_ROUGH_SPEC)
         #endif
         {
-            hits.spec.dist = lerp(hits.spec.dist, PK_HALF_MAX_MINUS1, hits.spec.is_miss);
+            hits.spec.dist = select(hits.spec.is_miss, PK_HALF_MAX_MINUS1, hits.spec.dist);
 
             [[branch]]
             if (!hits.spec.is_screen)
@@ -123,7 +123,7 @@ void MainRgs()
 
         // Validate diffuse hit
         {
-            hits.diff.dist = lerp(hits.diff.dist, PK_HALF_MAX_MINUS1, hits.diff.is_miss);
+            hits.diff.dist = select(hits.diff.is_miss, PK_HALF_MAX_MINUS1, hits.diff.dist);
             hits.diff_normal = payload.HIT_NORMAL;
 
             [[branch]]

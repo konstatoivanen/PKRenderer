@@ -64,12 +64,12 @@ namespace PK
     struct ShaderVertexInputElement
     {
         NameID name = 0u;
-        ElementType format = ElementType::Invalid;
-        uint16_t location = 0;
+        Uniform format = Uniform::Invalid;
+        uint8_t location = 0;
 
         ShaderVertexInputElement() = default;
 
-        ShaderVertexInputElement(NameID name, ElementType format, uint16_t location) : name(name), format(format), location(location)
+        ShaderVertexInputElement(NameID name, Uniform format, uint8_t location) : name(name), format(format), location(location)
         {
         }
 
@@ -97,7 +97,7 @@ namespace PK
     struct VertexStreamElement
     {
         NameID name = 0u;
-        ElementType format = ElementType::Invalid;
+        Uniform format = Uniform::Invalid;
         InputRate inputRate = InputRate::PerVertex;
         uint8_t stream = 0u;
         uint16_t stride = 0u;
@@ -105,7 +105,7 @@ namespace PK
         
         VertexStreamElement() = default;
 
-        VertexStreamElement(ElementType format, NameID name, uint8_t stream = 0u, InputRate inputRate = InputRate::PerVertex) :
+        VertexStreamElement(Uniform format, NameID name, uint8_t stream = 0u, InputRate inputRate = InputRate::PerVertex) :
             name(name),
             format(format),
             inputRate(inputRate),

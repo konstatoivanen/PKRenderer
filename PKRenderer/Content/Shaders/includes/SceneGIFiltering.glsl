@@ -73,30 +73,30 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
 
 /* Profiling revealed that deferring these to functions yielded significantly worse performance, so they're macros for now. */
 
-#define GI_SF_DIFF_VARIANCE(SF_COORD, SF_DEPTH, SF_DIFF, SF_OUT)                                \
-{                                                                                               \
-    float2 mom;                                                                                 \
-    mom.x = GI_LogLuminance(SF_DIFF);                                                           \
-    mom.y = pow2(mom.x);                                                                        \
-    float w_mom = 1.0f;                                                                         \
-                                                                                                \
-    for (int yy = -1; yy <= 1; ++yy)                                                            \
-    for (int xx = -1; xx <= 1; ++xx)                                                            \
-    {                                                                                           \
-        if (xx != 0 || yy != 0)                                                                 \
-        {                                                                                       \
-            const int2 xy = SF_COORD + int2(xx, yy);                                            \
-            const float s_depth = SampleMinZ(xy, 0);                                            \
-            const float s_w = lerp(0.0f, 1.0f, (abs(SF_DEPTH - s_depth) / SF_DEPTH) < 0.02f);   \
-            const float s_l = GI_LogLuminance(GI_Load_Diff(xy)) * s_w;                          \
-            mom += float2(s_l, s_l * s_l);                                                      \
-            w_mom += s_w;                                                                       \
-        }                                                                                       \
-    }                                                                                           \
-                                                                                                \
-    mom /= w_mom;                                                                               \
-    SF_OUT = sqrt(abs(mom.y - pow2(mom.x)));                                                    \
-}                                                                                               \
+#define GI_SF_DIFF_VARIANCE(SF_COORD, SF_DEPTH, SF_DIFF, SF_OUT)                                 \
+{                                                                                                \
+    float2 mom;                                                                                  \
+    mom.x = GI_LogLuminance(SF_DIFF);                                                            \
+    mom.y = pow2(mom.x);                                                                         \
+    float w_mom = 1.0f;                                                                          \
+                                                                                                 \
+    for (int yy = -1; yy <= 1; ++yy)                                                             \
+    for (int xx = -1; xx <= 1; ++xx)                                                             \
+    {                                                                                            \
+        if (xx != 0 || yy != 0)                                                                  \
+        {                                                                                        \
+            const int2 xy = SF_COORD + int2(xx, yy);                                             \
+            const float s_depth = SampleMinZ(xy, 0);                                             \
+            const float s_w = select((abs(SF_DEPTH - s_depth) / SF_DEPTH) < 0.02f, 1.0f, 0.0f);  \
+            const float s_l = GI_LogLuminance(GI_Load_Diff(xy)) * s_w;                           \
+            mom += float2(s_l, s_l * s_l);                                                       \
+            w_mom += s_w;                                                                        \
+        }                                                                                        \
+    }                                                                                            \
+                                                                                                 \
+    mom /= w_mom;                                                                                \
+    SF_OUT = sqrt(abs(mom.y - pow2(mom.x)));                                                     \
+}                                                                                                \
 
 #define GI_SF_DISK_DIFF(SF_NORMAL, SF_DEPTH, SF_VIEW, SF_VPOS, SF_HISTORY, SF_STEP, SF_SKIP, SF_RADIUS, SF_OUT) \
 {                                                                                                               \
@@ -106,7 +106,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     const float2 k_D = GI_GetDiskWeightParams(SF_RADIUS, SF_DEPTH);                                             \
                                                                                                                 \
     float wSum = 1.0f;                                                                                          \
-    uint i = lerp(0u, 0xFFFFu, SF_SKIP);                                                                        \
+    uint i = select(SF_SKIP, 0xFFFFu, 0u);                                                                      \
                                                                                                                 \
     [[loop]]                                                                                                    \
     for (; i < 32u; i += SF_STEP)                                                                               \
@@ -124,7 +124,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
         w *= saturate(1.0f - dot(s_ray, s_ray) * k_D.y);                                                        \
         w *= exp(-acos(dot(SF_NORMAL, s_nr.xyz) - 1e-6f) * k_N);                                                \
         w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                \
-        w = lerp(0.0f, w, !Test_NaN_EPS4(w));                                                                   \
+        w = select(!Test_NaN_EPS4(w), w, 0.0f);                                                                  \
                                                                                                                 \
         SF_OUT = GI_Sum_NoHistory(SF_OUT, GI_Load_Diff(s_gpx), w);                                              \
         wSum += w;                                                                                              \
@@ -143,7 +143,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     const float2 k_R = GI_GetRoughnessWeightParams(SF_ROUGHNESS);                                                               \
                                                                                                                                 \
     float wSum = 1.0f;                                                                                                          \
-    uint i = lerp(0u, 0xFFFFu, SF_SKIP);                                                                                        \
+    uint i = select(SF_SKIP, 0xFFFFu, 0u);                                                                                      \
                                                                                                                                 \
     [[loop]]                                                                                                                    \
     for (; i < 32u; i += SF_STEP)                                                                                               \
@@ -161,7 +161,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
         w *= exp(-abs(s_nr.w * k_R.x + k_R.y));                                                                                 \
         w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                                \
         if (PK_GI_APPROX_ROUGH_SPEC) w *= float(s_nr.w < PK_GI_MAX_ROUGH_SPEC);                                                 \
-        w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                                            \
+        w = select(Test_InScreen(s_uv) && !Test_NaN_EPS4(w), w, 0.0f);                                                          \
                                                                                                                                 \
         SF_OUT = GI_Sum_NoHistory(SF_OUT, GI_Load_Spec(s_px), w);                                                               \
         wSum += w;                                                                                                              \

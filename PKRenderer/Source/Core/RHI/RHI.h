@@ -6,7 +6,7 @@
 
 namespace PKAssets
 {
-    enum class PKElementType : uint16_t;
+    enum class PKUniform : uint8_t;
     enum class PKDescriptorType : uint8_t;
     enum class PKShaderStage : uint8_t;  
     enum class PKShaderStageFlags : uint16_t; 
@@ -61,7 +61,7 @@ namespace PK
     struct VertexStreamLayout;
     struct ShaderBindingTableInfo;
     
-    typedef PKAssets::PKElementType ElementType;
+    typedef PKAssets::PKUniform Uniform;
     typedef PKAssets::PKDescriptorType ShaderResourceType;
     typedef PKAssets::PKShaderStage ShaderStage;
     typedef PKAssets::PKShaderStageFlags ShaderStageFlags;

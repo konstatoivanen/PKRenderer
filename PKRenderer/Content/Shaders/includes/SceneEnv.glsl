@@ -7,8 +7,8 @@
 #define PK_SCENE_ENV_ISL_MAX_MIP 7
 #define PK_SCENE_ENV_MIN_SIZE 32
 
-uniform texture2D pk_SceneEnv;
-uniform texture2D pk_SceneEnv_ISL;
+uniform Texture2D<float3> pk_SceneEnv;
+uniform Texture2D<float3> pk_SceneEnv_ISL;
 uniform RWStructuredBuffer<float4> pk_SceneEnv_SH;
 
 float3 SceneEnv_Sample_IBL(float2 uv, float roughness) 

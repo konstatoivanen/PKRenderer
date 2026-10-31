@@ -8,8 +8,8 @@ namespace PK
     struct ShaderProperty
     {
         NameID name = 0u;
-        ElementType format = ElementType::Invalid;
-        uint16_t count = 1u;
+        Uniform format = Uniform::Invalid;
+        uint8_t count = 1u;
         uint16_t offset = 0u;
         uint16_t offsetHandle = 0u;
 
@@ -17,7 +17,7 @@ namespace PK
 
         ShaderProperty() = default;
 
-        ShaderProperty(ElementType format, NameID name, uint8_t count = 1) :
+        ShaderProperty(Uniform format, NameID name, uint8_t count = 1) :
             name(name),
             format(format),
             count(count)

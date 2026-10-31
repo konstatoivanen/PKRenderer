@@ -4,8 +4,8 @@
 #include "includes/GBuffers.glsl"
 
 // Backbuffer is 64px aligned. check alignment for mips 6-12
-uniform writeonly restrict image2DArray pk_ImageArray[13];
-uniform coherent image2DArray pk_Image6; // Load store for last mips.
+uniform writeonly restrict RWTexture2DArray<float> pk_ImageArray[13];
+uniform coherent RWTexture2DArray<float> pk_Image6; // Load store for last mips.
 uniform RWStructuredBuffer<uint> pk_HZB_WorkgroupCounter;
 uniform uint4 pk_HZB_Parameters;
 

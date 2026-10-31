@@ -92,8 +92,8 @@ void ReprojectCs()
                     const float w_n = pow5(dot(normal, s_nr.xyz));
                     float w_diff = weights[i] * w_n * float(w_n > 0.05f);
                     float w_spec = weights[i] * w_n * exp(-abs(s_nr.w * k_R.x + k_R.y));
-                    w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff));
-                    w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));
+                    w_diff = select(!Test_NaN_EPS6(w_diff), w_diff, 0.0f);
+                    w_spec = select(!Test_NaN_EPS6(w_spec), w_spec, 0.0f);
 
                     // Using spec weight to save registers.
                     diff = GI_Sum(diff, GI_Load_Diff(xy), w_spec);
@@ -136,9 +136,9 @@ void ReprojectCs()
                     float w = weights[i];
                     w *= pow(saturate(dot(normal, s_nr.xyz)), 256.0f);
                     w *= exp(-abs(s_nr.w * k_R.x + k_R.y));
-                    w = lerp(0.0f, w, !Test_NaN_EPS6(w));
+                    w = select(!Test_NaN_EPS6(w), w, 0.0f);
 #if PK_GI_APPROX_ROUGH_SPEC == 1
-                    w = lerp(0.0f, w, s_nr.w < PK_GI_MAX_ROUGH_SPEC);
+                    w = select(s_nr.w < PK_GI_MAX_ROUGH_SPEC, w, 0.0f);
 #endif
                     spec_virt = GI_Sum(spec_virt, GI_Load_Spec(xy), w);
                     wsum_spec_virt += w;

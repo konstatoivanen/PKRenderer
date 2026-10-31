@@ -83,34 +83,24 @@ namespace PKAssets
     };
 
 
-    enum class PKElementType : uint16_t
+    enum class PKUniform : uint8_t
     {
         Invalid = 0,
 
-        Float,
-        Float2,
-        Float3,
-        Float4,
+        Bool,
+        Bool2,
+        Bool3,
+        Bool4,
 
-        Double,
-        Double2,
-        Double3,
-        Double4,
+        Byte,
+        Byte2,
+        Byte3,
+        Byte4,
 
-        Half,
-        Half2,
-        Half3,
-        Half4,
-
-        Int,
-        Int2,
-        Int3,
-        Int4,
-
-        Uint,
-        Uint2,
-        Uint3,
-        Uint4,
+        Sbyte,
+        Sbyte2,
+        Sbyte3,
+        Sbyte4,
 
         Short,
         Short2,
@@ -122,6 +112,26 @@ namespace PKAssets
         Ushort3,
         Ushort4,
 
+        Half,
+        Half2,
+        Half3,
+        Half4,
+
+        Float,
+        Float2,
+        Float3,
+        Float4,
+
+        Int,
+        Int2,
+        Int3,
+        Int4,
+
+        Uint,
+        Uint2,
+        Uint3,
+        Uint4,
+
         Long,
         Long2,
         Long3,
@@ -132,10 +142,20 @@ namespace PKAssets
         Ulong3,
         Ulong4,
 
+        Double,
+        Double2,
+        Double3,
+        Double4,
+
         Float2x2,
+        Float2x3,
+        Float2x4,
+        Float3x2,
         Float3x3,
-        Float4x4,
         Float3x4,
+        Float4x2,
+        Float4x3,
+        Float4x4,
 
         Double2x2,
         Double3x3,
@@ -465,16 +485,19 @@ namespace PKAssets
     struct alignas(4) PKVertexInputAttribute
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKElementType type;                  // 66 bytes
-        uint16_t location;                   // 68 bytes
+        PKUniform type;                      // 65 bytes
+        uint8_t location;                    // 66 bytes
+
+        uint16_t __padding = 0u;             // 68 bytes
     };
 
     struct alignas(4) PKMaterialProperty
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKElementType type;                  // 66 bytes
+        PKUniform type;                      // 66 bytes
 
-        uint16_t __padding = 0u;             // 68 bytes
+        uint8_t __padding0 = 0u;             // 68 bytes
+        uint16_t __padding1 = 0u;            // 68 bytes
     };
 
     struct alignas(4) PKConstantVariable
@@ -598,10 +621,10 @@ namespace PKAssets
 
     struct alignas(4) PKVertexAttribute
     {
-        char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        uint8_t format = 0;                  // 65 bytes // aliased PKElementType
-        uint8_t stream = 0;                  // 66 bytes
-        uint16_t offset = 0;                 // 68 bytes
+        char name[PK_ASSET_NAME_MAX_LENGTH];   // 64 bytes
+        PKUniform format = PKUniform::Invalid; // 65 bytes
+        uint8_t stream = 0;                    // 66 bytes
+        uint16_t offset = 0;                   // 68 bytes
     };
 
     struct alignas(4) PKSubmesh
@@ -683,11 +706,11 @@ namespace PKAssets
         float candelaAverage;                // 16 bytes 
     };
 
-    uint32_t PKElementTypeToSize(PKElementType type);
-    uint32_t PKElementTypeToScalarSize(PKElementType type);
-    uint32_t PKElementTypeToComponents(PKElementType type);
-    PKElementType PKElementTypeToScalar(PKElementType type);
-    bool PKElementTypeIsResourceHandle(PKElementType type);
+    uint32_t PKUniformToSize(PKUniform type);
+    uint32_t PKUniformToScalarSize(PKUniform type);
+    uint32_t PKUniformToComponents(PKUniform type);
+    PKUniform PKUniformToScalar(PKUniform type);
+    bool PKUniformIsResourceHandle(PKUniform type);
 
     PKDrawInfo PackPKDrawInfo(uint16_t material, float uniformScale, uint32_t transform, uint32_t submesh, uint32_t userdata);
 

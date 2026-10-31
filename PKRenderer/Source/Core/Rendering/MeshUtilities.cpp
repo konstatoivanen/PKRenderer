@@ -82,7 +82,7 @@ namespace PK::MeshUtilities
         }
     }
 
-    static void ConvertVertices(void* dst, const void* src, size_t count, size_t strideSrc, size_t strideDst, ElementType typeSrc, ElementType typeDst)
+    static void ConvertVertices(void* dst, const void* src, size_t count, size_t strideSrc, size_t strideDst, Uniform typeSrc, Uniform typeDst)
     {
         auto componentsSrc = RHIEnumConvert::Components(typeSrc);
         auto componentsDst = RHIEnumConvert::Components(typeDst);
@@ -106,58 +106,58 @@ namespace PK::MeshUtilities
             }
 
         // Special conversions for half. conversions to/from half from other types is not supported.
-        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Half, float, uint16_t)
-        PK_VERTEX_CONVERT(ElementType::Half, ElementType::Float, uint16_t, float)
+        PK_VERTEX_CONVERT(Uniform::Float, Uniform::Half, float, uint16_t)
+        PK_VERTEX_CONVERT(Uniform::Half, Uniform::Float, uint16_t, float)
 
-        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Uint,   uint16_t, uint32_t)
-        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Int,    uint16_t, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Float,  uint16_t, float)
-        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Ulong,  uint16_t, uint64_t)
-        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Long,   uint16_t, int64_t)
-        PK_VERTEX_CONVERT(ElementType::Ushort, ElementType::Double, uint16_t, double)
+        PK_VERTEX_CONVERT(Uniform::Ushort, Uniform::Uint,   uint16_t, uint32_t)
+        PK_VERTEX_CONVERT(Uniform::Ushort, Uniform::Int,    uint16_t, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Ushort, Uniform::Float,  uint16_t, float)
+        PK_VERTEX_CONVERT(Uniform::Ushort, Uniform::Ulong,  uint16_t, uint64_t)
+        PK_VERTEX_CONVERT(Uniform::Ushort, Uniform::Long,   uint16_t, int64_t)
+        PK_VERTEX_CONVERT(Uniform::Ushort, Uniform::Double, uint16_t, double)
 
-        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Uint,   int16_t, uint32_t)
-        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Int,    int16_t, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Float,  int16_t, float)
-        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Ulong,  int16_t, uint64_t)
-        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Long,   int16_t, int64_t)
-        PK_VERTEX_CONVERT(ElementType::Short, ElementType::Double, int16_t, double)
+        PK_VERTEX_CONVERT(Uniform::Short, Uniform::Uint,   int16_t, uint32_t)
+        PK_VERTEX_CONVERT(Uniform::Short, Uniform::Int,    int16_t, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Short, Uniform::Float,  int16_t, float)
+        PK_VERTEX_CONVERT(Uniform::Short, Uniform::Ulong,  int16_t, uint64_t)
+        PK_VERTEX_CONVERT(Uniform::Short, Uniform::Long,   int16_t, int64_t)
+        PK_VERTEX_CONVERT(Uniform::Short, Uniform::Double, int16_t, double)
 
-        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Ushort, uint32_t, uint16_t)
-        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Short,  uint32_t, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Ulong,  uint32_t, uint64_t)
-        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Long,   uint32_t, int64_t)
-        PK_VERTEX_CONVERT(ElementType::Uint, ElementType::Double, uint32_t, double)
+        PK_VERTEX_CONVERT(Uniform::Uint, Uniform::Ushort, uint32_t, uint16_t)
+        PK_VERTEX_CONVERT(Uniform::Uint, Uniform::Short,  uint32_t, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Uint, Uniform::Ulong,  uint32_t, uint64_t)
+        PK_VERTEX_CONVERT(Uniform::Uint, Uniform::Long,   uint32_t, int64_t)
+        PK_VERTEX_CONVERT(Uniform::Uint, Uniform::Double, uint32_t, double)
 
-        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Ushort, int32_t, uint16_t)
-        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Short,  int32_t, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Ulong,  int32_t, uint64_t)
-        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Long,   int32_t, int64_t)
-        PK_VERTEX_CONVERT(ElementType::Int, ElementType::Double, int32_t, double)
+        PK_VERTEX_CONVERT(Uniform::Int, Uniform::Ushort, int32_t, uint16_t)
+        PK_VERTEX_CONVERT(Uniform::Int, Uniform::Short,  int32_t, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Int, Uniform::Ulong,  int32_t, uint64_t)
+        PK_VERTEX_CONVERT(Uniform::Int, Uniform::Long,   int32_t, int64_t)
+        PK_VERTEX_CONVERT(Uniform::Int, Uniform::Double, int32_t, double)
 
-        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Ushort, float, uint16_t)
-        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Short,  float, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Ulong,  float, uint64_t)
-        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Long,   float, int64_t)
-        PK_VERTEX_CONVERT(ElementType::Float, ElementType::Double, float, double)
+        PK_VERTEX_CONVERT(Uniform::Float, Uniform::Ushort, float, uint16_t)
+        PK_VERTEX_CONVERT(Uniform::Float, Uniform::Short,  float, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Float, Uniform::Ulong,  float, uint64_t)
+        PK_VERTEX_CONVERT(Uniform::Float, Uniform::Long,   float, int64_t)
+        PK_VERTEX_CONVERT(Uniform::Float, Uniform::Double, float, double)
 
-        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Ushort, uint64_t, uint16_t)
-        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Short,  uint64_t, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Uint,   uint64_t, uint32_t)
-        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Int,    uint64_t, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Ulong, ElementType::Float,  uint64_t, float)
+        PK_VERTEX_CONVERT(Uniform::Ulong, Uniform::Ushort, uint64_t, uint16_t)
+        PK_VERTEX_CONVERT(Uniform::Ulong, Uniform::Short,  uint64_t, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Ulong, Uniform::Uint,   uint64_t, uint32_t)
+        PK_VERTEX_CONVERT(Uniform::Ulong, Uniform::Int,    uint64_t, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Ulong, Uniform::Float,  uint64_t, float)
 
-        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Ushort, int64_t, uint16_t)
-        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Short,  int64_t, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Uint,   int64_t, uint32_t)
-        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Int,    int64_t, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Long, ElementType::Float,  int64_t, float)
+        PK_VERTEX_CONVERT(Uniform::Long, Uniform::Ushort, int64_t, uint16_t)
+        PK_VERTEX_CONVERT(Uniform::Long, Uniform::Short,  int64_t, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Long, Uniform::Uint,   int64_t, uint32_t)
+        PK_VERTEX_CONVERT(Uniform::Long, Uniform::Int,    int64_t, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Long, Uniform::Float,  int64_t, float)
 
-        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Ushort, double, uint16_t)
-        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Short,  double, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Uint,   double, uint32_t)
-        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Int,    double, int16_t)
-        PK_VERTEX_CONVERT(ElementType::Double, ElementType::Float,  double, float)
+        PK_VERTEX_CONVERT(Uniform::Double, Uniform::Ushort, double, uint16_t)
+        PK_VERTEX_CONVERT(Uniform::Double, Uniform::Short,  double, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Double, Uniform::Uint,   double, uint32_t)
+        PK_VERTEX_CONVERT(Uniform::Double, Uniform::Int,    double, int16_t)
+        PK_VERTEX_CONVERT(Uniform::Double, Uniform::Float,  double, float)
 
         #undef PK_VERTEX_CONVERT
     }
@@ -530,10 +530,10 @@ namespace PK::MeshUtilities
         desc.regular.streamLayout =
         {
             // VertexDefault layout. allocator will rearrange & pack vertices if needed.
-            { ElementType::Float3, PK_RHI_VS_POSITION, 0 },
-            { ElementType::Float3, PK_RHI_VS_NORMAL, 0 },
-            { ElementType::Float2, PK_RHI_VS_TEXCOORD0, 0 },
-            { ElementType::Float4, PK_RHI_VS_TANGENT, 0 },
+            { Uniform::Float3, PK_RHI_VS_POSITION, 0 },
+            { Uniform::Float3, PK_RHI_VS_NORMAL, 0 },
+            { Uniform::Float2, PK_RHI_VS_TEXCOORD0, 0 },
+            { Uniform::Float4, PK_RHI_VS_TANGENT, 0 },
         };
         desc.meshlets.pSubmeshes = &meshlets.submesh;
         desc.meshlets.submeshCount = 1u;

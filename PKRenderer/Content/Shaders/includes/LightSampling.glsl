@@ -74,9 +74,9 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
     
     const bool is_directional = light.light_type == LIGHT_TYPE_DIRECTIONAL;
     
-    const float3 pos_to_light = lerp(light.position - world_pos, -light.position, is_directional.xxx);
+    const float3 pos_to_light = select(is_directional.xxx, -light.position, light.position - world_pos);
+    const float dist_to_light = select(is_directional, 0.0f, length(pos_to_light));
     
-    const float dist_to_light = lerp(length(pos_to_light), 0.0f, is_directional);
     const float dist_volumetric = dist_to_light + 1e+4f * uint(is_directional); 
     const float source_radius = light.source_radius / (dist_to_light + uint(is_directional));
     
@@ -115,17 +115,17 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
 
             const float shadow_dist_rad = length(shadow_sample_pos - light.position);
             const float shadow_dist_dir = dot(light.position, shadow_sample_pos) + light.radius;
-            const float shadow_dist_fin = lerp(shadow_dist_rad, shadow_dist_dir, is_directional);
+            const float shadow_dist_fin = select(is_directional, shadow_dist_dir, shadow_dist_rad);
 
             #if SHADOW_SAMPLE_VOLUMETRICS == 1
             const float4 shadow_uv_p = Lights_GetOctaUvMinMax(shadow_sample_pos, shadow_bias, light.position);
             const float4 shadow_uv_d = Lights_GetClipUvMinMax(shadow_sample_pos, shadow_bias, index_matrix);
-            const float4 shadow_uv = lerp(shadow_uv_d, shadow_uv_p, (light.light_type == LIGHT_TYPE_POINT).xxxx);
+            const float4 shadow_uv = select((light.light_type == LIGHT_TYPE_POINT).xxxx, shadow_uv_p, shadow_uv_d);
             shadow = ShadowTest_Volumetrics4(index_shadow, shadow_uv, shadow_dist_fin);
             #else
             const float2 shadow_uv_p = EncodeOctaUv(-L);
             const float2 shadow_uv_d = Lights_GetClipUv(shadow_sample_pos, index_matrix);
-            const float2 shadow_uv = lerp(shadow_uv_d, shadow_uv_p, (light.light_type == LIGHT_TYPE_POINT).xx);
+            const float2 shadow_uv = select((light.light_type == LIGHT_TYPE_POINT).xx, shadow_uv_p, shadow_uv_d);
             shadow = SHADOW_TEST(index_shadow, shadow_uv, shadow_dist_fin);
             #endif
         }

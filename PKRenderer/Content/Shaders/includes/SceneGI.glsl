@@ -16,7 +16,7 @@
 uniform RWTexture2DArray<uint4> pk_GI_PackedDiff;
 uniform RWTexture2DArray<uint2> pk_GI_PackedSpec;
 uniform RWTexture2D<uint4> pk_GI_ResolvedWrite;
-uniform utexture2D pk_GI_ResolvedRead;
+uniform Texture2D<uint4> pk_GI_ResolvedRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
 // Should surface shading approximate sheen & clear coat from diffuse sh

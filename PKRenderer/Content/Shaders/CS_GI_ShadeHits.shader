@@ -49,7 +49,7 @@ void ShadeHitsCs()
         GI_LOAD_RAY_PARAMS(coord, coord_ray, depth, normal_roughness.xyz, normal_roughness.w)
 
         // Convert ray to unbiased space
-        const float3 hitpos = origin + direction_diff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.is_miss);
+        const float3 hitpos = origin + direction_diff * select(hits.diff.is_miss, PK_GI_RAY_TMAX, hits.diff.dist);
         const float3 origin_unbiased = CoordToWorldPos(coord, depth);
         const float4 hitvec_unbiased = NormalizeLength(hitpos - origin_unbiased);
         // assuming lambertian distribution

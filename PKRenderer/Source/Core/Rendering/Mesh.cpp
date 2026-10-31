@@ -16,10 +16,10 @@ namespace PK
     {
         m_streamLayout = VertexStreamLayout(
         {
-            { ElementType::Half4, PK_RHI_VS_NORMAL, 0 },
-            { ElementType::Half4, PK_RHI_VS_TANGENT, 0 },
-            { ElementType::Half2, PK_RHI_VS_TEXCOORD0, 0 },
-            { ElementType::Float3, PK_RHI_VS_POSITION, 1 },
+            { Uniform::Half4, PK_RHI_VS_NORMAL, 0 },
+            { Uniform::Half4, PK_RHI_VS_TANGENT, 0 },
+            { Uniform::Half2, PK_RHI_VS_TEXCOORD0, 0 },
+            { Uniform::Float3, PK_RHI_VS_POSITION, 1 },
         });
 
         m_vertexBuffers.ClearFast();
@@ -223,7 +223,7 @@ namespace PK
             stream->inputRate = InputRate::PerVertex;
             stream->stride = 0u;
             stream->offset = pAttributes[i].offset;
-            stream->format = (ElementType)pAttributes[i].format;
+            stream->format = pAttributes[i].format;
         }
 
         streamLayout.CalculateOffsetsAndStride();
@@ -330,7 +330,7 @@ namespace PK
             attribute->inputRate = InputRate::PerVertex;
             attribute->stride = 0u;
             attribute->offset = pAttributes[i].offset;
-            attribute->format = (ElementType)pAttributes[i].format;
+            attribute->format = pAttributes[i].format;
             attribute->name = pAttributes[i].name;
         }
 
@@ -412,7 +412,7 @@ namespace PK
 
         for (auto i = 0u; i < m_streamLayout.GetCount(); ++i)
         {
-            if (m_streamLayout[i].name == vertexPositionName && m_streamLayout[i].format == ElementType::Float3)
+            if (m_streamLayout[i].name == vertexPositionName && m_streamLayout[i].format == Uniform::Float3)
             {
                 m_positionAttributeIndex = i;
             }

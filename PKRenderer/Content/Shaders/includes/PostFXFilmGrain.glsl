@@ -2,7 +2,7 @@
 #include "PostFXResources.glsl"
 #include "Constants.glsl"
 
-uniform texture2D pk_FilmGrain_Texture;
+uniform Texture2D<float3> pk_FilmGrain_Texture;
 
 float3 FilmGrain(const float2 coord, const float3 color, const float exposure)
 {

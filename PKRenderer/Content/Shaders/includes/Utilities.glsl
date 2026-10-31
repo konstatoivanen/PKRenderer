@@ -17,6 +17,8 @@ float4 f16tof32(uint4 v) { return float4(uint16BitsToFloat16(ushort4(v & 0xFFFFu
 #define ddx dFdx
 #define ddy dFdy
 
+#define select(cond, a, b) lerp(b, a, cond)
+
 float pow2(float x) { return x * x; }
 float pow3(float x) { return x * x * x; }
 float pow4(float x) { return x * x * x * x; }
@@ -47,7 +49,7 @@ float4 unpackHalf4x16(uint2 v) { return float4(unpackHalf2x16(v.x), unpackHalf2x
 float AsUnorm(uint x) { return asfloat(x & 0x007fffffu | 0x3f800000u) - 1.0f; }
 uint Checkerboard(uint2 coord, uint offset) { return ((coord.x ^ coord.y) ^ offset) & 0x1u; }
 
-float SafePositiveRcp(float f) { return lerp(1.0f / f, 0.0f, f <= 1e-12f); }
+float SafePositiveRcp(float f) { return select(f <= 1e-12f, 0.0f, 1.0f / f); }
 float3 SafeNormalize(float3 v) { return v * SafePositiveRcp(length(v)); }
 float4 NormalizeLength(float3 v) { float l = length(v); return float4(v.xyz * SafePositiveRcp(l), l); }
 
