@@ -45,6 +45,7 @@ float2 unpackHalf2x16(uint v)
 }
 
 uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.zw)); }
+
 float4 unpackHalf4x16(uint2 v) { return float4(unpackHalf2x16(v.x), unpackHalf2x16(v.y)); }
 
 uint packUnorm2x16(float2 v)
@@ -103,28 +104,18 @@ void CreateTBN(const float3 n, out float3 b1, out float3 b2)
 float2x3 CreateTB(const float3 n, float scale) { float3 t, b; CreateTBN(n, t, b); return float2x3(t * scale, b * scale); }
 float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float3x3(t, b, n); }
 
-
 #define lerp_sat(a,b,c) lerp(a,b,clamp(c,0,1))
 #define lerp_outquad(a,b,c) (-((b) - (a)) * (c) * ((c) - 2) + (a))
 #define lerp_inquad(a,b,c) (((b) - (a)) * (c) * (c) + (a))
 #define unlerp(a,b,value) (((value) - (a)) / ((b) - (a)))
 #define unlerp_sat(a,b,value) saturate(((value) - (a)) / ((b) - (a)))
-#define saturate(v) clamp(v, 0.0, 1.0)
 
-#define Any_IsNaN(v) any(isnan(v))
 #define Any_GEqual(a, b) any((a) >= (b))
-#define Any_Equal(a, b) any((a) == (b))
 #define Any_NotEqual(a, b) any((a) != (b))
 #define Any_LEqual(a, b) any((a) <= (b))
-#define Any_Less(a, b) any((a) < (b))
-#define Any_Greater(a, b) any((a) > (b))
 
-#define All_GEqual(a, b) all((a) >= (b))
 #define All_Equal(a, b) all((a) == (b))
-#define All_NotEqual(a, b) all((a) != (b))
-#define All_LEqual(a, b) all((a) <= (b))
 #define All_Less(a, b) all((a) < (b))
-#define All_Greater(a, b) all((a) > (b))
 #define All_InArea(a, b, c) (all((a) >= (b)) && all((a) < (c)))
 
 #define Replace_NaN(v, r) (any(isnan(v)) ? (r) : (v))
