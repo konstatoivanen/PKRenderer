@@ -10,9 +10,9 @@
 #define SAMPLE_COUNT (PK_SCENE_ENV_MIN_SIZE * PK_SCENE_ENV_MIN_SIZE)
 #define GROUP_SIZE 8u
 
-shared float4 lds_SH_R[GROUP_SIZE * GROUP_SIZE];
-shared float4 lds_SH_G[GROUP_SIZE * GROUP_SIZE];
-shared float4 lds_SH_B[GROUP_SIZE * GROUP_SIZE];
+groupshared float4 lds_SH_R[GROUP_SIZE * GROUP_SIZE];
+groupshared float4 lds_SH_G[GROUP_SIZE * GROUP_SIZE];
+groupshared float4 lds_SH_B[GROUP_SIZE * GROUP_SIZE];
 
 uniform float pk_SceneEnv_Exposure;
 
@@ -32,7 +32,7 @@ void IntegrateCs()
         const float2 uv = (coord + uint2(xx, yy) + 0.5f.xx) / TEXTURE_DIM;
 
         const float4 basis = SH_GetBasis(DecodeOctaUv(uv));
-        const float3 radiance = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv, PK_SCENE_ENV_IBL_MAX_MIP).rgb * pk_SceneEnv_Exposure;
+        const float3 radiance = pk_SceneEnv.SampleLevel(pk_SamplerBilinearMirror, uv, PK_SCENE_ENV_IBL_MAX_MIP).rgb * pk_SceneEnv_Exposure;
 
         local_SH_R += basis * radiance.r;
         local_SH_G += basis * radiance.g;

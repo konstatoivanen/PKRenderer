@@ -66,5 +66,5 @@ void FilmGrainCs()
     const float phase = AsUnorm(pk_View.FrameRandom.x);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float3 grain = NoiseGrainColor(coord, phase, 256.0f);
-    imageStore(pk_Image, coord, float4(grain, 1.0f));
+    pk_Image[coord] = grain;
 }

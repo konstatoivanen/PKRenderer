@@ -15,7 +15,7 @@
 uniform Texture2D<float3> pk_Texture;
 
 // Source: http://www.alextardif.com/HistogramLuminance.html
-shared uint lds_Histogram[NUM_HISTOGRAM_BINS];
+groupshared uint lds_Histogram[NUM_HISTOGRAM_BINS];
 
 void SetAutoExposure(float exposure) { pk_AutoExposure_Histogram[256] = asuint(exposure); }
 void SetLogLuminanceMin(float value) { pk_AutoExposure_Histogram[257] = asuint(value); }
@@ -27,10 +27,10 @@ void HistogramCs()
     lds_Histogram[gl_LocalInvocationIndex] = 0;
     GroupMemoryBarrierWithGroupSync();
 
-    const float2 resolution = textureSize(pk_Texture, 0).xy >> 1;
+    const float2 resolution = pk_Texture.GetSize() >> 1;
     const float2 uv = (gl_GlobalInvocationID.xy + 0.5f) / resolution;
     
-    const float3 color = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv).rgb;
+    const float3 color = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv, 0).rgb;
     
     const float luma_log_min = GetLogLuminanceMin();
     const float luma_log_range = pk_View.AutoExposure_LogLumaRange;
@@ -40,10 +40,10 @@ void HistogramCs()
     
     const uint bin_index = luma < 1e-4f ? 0u : uint(luma_log * 254.0f + 1.0f);
 
-    atomicAdd(lds_Histogram[bin_index], 1);
+    InterlockedAdd(lds_Histogram[bin_index], 1u);
 
     GroupMemoryBarrierWithGroupSync();
-    atomicAdd(pk_AutoExposure_Histogram[gl_LocalInvocationIndex], lds_Histogram[gl_LocalInvocationIndex]);
+    InterlockedAdd(pk_AutoExposure_Histogram[gl_LocalInvocationIndex], lds_Histogram[gl_LocalInvocationIndex]);
 }
 
 [numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
@@ -72,7 +72,7 @@ void AverageCs()
         const float luma_log_min = GetLogLuminanceMin();
         const float luma_log_range = pk_View.AutoExposure_LogLumaRange;
 
-        const float2 resolution = textureSize(pk_Texture, 0).xy >> 1;
+        const float2 resolution = pk_Texture.GetSize() >> 1;
         const float pixel_count = resolution.x * resolution.y;
 
         const float luma_log_avg = (lds_Histogram[0] / max(pixel_count - local_bin_val, 1.0f)) - 1.0f;

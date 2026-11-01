@@ -30,8 +30,8 @@ void ShadowmapCs()
     //@TODO this causes bad bias vectors in corners as they average towards view which can offset out of shadow unintentionally.
     // Perhaps solve this in the upsampling by eliminating outliers
     const float2 uv_gather = (coord + 1.0f) * pk_View.ScreenParams.zw;
-    const float4 gz_gather = GBUFFER_GATHER(pk_GB_Current_Normals, uv_gather, 2) - 0.5f;
-    const float4 gw_gather = GBUFFER_GATHER(pk_GB_Current_Normals, uv_gather, 3) - 0.5f;
+    const float4 gz_gather = pk_GB_Current_Normals.GatherBlue(pk_SamplerBilinearClamped, uv_gather) - 0.5f;
+    const float4 gw_gather = pk_GB_Current_Normals.GatherAlpha(pk_SamplerBilinearClamped, uv_gather) - 0.5f;
 
     // Normal downsampling causes viewdirection aligned vectors.
     // This yields bad bias offsets that pull corners out of shadow.
@@ -115,13 +115,13 @@ void ShadowmapCs()
         shadow /= 16.0hf;
     }
 
-    imageStore(pk_Image, coord_base, float4(shadow));
+    pk_Image[coord_base] = shadow;
 }
 
 #define GROUP_SIZE 8
 
-shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
-shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
+groupshared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
+groupshared float lds_depth[GROUP_SIZE * GROUP_SIZE];
 
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
 void ShadowmapUpsampleCs()
@@ -149,7 +149,7 @@ void ShadowmapUpsampleCs()
     byte4 indices[4];
     half4 weights[4];
 
-    lds_shadow[thread] = half(texelFetch(pk_Texture, coord_load / 2, 0).x);
+    lds_shadow[thread] = half(pk_Texture[coord_load / 2]);
 
     [[unroll]]
     for (uint i = 0u; i < 4; ++i)
@@ -202,7 +202,7 @@ void ShadowmapUpsampleCs()
 
     shadow /= wsum;
 
-    imageStore(pk_Image, int2(gl_GlobalInvocationID.xy), float4(shadow));
+    pk_Image[int2(gl_GlobalInvocationID.xy)] = shadow;
 }
 
 #if defined(PASS_SCREEN_DEPTH)

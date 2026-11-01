@@ -13,18 +13,18 @@ uniform RWStructuredBuffer<float4> pk_SceneEnv_SH;
 
 float3 SceneEnv_Sample_IBL(float2 uv, float roughness) 
 { 
-    return TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv, roughness * PK_SCENE_ENV_IBL_MAX_MIP).rgb; 
+    return pk_SceneEnv.SampleLevel(pk_SamplerBilinearMirror, uv, roughness * PK_SCENE_ENV_IBL_MAX_MIP).rgb; 
 }
 
 float3 SceneEnv_Sample_ISL(float2 uv, float level)
 {
-    return TMP_SMP_LEVEL_2D(pk_SceneEnv_ISL, pk_SamplerBilinearMirror, uv, level).rgb; 
+    return pk_SceneEnv_ISL.SampleLevel(pk_SamplerBilinearMirror, uv, level).rgb; 
 }
 
 float3 SceneEnv_Sample_ISL_Dual(float2 uv, float directionality)
 {
-    const float3 directional = TMP_SMP_LEVEL_2D(pk_SceneEnv_ISL, pk_SamplerBilinearMirror, uv, 0.0f).rgb;
-    const float3 ambient = TMP_SMP_LEVEL_2D(pk_SceneEnv_ISL, pk_SamplerBilinearMirror, uv, PK_SCENE_ENV_ISL_MAX_MIP).rgb;
+    const float3 directional = pk_SceneEnv_ISL.SampleLevel(pk_SamplerBilinearMirror, uv, 0.0f).rgb;
+    const float3 ambient = pk_SceneEnv_ISL.SampleLevel(pk_SamplerBilinearMirror, uv, PK_SCENE_ENV_ISL_MAX_MIP).rgb;
     return lerp(ambient, directional, directionality);
 }
 

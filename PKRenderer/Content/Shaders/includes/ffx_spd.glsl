@@ -239,6 +239,8 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
         return;
     }
 
+    DeviceMemoryBarrier();
+
     if (localInvocationIndex == 0)
     {
         SpdIncreaseAtomicCounter();
@@ -251,6 +253,8 @@ void SpdDownsample(uint2 workGroupID, uint localInvocationIndex, uint mips, uint
     {
         return;
     }
+
+    DeviceMemoryBarrier();
 
     // Mips 7-8
     {

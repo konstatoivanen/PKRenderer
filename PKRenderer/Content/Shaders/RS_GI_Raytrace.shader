@@ -10,10 +10,11 @@
 #include "includes/SceneGIRT.glsl"
 #include "includes/Encoding.glsl"
 
-#define HIT_NORMAL x
-#define HIT_DISTANCE y
-
-layout(location = 0) rayPayloadEXT uint2 payload;
+struct RayPayload
+{
+    uint hit_normal;
+    uint hit_distance;
+};
 
 bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 direction, inout float hit_t)
 {
@@ -78,6 +79,12 @@ void MainRgs()
 
         GI_LOAD_RAY_PARAMS(coord, coord_ray, depth, normal_roughness.xyz, normal_roughness.w)
 
+        RayPayload payload;
+        RayDesc ray;
+        ray.Origin = origin;
+        ray.TMin = 0.0f;
+        ray.TMax = PK_GI_RAY_TMAX;
+
         #if PK_GI_APPROX_ROUGH_SPEC == 1
         if (normal_roughness.w < PK_GI_MAX_ROUGH_SPEC)
         #endif
@@ -88,9 +95,10 @@ void MainRgs()
             [[branch]]
             if (hits.spec.is_miss)
             {
-                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction_spec, PK_GI_RAY_TMAX, 0);
-                hits.spec.is_miss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
-                hits.spec.dist = asfloat(payload.HIT_DISTANCE);
+                ray.Direction = direction_spec;
+                TraceRay(pk_SceneStructure, RAY_FLAG_FORCE_OPAQUE, 0xff, 0, 0, 0, ray, payload);
+                hits.spec.is_miss = payload.hit_distance == 0xFFFFFFFFu;
+                hits.spec.dist = asfloat(payload.hit_distance);
             }
         }
 
@@ -101,9 +109,10 @@ void MainRgs()
             [[branch]]
             if (hits.diff.is_miss)
             {
-                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction_diff, PK_GI_RAY_TMAX, 0);
-                hits.diff.is_miss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
-                hits.diff.dist = asfloat(payload.HIT_DISTANCE);
+                ray.Direction = direction_diff;
+                TraceRay(pk_SceneStructure, RAY_FLAG_FORCE_OPAQUE, 0xff, 0, 0, 0, ray, payload);
+                hits.diff.is_miss = payload.hit_distance == 0xFFFFFFFFu;
+                hits.diff.dist = asfloat(payload.hit_distance);
             }
         }
 
@@ -124,7 +133,7 @@ void MainRgs()
         // Validate diffuse hit
         {
             hits.diff.dist = select(hits.diff.is_miss, PK_HALF_MAX_MINUS1, hits.diff.dist);
-            hits.diff_normal = payload.HIT_NORMAL;
+            hits.diff_normal = payload.hit_normal;
 
             [[branch]]
             if (!hits.diff.is_screen)
@@ -146,28 +155,28 @@ void MainRgs()
     }
 }
 
-void MainRms()
+void MainRms(inout RayPayload payload)
 {
-    payload.HIT_NORMAL = EncodeOctaUv2x16(-gl_WorldRayDirectionEXT);
-    payload.HIT_DISTANCE = 0xFFFFFFFFu;
+    payload.hit_normal = EncodeOctaUv2x16(-WorldRayDirection());
+    payload.hit_distance = 0xFFFFFFFFu;
 }
 
-void MainRchs()
+void MainRchs(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
 {
-    const float3 p0 = gl_HitTriangleVertexPositionsEXT[0];
-    const float3 p1 = gl_HitTriangleVertexPositionsEXT[1];
-    const float3 p2 = gl_HitTriangleVertexPositionsEXT[2];
+    const float3 p0 = HitTriangleVertexPosition(0);
+    const float3 p1 = HitTriangleVertexPosition(1);
+    const float3 p2 = HitTriangleVertexPosition(2);
     const float3 v0 = normalize(p1 - p0);
     const float3 v1 = normalize(p2 - p0);
 
     float3 normal = cross(v0, v1);
-    normal = gl_ObjectToWorldEXT * float4(normal, 0.0f);
+    normal = mul(ObjectToWorld3x4(), float4(normal, 0.0f));
 
-    if (dot(normal, gl_WorldRayDirectionEXT) > 0)
+    if (dot(normal, WorldRayDirection()) > 0)
     {
         normal *= -1;
     }
 
-    payload.HIT_NORMAL = EncodeOctaUv2x16(normal);
-    payload.HIT_DISTANCE = asuint(gl_HitTEXT);
+    payload.hit_normal = EncodeOctaUv2x16(normal);
+    payload.hit_distance = asuint(RayTCurrent());
 }

@@ -9,13 +9,13 @@
 #include "includes/BRDF.glsl"
 #include "includes/Noise.glsl"
 
-uniform writeonly restrict RWTexture2D<uint> pk_Image;
-uniform writeonly restrict RWTexture2D<uint> pk_Image1;
-uniform writeonly restrict RWTexture2D<uint> pk_Image2;
-uniform writeonly restrict RWTexture2D<uint> pk_Image3;
+uniform RWTexture2D<uint> pk_Image;
+uniform RWTexture2D<uint> pk_Image1;
+uniform RWTexture2D<uint> pk_Image2;
+uniform RWTexture2D<uint> pk_Image3;
 uniform float pk_SceneEnv_Exposure;
 
-shared float3 lds_scatter;
+groupshared float3 lds_scatter;
 
 float3 GetDirectionSphere(float2 xi)
 {
@@ -50,7 +50,7 @@ void IntegrateCs()
 
 #if defined(PASS_INTEGRATE)
     const uint sample_count = 20000u;
-    const float2 texel_size = 1.0f.xx / imageSize(pk_Image).xy;
+    const float2 texel_size = 1.0f.xx / pk_Image.GetSize();
     const float3 local_dir = DecodeOctaUv((coord + 0.5f.xx) * texel_size);
 
     for (uint i = 0u; i < sample_count; ++i)
@@ -59,7 +59,7 @@ void IntegrateCs()
         const float3 sample_dir = GetDirectionSphere(xi);
  
         const float2 sample_uv = EncodeOctaUv(sample_dir);
-        const float3 sample_scatter = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, sample_uv, 0.0f).rgb * pk_SceneEnv_Exposure;
+        const float3 sample_scatter = pk_SceneEnv.SampleLevel(pk_SamplerBilinearMirror, sample_uv, 0.0f).rgb * pk_SceneEnv_Exposure;
 
         const float sample_cosa = dot(local_dir, sample_dir);
         const float sample_phase = Fp_HenyeyGreensteinDual(sample_cosa, pk_View.Fog_Phase0, pk_View.Fog_Phase1, pk_View.Fog_PhaseW);
@@ -69,11 +69,11 @@ void IntegrateCs()
     local_scatter *= PK_FOUR_PI;
     local_scatter /= sample_count;
 #else
-    const float2 texel_size = 1.0f.xx / textureSize(pk_SceneEnv_ISL, 4).xy;
-    local_scatter = TMP_SMP_2D(pk_SceneEnv_ISL, pk_SamplerBilinearMirror, (coord + 0.5f) * texel_size).rgb;
+    const float2 texel_size = 1.0f.xx / pk_SceneEnv_ISL.GetSize(4);
+    local_scatter = pk_SceneEnv_ISL.SampleLevel(pk_SamplerBilinearMirror, (coord + 0.5f) * texel_size, 0).rgb;
 #endif
 
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(local_scatter)));
+    pk_Image[coord] = EncodeE5BGR9(local_scatter);
 
     // Mip 1
     {
@@ -90,11 +90,9 @@ void IntegrateCs()
 
         if ((thread & 0x9u) == 0u)
         {
-            imageStore(pk_Image1, coord >> 1, uint4(EncodeE5BGR9(local_scatter)));
+            pk_Image1[coord >> 1] = EncodeE5BGR9(local_scatter);
         }
     }
-
-    subgroupBarrier();
 
     // Mip 3
     {
@@ -115,11 +113,9 @@ void IntegrateCs()
 
         if ((thread & 0x1Bu) == 0u)
         {
-            imageStore(pk_Image2, coord >> 2, uint4(EncodeE5BGR9(local_scatter)));
+            pk_Image2[coord >> 2] = EncodeE5BGR9(local_scatter);
         }
     }
-
-    subgroupBarrier();
 
     // Combine subgroups
     {
@@ -138,6 +134,6 @@ void IntegrateCs()
     if (thread == 0u)
     {
         local_scatter = (local_scatter + lds_scatter) / 2;
-        imageStore(pk_Image3, coord >> 3, uint4(EncodeE5BGR9(local_scatter)));
+        pk_Image3[coord >> 3] = EncodeE5BGR9(local_scatter);
     }
 }

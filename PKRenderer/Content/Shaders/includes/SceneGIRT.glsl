@@ -85,7 +85,7 @@ float3 direction_spec = Fr_Inverse_GGXVNDF_Full(Xi.yx, NORMAL, view_dir, ROUGHNE
 
 GIRayHits GI_Load_RayHits(const int2 coord)
 {
-    uint2 packed = imageLoad(pk_GI_RayHits, coord).xy;
+    uint2 packed = pk_GI_RayHits[coord];
     const bool is_screen_diff = bitfieldExtract(packed.x, 15, 1) != 0;
     const bool is_screen_spec = bitfieldExtract(packed.x, 31, 1) != 0;
     packed.x &= 0x7FFF7FFFu; // Remove sign bits
@@ -102,5 +102,5 @@ void GI_Store_RayHits(const int2 coord, const GIRayHits u)
     packed = u.spec.is_miss ? bitfieldInsert(packed, 0x7C00u, 16, 16) : packed;
     packed = bitfieldInsert(packed, u.diff.is_screen ? 0x1u : 0x0u, 15, 1);
     packed = bitfieldInsert(packed, u.spec.is_screen ? 0x1u : 0x0u, 31, 1);
-    imageStore(pk_GI_RayHits, coord, uint4(packed, u.diff_normal, 0u, 0u));
+    pk_GI_RayHits[coord] = uint2(packed, u.diff_normal);
 }

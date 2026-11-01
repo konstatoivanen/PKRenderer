@@ -10,7 +10,7 @@ void GradientEstimateCs()
 {
 #if defined(PK_GI_GRADIENT_FILTER)
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const int2 size = int2(imageSize(pk_Gradients).xy);
+    const int2 size = pk_Gradients.GetSize().xy;
 
     if (coord.x >= size.x || coord.y >= size.y)
     {
@@ -42,7 +42,7 @@ void GradientEstimateCs()
 
 #else
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const int2 size = int2(imageSize(pk_GradientInputs).xy);
+    const int2 size = pk_GradientInputs.GetSize();
 
     if (coord.x * GRADIENT_STRATA_SIZE >= size.x || coord.y * GRADIENT_STRATA_SIZE >= size.y)
     {

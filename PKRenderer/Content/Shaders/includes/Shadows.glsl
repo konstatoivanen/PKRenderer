@@ -21,7 +21,7 @@ uniform Texture2D<float> pk_ShadowmapScreenSpace;
 #define SHADOW_NEAR_BIAS 0.05f
 #define SHADOW_HARD_EDGE_FADE_FACTOR 20.0hf
 #define SHADOW_PCSS_SUBGROUP 1
-#define SHADOW_SIZE textureSize(pk_ShadowmapAtlas, 0)
+#define SHADOW_SIZE pk_ShadowmapAtlas.GetSize()
 
 //Source: http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
 float2 Shadow_GetBiasFactors(const float3 normal, const float3 light_direction)
@@ -34,7 +34,7 @@ float2 Shadow_GetBiasFactors(const float3 normal, const float3 light_direction)
 
 half2 Shadow_GatherMax(const uint index, const float2 uv, const float z)
 {
-    const float4 depths = TMP_SMP_GATHER_2DArray(pk_ShadowmapAtlas, pk_SamplerBilinearClamped, float3(uv, index), 0);
+    const float4 depths = pk_ShadowmapAtlas.GatherRed(pk_SamplerBilinearClamped, float3(uv, index));
     const half delta_depth = half(z - max(max(max(depths.x, depths.y), depths.z), depths.w));
     const half shadow_fade = -delta_depth * SHADOW_HARD_EDGE_FADE_FACTOR + 1.0hf;
     return half2(delta_depth, 1.0f) * step(shadow_fade, 0.0hf);
@@ -44,7 +44,7 @@ half ShadowTest_PCF2x2(const uint index, const float2 uv, const float z)
 { 
     const float2 f = frac(uv * SHADOW_SIZE.xx - 0.5f.xx).xy;
     const float4 fw = float4(f.xy, 1.0hf - f.xy);
-    half4 s = half4(TMP_SMP_GATHER_2DArray(pk_ShadowmapAtlas, pk_SamplerBilinearClamped, float3(uv, index), 0) - z.xxxx);
+    half4 s = half4(pk_ShadowmapAtlas.GatherRed(pk_SamplerBilinearClamped, float3(uv, index)) - z.xxxx);
     s = clamp(s * SHADOW_HARD_EDGE_FADE_FACTOR + 1.0hf, 0.0hf, 1.0hf);
     return dot(s, half4(fw.zxxz * fw.wwyy));
 }

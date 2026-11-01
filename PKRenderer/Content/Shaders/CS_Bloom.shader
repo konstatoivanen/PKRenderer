@@ -19,8 +19,8 @@ uniform RWTexture2D<uint> pk_Image;
 void Downsample0Cs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 tx_dst = 1.0f.xx / imageSize(pk_Image).xy;
-    const float2 tx_src = 1.0f.xx / textureSize(pk_Texture, 0).xy;
+    const float2 tx_dst = 1.0f.xx / pk_Image.GetSize();
+    const float2 tx_src = 1.0f.xx / pk_Texture.GetSize();
     const float2 uv = float2(coord + 0.5f.xx) * tx_dst;
 
     // Castaño, 2013, "Shadow Mapping Summary Part 1"
@@ -33,26 +33,26 @@ void Downsample0Cs()
 
     float4 color = 0.0f.xxxx;
     float3 bisample = 0.0f.xxx;
-    bisample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.xy).rgb;
+    bisample = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvs.xy, 0).rgb;
     color += float4(bisample, 1.0f) * uwvw.x * uwvw.y * (1.0 / 16.0);
-    bisample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.zy).rgb;
+    bisample = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvs.zy, 0).rgb;
     color += float4(bisample, 1.0f) * uwvw.z * uwvw.y * (1.0 / 16.0);
-    bisample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.xw).rgb;
+    bisample = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvs.xw, 0).rgb;
     color += float4(bisample, 1.0f) * uwvw.x * uwvw.w * (1.0 / 16.0);
-    bisample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.zw).rgb;
+    bisample = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvs.zw, 0).rgb;
     color += float4(bisample, 1.0f) * uwvw.z * uwvw.w * (1.0 / 16.0);
     color.rgb /= color.w;
     color.rgb = -min(-color.rgb, 0.0f.xxx);
     
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color.rgb)));
+    pk_Image[coord] = EncodeE5BGR9(color.rgb);
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void Downsample1Cs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 tx_dst = 1.0f.xx / imageSize(pk_Image).xy;
-    const float2 tx_src = 1.0f.xx / textureSize(pk_Texture, 0).xy;
+    const float2 tx_dst = 1.0f.xx / pk_Image.GetSize();
+    const float2 tx_src = 1.0f.xx / pk_Texture.GetSize();
     const float2 uv = float2(coord + 0.5f.xx) * tx_dst;
 
     // Source: https://www.shadertoy.com/view/cslczj
@@ -68,41 +68,41 @@ void Downsample1Cs()
 
     float3 color = 0.0f.xxx;
 
-    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv).rgb * w0;
-    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(-1.0, +0.0) * oa2).rgb * a;
-    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+1.0, +0.0) * oa2).rgb * a;
-    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+0.0, -1.0) * oa2).rgb * a;
-    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+0.0, +1.0) * oa2).rgb * a;
-    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(-1.0, -1.0) * ob2).rgb * b;
-    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+1.0, -1.0) * ob2).rgb * b;
-    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(-1.0, +1.0) * ob2).rgb * b;
-    color += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + float2(+1.0, +1.0) * ob2).rgb * b;
+    color += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv, 0).rgb * w0;
+    color += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + float2(-1.0, +0.0) * oa2, 0).rgb * a;
+    color += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + float2(+1.0, +0.0) * oa2, 0).rgb * a;
+    color += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + float2(+0.0, -1.0) * oa2, 0).rgb * a;
+    color += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + float2(+0.0, +1.0) * oa2, 0).rgb * a;
+    color += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + float2(-1.0, -1.0) * ob2, 0).rgb * b;
+    color += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + float2(+1.0, -1.0) * ob2, 0).rgb * b;
+    color += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + float2(-1.0, +1.0) * ob2, 0).rgb * b;
+    color += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + float2(+1.0, +1.0) * ob2, 0).rgb * b;
 
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
+    pk_Image[coord] = EncodeE5BGR9(color);
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void UpsampleCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 tx_dst = 1.0f.xx / imageSize(pk_Image).xy;
-    const float2 tx_src = 1.0f.xx / textureSize(pk_Texture, 0).xy;
+    const float2 tx_dst = 1.0f.xx / pk_Image.GetSize();
+    const float2 tx_src = 1.0f.xx / pk_Texture.GetSize();
     const float2 uv = float2(coord + 0.5f.xx) * tx_dst;
     const float4 uvs = uv.xyxy + float4(0.5f.xx, -0.5f.xx) * tx_src.xyxy;
 
     float4 color = 0.0f.xxxx;
 
-    color.rgb += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.zw).rgb;
-    color.rgb += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.zy).rgb;
-    color.rgb += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.xy).rgb;
-    color.rgb += TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uvs.xw).rgb;
+    color.rgb += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvs.zw, 0).rgb;
+    color.rgb += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvs.zy, 0).rgb;
+    color.rgb += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvs.xy, 0).rgb;
+    color.rgb += pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvs.xw, 0).rgb;
     color.rgb *= 0.25f;
 
     const float upsample_weight = pk_Bloom_UpsampleWeight;
 
     color.rgb *= upsample_weight;
-    color.rgb += DecodeE5BGR9(imageLoad(pk_Image, coord).r);
+    color.rgb += DecodeE5BGR9(pk_Image[coord]);
     color.rgb /= upsample_weight + 1.0f;
 
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color.rgb)));
+    pk_Image[coord] = EncodeE5BGR9(color.rgb);
 }

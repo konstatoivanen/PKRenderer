@@ -4,9 +4,9 @@
 #pragma pk_material_property float _Roughness
 #pragma pk_material_property float _Occlusion
 #pragma pk_material_property float _NormalAmount
-#pragma pk_material_property texture2D _AlbedoTexture
-#pragma pk_material_property texture2D _PBSTexture
-#pragma pk_material_property texture2D _NormalMap
+#pragma pk_material_property Texture2D _AlbedoTexture
+#pragma pk_material_property Texture2D _PBSTexture
+#pragma pk_material_property Texture2D _NormalMap
 
 #define BxDF_ENABLE_SHEEN
 #define BxDF_ENABLE_CLEARCOAT

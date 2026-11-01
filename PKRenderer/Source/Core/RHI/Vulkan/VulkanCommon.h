@@ -298,6 +298,7 @@ namespace PK
         VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR raytracingMaintenance1 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR };
         VkPhysicalDeviceShaderObjectFeaturesEXT shaderObject{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT };
         VkPhysicalDeviceShaderUntypedPointersFeaturesKHR untypedPointers{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNTYPED_POINTERS_FEATURES_KHR };
+        VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR computeShaderDerivatives{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };

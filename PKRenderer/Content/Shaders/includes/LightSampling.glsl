@@ -39,7 +39,7 @@ float Lights_ApplyIESProfile(float3 L, uint profile)
     {
         const float angleH = acos(-L.z) / PK_PI;
         const float angleV = mad(atan2(L.x, L.y), PK_INV_TWO_PI, 0.5f);
-        value = TMP_SMP_LEVEL_2DArray(pk_IESProfiles, pk_SamplerBilinearClamped, float3(angleH, angleV, profile - 1u), 0.0f).r;
+        value = pk_IESProfiles.SampleLevel(pk_SamplerBilinearClamped, float3(angleH, angleV, profile - 1u), 0.0f).r;
     }
     
     return value;
@@ -95,7 +95,7 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
         [[branch]]
         if (light.light_type == LIGHT_TYPE_DIRECTIONAL && light.index_shadow == 1u)
         {
-            shadow = texelFetch(pk_ShadowmapScreenSpace, int2(gl_FragCoord.xy), 0).r;
+            shadow = pk_ShadowmapScreenSpace[int2(gl_FragCoord.xy)];
         }
         else
         #endif

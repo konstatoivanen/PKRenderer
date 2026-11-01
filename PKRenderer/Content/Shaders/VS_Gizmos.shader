@@ -9,27 +9,27 @@
 #include "includes/Common.glsl"
 #include "includes/GBuffers.glsl"
 
-
-in uint4 in_POSITION;
-
-PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
-
-void MainVs()
+struct VsOut
 {
-    gl_Position = pk_View.WorldToClip_NoJitter * float4(asfloat(in_POSITION.xyz), 1.0f);
-    vs_COLOR = unpackUnorm4x8(in_POSITION.w);
+    float4 position : SV_Position;
+    float4 color : COLOR0;
 };
 
-out float4 SV_Target0;
-
-void MainFs()
+VsOut MainVs(uint4 in_POSITION : in_POSITION)
 {
-    const float view_depth = ViewDepth(gl_FragCoord.z);
-    const float scene_depth = SampleViewDepth(gl_FragCoord.xy * pk_View.ScreenParams.zw);
+    VsOut o;
+    o.position = pk_View.WorldToClip_NoJitter * float4(asfloat(in_POSITION.xyz), 1.0f);
+    o.color = unpackUnorm4x8(in_POSITION.w);
+    return o;
+}
+
+float4 MainFs(VsOut i) : SV_Target0
+{
+    const float view_depth = ViewDepth(i.position.z);
+    const float scene_depth = SampleViewDepth(i.position.xy * pk_View.ScreenParams.zw);
     const float fade_alpha = 0.3f * exp((-view_depth + scene_depth) * 0.125f);
 
-    float4 color = vs_COLOR;
+    float4 color = i.color;
     color.a *= scene_depth < view_depth ? fade_alpha : 1.0f;
-
-    SV_Target0 = color;
-};
+    return color;
+}

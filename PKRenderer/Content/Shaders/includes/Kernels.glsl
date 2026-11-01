@@ -1,6 +1,6 @@
 #pragma once
 
-const float2 PK_SPIRAL_DISK_16[16] =
+static const float2 PK_SPIRAL_DISK_16[16] =
 {
     float2( 0.1250f,  0.0000f),
     float2(-0.1250f,  0.0000f),
@@ -20,7 +20,7 @@ const float2 PK_SPIRAL_DISK_16[16] =
     float2( 0.7071f, -0.7071f),
 };
 
-const float2 PK_POISSON_DISK_16[16] =
+static const float2 PK_POISSON_DISK_16[16] =
 {
     float2(-0.94201624f,  -0.39906216f),
     float2(+0.94558609f,  -0.76890725f),
@@ -40,7 +40,7 @@ const float2 PK_POISSON_DISK_16[16] =
     float2(+0.14383161f,  -0.14100790f)
 };
 
-const float3 PK_POISSON_DISK_16_POW[16] =
+static const float3 PK_POISSON_DISK_16_POW[16] =
 {
     float3(-0.1078042, -0.6434212, 0.6523899),
     float3(-0.1982531, -0.3867292, 0.4345846),
@@ -60,7 +60,7 @@ const float3 PK_POISSON_DISK_16_POW[16] =
     float3(+0.2061829, -0.5709705, 0.6070574)
 };
 
-const float3 PK_POISSON_DISK_32_POW[32] =
+static const float3 PK_POISSON_DISK_32_POW[32] =
 {
     float3(-0.1078042, -0.6434212, 0.6523899),
     float3(-0.1141091, -0.9539828, 0.9607830),

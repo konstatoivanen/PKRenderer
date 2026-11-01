@@ -29,8 +29,8 @@ struct AABB
     float  radius;
 };
 
-AABB current_cell;
-shared SharedLight lds_Lights[THREAD_COUNT];
+static AABB current_cell;
+groupshared SharedLight lds_Lights[THREAD_COUNT];
 
 bool IntersectPointLight(uint lightIndex)
 {
@@ -132,7 +132,7 @@ void LightAssignmentCs()
     [[branch]]
     if (All_Less(coord.xy, LIGHT_TILE_COUNT_XY))
     {
-        offset = atomicAdd(pk_LightCounter[0], visible_count);
+        InterlockedAdd(pk_LightCounter[0], visible_count, offset);
 
         for (uint i = 0; i < visible_count; ++i)
         {
@@ -144,5 +144,5 @@ void LightAssignmentCs()
     base = bitfieldInsert(base, offset, 0, 22);
     base = bitfieldInsert(base, visible_count, 22, 8);
     base = bitfieldInsert(base, GetShadowCascadeIndex(lerp(near, far, 0.5f)), 30, 2);
-    imageStore(pk_LightTiles, int3(coord), uint4(base));
+    pk_LightTiles[int3(coord)] = base;
 }

@@ -22,11 +22,11 @@ uniform RWTexture2D<float4> pk_Image;
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void PostEffectsCompositeCs()
 {
-    const int2 size = imageSize(pk_Image).xy;
+    const int2 size = pk_Image.GetSize();
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     float2 uv = float2(coord + 0.5f.xx) / float2(size);
 
-    float3 color = imageLoad(pk_Image, coord).rgb;
+    float3 color = pk_Image[coord].rgb;
 
     // Remove nans
     color = -min(-color, 0.0f.xxx);
@@ -134,5 +134,5 @@ void PostEffectsCompositeCs()
     }
 #endif
 
-    imageStore(pk_Image, coord, float4(color, 1.0f));
+    pk_Image[coord] = float4(color, 1.0f);
 }

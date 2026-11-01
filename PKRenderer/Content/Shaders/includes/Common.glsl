@@ -5,7 +5,7 @@
 #include "Utilities.glsl"
 #include "Constants.glsl"
 
-uniform cbuffer PKRenderView
+struct PKRenderView
 {
     float3x4 WorldToView;     // Current view matrix.
     float3x4 ViewToWorld;     // Current inverse view matrix.
@@ -119,14 +119,10 @@ uniform cbuffer PKRenderView
     uint8_t SamplerTrilinearClamped;
     uint8_t SamplerPointClamped;
     uint8_t SamplerTrilinearRepeatAniso;
-} pk_View;
-
-#if !defined(PK_INSTANCING_ENABLED)
-uniform cbuffer pk_ModelMatrices
-{
-    float3x4 pk_ObjectToWorld; // Current model matrix.
 };
-#endif
+
+uniform ConstantBuffer<PKRenderView> pk_View;
+uniform RaytracingAccelerationStructure pk_SceneStructure;
 
 #define pk_SamplerBilinearRepeat       pk_Heap_Samplers[uint(pk_View.SamplerBilinearRepeat)]
 #define pk_SamplerBilinearMirror       pk_Heap_Samplers[uint(pk_View.SamplerBilinearMirror)]
@@ -136,29 +132,9 @@ uniform cbuffer pk_ModelMatrices
 #define pk_SamplerPointClamped         pk_Heap_Samplers[uint(pk_View.SamplerPointClamped)]
 #define pk_SamplerTrilinearRepeatAniso pk_Heap_Samplers[uint(pk_View.SamplerTrilinearRepeatAniso)]
 
-// @TODO TEMP UTILITIES FOR TEXTURE SAMPLING.
-#define TMP_SMP_2D(tex, smp, uv) texture(nonuniformEXT(sampler2D(tex, smp)), uv)
-#define TMP_SMP_2DArray(tex, smp, uv) texture(nonuniformEXT(sampler2DArray(tex, smp)), uv)
-#define TMP_SMP_3D(tex, smp, uv) texture(nonuniformEXT(sampler3D(tex, smp)), uv)
-#define TMP_SMP_CubeArray(tex, smp, uv) texture(nonuniformEXT(samplerCubeArray(tex, smp)), uv)
-
-#define TMP_SMP_BIAS_2D(tex, smp, uv, bias) texture(nonuniformEXT(sampler2D(tex, smp)), uv, bias)
-
-#define TMP_SMP_LEVEL_2D(tex, smp, uv, level) textureLod(nonuniformEXT(sampler2D(tex, smp)), uv, level)
-#define TMP_SMP_LEVEL_2DArray(tex, smp, uv, level) textureLod(nonuniformEXT(sampler2DArray(tex, smp)), uv, level)
-#define TMP_SMP_LEVEL_3D(tex, smp, uv, level) textureLod(nonuniformEXT(sampler3D(tex, smp)), uv, level)
-#define TMP_SMP_LEVEL_CubeArray(tex, smp, uv, level) textureLod(nonuniformEXT(samplerCubeArray(tex, smp)), uv, level)
-
-#define TMP_SMP_OFFSET_2D(tex, smp, uv, offs) textureOffset(nonuniformEXT(sampler2D(tex, smp)), uv, offs)
-#define TMP_SMP_GATHER_2D(tex, smp, uv, cmp) textureGather(nonuniformEXT(sampler2D(tex, smp)), uv, cmp)
-#define TMP_SMP_GATHER_2DArray(tex, smp, uv, cmp) textureGather(nonuniformEXT(sampler2DArray(tex, smp)), uv, cmp)
-#define TMP_SMP_GATHER_OFFSETS_2D(tex, smp, uv, offs) textureGatherOffsets(nonuniformEXT(sampler2D(tex, smp)), uv, offs)
-
-uniform accelerationStructureEXT pk_SceneStructure;
-
 uint GetShadowCascadeIndex(float view_depth)
 {
-    uint3 mask = uint3(greaterThan(view_depth.xxx, pk_View.ShadowCascadeZSplits.xyz));
+    uint3 mask = uint3(view_depth.xxx > pk_View.ShadowCascadeZSplits.xyz);
     return mask.x + mask.y + mask.z;
 }
 
@@ -214,8 +190,8 @@ float3 CoordToWorldPosPrev(const int2 coord, const float view_depth) { return Vi
 float2 ClampBilinearViewUv(const float2 uv) { return clamp(uv, 0.5f * pk_View.ScreenParams.zw, 1.0f.xx - pk_View.ScreenParams.zw * 0.5f); }
 
 //----------TESTS----------//
-bool4 Test_DepthIsScene(const float4 depth) { return lessThan(depth, pk_View.ClipParams.yyyy - 1e-2f); }
-bool4 Test_DepthReproject(const float4 z, const float4 zprev, const float4 bias) { return lessThan(abs(z - zprev - pk_View.ViewSpaceCameraDelta.zzzz) / z, bias); }
+bool4 Test_DepthIsScene(const float4 depth) { return depth < (pk_View.ClipParams.yyyy - 1e-2f); }
+bool4 Test_DepthReproject(const float4 z, const float4 zprev, const float4 bias) { return (abs(z - zprev - pk_View.ViewSpaceCameraDelta.zzzz) / z) < bias; }
 bool Test_DepthIsScene(const float depth) { return depth < (pk_View.ClipParams.y - 1e-2f); }
 bool Test_DepthReproject(const float z, const float zprev, const float bias) { return Test_DepthIsScene(zprev) && (abs(z - zprev - pk_View.ViewSpaceCameraDelta.z) / z) < bias; }
 bool Test_DepthSurface(const float z0, const float z1, const float bias) { return Test_DepthIsScene(z1) && (abs(z0 - z1 ) / z0) < bias; }

@@ -9,23 +9,23 @@
 
 #define PK_STATIC_FOG_VIRTUAL_DISTANCE 14000.0f
 
-uniform writeonly restrict RWTexture2D<uint> pk_Image;
-uniform writeonly restrict RWTexture2D<uint> pk_Image1;
-uniform writeonly restrict RWTexture2D<uint> pk_Image2;
-uniform writeonly restrict RWTexture2D<uint> pk_Image3;
-uniform writeonly restrict RWTexture2D<uint> pk_Image4;
+uniform RWTexture2D<uint> pk_Image;
+uniform RWTexture2D<uint> pk_Image1;
+uniform RWTexture2D<uint> pk_Image2;
+uniform RWTexture2D<uint> pk_Image3;
+uniform RWTexture2D<uint> pk_Image4;
 uniform float pk_SceneEnv_Exposure;
 
 uniform float4 pk_SceneEnv_Origin;
-shared float3 lds_irrad;
-shared float3 lds_trans;
+groupshared float3 lds_irrad;
+groupshared float3 lds_trans;
 
 [numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const uint thread = gl_LocalInvocationIndex;
-    const float2 texel_size = 1.0f.xx / textureSize(pk_SceneEnv, 0).xy;
+    const float2 texel_size = 1.0f.xx / pk_SceneEnv.GetSize();
     const float2 uv_base = (coord + 1.0f.xx) * texel_size;
 
     float3 local_irrad = 0.0f.xxx;
@@ -43,9 +43,9 @@ void IntegrateCs()
         local_irrad += irrad;
         local_trans += trans;
 
-        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv, 0.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = pk_SceneEnv.SampleLevel(pk_SamplerBilinearMirror, uv, 0.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(irrad, color, trans);
-        imageStore(pk_Image, coord * 2 + int2(xx, yy), uint4(EncodeE5BGR9(color)));
+        pk_Image[coord * 2 + int2(xx, yy)] = EncodeE5BGR9(color);
     }
 
     // Mip 1
@@ -53,9 +53,9 @@ void IntegrateCs()
         local_irrad /= 4;
         local_trans /= 4;
 
-        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv_base, 1.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = pk_SceneEnv.SampleLevel(pk_SamplerBilinearMirror, uv_base, 1.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
-        imageStore(pk_Image1, coord, uint4(EncodeE5BGR9(color)));
+        pk_Image1[coord] = EncodeE5BGR9(color);
     }
 
     // Mip 2
@@ -76,16 +76,14 @@ void IntegrateCs()
         local_irrad /= 4;
         local_trans /= 4;
 
-        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv_base, 2.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = pk_SceneEnv.SampleLevel(pk_SamplerBilinearMirror, uv_base, 2.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
         if ((thread & 0x9u) == 0u)
         {
-            imageStore(pk_Image2, coord >> 1, uint4(EncodeE5BGR9(color)));
+            pk_Image2[coord >> 1] = EncodeE5BGR9(color);
         }
     }
-
-    subgroupBarrier();
 
     // Mip 3
     {
@@ -109,16 +107,14 @@ void IntegrateCs()
         local_irrad /= 4;
         local_trans /= 4;
 
-        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv_base, 3.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = pk_SceneEnv.SampleLevel(pk_SamplerBilinearMirror, uv_base, 3.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
         if ((thread & 0x1Bu) == 0u)
         {
-            imageStore(pk_Image3, coord >> 2, uint4(EncodeE5BGR9(color)));
+            pk_Image3[coord >> 2] = EncodeE5BGR9(color);
         }
     }
-
-    subgroupBarrier();
 
     // Combine subgroups
     {
@@ -142,9 +138,9 @@ void IntegrateCs()
         local_irrad = (local_irrad + lds_irrad) / 2;
         local_trans = (local_trans + lds_trans) / 2;
 
-        float3 color = TMP_SMP_LEVEL_2D(pk_SceneEnv, pk_SamplerBilinearMirror, uv_base, 4.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = pk_SceneEnv.SampleLevel(pk_SamplerBilinearMirror, uv_base, 4.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
-        imageStore(pk_Image4, coord >> 3, uint4(EncodeE5BGR9(color)));
+        pk_Image4[coord >> 3] = EncodeE5BGR9(color);
     }
 }

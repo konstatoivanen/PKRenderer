@@ -35,11 +35,11 @@ void TemporalAntialiasCs()
 
     float3 resolved = 0.0f.xxx;
     {
-        float4 color_alpha = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv);
+        float4 color_alpha = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv, 0);
         float3 color = color_alpha.rgb;
-        float3 history = TMP_SMP_2D(pk_Texture1, pk_SamplerBilinearClamped, uv - motion).rgb;
-        const float3 color_11 = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv - texel_size * 0.5f).rgb;
-        const float3 color_00 = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + texel_size * 0.5f).rgb;
+        float3 history = pk_Texture1.SampleLevel(pk_SamplerBilinearClamped, uv - motion, 0).rgb;
+        const float3 color_11 = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv - texel_size * 0.5f, 0).rgb;
+        const float3 color_00 = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + texel_size * 0.5f, 0).rgb;
         const float3 corners = 4.0f * (color_11 + color_00) - 2.0f * color;
 
         color += (color - (corners * 0.166667f)) * 2.718282f * k_sharpness;
@@ -80,7 +80,7 @@ void TemporalAntialiasCs()
     }
 
     // @TODO should antialias depth as well or depth of field will have an incorrect coc mask.
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(resolved)));
+    pk_Image[coord] = EncodeE5BGR9(resolved);
 
     const uint swap_id_h = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
     const uint swap_id_v = QuadSwapIdVertical16x2(gl_SubgroupInvocationID);
@@ -95,6 +95,6 @@ void TemporalAntialiasCs()
     [[branch]]
     if ((gl_LocalInvocationID.x & 0x1u) == 0 && (gl_LocalInvocationID.y & 0x1u) == 0)
     {
-        imageStore(pk_Image1, coord / 2, float4(downsampled, 1.0f));
+        pk_Image1[coord / 2] = float4(downsampled, 1.0f);
     }
 }

@@ -128,6 +128,7 @@ namespace PK
                 features.raytracingMaintenance1.rayTracingMaintenance1 = VK_TRUE;
                 features.shaderObject.shaderObject = VK_TRUE;
                 features.untypedPointers.shaderUntypedPointers = VK_TRUE;
+                features.computeShaderDerivatives.computeDerivativeGroupQuads = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 const char* PK_INSTANCE_EXTENTIONS[] =
@@ -164,7 +165,8 @@ namespace PK
                     VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME,
                     VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME,
                     VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
-                    VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME
+                    VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME,
+                    VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanDriverDescriptor

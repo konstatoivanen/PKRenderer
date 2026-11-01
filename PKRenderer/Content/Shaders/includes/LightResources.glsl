@@ -5,7 +5,7 @@
 #define LIGHT_TILE_SIZE_PX 64
 #define LIGHT_TILE_SHIFT_PX 6
 #define LIGHT_TILE_COUNT_Z 32
-#define LIGHT_TILE_COUNT_XY imageSize(pk_LightTiles).xy
+#define LIGHT_TILE_COUNT_XY pk_LightTiles.GetSize().xy
 #define LIGHT_TILE_MAX_LIGHTS 128
 
 #define LIGHT_PARAM_INVALID 0x7FFF
@@ -50,10 +50,10 @@ uniform StructuredBuffer<float4x4> pk_LightMatrices;
 
 #if defined(PK_WRITE_LIGHT_CLUSTERS)
 uniform RWStructuredBuffer<ushort> pk_LightLists;
-uniform writeonly RWTexture3D<uint> pk_LightTiles;
+uniform RWTexture3D<uint> pk_LightTiles;
 #else
 uniform StructuredBuffer<ushort> pk_LightLists;
-uniform readonly RWTexture3D<uint> pk_LightTiles;
+uniform RWTexture3D<uint> pk_LightTiles;
 #endif
 
 SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)
@@ -93,7 +93,7 @@ LightTile Lights_LoadTile(const int3 coord)
     #if defined(PK_WRITE_LIGHT_CLUSTERS)
         return LightTile(0,0,0);
     #else
-        return Lights_UnpackTile(imageLoad(pk_LightTiles, coord).x);
+        return Lights_UnpackTile(pk_LightTiles[coord]);
     #endif
 }
 

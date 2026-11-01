@@ -3,14 +3,14 @@
 #include "Encoding.glsl"
 #include "Constants.glsl"
 
-const float3x3 LIN_2_LMS_MAT = float3x3
+static const float3x3 LIN_2_LMS_MAT = float3x3
 (
     3.90405e-1, 5.49941e-1, 8.92632e-3,
     7.08416e-2, 9.63172e-1, 1.35775e-3,
     2.31082e-2, 1.28021e-1, 9.36245e-1
 );
 
-const float3x3 LMS_2_LIN_MAT = float3x3
+static const float3x3 LMS_2_LIN_MAT = float3x3
 (
      2.85847e+0, -1.62879e+0, -2.48910e-2,
     -2.10182e-1,  1.15820e+0,  3.24281e-4,
@@ -131,7 +131,7 @@ float3 Tonemap_AgX(float3 color, float exposure)
             + 0.1191 * color
             - 0.00232;
 
-    const mat3 agx_mat_inv = mat3(
+    const float3x3 agx_mat_inv = float3x3(
         1.19687900512017, -0.0528968517574562, -0.0529716355144438,
         -0.0980208811401368, 1.15190312990417, -0.0980434501171241,
         -0.0990297440797205, -0.0989611768448433, 1.15107367264116);
@@ -154,8 +154,8 @@ float3 Tonemap_LUT(float3 color, float exposure)
 {
     const float3 stimulus = color * exposure;
     const float3 encoded = stimulus / (stimulus + 1.0);
-    const float3 size = textureSize(pk_Tonemap_LutTex, 0).xyz;
-    return TMP_SMP_LEVEL_3D(pk_Tonemap_LutTex, pk_SamplerBilinearClamped, encoded * ((size - 1.0) / size) + 0.5f / size, 0.0f).rgb;
+    const float3 size = pk_Tonemap_LutTex.GetSize();
+    return pk_Tonemap_LutTex.SampleLevel(pk_SamplerBilinearClamped, encoded * ((size - 1.0) / size) + 0.5f / size, 0.0f).rgb;
 }
 
 float3 Saturate_BT2100(float3 color, float amount) { return lerp(dot(color, PK_LUMA_BT2100).xxx, color, amount); }
@@ -229,7 +229,7 @@ float3 ApplyColorGrading(float3 color)
 float3 ApplyLutColorGrading(float3 color)
 {
     const float3 uvw = saturate(color);
-    const float3 final = TMP_SMP_LEVEL_3D(pk_CC_LutTex, pk_SamplerBilinearClamped, uvw, 0.0f).rgb;
+    const float3 final = pk_CC_LutTex.SampleLevel(pk_SamplerBilinearClamped, uvw, 0.0f).rgb;
     const float contribution = pk_View.CC_Contribution;
     return lerp(color, final, contribution);
 }

@@ -31,21 +31,21 @@ float3 GI_VX_FragToWorld(float3 fcoord)
 }
 
 //----------LOAD/STORE FUNCTIONS----------//
-float4 GI_VX_Load_Uvw(const half3 uvw, float lvl) { return TMP_SMP_LEVEL_3D(pk_GI_VX_RadianceRead, pk_SamplerTrilinearBorder, float3(uvw), lvl); }
-float4 GI_VX_Load(const float3 world_pos, float lvl) { return TMP_SMP_LEVEL_3D(pk_GI_VX_RadianceRead, pk_SamplerTrilinearBorder, GI_VX_WorldToUvw(world_pos), lvl); }
-float4 GI_VX_Load_Point(const float3 world_pos, float lvl) { return TMP_SMP_LEVEL_3D(pk_GI_VX_RadianceRead, pk_SamplerPointClamped, GI_VX_WorldToUvw(world_pos), lvl); }
+float4 GI_VX_Load_Uvw(const half3 uvw, float lvl) { return pk_GI_VX_RadianceRead.SampleLevel(pk_SamplerTrilinearBorder, float3(uvw), lvl); }
+float4 GI_VX_Load(const float3 world_pos, float lvl) { return pk_GI_VX_RadianceRead.SampleLevel(pk_SamplerTrilinearBorder, GI_VX_WorldToUvw(world_pos), lvl); }
+float4 GI_VX_Load_Point(const float3 world_pos, float lvl) { return pk_GI_VX_RadianceRead.SampleLevel(pk_SamplerPointClamped, GI_VX_WorldToUvw(world_pos), lvl); }
 
 void GI_VX_Store(float3 world_pos, float4 color) 
 { 
     int3 coord = GI_VX_WorldToCoord(world_pos);
-    imageStore(pk_GI_VX_Mask, coord, uint4(1u));
-    imageStore(pk_GI_VX_RadianceWrite, coord, color); 
+    pk_GI_VX_Mask[coord] = 1u;
+    pk_GI_VX_RadianceWrite[coord] = color;
 }
 
 //----------PREDICATES----------//
 bool GI_VX_Test_HasValue(float3 world_pos) 
 { 
-    return imageLoad(pk_GI_VX_Mask, GI_VX_WorldToCoord(world_pos)).x != 0; 
+    return pk_GI_VX_Mask[GI_VX_WorldToCoord(world_pos)] != 0; 
 }
 
 bool GI_VX_Test_Normal(float3 normal)

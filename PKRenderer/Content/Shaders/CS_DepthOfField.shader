@@ -32,13 +32,13 @@ void PrefilterCs()
     const float4 weights = saturate(abs(cocs) / pk_DoF_MaximumCoC);
 
     float3 average;
-    average.r = dot(TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, uv, 0), weights);
-    average.g = dot(TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, uv, 1), weights);
-    average.b = dot(TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, uv, 2), weights);
+    average.r = dot(pk_Texture.GatherRed(pk_SamplerBilinearClamped, uv), weights);
+    average.g = dot(pk_Texture.GatherGreen(pk_SamplerBilinearClamped, uv), weights);
+    average.b = dot(pk_Texture.GatherBlue(pk_SamplerBilinearClamped, uv), weights);
     average /= dot(weights, 1.0f.xxxx);
 
-    imageStore(pk_DoF_ColorWrite, int3(coord, 0), EncodeE5BGR9(average).xxxx);
-    imageStore(pk_DoF_AlphaWrite, int3(coord, 0), dot(cocs, 0.25f.xxxx).xxxx);
+    pk_DoF_ColorWrite[int3(coord, 0)] = EncodeE5BGR9(average);
+    pk_DoF_AlphaWrite[int3(coord, 0)] = dot(cocs, 0.25f.xxxx);
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
@@ -53,9 +53,9 @@ void DiskBlurCs()
 
     const half margin = 2.0hf * half(texel_size.y);
     const float aspect = texel_size.x / texel_size.y;
-    const half center_coc = half(TMP_SMP_2DArray(pk_DoF_AlphaRead, pk_SamplerBilinearClamped, float3(uv, 0)).r);
-
-    const half3 center = half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, float3(uv, 0)).rgb);
+    const half center_coc = half(pk_DoF_AlphaRead.SampleLevel(pk_SamplerBilinearClamped, float3(uv, 0), 0));
+    
+    const half3 center = half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, float3(uv, 0), 0).rgb);
     background = half4(center, 1.0hf) * clamp((max(0.0hf, center_coc) + margin) / margin, 0.0hf, 1.0hf);
     foreground = half4(center, 1.0hf) * clamp((-center_coc + margin) / margin, 0.0hf, 1.0hf);
 
@@ -74,8 +74,8 @@ void DiskBlurCs()
             const half dist = length(offset) - margin;
             const float3 uvw = float3(uv + float2(offset.x * aspect, offset.y), 0);
 
-            const half3 color = half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, uvw).rgb);
-            const half coc = half(TMP_SMP_2DArray(pk_DoF_AlphaRead, pk_SamplerBilinearClamped, uvw).r);
+            const half3 color = half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, uvw, 0).rgb);
+            const half coc = half(pk_DoF_AlphaRead.SampleLevel(pk_SamplerBilinearClamped, uvw, 0).r);
             const half bgcoc = max(min(center_coc, coc), 0.0hf);
 
             background += half4(color, 1.0hf) * clamp((bgcoc - dist) / margin, 0.0hf, 1.0hf);
@@ -87,9 +87,9 @@ void DiskBlurCs()
     foreground.rgb /= foreground.a + (foreground.a < 1e-4hf ? 1.0hf : 0.0hf);
     foreground.a = clamp(foreground.a * half(PK_PI / SAMPLE_COUNT), 0.0hf, 1.0hf);
 
-    imageStore(pk_DoF_ColorWrite, int3(coord, 1), EncodeE5BGR9(foreground.rgb).xxxx);
-    imageStore(pk_DoF_ColorWrite, int3(coord, 2), EncodeE5BGR9(background.rgb).xxxx);
-    imageStore(pk_DoF_AlphaWrite, int3(coord, 1), foreground.aaaa);
+    pk_DoF_ColorWrite[int3(coord, 1)] = EncodeE5BGR9(foreground.rgb);
+    pk_DoF_ColorWrite[int3(coord, 2)] = EncodeE5BGR9(background.rgb);
+    pk_DoF_AlphaWrite[int3(coord, 1)] = foreground.a;
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
@@ -106,10 +106,10 @@ void UpsampleCs()
     const float coc = DoF_GetCircleOfConfusion(view_depth);
     const float4 uvs = uv.xyxy + texel_size.xyxy * float2(-1.0f, 1.0f).xxyy;
 
-    foreground.a += half(TMP_SMP_2DArray(pk_DoF_AlphaRead, pk_SamplerBilinearClamped, float3(uvs.xy, 1)).r);
-    foreground.a += half(TMP_SMP_2DArray(pk_DoF_AlphaRead, pk_SamplerBilinearClamped, float3(uvs.zy, 1)).r);
-    foreground.a += half(TMP_SMP_2DArray(pk_DoF_AlphaRead, pk_SamplerBilinearClamped, float3(uvs.xw, 1)).r);
-    foreground.a += half(TMP_SMP_2DArray(pk_DoF_AlphaRead, pk_SamplerBilinearClamped, float3(uvs.zw, 1)).r);
+    foreground.a += half(pk_DoF_AlphaRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.xy, 1), 0).r);
+    foreground.a += half(pk_DoF_AlphaRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.zy, 1), 0).r);
+    foreground.a += half(pk_DoF_AlphaRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.xw, 1), 0).r);
+    foreground.a += half(pk_DoF_AlphaRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.zw, 1), 0).r);
     foreground.a *= 0.25hf;
     background.a = half(smoothstep(texel_size.y * 2.0f, texel_size.y * 4.0f, coc));
 
@@ -121,21 +121,21 @@ void UpsampleCs()
     [[branch]]
     if (thread_count > 0u)
     {
-        foreground.rgb += half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, float3(uvs.xy, 1)).rgb);
-        foreground.rgb += half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, float3(uvs.zy, 1)).rgb);
-        foreground.rgb += half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, float3(uvs.xw, 1)).rgb);
-        foreground.rgb += half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, float3(uvs.zw, 1)).rgb);
+        foreground.rgb += half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.xy, 1), 0).rgb);
+        foreground.rgb += half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.zy, 1), 0).rgb);
+        foreground.rgb += half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.xw, 1), 0).rgb);
+        foreground.rgb += half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.zw, 1), 0).rgb);
         foreground.rgb *= 0.25hf;
 
-        background.rgb += half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, float3(uvs.xy, 2)).rgb);
-        background.rgb += half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, float3(uvs.zy, 2)).rgb);
-        background.rgb += half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, float3(uvs.xw, 2)).rgb);
-        background.rgb += half3(TMP_SMP_2DArray(pk_DoF_ColorRead, pk_SamplerBilinearClamped, float3(uvs.zw, 2)).rgb);
+        background.rgb += half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.xy, 2), 0).rgb);
+        background.rgb += half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.zy, 2), 0).rgb);
+        background.rgb += half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.xw, 2), 0).rgb);
+        background.rgb += half3(pk_DoF_ColorRead.SampleLevel(pk_SamplerBilinearClamped, float3(uvs.zw, 2), 0).rgb);
         background.rgb *= 0.25hf;
 
         const half3 dof = lerp(background.rgb * background.a, foreground.rgb, foreground.a);
-        const half3 scene = half3(imageLoad(pk_Image, coord).rgb);
+        const half3 scene = half3(pk_Image[coord].rgb);
 
-        imageStore(pk_Image, coord, half4(scene * alpha + dof, 1.0hf));
+        pk_Image[coord] = half4(scene * alpha + dof, 1.0hf);
     }
 }

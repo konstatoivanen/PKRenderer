@@ -10,7 +10,8 @@ uniform RWStructuredBuffer<uint4> pk_Gizmos_IndirectArguments;
 
 void Gizmos_DrawPacked(uint4 v0, uint4 v1)
 {
-    uint vertexIndex = atomicAdd(pk_Gizmos_IndirectArguments[0].x, 2u);
+    uint vertexIndex = 0u;
+    InterlockedAdd(pk_Gizmos_IndirectArguments[0].x, 2u, vertexIndex);
     vertexIndex %= GIZMOS_MAX_VERTICES;
     pk_Gizmos_IndirectVertices[vertexIndex + 0u] = v0;
     pk_Gizmos_IndirectVertices[vertexIndex + 1u] = v1;

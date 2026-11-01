@@ -21,20 +21,24 @@ struct LightPayload
 #define PK_MESHLET_USE_FUNC_CULL 1
 #define PK_MESHLET_USE_FUNC_TRIANGLE 1
 #define PK_MESHLET_USE_FUNC_TASKLET 1
-#define PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA 1
 #define PK_MESHLET_EXTRA_PAYLOAD_DATA LightPayload
+
+struct ShadowVertexUserData
+{
+#if defined(PK_LIGHT_PASS_DIRECTIONAL)
+    float vs_DEPTH : TEXCOORD0;
+#else
+    float3 vs_DEPTH : TEXCOORD0;
+#endif
+};
+
+#define PK_MESHLET_VERTEX_USER_DATA ShadowVertexUserData
 
 #include "includes/LightResources.glsl"
 #include "includes/Meshlets.glsl"
 
-#if defined(PK_LIGHT_PASS_DIRECTIONAL)
-    PK_DECLARE_VS_ATTRIB(float vs_DEPTH);
-#else
-    PK_DECLARE_VS_ATTRIB(float3 vs_DEPTH);
-#endif
-
 // As opposed to default order y axis is flipped here to avoid having to switch winding order for cube depth rendering
-const float3x3 PK_CUBE_FACE_MATRICES[6] =
+static const float3x3 PK_CUBE_FACE_MATRICES[6] =
 {
     float3x3(+0,+0,-1, +0,+1,+0, +1,+0,+0), // Right
     float3x3(+0,+0,+1, +0,+1,+0, -1,+0,+0), // Left
@@ -74,7 +78,7 @@ void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
     payload.extra.light_matrix = light_matrix;
 }
 
-bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
+bool PK_MESHLET_FUNC_CULL(PKMeshTaskPayload payload, const PKMeshlet meshlet)
 {
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
         return Meshlet_Cull_Cone_Directional(meshlet, payload.extra.light_position) && Meshlet_Cull_Frustum_Ortho(meshlet, payload.extra.light_matrix);
@@ -85,44 +89,35 @@ bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
     #endif
 }
 
-void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, inout uint3 indices)
+void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, PKMeshTaskPayload payload, inout uint3 indices, inout PKMeshPrimitiveOut pout)
 {
-    gl_MeshPrimitivesEXT[triangle_index].gl_Layer = int(payload.extra.layer);
+    pout.sv_Layer = payload.extra.layer;
 }
 
-void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_Position)
+void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKMeshTaskPayload payload, PKVertex vertex, inout PKMeshletVertexVaryings outVaryings)
 {
     const float3 world_pos = ObjectToWorldPos(vertex.position);
 
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-
-        sv_Position = payload.extra.light_matrix * float4(world_pos, 1.0f);
+        outVaryings.sv_Position = payload.extra.light_matrix * float4(world_pos, 1.0f);
         // Depth test uses reverse z for precision reasons. revert range for actual distance.
-        vs_DEPTH[vertex_index] = dot(payload.extra.light_position, world_pos) + payload.extra.light_radius;
-
+        outVaryings.userdata.vs_DEPTH = dot(payload.extra.light_position, world_pos) + payload.extra.light_radius;
     #elif defined(PK_LIGHT_PASS_SPOT)
-
-        sv_Position = payload.extra.light_matrix * float4(world_pos, 1.0f);
-        vs_DEPTH[vertex_index] = world_pos - payload.extra.light_position;
-
+        outVaryings.sv_Position = payload.extra.light_matrix * float4(world_pos, 1.0f);
+        outVaryings.userdata.vs_DEPTH = world_pos - payload.extra.light_position;
     #elif defined(PK_LIGHT_PASS_POINT)
-
         const float3 vs_depth = world_pos - payload.extra.light_position;
-        sv_Position = GetCubeClipPos(vs_depth, payload.extra.light_znear, payload.extra.light_radius, payload.extra.layer % 6);
-        vs_DEPTH[vertex_index] = vs_depth;
-
+        outVaryings.sv_Position = GetCubeClipPos(vs_depth, payload.extra.light_znear, payload.extra.light_radius, payload.extra.layer % 6);
+        outVaryings.userdata.vs_DEPTH = vs_depth;
     #endif
 }
 
-out float SV_Target0;
-layout(early_fragment_tests) in;
-void MainFs()
+[earlydepthstencil]
+float MainFs(PKMeshletVertexVaryings vout) : SV_Target0
 {
-    // Store linear distance into shadowmaps.
-    // Point lights use an octahedral layout which doesnt mesh well with clip space depth.
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        SV_Target0 = vs_DEPTH;
+        return vout.userdata.vs_DEPTH;
     #else
-        SV_Target0 = length(vs_DEPTH.xyz);
+        return length(vout.userdata.vs_DEPTH.xyz);
     #endif
 }

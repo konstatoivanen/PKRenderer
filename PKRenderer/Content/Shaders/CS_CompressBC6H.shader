@@ -147,8 +147,8 @@ void InsetColorBBoxP1(float3 texels[16], inout float3 blockMin, inout float3 blo
 
     for (uint i = 0; i < 16; ++i)
     {
-        refinedBlockMin = min(refinedBlockMin, texels[i] == blockMin ? refinedBlockMin : texels[i]);
-        refinedBlockMax = max(refinedBlockMax, texels[i] == blockMax ? refinedBlockMax : texels[i]);
+        refinedBlockMin = min(refinedBlockMin, select(texels[i] == blockMin, refinedBlockMin, texels[i]));
+        refinedBlockMax = max(refinedBlockMax, select(texels[i] == blockMax, refinedBlockMax, texels[i]));
     }
 
     float3 logRefinedBlockMax = log2(refinedBlockMax + 1.0f);
@@ -176,8 +176,8 @@ void InsetColorBBoxP2(float3 texels[16], uint pattern, uint patternSelector, ino
         uint paletteID = Pattern(pattern, i);
         if (paletteID == patternSelector)
         {
-            refinedBlockMin = min(refinedBlockMin, texels[i] == blockMin ? refinedBlockMin : texels[i]);
-            refinedBlockMax = max(refinedBlockMax, texels[i] == blockMax ? refinedBlockMax : texels[i]);
+            refinedBlockMin = min(refinedBlockMin, select(texels[i] == blockMin, refinedBlockMin, texels[i]));
+            refinedBlockMax = max(refinedBlockMax, select(texels[i] == blockMax, refinedBlockMax, texels[i]));
         }
     }
 
@@ -707,18 +707,18 @@ void CompressBC6HCs()
     float2 block1UV = uv + float2(2.0f * texelSize.x, 0.0f);
     float2 block2UV = uv + float2(0.0f, 2.0f * texelSize.y);
     float2 block3UV = uv + float2(2.0f * texelSize.x, 2.0f * texelSize.y);
-    float4 block0X = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block0UV, 0);
-    float4 block1X = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block1UV, 0);
-    float4 block2X = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block2UV, 0);
-    float4 block3X = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block3UV, 0);
-    float4 block0Y = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block0UV, 1);
-    float4 block1Y = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block1UV, 1);
-    float4 block2Y = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block2UV, 1);
-    float4 block3Y = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block3UV, 1);
-    float4 block0Z = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block0UV, 2);
-    float4 block1Z = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block1UV, 2);
-    float4 block2Z = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block2UV, 2);
-    float4 block3Z = TMP_SMP_GATHER_2D(pk_Texture, pk_SamplerBilinearClamped, block3UV, 2);
+    float4 block0X = pk_Texture.GatherRed(pk_SamplerBilinearClamped, block0UV);
+    float4 block1X = pk_Texture.GatherRed(pk_SamplerBilinearClamped, block1UV);
+    float4 block2X = pk_Texture.GatherRed(pk_SamplerBilinearClamped, block2UV);
+    float4 block3X = pk_Texture.GatherRed(pk_SamplerBilinearClamped, block3UV);
+    float4 block0Y = pk_Texture.GatherGreen(pk_SamplerBilinearClamped, block0UV);
+    float4 block1Y = pk_Texture.GatherGreen(pk_SamplerBilinearClamped, block1UV);
+    float4 block2Y = pk_Texture.GatherGreen(pk_SamplerBilinearClamped, block2UV);
+    float4 block3Y = pk_Texture.GatherGreen(pk_SamplerBilinearClamped, block3UV);
+    float4 block0Z = pk_Texture.GatherBlue(pk_SamplerBilinearClamped, block0UV);
+    float4 block1Z = pk_Texture.GatherBlue(pk_SamplerBilinearClamped, block1UV);
+    float4 block2Z = pk_Texture.GatherBlue(pk_SamplerBilinearClamped, block2UV);
+    float4 block3Z = pk_Texture.GatherBlue(pk_SamplerBilinearClamped, block3UV);
 
     float3 texels[16];
     texels[0] = float3(block0X.w, block0Y.w, block0Z.w);
@@ -762,5 +762,5 @@ void CompressBC6HCs()
     EncodeP2Pattern(block, blockMSLE, bestPattern, texels);
 #endif
 
-    imageStore(pk_Image, int2(blockCoord), block);
+    pk_Image[int2(blockCoord)] = block;
 }

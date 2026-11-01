@@ -204,8 +204,8 @@ void ComputeWavefrontExtents(DispatchParameters inParameters, int3 inGroupID, ui
 #define READ_COUNT (SAMPLE_COUNT / WAVE_SIZE + 2)
 
 // Common shared data
-shared float DepthData[READ_COUNT * WAVE_SIZE];
-shared bool LdsEarlyOut;
+groupshared float DepthData[READ_COUNT * WAVE_SIZE];
+groupshared bool LdsEarlyOut;
 
 // Forward declare:
 // Generate the shadow
@@ -228,7 +228,7 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
     ComputeWavefrontExtents(inParameters, int3(inGroupID), inGroupThreadID.x, xy_delta, pixel_xy, pixel_distance, x_axis_major);
 
     // PK_MOD_READ_CURRENT
-    inParameters.CurrentShadow = imageLoad(pk_Image, int2(pixel_xy)).x;
+    inParameters.CurrentShadow = pk_Image[int2(pixel_xy)].x;
 
     // Read in the depth values
     float sampling_depth[READ_COUNT];
@@ -458,6 +458,6 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
         // But thankfully the latency is hidden by all the work we're doing...
         // PK Mod
         //inParameters.OutputTexture[(int2)write_xy] = result;
-        imageStore(pk_Image, int2(write_xy), float4(min(inParameters.CurrentShadow, result)));
+        pk_Image[int2(write_xy)] = min(inParameters.CurrentShadow, result);
     }
 }

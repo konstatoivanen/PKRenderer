@@ -32,10 +32,6 @@
     #define PK_MESHLET_LOD_SCALE 1.0f
 #endif
 
-#ifndef PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA
-    #define PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA 0
-#endif
-
 #ifndef PK_MESHLET_USE_VERTEX_COLORS
     #define PK_MESHLET_USE_VERTEX_COLORS 0
 #endif
@@ -52,13 +48,41 @@
     #define PK_MESHLET_USE_FUNC_TRIANGLE 0
 #endif
 
+#define PK_MESHLET_HAS_PRIMITIVE_OUT (PK_MESHLET_USE_FUNC_TRIANGLE == 1 || PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_TRIANGLES)
+
+#if PK_MESHLET_HAS_PRIMITIVE_OUT
+    #define PK_MESHLET_DECLARE_PRIMITIVE_OUT , out primitives PKMeshPrimitiveOut outPrimitives[MAX_TRIANGLES_PER_MESHLET]
+#else
+    #define PK_MESHLET_DECLARE_PRIMITIVE_OUT
+#endif
+
+struct PKMeshletVertexVaryings
+{
+    float4 sv_Position : SV_Position;
+    #ifdef PK_MESHLET_VERTEX_USER_DATA
+    PK_MESHLET_VERTEX_USER_DATA userdata;
+    #endif
+    #if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_CLUSTERS
+    nointerpolation uint vs_MESHLET_INDEX : PK_MESHLET_INDEX;
+    #endif
+    PK_INSTANCING_VARYING_ID
+};
+
+struct PKMeshPrimitiveOut
+{
+    bool sv_CullPrimitive : SV_CullPrimitive;
+    uint sv_Layer : SV_RenderTargetArrayIndex;
+    #if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_TRIANGLES
+    uint sv_PrimitiveId : SV_PrimitiveID;
+    #endif
+};
+
 #if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_NONE
-    #define PK_MESHLET_DEBUG_VISUALIZE(color)
+    #define PK_MESHLET_DEBUG_VISUALIZE(vout, color)
 #elif PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_CLUSTERS
-    PK_DECLARE_VS_ATTRIB(flat uint vs_MESHLET_INDEX);
-    #define PK_MESHLET_DEBUG_VISUALIZE(color) color *= 0.1f; color += HsvToRgb(float3((vs_MESHLET_INDEX % 16u) / 16.0f, 1.0f, 1.0f))
+    #define PK_MESHLET_DEBUG_VISUALIZE(vout, color) color = color * 0.1f + HsvToRgb(float3((vout.vs_MESHLET_INDEX % 16u) / 16.0f, 1.0f, 1.0f))
 #elif PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_TRIANGLES
-    #define PK_MESHLET_DEBUG_VISUALIZE(color) color *= 0.1f; color += HsvToRgb(float3((gl_PrimitiveID % 16u) / 16.0f, 1.0f, 1.0f))
+    #define PK_MESHLET_DEBUG_VISUALIZE(vout, color) color = color * 0.1f + HsvToRgb(float3((gl_PrimitiveID % 16u) / 16.0f, 1.0f, 1.0f))
 #endif
 
 uniform StructuredBuffer<uint2> pk_Meshlet_Tasklets;
@@ -66,14 +90,15 @@ uniform StructuredBuffer<uint4> pk_Meshlet_Submeshes;
 uniform StructuredBuffer<uint4> pk_Meshlets;
 uniform StructuredBuffer<uint4> pk_Meshlet_Vertices;
 uniform StructuredBuffer<byte> pk_Meshlet_Indices;
+uniform uint pk_Meshlet_DispatchOffset;
 
 struct PKMeshTaskPayload
 {
     uint4 packed0;
     uint4 packed1;
-    uint4 visible_mask; 
+    uint4 visible_mask;
 
-#if PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA == 1
+#ifdef PK_MESHLET_EXTRA_PAYLOAD_DATA
     PK_MESHLET_EXTRA_PAYLOAD_DATA extra;
 #endif
 };
@@ -202,30 +227,31 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 sm_bbmin, const 
         const float4 swizzled_quat = float4
         (
             1.0f,
-            fma(bitfieldExtract(packed.w, 0,  10), 2.0f / 1023.0f, -1.0f),
-            fma(bitfieldExtract(packed.w, 10, 10), 2.0f / 1023.0f, -1.0f),
-            fma(bitfieldExtract(packed.w, 20, 10), 2.0f / 1023.0f, -1.0f)
+            mad(float(bitfieldExtract(packed.w, 0,  10)), 2.0f / 1023.0f, -1.0f),
+            mad(float(bitfieldExtract(packed.w, 10, 10)), 2.0f / 1023.0f, -1.0f),
+            mad(float(bitfieldExtract(packed.w, 20, 10)), 2.0f / 1023.0f, -1.0f)
         );
 
         quat = swizzled_quat;
-        quat = select(bool(swizzle_index == 1).xxxx, swizzled_quat.wxyz, quat);
-        quat = select(bool(swizzle_index == 2).xxxx, swizzled_quat.zwxy, quat);
-        quat = select(bool(swizzle_index == 3).xxxx, swizzled_quat.yzwx, quat);
+        quat = select(swizzle_index == 1u, swizzled_quat.wxyz, quat);
+        quat = select(swizzle_index == 2u, swizzled_quat.zwxy, quat);
+        quat = select(swizzle_index == 3u, swizzled_quat.yzwx, quat);
         quat = normalize(quat);
     }
 
     v.normal = Quat_MultiplyVector(quat, float3(0,0,1));
     v.tangent.xyz = Quat_MultiplyVector(quat, float3(1,0,0));
-    v.tangent.w = fma(bitfieldExtract(packed.y, 16, 1), 2.0f, -1.0f);
+    v.tangent.w = mad(float(bitfieldExtract(packed.y, 16, 1)), 2.0f, -1.0f);
 
     #if PK_MESHLET_USE_VERTEX_COLORS
-    v.color.r = bitfieldExtract(packed.y, 17, 5) / 31.0f;
-    v.color.g = bitfieldExtract(packed.y, 22, 5) / 31.0f;
-    v.color.b = bitfieldExtract(packed.y, 27, 5) / 31.0f;
+    v.color.r = float(bitfieldExtract(packed.y, 17, 5)) / 31.0f;
+    v.color.g = float(bitfieldExtract(packed.y, 22, 5)) / 31.0f;
+    v.color.b = float(bitfieldExtract(packed.y, 27, 5)) / 31.0f;
     #endif
 
     return v;
 }
+
 
 // Loading functions
 PKTasklet Meshlet_Load_Tasklet(const uint task_index) { return Meshlet_Unpack_Tasklet(pk_Meshlet_Tasklets[task_index]); }
@@ -249,321 +275,321 @@ PKMeshlet Meshlet_Load_Meshlet(const uint index)
 
 PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const float3 sm_bbmax) { return Meshlet_Unpack_Vertex(pk_Meshlet_Vertices[index], sm_bbmin, sm_bbmax); }
 
-#if defined(SHADER_MESH_TASK)
-
-    bool Meshlet_Cull_Lod(const PKMeshlet meshlet)
-    {
-        #if PK_MESHLET_MAX_LOD_ONLY == 1
-            return meshlet.lod_center_error_parent.w > MESHLET_MAX_ERROR;
-        #else
-            const float threshold = PK_MESHLET_LOD_SCALE * pk_View.MeshletCullParams.x;
-            const float4 center_c = ObjectToClipPos(meshlet.lod_center_error_current.xyz);
-            const float4 center_p = ObjectToClipPos(meshlet.lod_center_error_parent.xyz);
-            float error_c = pk_Instancing_UniformScale * meshlet.lod_center_error_current.w;
-            float error_p = pk_Instancing_UniformScale * meshlet.lod_center_error_parent.w;
-            error_c *= rsqrt(max(1e-6f, dot(center_c, center_c) - pow2(error_c)));
-            error_p *= rsqrt(max(1e-6f, dot(center_p, center_p) - pow2(error_p)));
-            return error_p > threshold && error_c <= threshold;
-        #endif 
-    }
-        
-    bool Meshlet_Cull_Frustum_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip)
-    {
-        const float3 clip_center = (world_to_clip * float4(ObjectToWorldPos(meshlet.center), 1.0f)).xyz;
-        const float3 clip_delta = abs(meshlet.extents.x * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f)).xyz) + 
-                                  abs(meshlet.extents.y * (world_to_clip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f)).xyz) + 
-                                  abs(meshlet.extents.z * (world_to_clip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f)).xyz);
-                                    
-        const float3 rect_min = clip_center - clip_delta;
-        const float3 rect_max = clip_center + clip_delta;
-        return rect_max.z > 0.0f && rect_min.z < 1.0f && All_Greater(rect_max.xy, -1.0f.xx) && All_Less(rect_min.xy, 1.0f.xx);
-    }
-    
-    bool Meshlet_Cull_Frustum_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip)
-    {
-        const float4 delta_x = (2.0f * meshlet.extents.x) * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f));
-        const float4 delta_y = (2.0f * meshlet.extents.y) * (world_to_clip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f));
-        const float4 delta_z = (2.0f * meshlet.extents.z) * (world_to_clip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f));
-        const float4 clip_z0 = world_to_clip * float4(ObjectToWorldPos(meshlet.center - meshlet.extents), 1.0f);
-        const float4 clip_z1 = clip_z0 + delta_z;
-
-        float4 pmin = 1.0f.xxxx;
-
-        for (uint i = 0; i < 4; ++i)
-        {
-            const float4 clip_0 = clip_z0 + delta_x * (i & 0x1) + delta_y * (i / 2);
-            const float4 clip_1 = clip_z1 + delta_x * (i & 0x1) + delta_y * (i / 2);
-            pmin = min(pmin, float4(clip_0.xy, -clip_0.xy) - clip_0.w);
-            pmin = min(pmin, float4(clip_1.xy, -clip_1.xy) - clip_1.w);
-        }
-    
-        return All_Less(pmin, 0.0f.xxxx);
-    }
-    
-    bool Meshlet_Cull_Sphere(const PKMeshlet meshlet, float3 center, float radius)
-    {
-        center -= ObjectToWorldPos(meshlet.center);
-        const float3 vx = 2.0f * meshlet.extents.x * float3(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0]);
-        const float3 vy = 2.0f * meshlet.extents.y * float3(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1]);
-        const float3 vz = 2.0f * meshlet.extents.z * float3(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2]);
-        const float3 base = -0.5f * (vx + vy + vz);
-        float3 extents = 0.0f.xxx;
-
-        for (uint i = 0; i < 4; ++i)
-        {
-            const float3 pmin = base + vz * 0 + vx * (i & 0x1) + vy * (i / 2);
-            const float3 pmax = base + vz * 1 + vx * (i & 0x1) + vy * (i / 2);
-            extents = max(max(extents, pmin), pmax);
-        }
-
-        float3 d = abs(center) - extents;
-        float r = radius - cmax(min(d, float3(0.0f)));
-        d = max(d, float3(0.0f));
-        return dot(d, d) <= r * r;
-    }
-    
-    bool Meshlet_Cull_Cone(const PKMeshlet meshlet, float3 cull_origin)
-    {
-        const float3 cone_axis = SafeNormalize(ObjectToWorldVec(meshlet.cone_axis));
-        const float3 cone_apex = ObjectToWorldPos(meshlet.cone_apex);
-        const float3 cone_view = normalize(cone_apex - cull_origin);
-        return dot(cone_view, cone_axis) < meshlet.cone_cutoff;
-    }
-    
-    bool Meshlet_Cull_Cone_Directional(const PKMeshlet meshlet, float3 cull_direction)
-    {
-        const float3 cone_axis = SafeNormalize(ObjectToWorldVec(meshlet.cone_axis));
-        return dot(cull_direction, cone_axis) < meshlet.cone_cutoff;
-    }
-    
-    #if defined(PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP)
-    bool Meshlet_Cull_Depth(const bool is_visible, const bool is_clipped_near, const float3 rect_min, const float3 rect_max, const int2 resolution, const int max_mip)
-    {
-        [[branch]]
-        if (is_visible && !is_clipped_near)
-        {
-            const float4 rect_aabb = saturate(float4(rect_min.xy, rect_max.xy) * 0.5f + 0.5f) * resolution.xyxy;
-            const float2 rect_size = rect_aabb.zw - rect_aabb.xy;
-
-            const int  rect_level = min(max_mip, int(ceil(log2(cmax(rect_size)))));
-            const int2 rect_clamp = (resolution >> rect_level) - 1;
-            const int4 rect_coords = min(int4(rect_aabb) >> rect_level, rect_clamp.xyxy);
-            
-            const float depth_00 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.xy, rect_level);
-            const float depth_01 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.xw, rect_level);
-            const float depth_11 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.zw, rect_level);
-            const float depth_10 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.zy, rect_level);
-            const float depth_max = max(max(depth_00, depth_01), max(depth_11, depth_10));
-            return ViewDepth(rect_max.z) <= depth_max;
-        }
-    
-        return is_visible;
-    }
-
-    bool Meshlet_Cull_Depth_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip, const int2 resolution, const int max_mip)
-    {
-        const float3 clip_center = (world_to_clip * float4(ObjectToWorldPos(meshlet.center), 1.0f)).xyz;
-        const float3 clip_delta = abs(meshlet.extents.x * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f)).xyz) + 
-                                  abs(meshlet.extents.y * (world_to_clip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f)).xyz) + 
-                                  abs(meshlet.extents.z * (world_to_clip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f)).xyz);
-        
-        const float3 rect_min = clip_center - clip_delta;
-        const float3 rect_max = clip_center + clip_delta;
-        const bool is_clipped_far = rect_min.z < 0.0f;
-        const bool is_clipped_near = rect_max.z > 1.0f;
-        const bool is_visible = rect_max.z > 0.0f && rect_min.z < 1.0f && All_Greater(rect_max.xy, -1.0f.xx) && All_Less(rect_min.xy, 1.0f.xx);
-        return Meshlet_Cull_Depth(is_visible, is_clipped_near, rect_min, rect_max, resolution, max_mip);
-    }
-
-    bool Meshlet_Cull_Depth_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip, const float4x4 view_to_clip, const int2 resolution, const int max_mip)
-    {
-        const float4 delta_x = (2.0f * meshlet.extents.x) * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f));
-        const float4 delta_y = (2.0f * meshlet.extents.y) * (world_to_clip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f));
-        const float4 delta_z = (2.0f * meshlet.extents.z) * (world_to_clip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f));
-        const float4 clip_z0 = world_to_clip * float4(ObjectToWorldPos(meshlet.center - meshlet.extents), 1.0f);
-        const float4 clip_z1 = clip_z0 + delta_z;
-    
-        float min_w = +1e+38f;
-        float max_w = -1e+38f;
-        float4 pmin = 1.0f.xxxx;
-        float3 rect_min = float3(+1.0f, +1.0f, +1.0f);
-        float3 rect_max = float3(-1.0f, -1.0f, -1.0f);
-        
-        [[loop]]
-        for (uint i = 0; i < 4; ++i)
-        {
-            const float4 clip_0 = clip_z0 + delta_x * (i & 0x1) + delta_y * (i / 2);
-            const float4 clip_1 = clip_z1 + delta_x * (i & 0x1) + delta_y * (i / 2);
-            const float2 clip_0_xy = clip_0.xy / clip_0.w;
-            const float2 clip_1_xy = clip_1.xy / clip_1.w;
-            pmin = min(pmin, float4(clip_0.xy, -clip_0.xy) - clip_0.w);
-            pmin = min(pmin, float4(clip_1.xy, -clip_1.xy) - clip_1.w);
-            min_w = min(min(min_w, clip_0.w), clip_1.w);
-            max_w = max(max(max_w, clip_0.w), clip_1.w); 
-            rect_min.xy = min(min(rect_min.xy, clip_0_xy), clip_1_xy); 
-            rect_max.xy = max(max(rect_max.xy, clip_0_xy), clip_1_xy);
-        }
-    
-        const float min_z = max_w * view_to_clip[2][2] + view_to_clip[3][2]; // Flipped from 3,2
-        const float max_z = min_w * view_to_clip[2][2] + view_to_clip[3][2]; // Flipped from 3,2
-    
-        if (min_w <= 0.0f && max_w > 0.0f)
-        {
-            rect_min = float3(-1.0f, -1.0f, -1.0f);
-            rect_max = float3(+1.0f, +1.0f, +1.0f);
-        }
-        else
-        {
-            rect_min.z = min_z / max_w;
-            rect_max.z = max_z / min_w;
-        }
-        
-        const bool is_clipped_near = min_w <= max_z;
-        const bool is_clipped_far = 0.0f >= min_z;
-        const bool is_visible = max_w > min_z && 0.0f < max_z && All_Less(pmin, 0.0f.xxxx);
-        return Meshlet_Cull_Depth(is_visible, is_clipped_near, rect_min, rect_max, resolution, max_mip);
-    }
-
-    #else
-    bool Meshlet_Cull_Hierarchical_Depth_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip, const int2 resolution, const int max_mip) { return false; }
-    bool Meshlet_Cull_Hierarchical_Depth_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip, const float4x4 view_to_clip, const int2 resolution, const int max_mip) { return false; }
-    #endif
-
-    #if PK_MESHLET_USE_FUNC_TASKLET == 1
-    void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload);
-    #else
-    void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload) {}
-    #endif
-
-    #if PK_MESHLET_USE_FUNC_CULL == 1
-    bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet);
-    #else
-    bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet) {}
-    #endif
-
-    uniform uint pk_Meshlet_DispatchOffset;
-    taskPayloadSharedEXT PKMeshTaskPayload payload;
-
-    layout(local_size_x = MAX_MESHLETS_PER_TASK) in;
-    void MainMeshTask()
-    {
-        uint meshlet_count;
-        
-        [[branch]]
-        if (WaveIsFirstLane())
-        {
-            const uint task_index = pk_Meshlet_DispatchOffset + gl_WorkGroupID.x;
-            const PKTasklet tasklet = Meshlet_Load_Tasklet(task_index);
-            PK_INSTANCING_ASSIGN_LOCALS(tasklet.instance_id);
-            const PKSubmesh submesh = Meshlet_Load_Submesh(pk_Instancing_Submesh);
-            payload.packed0.xyz = asuint(submesh.bbmin);
-            payload.packed1.xyz = asuint(submesh.bbmax);
-            payload.packed0.w = tasklet.meshlet_first;
-            payload.packed1.w = tasklet.instance_id;
-            meshlet_count = tasklet.meshlet_count;
-            PK_MESHLET_FUNC_TASKLET(payload);
-        }
-    
-        subgroupBarrier();
-
-        PK_INSTANCING_BROADCAST_LOCALS_MANUAL();
-
-        const uint meshlet_first = payload.packed0.w;
-        meshlet_count = WaveReadFirstLane(meshlet_count);
-    
-        const uint meshlet_index_local = gl_LocalInvocationID.x;
-        const uint meshlet_index = meshlet_first + meshlet_index_local;
-        const PKMeshlet meshlet = Meshlet_Load_Meshlet(meshlet_index);
-        
-        bool is_visible = true;
-        is_visible = is_visible && meshlet_index_local < meshlet_count;
-        is_visible = is_visible && Meshlet_Cull_Lod(meshlet);
-        is_visible = is_visible && PK_MESHLET_FUNC_CULL(meshlet);
-
-        const uint4 visible_mask = WaveActiveBallot(is_visible);
-        const uint visible_count = countbits(visible_mask.x);
-    
-        payload.visible_mask = visible_mask;
-
-        EmitMeshTasksEXT(visible_count, 1, 1);
-    }
-
-#elif defined(SHADER_MESH_ASSEMBLY)
-
-    void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_Position);
-
-    #if PK_MESHLET_USE_FUNC_TRIANGLE == 1
-    void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, inout uint3 indices);
-    #else
-    void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, inout uint3 indices) {}
-    #endif
-
-    taskPayloadSharedEXT PKMeshTaskPayload payload;
-
-    layout(local_size_x = MESHLET_LOCAL_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
-    layout(triangles, max_vertices = MAX_VERTICES_PER_MESHLET, max_primitives = MAX_TRIANGLES_PER_MESHLET) out;
-    void MainMeshAssembly()
-    {
-        const uint meshlet_first = payload.packed0.w;
-        const uint instance_id = payload.packed1.w;
-
-        uint delta_index = subgroupBallotExclusiveBitCount(payload.visible_mask);
-        delta_index = select(delta_index == gl_WorkGroupID.x, gl_LocalInvocationID.x, 0u);
-        delta_index = WaveActiveMax(delta_index);
-
-        const uint meshlet_index = meshlet_first + delta_index;
-        const PKMeshletLite meshlet = Meshlet_Load_MeshletLite(meshlet_index);
-        
-        PK_INSTANCING_ASSIGN_LOCALS(instance_id);
-
-        const uint vertex_first = meshlet.vertex_first;
-        const uint vertex_count = meshlet.vertex_count;
-        const uint triangle_first = meshlet.triangle_first;
-        const uint triangle_count = meshlet.triangle_count;
-        const float3 smb_bmin = asfloat(payload.packed0.xyz);
-        const float3 smb_bmax = asfloat(payload.packed1.xyz);
-
-        SetMeshOutputsEXT(vertex_count, triangle_count);
-
-        [[loop]]
-        for (uint i = 0u; i < VERTICES_PER_MESHLET_THREAD; ++i)
-        {
-            const uint vertex_index = gl_LocalInvocationID.x * VERTICES_PER_MESHLET_THREAD + i;
-            const PKVertex vertex = Meshlet_Load_Vertex(vertex_first + vertex_index, smb_bmin, smb_bmax);
-            float4 sv_Position;
-
-            [[branch]]
-            if (vertex_index < vertex_count)
-            {
-                PK_INSTANCING_ASSIGN_VERTEX_INSTANCE_ID(vertex_index, instance_id)
-                PK_MESHLET_FUNC_VERTEX(vertex_index, vertex, sv_Position);
-                gl_MeshVerticesEXT[vertex_index].gl_Position = sv_Position;
-                #if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_CLUSTERS
-                vs_MESHLET_INDEX[vertex_index] = meshlet_index;
-                #endif
-            }
-        }
-
-        [[unroll]]
-        for (uint i = 0u; i < TRIANGLES_PER_MESHLET_THREAD; ++i)
-        {
-            const uint triangle_index = gl_LocalInvocationID.x * TRIANGLES_PER_MESHLET_THREAD + i;
-            uint3 indices = uint3
-            (
-                pk_Meshlet_Indices[triangle_first * 3u + triangle_index * 3u + 0u],
-                pk_Meshlet_Indices[triangle_first * 3u + triangle_index * 3u + 1u],
-                pk_Meshlet_Indices[triangle_first * 3u + triangle_index * 3u + 2u]
-            );
-            
-            [[branch]]
-            if (triangle_index < triangle_count)
-            {
-                PK_MESHLET_FUNC_TRIANGLE(triangle_index, indices);
-                gl_PrimitiveTriangleIndicesEXT[triangle_index] = indices;
-                #if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_TRIANGLES
-                gl_MeshPrimitivesEXT[triangle_index].gl_PrimitiveID = int(triangle_first + triangle_index);
-                #endif
-            }
-        }        
-    }
+// Culling functions
+bool Meshlet_Cull_Lod(const PKMeshlet meshlet)
+{
+#if PK_MESHLET_MAX_LOD_ONLY == 1
+    return meshlet.lod_center_error_parent.w > MESHLET_MAX_ERROR;
+#else
+    const float threshold = PK_MESHLET_LOD_SCALE * pk_View.MeshletCullParams.x;
+    const float4 center_c = ObjectToClipPos(meshlet.lod_center_error_current.xyz);
+    const float4 center_p = ObjectToClipPos(meshlet.lod_center_error_parent.xyz);
+    float error_c = pk_Instancing_UniformScale * meshlet.lod_center_error_current.w;
+    float error_p = pk_Instancing_UniformScale * meshlet.lod_center_error_parent.w;
+    error_c *= rsqrt(max(1e-6f, dot(center_c, center_c) - pow2(error_c)));
+    error_p *= rsqrt(max(1e-6f, dot(center_p, center_p) - pow2(error_p)));
+    return error_p > threshold && error_c <= threshold;
 #endif
+}
+    
+bool Meshlet_Cull_Frustum_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip)
+{
+    const float3 clip_center = mul(world_to_clip, float4(ObjectToWorldPos(meshlet.center), 1.0f)).xyz;
+    const float3 clip_delta = abs(meshlet.extents.x * mul(world_to_clip, float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f)).xyz) +
+                              abs(meshlet.extents.y * mul(world_to_clip, float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f)).xyz) +
+                              abs(meshlet.extents.z * mul(world_to_clip, float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f)).xyz);
+
+    const float3 rect_min = clip_center - clip_delta;
+    const float3 rect_max = clip_center + clip_delta;
+    return rect_max.z > 0.0f && rect_min.z < 1.0f && all(rect_max.xy > -1.0f.xx) && all(rect_min.xy < 1.0f.xx);
+}
+
+bool Meshlet_Cull_Frustum_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip)
+{
+    const float4 delta_x = (2.0f * meshlet.extents.x) * mul(world_to_clip, float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f));
+    const float4 delta_y = (2.0f * meshlet.extents.y) * mul(world_to_clip, float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f));
+    const float4 delta_z = (2.0f * meshlet.extents.z) * mul(world_to_clip, float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f));
+    const float4 clip_z0 = mul(world_to_clip, float4(ObjectToWorldPos(meshlet.center - meshlet.extents), 1.0f));
+    const float4 clip_z1 = clip_z0 + delta_z;
+
+    float4 pmin = 1.0f.xxxx;
+
+    for (uint i = 0; i < 4; ++i)
+    {
+        const float4 clip_0 = clip_z0 + delta_x * (i & 0x1) + delta_y * (i / 2);
+        const float4 clip_1 = clip_z1 + delta_x * (i & 0x1) + delta_y * (i / 2);
+        pmin = min(pmin, float4(clip_0.xy, -clip_0.xy) - clip_0.w);
+        pmin = min(pmin, float4(clip_1.xy, -clip_1.xy) - clip_1.w);
+    }
+
+    return all(pmin < 0.0f.xxxx);
+}
+    
+bool Meshlet_Cull_Sphere(const PKMeshlet meshlet, float3 center, float radius)
+{
+    center -= ObjectToWorldPos(meshlet.center);
+    const float3 vx = 2.0f * meshlet.extents.x * float3(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0]);
+    const float3 vy = 2.0f * meshlet.extents.y * float3(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1]);
+    const float3 vz = 2.0f * meshlet.extents.z * float3(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2]);
+    const float3 base = -0.5f * (vx + vy + vz);
+    float3 extents = 0.0f.xxx;
+
+    for (uint i = 0; i < 4; ++i)
+    {
+        const float3 pmin = base + vz * 0 + vx * (i & 0x1) + vy * (i / 2);
+        const float3 pmax = base + vz * 1 + vx * (i & 0x1) + vy * (i / 2);
+        extents = max(max(extents, pmin), pmax);
+    }
+
+    float3 d = abs(center) - extents;
+    float r = radius - cmax(min(d, float3(0.0f)));
+    d = max(d, float3(0.0f));
+    return dot(d, d) <= r * r;
+}
+
+bool Meshlet_Cull_Cone(const PKMeshlet meshlet, float3 cull_origin)
+{
+    const float3 cone_axis = SafeNormalize(ObjectToWorldVec(meshlet.cone_axis));
+    const float3 cone_apex = ObjectToWorldPos(meshlet.cone_apex);
+    const float3 cone_view = normalize(cone_apex - cull_origin);
+    return dot(cone_view, cone_axis) < meshlet.cone_cutoff;
+}
+
+bool Meshlet_Cull_Cone_Directional(const PKMeshlet meshlet, float3 cull_direction)
+{
+    const float3 cone_axis = SafeNormalize(ObjectToWorldVec(meshlet.cone_axis));
+    return dot(cull_direction, cone_axis) < meshlet.cone_cutoff;
+}
+    
+#if defined(PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP)
+bool Meshlet_Cull_Depth(const bool is_visible, const bool is_clipped_near, const float3 rect_min, const float3 rect_max, const int2 resolution, const int max_mip)
+{
+    [[branch]]
+    if (is_visible && !is_clipped_near)
+    {
+        const float4 rect_aabb = saturate(float4(rect_min.xy, rect_max.xy) * 0.5f + 0.5f) * resolution.xyxy;
+        const float2 rect_size = rect_aabb.zw - rect_aabb.xy;
+
+        const int  rect_level = min(max_mip, int(ceil(log2(cmax(rect_size)))));
+        const int2 rect_clamp = (resolution >> rect_level) - 1;
+        const int4 rect_coords = min(int4(rect_aabb) >> rect_level, rect_clamp.xyxy);
+        
+        const float depth_00 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.xy, rect_level);
+        const float depth_01 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.xw, rect_level);
+        const float depth_11 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.zw, rect_level);
+        const float depth_10 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.zy, rect_level);
+        const float depth_max = max(max(depth_00, depth_01), max(depth_11, depth_10));
+        return ViewDepth(rect_max.z) <= depth_max;
+    }
+
+    return is_visible;
+}
+
+bool Meshlet_Cull_Depth_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip, const int2 resolution, const int max_mip)
+{
+    const float3 clip_center = mul(world_to_clip, float4(ObjectToWorldPos(meshlet.center), 1.0f)).xyz;
+    const float3 clip_delta = abs(meshlet.extents.x * mul(world_to_clip, float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f)).xyz) +
+                              abs(meshlet.extents.y * mul(world_to_clip, float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f)).xyz) +
+                              abs(meshlet.extents.z * mul(world_to_clip, float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f)).xyz);
+
+    const float3 rect_min = clip_center - clip_delta;
+    const float3 rect_max = clip_center + clip_delta;
+    const bool is_clipped_near = rect_max.z > 1.0f;
+    const bool is_visible = rect_max.z > 0.0f && rect_min.z < 1.0f && all(rect_max.xy > -1.0f.xx) && all(rect_min.xy < 1.0f.xx);
+    return Meshlet_Cull_Depth(is_visible, is_clipped_near, rect_min, rect_max, resolution, max_mip);
+}
+
+bool Meshlet_Cull_Depth_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip, const float4x4 view_to_clip, const int2 resolution, const int max_mip)
+{
+    const float4 delta_x = (2.0f * meshlet.extents.x) * mul(world_to_clip, float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f));
+    const float4 delta_y = (2.0f * meshlet.extents.y) * mul(world_to_clip, float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f));
+    const float4 delta_z = (2.0f * meshlet.extents.z) * mul(world_to_clip, float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f));
+    const float4 clip_z0 = mul(world_to_clip, float4(ObjectToWorldPos(meshlet.center - meshlet.extents), 1.0f));
+    const float4 clip_z1 = clip_z0 + delta_z;
+
+    float min_w = +1e+38f;
+    float max_w = -1e+38f;
+    float4 pmin = 1.0f.xxxx;
+    float3 rect_min = float3(+1.0f, +1.0f, +1.0f);
+    float3 rect_max = float3(-1.0f, -1.0f, -1.0f);
+
+    [[loop]]
+    for (uint i = 0; i < 4; ++i)
+    {
+        const float4 clip_0 = clip_z0 + delta_x * (i & 0x1) + delta_y * (i / 2);
+        const float4 clip_1 = clip_z1 + delta_x * (i & 0x1) + delta_y * (i / 2);
+        const float2 clip_0_xy = clip_0.xy / clip_0.w;
+        const float2 clip_1_xy = clip_1.xy / clip_1.w;
+        pmin = min(pmin, float4(clip_0.xy, -clip_0.xy) - clip_0.w);
+        pmin = min(pmin, float4(clip_1.xy, -clip_1.xy) - clip_1.w);
+        min_w = min(min(min_w, clip_0.w), clip_1.w);
+        max_w = max(max(max_w, clip_0.w), clip_1.w);
+        rect_min.xy = min(min(rect_min.xy, clip_0_xy), clip_1_xy);
+        rect_max.xy = max(max(rect_max.xy, clip_0_xy), clip_1_xy);
+    }
+
+    // In HLSL/Slang M[row][col], row 2 col 3 is the Z translation term (was [3][2] in GLSL M[col][row])
+    // @TODO SLANG VERIFY
+    const float min_z = max_w * view_to_clip[2][2] + view_to_clip[2][3];
+    const float max_z = min_w * view_to_clip[2][2] + view_to_clip[2][3];
+
+    if (min_w <= 0.0f && max_w > 0.0f)
+    {
+        rect_min = float3(-1.0f, -1.0f, -1.0f);
+        rect_max = float3(+1.0f, +1.0f, +1.0f);
+    }
+    else
+    {
+        rect_min.z = min_z / max_w;
+        rect_max.z = max_z / min_w;
+    }
+
+    const bool is_clipped_near = min_w <= max_z;
+    const bool is_visible = max_w > min_z && 0.0f < max_z && all(pmin < 0.0f.xxxx);
+    return Meshlet_Cull_Depth(is_visible, is_clipped_near, rect_min, rect_max, resolution, max_mip);
+}
+
+#else
+bool Meshlet_Cull_Hierarchical_Depth_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip, const int2 resolution, const int max_mip) { return false; }
+bool Meshlet_Cull_Hierarchical_Depth_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip, const float4x4 view_to_clip, const int2 resolution, const int max_mip) { return false; }
+#endif
+
+#if PK_MESHLET_USE_FUNC_TASKLET == 1
+void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload);
+#else
+void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload) {}
+#endif
+
+#if PK_MESHLET_USE_FUNC_CULL == 1
+bool PK_MESHLET_FUNC_CULL(PKMeshTaskPayload payload, const PKMeshlet meshlet);
+#else
+bool PK_MESHLET_FUNC_CULL(PKMeshTaskPayload payload, const PKMeshlet meshlet) { return true; }
+#endif
+
+void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKMeshTaskPayload payload, PKVertex vertex, inout PKMeshletVertexVaryings outVaryings);
+
+#if PK_MESHLET_USE_FUNC_TRIANGLE == 1
+void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, PKMeshTaskPayload payload, inout uint3 indices, inout PKMeshPrimitiveOut pout);
+#else
+void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, PKMeshTaskPayload payload, inout uint3 indices, inout PKMeshPrimitiveOut pout) {}
+#endif
+
+[numthreads(MAX_MESHLETS_PER_TASK, 1, 1)]
+void MainMeshTask()
+{
+    PKMeshTaskPayload payload = (PKMeshTaskPayload)0;
+    uint meshlet_count = 0u;
+
+    [[branch]]
+    if (WaveIsFirstLane())
+    {
+        const uint task_index = pk_Meshlet_DispatchOffset + gl_WorkGroupID.x;
+        const PKTasklet tasklet = Meshlet_Load_Tasklet(task_index);
+        PK_INSTANCING_ASSIGN_LOCALS(tasklet.instance_id);
+        const PKSubmesh submesh = Meshlet_Load_Submesh(pk_Instancing_Submesh);
+        payload.packed0.xyz = asuint(submesh.bbmin);
+        payload.packed1.xyz = asuint(submesh.bbmax);
+        payload.packed0.w = tasklet.meshlet_first;
+        payload.packed1.w = tasklet.instance_id;
+        meshlet_count = tasklet.meshlet_count;
+    }
+
+    PK_INSTANCING_BROADCAST_LOCALS();
+    payload.packed0 = WaveReadLaneFirst(payload.packed0);
+    payload.packed1 = WaveReadLaneFirst(payload.packed1);
+    meshlet_count = WaveReadLaneFirst(meshlet_count);
+    PK_MESHLET_FUNC_TASKLET(payload);
+
+    const uint meshlet_first = payload.packed0.w;
+    const uint meshlet_index_local = gl_LocalInvocationID.x;
+    const uint meshlet_index = meshlet_first + meshlet_index_local;
+    const PKMeshlet meshlet = Meshlet_Load_Meshlet(meshlet_index);
+
+    bool is_visible = true;
+    is_visible = is_visible && meshlet_index_local < meshlet_count;
+    is_visible = is_visible && Meshlet_Cull_Lod(meshlet);
+    is_visible = is_visible && PK_MESHLET_FUNC_CULL(payload, meshlet);
+
+    const uint4 visible_mask = WaveActiveBallot(is_visible);
+    const uint visible_count = countbits(visible_mask.x);
+    payload.visible_mask = visible_mask;
+
+    DispatchMesh(visible_count, 1, 1, payload);
+}
+
+[outputtopology("triangle")]
+[numthreads(MESHLET_LOCAL_GROUP_SIZE, 1, 1)]
+void MainMeshAssembly(
+    in payload PKMeshTaskPayload inPayload,
+    out vertices PKMeshletVertexVaryings outVertices[MAX_VERTICES_PER_MESHLET],
+    out indices uint3 outTriangles[MAX_TRIANGLES_PER_MESHLET]
+    PK_MESHLET_DECLARE_PRIMITIVE_OUT)
+{
+    const uint meshlet_first = inPayload.packed0.w;
+    const uint instance_id = inPayload.packed1.w;
+
+    const uint thread = gl_LocalInvocationID.x;
+    uint delta_index = countbits(inPayload.visible_mask.x & ((1u << thread) - 1u));
+    delta_index = select(delta_index == gl_WorkGroupID.x, thread, 0u);
+    delta_index = WaveActiveMax(delta_index);
+
+    const uint meshlet_index = meshlet_first + delta_index;
+    const PKMeshletLite meshlet = Meshlet_Load_MeshletLite(meshlet_index);
+
+    PK_INSTANCING_ASSIGN_LOCALS(instance_id);
+
+    const uint vertex_first = meshlet.vertex_first;
+    const uint vertex_count = meshlet.vertex_count;
+    const uint triangle_first = meshlet.triangle_first;
+    const uint triangle_count = meshlet.triangle_count;
+    const float3 smb_bmin = asfloat(inPayload.packed0.xyz);
+    const float3 smb_bmax = asfloat(inPayload.packed1.xyz);
+
+    SetMeshOutputCounts(vertex_count, triangle_count);
+
+    [[loop]]
+    for (uint i = 0u; i < VERTICES_PER_MESHLET_THREAD; ++i)
+    {
+        const uint vertex_index = thread * VERTICES_PER_MESHLET_THREAD + i;
+        const PKVertex vertex = Meshlet_Load_Vertex(vertex_first + vertex_index, smb_bmin, smb_bmax);
+
+        [[branch]]
+        if (vertex_index < vertex_count)
+        {
+            PKMeshletVertexVaryings vout = {};
+            PK_INSTANCING_ASSIGN_VARYING_ID(vout, instance_id);
+            PK_MESHLET_FUNC_VERTEX(vertex_index, inPayload, vertex, vout);
+            #if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_CLUSTERS
+            vout.vs_MESHLET_INDEX = meshlet_index;
+            #endif
+            outVertices[vertex_index] = vout;
+        }
+    }
+
+    [[unroll]]
+    for (uint i = 0u; i < TRIANGLES_PER_MESHLET_THREAD; ++i)
+    {
+        const uint triangle_index = thread * TRIANGLES_PER_MESHLET_THREAD + i;
+        uint3 indices = uint3
+        (
+            pk_Meshlet_Indices[triangle_first * 3u + triangle_index * 3u + 0u],
+            pk_Meshlet_Indices[triangle_first * 3u + triangle_index * 3u + 1u],
+            pk_Meshlet_Indices[triangle_first * 3u + triangle_index * 3u + 2u]
+        );
+
+        [[branch]]
+        if (triangle_index < triangle_count)
+        {
+            #if PK_MESHLET_HAS_PRIMITIVE_OUT
+                PKMeshPrimitiveOut pout = {};
+                #if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_TRIANGLES
+                pout.sv_PrimitiveId = triangle_first + triangle_index;
+                #endif
+                PK_MESHLET_FUNC_TRIANGLE(triangle_index, inPayload, indices, pout);
+                outPrimitives[triangle_index] = pout;
+            #endif
+            
+            outTriangles[triangle_index] = indices;
+        }
+    }
+}

@@ -2,22 +2,7 @@
 #ifndef PK_UTILITIES
 #define PK_UTILITIES
 
-// @TODO TEMP HLSL compatibility functions
-uint  f32tof16(float  v) { return uint(float16BitsToUint16(half(v))); }
-uint2 f32tof16(float2 v) { return uint2(float16BitsToUint16(half2(v))); }
-uint3 f32tof16(float3 v) { return uint3(float16BitsToUint16(half3(v))); }
-uint4 f32tof16(float4 v) { return uint4(float16BitsToUint16(half4(v))); }
-
-float  f16tof32(uint  v) { return float(uint16BitsToFloat16(ushort(v & 0xFFFFu))); }
-float2 f16tof32(uint2 v) { return float2(uint16BitsToFloat16(ushort2(v & 0xFFFFu))); }
-float3 f16tof32(uint3 v) { return float3(uint16BitsToFloat16(ushort3(v & 0xFFFFu))); }
-float4 f16tof32(uint4 v) { return float4(uint16BitsToFloat16(ushort4(v & 0xFFFFu))); }
-
-#define mad fma
-#define ddx dFdx
-#define ddy dFdy
-
-#define select(cond, a, b) lerp(b, a, cond)
+#pragma pk_log_verbose
 
 float pow2(float x) { return x * x; }
 float pow3(float x) { return x * x * x; }
@@ -43,8 +28,52 @@ half cmax(half2 x) { return max(x.x, x.y); }
 half cmax(half3 x) { return max(max(x.x, x.y), x.z); }
 half cmax(half4 x) { return max(max(max(x.x, x.y), x.z), x.w); }
 
+float  mod(float  x, float  y) { return x - y * floor(x / y); }
+float2 mod(float2 x, float2 y) { return x - y * floor(x / y); }
+float3 mod(float3 x, float3 y) { return x - y * floor(x / y); }
+float4 mod(float4 x, float4 y) { return x - y * floor(x / y); }
+
+uint packHalf2x16(float2 v)
+{
+    uint2 h = f32tof16(v);
+    return (h.x & 0xFFFFu) | (h.y << 16u);
+}
+
+float2 unpackHalf2x16(uint v)
+{
+    return f16tof32(uint2(v & 0xFFFFu, v >> 16u));
+}
+
 uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.zw)); }
 float4 unpackHalf4x16(uint2 v) { return float4(unpackHalf2x16(v.x), unpackHalf2x16(v.y)); }
+
+uint packUnorm2x16(float2 v)
+{
+    uint2 u = uint2(round(saturate(v) * 65535.0f));
+    return (u.x & 0xFFFFu) | (u.y << 16u);
+}
+
+float2 unpackUnorm2x16(uint p)
+{
+    return float2(p & 0xFFFFu, p >> 16u) * (1.0f / 65535.0f);
+}
+
+uint packUnorm4x8(float4 v)
+{
+    uint4 u = uint4(round(saturate(v) * 255.0f));
+    return (u.x & 0xFFu) | ((u.y & 0xFFu) << 8u) | ((u.z & 0xFFu) << 16u) | (u.w << 24u);
+}
+
+float4 unpackUnorm4x8(uint p)
+{
+    return float4(p & 0xFFu, (p >> 8u) & 0xFFu, (p >> 16u) & 0xFFu, p >> 24u) * (1.0f / 255.0f);
+}
+
+float4 unpackSnorm4x8(uint p)
+{
+    int4 s = int4(p << 24, p << 16, p << 8, p) >> 24;
+    return clamp(float4(s) * (1.0f / 127.0f), -1.0f, 1.0f);
+}
 
 float AsUnorm(uint x) { return asfloat(x & 0x007fffffu | 0x3f800000u) - 1.0f; }
 uint Checkerboard(uint2 coord, uint offset) { return ((coord.x ^ coord.y) ^ offset) & 0x1u; }
@@ -83,20 +112,20 @@ float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float
 #define saturate(v) clamp(v, 0.0, 1.0)
 
 #define Any_IsNaN(v) any(isnan(v))
-#define Any_GEqual(a, b) any(greaterThanEqual(a,b))
-#define Any_Equal(a, b) any(equal(a,b))
-#define Any_NotEqual(a, b) any(notEqual(a,b))
-#define Any_LEqual(a, b) any(lessThanEqual(a,b))
-#define Any_Less(a,b) any(lessThan(a,b))
-#define Any_Greater(a,b) any(greaterThan(a,b))
+#define Any_GEqual(a, b) any((a) >= (b))
+#define Any_Equal(a, b) any((a) == (b))
+#define Any_NotEqual(a, b) any((a) != (b))
+#define Any_LEqual(a, b) any((a) <= (b))
+#define Any_Less(a, b) any((a) < (b))
+#define Any_Greater(a, b) any((a) > (b))
 
-#define All_GEqual(a, b) all(greaterThanEqual(a,b))
-#define All_Equal(a, b) all(equal(a,b))
-#define All_NotEqual(a, b) all(notEqual(a,b))
-#define All_LEqual(a, b) all(lessThanEqual(a,b))
-#define All_Less(a,b) all(lessThan(a,b))
-#define All_Greater(a,b) all(greaterThan(a,b))
-#define All_InArea(a,b,c) (all(greaterThanEqual(a,b)) && all(lessThan(a,c)))
+#define All_GEqual(a, b) all((a) >= (b))
+#define All_Equal(a, b) all((a) == (b))
+#define All_NotEqual(a, b) all((a) != (b))
+#define All_LEqual(a, b) all((a) <= (b))
+#define All_Less(a, b) all((a) < (b))
+#define All_Greater(a, b) all((a) > (b))
+#define All_InArea(a, b, c) (all((a) >= (b)) && all((a) < (c)))
 
 #define Replace_NaN(v, r) (any(isnan(v)) ? (r) : (v))
 
@@ -104,27 +133,5 @@ float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float
 #define Test_NaN_EPS6(v) (isnan(v) || v <= 1e-6f)
 #define Test_EPS4(v) (v <= 1e-4f)
 #define Test_EPS6(v) (v <= 1e-6f)
-
-#if defined(SHADER_MESH_ASSEMBLY)
-    #define PK_DECLARE_FS_OUT(variable) variable
-    #define PK_DECLARE_VS_ATTRIB(variable) out variable[]
-    #define PK_DECLARE_VS_MSAA_ATTRIB(variable) out variable[]
-    #define PK_SET_VS_ATTRIB(variable, index, value) variable[index] = value
-#elif defined(SHADER_VERTEX)
-    #define PK_DECLARE_FS_OUT(variable) variable
-    #define PK_DECLARE_VS_ATTRIB(variable) out variable
-    #define PK_DECLARE_VS_MSAA_ATTRIB(variable) out variable
-    #define PK_SET_VS_ATTRIB(variable, index, value) variable = value
-#elif defined(SHADER_FRAGMENT)
-    #define PK_DECLARE_FS_OUT(variable) out variable
-    #define PK_DECLARE_VS_ATTRIB(variable) in variable
-    #define PK_DECLARE_VS_MSAA_ATTRIB(variable) sample in variable
-    #define PK_SET_VS_ATTRIB(variable, index, value)
-#else
-    #define PK_DECLARE_FS_OUT(variable) variable
-    #define PK_DECLARE_VS_ATTRIB(variable)
-    #define PK_DECLARE_VS_MSAA_ATTRIB(variable)
-    #define PK_SET_VS_ATTRIB(variable, index, value)
-#endif
 
 #endif

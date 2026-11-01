@@ -5,12 +5,12 @@
 #include "includes/BRDF.glsl"
 #include "includes/Noise.glsl"
 
-uniform writeonly restrict RWTexture2D<float4> pk_Image;
+uniform RWTexture2D<float4> pk_Image;
 
 [numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
-    const int size = imageSize(pk_Image).x;
+    const int size = pk_Image.GetSize().x;
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float NoV = (coord.x + 0.5f) / size;
     const float roughness = (coord.y + 0.5f) / size;
@@ -105,5 +105,5 @@ void IntegrateCs()
         }
     }
 
-    imageStore(pk_Image, coord, accum / sample_count);
+    pk_Image[coord] = accum / sample_count;
 }

@@ -156,16 +156,16 @@ GISpec GI_Unpack_Spec(const uint2 p)
 }
 
 //----------LOAD/STORE FUNCTIONS----------//
-uint4 GI_Load_Packed_Diff(const int2 coord, const int l) { return imageLoad(pk_GI_PackedDiff, int3(coord, l)); }
-uint2 GI_Load_Packed_Spec(const int2 coord, const int l) { return imageLoad(pk_GI_PackedSpec, int3(coord, l)).xy; }
+uint4 GI_Load_Packed_Diff(const int2 coord, const int l) { return pk_GI_PackedDiff[int3(coord, l)]; }
+uint2 GI_Load_Packed_Spec(const int2 coord, const int l) { return pk_GI_PackedSpec[int3(coord, l)]; }
 uint4 GI_Load_Packed_Diff(const int2 coord) { return GI_Load_Packed_Diff(coord, PK_GI_LOAD_LVL); }
 uint2 GI_Load_Packed_Spec(const int2 coord) { return GI_Load_Packed_Spec(coord, PK_GI_LOAD_LVL); }
 GIDiff GI_Load_Diff(const int2 coord, int l) { return GI_Unpack_Diff(GI_Load_Packed_Diff(coord, l)); }
 GISpec GI_Load_Spec(const int2 coord, int l) { return GI_Unpack_Spec(GI_Load_Packed_Spec(coord, l)); }
 GIDiff GI_Load_Diff(const int2 coord) { return GI_Unpack_Diff(GI_Load_Packed_Diff(coord)); }
 GISpec GI_Load_Spec(const int2 coord) { return GI_Unpack_Spec(GI_Load_Packed_Spec(coord)); }
-void GI_Store_Packed_Diff(const int2 coord, const int l, const uint4 p) { imageStore(pk_GI_PackedDiff, int3(coord, l), p); }
-void GI_Store_Packed_Spec(const int2 coord, const int l, const uint2 p) { imageStore(pk_GI_PackedSpec, int3(coord, l), p.xyxy); }
+void GI_Store_Packed_Diff(const int2 coord, const int l, const uint4 p) { pk_GI_PackedDiff[int3(coord, l)] = p; }
+void GI_Store_Packed_Spec(const int2 coord, const int l, const uint2 p) { pk_GI_PackedSpec[int3(coord, l)] = p; }
 void GI_Store_Packed_Diff(const int2 coord, const uint4 p) { GI_Store_Packed_Diff(coord, PK_GI_STORE_LVL, p); }
 void GI_Store_Packed_Spec(const int2 coord, const uint2 p) { GI_Store_Packed_Spec(coord, PK_GI_STORE_LVL, p); }
 void GI_Store_Diff(const int2 coord, const int l, const GIDiff u) { GI_Store_Packed_Diff(coord, l, GI_Pack_Diff(u)); }
@@ -175,7 +175,7 @@ void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coor
 
 GIResolved GI_Load_Resolved(const float2 uv) 
 { 
-    const uint4 packed = texelFetch(pk_GI_ResolvedRead, int2(uv * pk_View.ScreenSize.xy), 0);
+    const uint4 packed = pk_GI_ResolvedRead[int2(uv * pk_View.ScreenSize.xy)];
     GIResolved resolved;
     resolved.diffSH.Y = unpackHalf4x16(packed.xy).xyz;
     resolved.diffSH.A = DecodeE5BGR9(packed.z);
@@ -195,5 +195,5 @@ void GI_Store_Resolved(const int2 coord, const GIDiff diff, const GISpec spec)
     packed.y = bitfieldInsert(packed.y, uint(saturate(final_spec_ao) * 255.0f + 0.5f), 24, 8);
     packed.z = EncodeE5BGR9(diff.sh.A);
     packed.w = EncodeE5BGR9(spec.radiance);
-    imageStore(pk_GI_ResolvedWrite, coord, packed);
+    pk_GI_ResolvedWrite[coord] = packed;
 }

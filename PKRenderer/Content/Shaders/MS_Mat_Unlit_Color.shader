@@ -14,38 +14,47 @@
 
 #define PK_MESHLET_USE_FUNC_CULL 1
 
-#include "includes/GBuffers.glsl"
-#include "includes/Meshlets.glsl"
-
 #if defined(PK_META_PASS_GBUFFER)
-PK_DECLARE_VS_ATTRIB(float3 vs_Normal);
+struct UnlitVertexUserData
+{
+    float3 vs_Normal : NORMAL0;
+};
+#define PK_MESHLET_VERTEX_USER_DATA UnlitVertexUserData
 #endif
 
-#if defined(SHADER_MESH_TASK)
+#include "includes/GBuffers.glsl"
+#include "includes/Meshlets.glsl"
+#include "includes/SceneGIVX.glsl"
 
-bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
+bool PK_MESHLET_FUNC_CULL(PKMeshTaskPayload payload, const PKMeshlet meshlet)
 {
     return Meshlet_Cull_Cone(meshlet, pk_View.ViewWorldOrigin.xyz);
 }
 
-#elif defined(SHADER_MESH_ASSEMBLY)
-
-void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_Position)
+void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKMeshTaskPayload payload, PKVertex vertex, inout PKMeshletVertexVaryings outVaryings)
 {
-    sv_Position = ObjectToClipPos(vertex.position);
+    outVaryings.sv_Position = ObjectToClipPos(vertex.position);
 #if defined(PK_META_PASS_GBUFFER)
-    vs_Normal[vertex_index] = ObjectToWorldVec(vertex.normal);
+    outVaryings.userdata.vs_Normal = ObjectToWorldVec(vertex.normal);
 #endif
 }
 
-#elif defined(SHADER_FRAGMENT)
+float4 ForwardFs(PKMeshletVertexVaryings vout) : SV_Target0
+{
+    PK_INSTANCING_ASSIGN_FRAGMENT_LOCALS(vout);
+    return _Color;
+}
 
-#include "includes/SceneGIVX.glsl"
-
-out float4 SV_Target0;
-
-void ForwardFs() { SV_Target0 = _Color; }
-void GBufferFs() { SV_Target0 = EncodeGBufferWorldNR(vs_Normal, 0.0f, 0.0f); }
-void GIVoxelizeFs() { GI_VX_Store(GI_VX_FragToWorld(gl_FragCoord.xyz), _ColorVoxelize); }
-
+#if defined(PK_META_PASS_GBUFFER)
+float4 GBufferFs(PKMeshletVertexVaryings vout) : SV_Target0
+{
+    PK_INSTANCING_ASSIGN_FRAGMENT_LOCALS(vout);
+    return EncodeGBufferWorldNR(vout.userdata.vs_Normal, 0.0f, 0.0f);
+}
 #endif
+
+void GIVoxelizeFs(PKMeshletVertexVaryings vout)
+{
+    PK_INSTANCING_ASSIGN_FRAGMENT_LOCALS(vout);
+    GI_VX_Store(GI_VX_FragToWorld(vout.sv_Position.xyz), _ColorVoxelize);
+}

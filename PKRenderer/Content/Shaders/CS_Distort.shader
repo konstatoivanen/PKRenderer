@@ -21,7 +21,7 @@ uniform RWTexture2D<float4> pk_Image;
 void DistortPaniniCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 texel = 1.0f.xx / textureSize(pk_Texture, 0).xy;
+    const float2 texel = 1.0f.xx / pk_Texture.GetSize();
     const float4 params = pk_View.Panini_Projection_Parameters;
 
     const float2 uv = float2(coord + 0.5f.xx) * texel;
@@ -35,15 +35,15 @@ void DistortPaniniCs()
     const float2 pos_screen = pos_cyl / (dist_c - params.z) / params.xy;
     const float2 panini_uv = pos_screen * 0.5f + 0.5f;
 
-    const float3 color = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, panini_uv).rgb;
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
+    const float3 color = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, panini_uv, 0).rgb;
+    pk_Image[coord] = EncodeE5BGR9(color);
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void DistortChromaCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 texel = 1.0f.xx / textureSize(pk_Texture, 0).xy;
+    const float2 texel = 1.0f.xx / pk_Texture.GetSize();
 
     const float2 uv = float2(coord + 0.5f.xx) * texel;
     const float2 screen_pos = uv * 2.0f - 1.0f;
@@ -65,12 +65,12 @@ void DistortChromaCs()
         const float s_interp = (i + noise) / 5.0f;
         const float s_theta = 3.0 * s_interp - 1.5;
         const float3 s_weight = saturate(float3(-s_theta, 1.0 - abs(s_theta), s_theta));
-        const float3 s_sample = TMP_SMP_2D(pk_Texture, pk_SamplerBilinearClamped, uv + offset * s_interp).rgb;
+        const float3 s_sample = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv + offset * s_interp, 0).rgb;
         wsum += s_weight;
         color += s_sample * s_weight;
     }
 
     color /= wsum;
 
-    imageStore(pk_Image, coord, float4(color.rgb, 1.0f));
+    pk_Image[coord] = float4(color.rgb, 1.0f);
 }

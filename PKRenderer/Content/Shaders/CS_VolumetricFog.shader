@@ -14,7 +14,7 @@
 
 // Hacky way to pass correct prog coord to shadow pass without parameters.
 // Needed as we swizzle the prog coord for wave ops.
-uint2 g_shadow_prog_coord;
+static uint2 g_shadow_prog_coord;
 #define SHADOW_PROG_COORD g_shadow_prog_coord
 
 #include "includes/VolumetricFog.glsl"
@@ -74,7 +74,7 @@ float3 Fog_EstimateTransmittance(const float3 uvw, float fade_static)
 {
     const float depth_min = Fog_ZToView(uvw.z);
     const float depth_max = Fog_ZToView(min(1.0f, uvw.z + VOLUMEFOG_SIZE_Z_INV));
-    const float density = TMP_SMP_3D(pk_Fog_Density_Read, pk_SamplerBilinearClamped, uvw).x;
+    const float density = pk_Fog_Density_Read.SampleLevel(pk_SamplerBilinearClamped, uvw, 0).x;
     const float extinction = density * (depth_max - depth_min) * fade_static;
     return exp(-extinction * pk_View.Fog_Absorption.rgb);
 }
@@ -83,8 +83,8 @@ float3 Fog_EstimateTransmittance(const float3 uvw, float fade_static)
 void ClearCs()
 {
     const int3 coord = int3(gl_GlobalInvocationID);
-    imageStore(pk_Fog_Density_Write, coord, 0.0f.xxxx);
-    imageStore(pk_Fog_Inject_Write, coord, uint4(0));
+    pk_Fog_Density_Write[coord] = 0.0f;
+    pk_Fog_Inject_Write[coord] = 0u;
 }
 
 [numthreads(4u, 4u, 4u)]
@@ -100,7 +100,7 @@ void DensityCs()
     const float value_cur = Fog_CalculateDensity(world_pos);
     const float value_pre = SAMPLE_TRICUBIC(pk_Fog_Density_Read, uvw_prev).x;
     const float value_out = lerp(value_pre, value_cur, Fog_GetAccumulation(uvw_prev));
-    imageStore(pk_Fog_Density_Write, pos, -min(0.0f, -value_out).xxxx);
+    pk_Fog_Density_Write[pos] = -min(0.0f, -value_out);
 }
 
 [numthreads(4u, 4u, 4u)]
@@ -125,7 +125,7 @@ void InjectCs()
         [[branch]]
         if (WaveActiveAllTrue(wave_zmax < tile_zmax))
         {
-            imageStore(pk_Fog_Inject_Write, int3(coord), uint4(0));
+            pk_Fog_Inject_Write[int3(coord)] = 0u;
             return;
         }
     }
@@ -193,7 +193,7 @@ void InjectCs()
     const float3 value_pre = SAMPLE_TRICUBIC(pk_Fog_Inject_Read, uvw_prev).rgb;
     const float3 value_out = -min(0.0f.xxx, -lerp(value_pre, value_cur, accumulation));
 
-    imageStore(pk_Fog_Inject_Write, int3(coord), EncodeE5BGR9(value_out).xxxx);
+    pk_Fog_Inject_Write[int3(coord)] = EncodeE5BGR9(value_out);
 }
 
 [numthreads(8u, 8u, 1u)]
@@ -210,8 +210,8 @@ void IntegrateCs()
         const float depth_max = Fog_ZToView((pos.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
         const float slice_width = depth_max - depth_min;
 
-        const float  density = texelFetch(pk_Fog_Density_Read, pos, 0).x;
-        const float3 irradiance = texelFetch(pk_Fog_Inject_Read, pos, 0).rgb * pk_View.Fog_Albedo.rgb;
+        const float  density = pk_Fog_Density_Read[pos];
+        const float3 irradiance = pk_Fog_Inject_Read[pos].rgb * pk_View.Fog_Albedo.rgb;
 
         const float  extinction = density * slice_width;
         const float3 transmittance = exp(-extinction * pk_View.Fog_Absorption.rgb);
@@ -222,7 +222,7 @@ void IntegrateCs()
         accum_scatter.a *= exp(-extinction);
         accum_transmittance *= transmittance;
 
-        imageStore(pk_Fog_Scatter_Write, pos, accum_scatter);
+        pk_Fog_Scatter_Write[pos] = accum_scatter;
     }
 }
 
@@ -232,11 +232,11 @@ uniform RWTexture2D<float4> pk_Image;
 void CompositeCs()
 {
     const int2 coord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 8u));
-    const int2 size = imageSize(pk_Image).xy;
+    const int2 size = pk_Image.GetSize();
     const float2 uv = float2(coord + 0.5f.xx) / float2(size);
 
-    const float3 color = imageLoad(pk_Image, coord).rgb;
+    const float3 color = pk_Image[coord].rgb;
     const float4 color_transmittance = Fog_SampleFroxel(uv, SampleViewDepth(uv), color);
 
-    imageStore(pk_Image, coord, color_transmittance);
+    pk_Image[coord] = color_transmittance;
 }

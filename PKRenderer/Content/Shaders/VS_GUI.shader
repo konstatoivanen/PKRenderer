@@ -16,14 +16,18 @@
 uniform StructuredBuffer<uint4> pk_GUI_Vertices;
 uniform float4 pk_GUI_ScreenTransform;
 
-PK_DECLARE_VS_MSAA_ATTRIB(float2 vs_TEXCOORD);
-PK_DECLARE_VS_MSAA_ATTRIB(float4 vs_COLOR);
-PK_DECLARE_VS_ATTRIB(flat uint vs_TEXTURE_INDEX);
-PK_DECLARE_VS_ATTRIB(flat uint vs_SHADING_MODE);
-
-void MainVs()
+struct VsOut
 {
-    const uint4 vertex_packed = pk_GUI_Vertices[gl_VertexIndex];
+    float4 position : SV_Position;
+    sample float2 texcoord : TEXCOORD0;
+    sample float4 color : COLOR0;
+    nointerpolation uint texture_index : TEXCOORD1;
+    nointerpolation uint shading_mode : TEXCOORD2;
+};
+
+VsOut MainVs(uint vertex_id : SV_VulkanVertexID)
+{
+    const uint4 vertex_packed = pk_GUI_Vertices[vertex_id];
 
     int2 coord;
     coord.x = bitfieldExtract(int(vertex_packed.y), 0, 16);
@@ -33,26 +37,26 @@ void MainVs()
     cs_pos *= pk_GUI_ScreenTransform.xy;
     cs_pos += pk_GUI_ScreenTransform.zw;
 
-    gl_Position = float4(cs_pos, 0.0f, 1.0f);
-    vs_TEXCOORD = unpackHalf2x16(vertex_packed.z);
-    vs_COLOR = unpackUnorm4x8(vertex_packed.x);
-    vs_TEXTURE_INDEX = bitfieldExtract(vertex_packed.w, 0, 16);
-    vs_SHADING_MODE = bitfieldExtract(vertex_packed.w, 16, 16);
-};
+    VsOut o;
+    o.position = float4(cs_pos, 0.0f, 1.0f);
+    o.texcoord = unpackHalf2x16(vertex_packed.z);
+    o.color = unpackUnorm4x8(vertex_packed.x);
+    o.texture_index = bitfieldExtract(vertex_packed.w, 0, 16);
+    o.shading_mode = bitfieldExtract(vertex_packed.w, 16, 16);
+    return o;
+}
 
-out float4 SV_Target0;
-
-void MainFs()
+float4 MainFs(VsOut i) : SV_Target0
 {
-    const float4 value = TMP_SMP_2D(pk_Heap_Textures2D[vs_TEXTURE_INDEX], pk_SamplerBilinearRepeat, vs_TEXCOORD);
-    float4 color = vs_COLOR;
+    const float4 value = pk_Heap_Textures2D[i.texture_index].Sample(pk_SamplerBilinearRepeat, i.texcoord);
+    float4 color = i.color;
 
-    if (vs_SHADING_MODE == PK_GUI_SHADING_MODE_FONT)
+    if (i.shading_mode == PK_GUI_SHADING_MODE_FONT)
     {
         const float sd_center = max(min(value.r, value.g), min(max(value.r, value.g), value.b)) - 0.5f;
         const float sd_subpx = ddx(sd_center) / 3.0f;
         const float3 sd_rgb = sd_center + float3(-sd_subpx, 0.0f, +sd_subpx);
-        const float px_range = PK_FONT_MSDF_UNIT / length(fwidth(vs_TEXCOORD));
+        const float px_range = PK_FONT_MSDF_UNIT / length(fwidth(i.texcoord));
         const float3 px_mask = saturate(sd_rgb * px_range + 0.5f);
         color *= float4(px_mask, px_mask.g);
     }
@@ -61,5 +65,5 @@ void MainFs()
         color *= value;
     }
 
-    SV_Target0 = color;
+    return color;
 };
