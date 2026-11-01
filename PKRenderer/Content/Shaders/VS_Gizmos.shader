@@ -9,7 +9,8 @@
 #include "includes/Common.glsl"
 #include "includes/GBuffers.glsl"
 
-[pk_local(MainVs)] in uint4 in_POSITION;
+
+in uint4 in_POSITION;
 
 PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
 
@@ -19,7 +20,7 @@ void MainVs()
     vs_COLOR = unpackUnorm4x8(in_POSITION.w);
 };
 
-[pk_local(MainFs)] out float4 SV_Target0;
+out float4 SV_Target0;
 
 void MainFs()
 {

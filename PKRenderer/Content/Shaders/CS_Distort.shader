@@ -10,8 +10,12 @@
 #include "includes/NoiseBlue.glsl"
 
 uniform Texture2D<float3> pk_Texture;
-[pk_local(DistortPaniniCs)] uniform RWTexture2D<uint> pk_Image;
-[pk_local(DistortChromaCs)] uniform RWTexture2D<float4> pk_Image;
+
+#if defined(PASS_BARREL)
+uniform RWTexture2D<uint> pk_Image;
+#else
+uniform RWTexture2D<float4> pk_Image;
+#endif
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void DistortPaniniCs()

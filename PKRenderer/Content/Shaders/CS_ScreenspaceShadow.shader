@@ -120,8 +120,8 @@ void ShadowmapCs()
 
 #define GROUP_SIZE 8
 
-[pk_local(ShadowmapUpsampleCs)] shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
-[pk_local(ShadowmapUpsampleCs)] shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
+shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
+shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
 
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
 void ShadowmapUpsampleCs()
@@ -214,8 +214,8 @@ void ShadowmapUpsampleCs()
     #include "includes/bend_sss_gpu.glsl"
 #endif
 
-[pk_local(ScreenSpaceShadowsCs)] uniform float4 pk_LightCoordinate;
-[pk_local(ScreenSpaceShadowsCs)] uniform int2 pk_WaveOffset;
+uniform float4 pk_LightCoordinate;
+uniform int2 pk_WaveOffset;
 
 [numthreads(WAVE_SIZE, 1u, 1u)]
 void ScreenSpaceShadowsCs()

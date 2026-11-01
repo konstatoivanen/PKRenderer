@@ -52,7 +52,6 @@ float4 GetCubeClipPos(float3 viewvec, float near, float far, uint face_index)
     return float4(view_pos.xy, m22 * view_pos.z + m32, view_pos.z);
 }
 
-[pk_local(MeshTask)] 
 void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
 {
     const uint light_index = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
@@ -75,7 +74,6 @@ void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
     payload.extra.light_matrix = light_matrix;
 }
 
-[pk_local(MeshTask)] 
 bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
 {
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
@@ -87,13 +85,11 @@ bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
     #endif
 }
 
-[pk_local(MeshAssembly)] 
 void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, inout uint3 indices)
 {
     gl_MeshPrimitivesEXT[triangle_index].gl_Layer = int(payload.extra.layer);
 }
 
-[pk_local(MeshAssembly)] 
 void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_Position)
 {
     const float3 world_pos = ObjectToWorldPos(vertex.position);
@@ -118,8 +114,8 @@ void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_
     #endif
 }
 
-[pk_local(Fragment)] out float SV_Target0;
-[pk_local(Fragment)] layout(early_fragment_tests) in;
+out float SV_Target0;
+layout(early_fragment_tests) in;
 void MainFs()
 {
     // Store linear distance into shadowmaps.

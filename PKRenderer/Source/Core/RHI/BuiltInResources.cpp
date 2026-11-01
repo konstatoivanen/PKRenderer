@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/ControlFlow/FenceRef.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "BuiltInResources.h"

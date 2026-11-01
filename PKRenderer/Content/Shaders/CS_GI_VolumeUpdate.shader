@@ -11,7 +11,7 @@ uniform writeonly restrict RWTexture3D<float4> pk_Image;
 uniform writeonly restrict RWTexture3D<float4> pk_Image1;
 uniform writeonly restrict RWTexture3D<float4> pk_Image2;
 
-[pk_local(VolumeMipmapCs)] shared float4 lds_Data[64u];
+shared float4 lds_Data[64u];
 
 [numthreads(4u, 4u, 4u)]
 void VolumeMipmapCs()
