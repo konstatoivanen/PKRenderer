@@ -56,11 +56,18 @@ namespace PK
             {
                 const auto type = pDescriptors[j].type;
                 const auto count = pDescriptors[j].count;
-                const auto isUnbounded = count >= PK_RHI_MAX_UNBOUNDED_SIZE;
-                const auto isSampler = type == ShaderResourceType::Sampler;
                 const auto isImage = type == ShaderResourceType::Texture || type == ShaderResourceType::Image || type == ShaderResourceType::InputAttachment;
                 const auto isBuffer = type == ShaderResourceType::ConstantBuffer || type == ShaderResourceType::StorageBuffer || type == ShaderResourceType::AccelerationStructure;
-                const auto resourceStride = isImage ? descriptorProps.imageStride : (isBuffer ? descriptorProps.bufferStride : 0u);
+                const auto resourceStride = isImage ? descriptorProps.imageStride : isBuffer ? descriptorProps.bufferStride : 0u;
+
+                PK_FATAL_ASSERT(resourceStride > 0u, "Unsupported descriptor set resource type for '%s'!", pDescriptors[j].name);
+
+                m_resourceLayout.Add(type, pDescriptors[j].name, pDescriptors[j].accessMask, pDescriptors[j].writeMask, count);
+                m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)resourceStride);
+
+                m_descriptorOffsets[j].offset = m_resourceSetSize;
+                m_descriptorOffsets[j].stride = (uint16_t)resourceStride;
+                m_resourceSetSize += resourceStride * count;
 
                 auto& descriptor = m_descriptors[j];
                 descriptor.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_AND_BINDING_MAPPING_EXT;
@@ -69,33 +76,11 @@ namespace PK
                 descriptor.firstBinding = j;
                 descriptor.bindingCount = 1u;
                 descriptor.resourceMask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT;
-
-                if (isUnbounded)
-                {
-                    m_descriptorOffsets[j].offset = 0u;
-                    m_descriptorOffsets[j].stride = 0u;
-                    descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-                    descriptor.sourceData.constantOffset.heapOffset = 0u;
-                    descriptor.sourceData.constantOffset.heapArrayStride = isSampler ? descriptorProps.samplerStride : resourceStride;
-                }
-                else
-                {
-                    PK_FATAL_ASSERT(!isSampler, "Bounded sampler descriptors are deprecated; use pk_Samplers[]!");
-                    PK_FATAL_ASSERT(resourceStride > 0u, "Unsupported descriptor set resource type for '%s'!", pDescriptors[j].name);
-
-                    m_resourceLayout.Add(type, pDescriptors[j].name, pDescriptors[j].accessMask, pDescriptors[j].writeMask, count);
-                    m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)resourceStride);
-
-                    m_descriptorOffsets[j].offset = m_resourceSetSize;
-                    m_descriptorOffsets[j].stride = (uint16_t)resourceStride;
-                    m_resourceSetSize += resourceStride * count;
-
-                    descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
-                    descriptor.sourceData.pushIndex.heapOffset = m_descriptorOffsets[j].offset;
-                    descriptor.sourceData.pushIndex.pushOffset = PK_VK_PUSH_OFFSET_RESOURCE_HEAP;
-                    descriptor.sourceData.pushIndex.heapIndexStride = 1u;
-                    descriptor.sourceData.pushIndex.heapArrayStride = resourceStride;
-                }
+                descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+                descriptor.sourceData.pushIndex.heapOffset = m_descriptorOffsets[j].offset;
+                descriptor.sourceData.pushIndex.pushOffset = PK_VK_PUSH_OFFSET_RESOURCE_HEAP;
+                descriptor.sourceData.pushIndex.heapIndexStride = 1u;
+                descriptor.sourceData.pushIndex.heapArrayStride = resourceStride;
             }
 
             m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)descriptorProps.maxResourceStride);

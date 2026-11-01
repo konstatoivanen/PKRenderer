@@ -27,8 +27,8 @@ namespace PK
             m_resourceHeap.arenaOffset = PK_VK_MAX_DESCRIPTORS * m_properties.maxResourceStride;
             m_resourceHeap.arenaCapacity = math::align(resourceArenaSize, m_properties.maxResourceStride);
 
-            const VkDeviceSize reservedOffset = math::align(m_resourceHeap.arenaOffset + m_resourceHeap.arenaCapacity, m_properties.resourceHeapOffset);
-            const VkDeviceSize reservedSize = properties.descriptorHeap.minResourceHeapReservedRange;
+            const auto reservedOffset = m_resourceHeap.arenaOffset + m_resourceHeap.arenaCapacity;
+            const auto reservedSize = properties.descriptorHeap.minResourceHeapReservedRange;
 
             VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
             bufferInfo.size = math::align(reservedOffset + reservedSize, m_properties.resourceHeapAlignment);
@@ -51,9 +51,8 @@ namespace PK
 
         // Create sampler heap
         {
-            const VkDeviceSize samplersSize = PK_VK_MAX_SAMPLERS * m_properties.samplerStride;
-            const VkDeviceSize reservedOffset = math::align(samplersSize, m_properties.samplerHeapOffset);
-            const VkDeviceSize reservedSize = properties.descriptorHeap.minSamplerHeapReservedRange;
+            const auto reservedOffset = PK_VK_MAX_SAMPLERS * m_properties.samplerStride;
+            const auto reservedSize = properties.descriptorHeap.minSamplerHeapReservedRange;
 
             VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
             bufferInfo.size = math::align(reservedOffset + reservedSize, m_properties.samplerHeapAlignment);

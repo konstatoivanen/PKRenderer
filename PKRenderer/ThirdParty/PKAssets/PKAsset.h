@@ -11,7 +11,6 @@ namespace PKAssets
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVES = 16u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVE_SIZE = 16u;
-    constexpr static const uint32_t PK_ASSET_MAX_UNBOUNDED_SIZE = 2048u;
 
     constexpr static const char* PK_ASSET_EXTENSION_SHADER = ".pkshader";
     constexpr static const char* PK_ASSET_EXTENSION_MESH = ".pkmesh";

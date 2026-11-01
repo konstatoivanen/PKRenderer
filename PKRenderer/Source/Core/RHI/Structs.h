@@ -13,7 +13,6 @@ namespace PK
     constexpr static const uint32_t PK_RHI_MAX_DESCRIPTORS_PER_SET = PKAssets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
     constexpr static const uint32_t PK_RHI_MAX_PUSH_CONSTANTS = PKAssets::PK_ASSET_MAX_PUSH_CONSTANTS;
     constexpr static const uint32_t PK_RHI_MAX_VERTEX_ATTRIBUTES = PKAssets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
-    constexpr static const uint32_t PK_RHI_MAX_UNBOUNDED_SIZE = PKAssets::PK_ASSET_MAX_UNBOUNDED_SIZE;
     constexpr static const uint32_t PK_RHI_MAX_VIEWPORTS = 16;
 
     constexpr const static char* PK_RHI_VS_POSITION = PKAssets::PK_MESH_VS_POSITION;
