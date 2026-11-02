@@ -112,25 +112,25 @@ struct PKRenderView
 
     uint PostEffectsFeatureMask;
 
-    uint8_t SamplerBilinearRepeat;
-    uint8_t SamplerBilinearMirror;
-    uint8_t SamplerBilinearClamped;
-    uint8_t SamplerTrilinearBorder;
-    uint8_t SamplerTrilinearClamped;
-    uint8_t SamplerPointClamped;
-    uint8_t SamplerTrilinearRepeatAniso;
+    SamplerRef SamplerBilinearRepeat;
+    SamplerRef SamplerBilinearMirror;
+    SamplerRef SamplerBilinearClamped;
+    SamplerRef SamplerTrilinearBorder;
+    SamplerRef SamplerTrilinearClamped;
+    SamplerRef SamplerPointClamped;
+    SamplerRef SamplerTrilinearRepeatAniso;
 };
 
 uniform ConstantBuffer<PKRenderView> pk_View;
 uniform RaytracingAccelerationStructure pk_SceneStructure;
 
-#define pk_SamplerBilinearRepeat       pk_Heap_Samplers[uint(pk_View.SamplerBilinearRepeat)]
-#define pk_SamplerBilinearMirror       pk_Heap_Samplers[uint(pk_View.SamplerBilinearMirror)]
-#define pk_SamplerBilinearClamped      pk_Heap_Samplers[uint(pk_View.SamplerBilinearClamped)]
-#define pk_SamplerTrilinearBorder      pk_Heap_Samplers[uint(pk_View.SamplerTrilinearBorder)]
-#define pk_SamplerTrilinearClamped     pk_Heap_Samplers[uint(pk_View.SamplerTrilinearClamped)]
-#define pk_SamplerPointClamped         pk_Heap_Samplers[uint(pk_View.SamplerPointClamped)]
-#define pk_SamplerTrilinearRepeatAniso pk_Heap_Samplers[uint(pk_View.SamplerTrilinearRepeatAniso)]
+property SamplerState pk_SamplerBilinearRepeat       { get { return pk_View.SamplerBilinearRepeat.Get(); } }
+property SamplerState pk_SamplerBilinearMirror       { get { return pk_View.SamplerBilinearMirror.Get(); } }
+property SamplerState pk_SamplerBilinearClamped      { get { return pk_View.SamplerBilinearClamped.Get(); } }
+property SamplerState pk_SamplerTrilinearBorder      { get { return pk_View.SamplerTrilinearBorder.Get(); } }
+property SamplerState pk_SamplerTrilinearClamped     { get { return pk_View.SamplerTrilinearClamped.Get(); } }
+property SamplerState pk_SamplerPointClamped         { get { return pk_View.SamplerPointClamped.Get(); } }
+property SamplerState pk_SamplerTrilinearRepeatAniso { get { return pk_View.SamplerTrilinearRepeatAniso.Get(); } }
 
 uint GetShadowCascadeIndex(float view_depth)
 {

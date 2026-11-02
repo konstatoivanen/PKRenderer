@@ -36,12 +36,12 @@ namespace PK
         ShaderStageFlags accessMask = ShaderStageFlags::None;
         ShaderStageFlags writeMask = ShaderStageFlags::None;
         uint16_t count = 0;
-        ShaderResourceType type = ShaderResourceType::Invalid;
+        Uniform type = Uniform::Invalid;
         uint8_t __padding = 0;
 
         ShaderResourceElement() = default;
 
-        ShaderResourceElement(ShaderResourceType type, NameID name, ShaderStageFlags accessMask, ShaderStageFlags writeMask, uint16_t count) :
+        ShaderResourceElement(Uniform type, NameID name, ShaderStageFlags accessMask, ShaderStageFlags writeMask, uint16_t count) :
             name(name),
             accessMask(accessMask),
             writeMask(writeMask),

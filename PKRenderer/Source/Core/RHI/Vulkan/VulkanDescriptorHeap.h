@@ -63,7 +63,7 @@ namespace PK
 
         VkImageView GetRenderTargetView(const VulkanResourceView& view);
         uint16_t GetSamplerIndex(const SamplerDescriptor& descriptor);
-        uint32_t GetResourceIndex(const VulkanResourceView& view, ShaderResourceType type);
+        uint32_t GetResourceIndex(const VulkanResourceView& view, Uniform type);
         uint3 GetTextureSize(uint32_t bindlessIndex) const;
 
         uint32_t AllocateDescriptorSet(

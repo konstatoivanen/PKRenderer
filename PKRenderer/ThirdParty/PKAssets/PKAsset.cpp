@@ -86,9 +86,13 @@ namespace PKAssets
         3u * 3u * 2u, /*Half3x3*/
         4u * 4u * 2u, /*Half4x4*/
         
-        4u, /*Texture2D*/
-        4u, /*Texture3D*/
-        4u, /*TextureCube*/
+        1u, /*Sampler*/
+        2u, /*Texture*/
+        2u, /*Image*/
+        2u, /*ConstantBuffer*/
+        2u, /*StorageBuffer*/
+        2u, /*InputAttachment*/
+        8u, /*AccelerationStructure*/
         1u  /*Keyword*/
     };
 
@@ -112,9 +116,13 @@ namespace PKAssets
         PKUniform::Float,  PKUniform::Float,  PKUniform::Float,
         PKUniform::Double, PKUniform::Double, PKUniform::Double,
         PKUniform::Half,   PKUniform::Half,   PKUniform::Half,
-        PKUniform::Texture2D,
-        PKUniform::Texture3D,
-        PKUniform::TextureCube,
+        PKUniform::Sampler,
+        PKUniform::Texture,
+        PKUniform::Image,
+        PKUniform::ConstantBuffer,
+        PKUniform::StorageBuffer,
+        PKUniform::InputAttachment,
+        PKUniform::AccelerationStructure,
         PKUniform::Keyword
     };
 
@@ -142,10 +150,16 @@ namespace PKAssets
     {
         switch (type)
         {
-            case PKUniform::Texture2D:
-            case PKUniform::Texture3D:
-            case PKUniform::TextureCube: return true;
-            default: return false;
+            case PKUniform::Sampler:
+            case PKUniform::Texture:
+            case PKUniform::Image:
+            case PKUniform::ConstantBuffer:
+            case PKUniform::StorageBuffer:
+            case PKUniform::InputAttachment:
+            case PKUniform::AccelerationStructure:
+                return true;
+            default:
+                return false;
         }
     }
 

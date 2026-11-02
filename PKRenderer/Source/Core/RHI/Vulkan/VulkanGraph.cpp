@@ -67,7 +67,7 @@ namespace PK
         const auto& view = *texture->GetNativeView<VulkanResourceView>();
         AddResidencyBarrierPass();
         RecordImageAccess(QueueType::EnumCount, view, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT);
-        return m_descriptorHeap->GetResourceIndex(view, ShaderResourceType::Texture);
+        return m_descriptorHeap->GetResourceIndex(view, Uniform::Texture);
     }
 
     uint32_t VulkanGraph::MakeResident(RHIBuffer* buffer)
@@ -75,7 +75,7 @@ namespace PK
         const auto& view = *buffer->GetNativeView<VulkanResourceView>();
         AddResidencyBarrierPass();
         RecordMemoryAccess(QueueType::EnumCount, view, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_UNIFORM_READ_BIT);
-        return m_descriptorHeap->GetResourceIndex(view, ShaderResourceType::StorageBuffer);
+        return m_descriptorHeap->GetResourceIndex(view, Uniform::StorageBuffer);
     }
 
     uint32_t VulkanGraph::MakeResident(const SamplerDescriptor& sampler) { return m_descriptorHeap->GetSamplerIndex(sampler); }
@@ -1454,22 +1454,22 @@ namespace PK
 
             for (auto i = 0u; i < count; ++i)
             {
-                if (descriptor.type == ShaderResourceType::Texture || descriptor.type == ShaderResourceType::Image)
+                if (descriptor.type == Uniform::Texture || descriptor.type == Uniform::Image)
                 {
                     RecordImageAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
                 }
 
-                if (descriptor.type == ShaderResourceType::StorageBuffer)
+                if (descriptor.type == Uniform::StorageBuffer)
                 {
                     RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
                 }
 
-                if (descriptor.type == ShaderResourceType::ConstantBuffer)
+                if (descriptor.type == Uniform::ConstantBuffer)
                 {
                     RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_UNIFORM_READ_BIT);
                 }
 
-                if (descriptor.type == ShaderResourceType::AccelerationStructure)
+                if (descriptor.type == Uniform::AccelerationStructure)
                 {
                     RecordMemoryAccess(queue, views[i], stageFlags, VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
                 }

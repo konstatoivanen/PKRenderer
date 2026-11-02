@@ -7,7 +7,6 @@
 namespace PKAssets
 {
     enum class PKUniform : uint8_t;
-    enum class PKDescriptorType : uint8_t;
     enum class PKShaderStage : uint8_t;  
     enum class PKShaderStageFlags : uint16_t; 
     enum class PKBlendFactor : uint8_t;  
@@ -62,7 +61,6 @@ namespace PK
     struct ShaderBindingTableInfo;
     
     typedef PKAssets::PKUniform Uniform;
-    typedef PKAssets::PKDescriptorType ShaderResourceType;
     typedef PKAssets::PKShaderStage ShaderStage;
     typedef PKAssets::PKShaderStageFlags ShaderStageFlags;
     typedef PKAssets::PKBlendFactor BlendFactor;

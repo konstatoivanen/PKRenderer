@@ -143,9 +143,7 @@ namespace PK
                         case Uniform::Half3x3:   Set(nameId, Serialize::ReadVal<ushort3x3>(value)); break;
                         case Uniform::Half4x4:   Set(nameId, Serialize::ReadVal<ushort4x4>(value)); break;
 
-                        case Uniform::Texture2D:
-                        case Uniform::Texture3D:
-                        case Uniform::TextureCube: SetResource(nameId, Serialize::ReadVal<TextureAsset*>(value)->GetRHI()); break;
+                        case Uniform::Texture: SetResource(nameId, Serialize::ReadVal<TextureAsset*>(value)->GetRHI()); break;
 
                         default: PK_LOG_WARNING("Unsupported material parameter type"); break;
                     }
@@ -174,7 +172,7 @@ namespace PK
         {
             switch (element.format)
             {
-                case Uniform::Texture2D:
+                case Uniform::Texture:
                 {
                     auto texIndex = RHI::GetGraph()->MakeResident(GetResource<RHITexture>(element.name));
                     memcpy(dst + element.offset, &texIndex, sizeof(int32_t));
@@ -202,7 +200,7 @@ namespace PK
         {
             switch (element.format)
             {
-                case Uniform::Texture2D: SetResource(element.name, builtIns->BlackTexture2D.get()); break;
+                case Uniform::Texture: SetResource(element.name, builtIns->BlackTexture2D.get()); break;
                 default: break;
             }
         }

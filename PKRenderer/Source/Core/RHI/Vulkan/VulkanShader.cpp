@@ -56,8 +56,8 @@ namespace PK
             {
                 const auto type = pDescriptors[j].type;
                 const auto count = pDescriptors[j].count;
-                const auto isImage = type == ShaderResourceType::Texture || type == ShaderResourceType::Image || type == ShaderResourceType::InputAttachment;
-                const auto isBuffer = type == ShaderResourceType::ConstantBuffer || type == ShaderResourceType::StorageBuffer || type == ShaderResourceType::AccelerationStructure;
+                const auto isImage = type == Uniform::Texture || type == Uniform::Image || type == Uniform::InputAttachment;
+                const auto isBuffer = type == Uniform::ConstantBuffer || type == Uniform::StorageBuffer || type == Uniform::AccelerationStructure;
                 const auto resourceStride = isImage ? descriptorProps.imageStride : isBuffer ? descriptorProps.bufferStride : 0u;
 
                 PK_FATAL_ASSERT(resourceStride > 0u, "Unsupported descriptor set resource type for '%s'!", pDescriptors[j].name);

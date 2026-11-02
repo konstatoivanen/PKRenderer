@@ -371,7 +371,7 @@ namespace PK
         const VulkanResourceView* views;
         uint64_t hash;
         uint16_t count;
-        ShaderResourceType type;
+        Uniform type;
     };
 
     struct VulkanDynamicState
@@ -477,7 +477,7 @@ namespace PK
         VkBorderColor GetBorderColor(BorderColor color);
         VkSamplerAddressMode GetSamplerAddressMode(WrapMode wrap);
         VkFilter GetFilterMode(FilterMode filter);
-        VkDescriptorType GetDescriptorType(ShaderResourceType type);
+        VkDescriptorType GetDescriptorType(Uniform type);
         VkShaderStageFlagBits GetShaderStage(ShaderStage stage);
         VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples);
         VkPolygonMode GetPolygonMode(PolygonMode mode);

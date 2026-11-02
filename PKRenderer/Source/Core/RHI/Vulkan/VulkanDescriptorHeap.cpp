@@ -202,7 +202,7 @@ namespace PK
         return index;
     }
 
-    uint32_t VulkanDescriptorHeap::GetResourceIndex(const VulkanResourceView& view, ShaderResourceType type)
+    uint32_t VulkanDescriptorHeap::GetResourceIndex(const VulkanResourceView& view, Uniform type)
     {
         // Pure resource descriptor: SamplerTexture in legacy shaders uses the exact same SAMPLED_IMAGE resource descriptor as Texture
         const auto key = Hash::Mix(view.hash, (uint64_t)type);
@@ -221,17 +221,17 @@ namespace PK
 
             resourceInfo.type = VulkanEnumConvert::GetDescriptorType(type);
 
-            if (type == ShaderResourceType::Texture || type == ShaderResourceType::Image)
+            if (type == Uniform::Texture || type == Uniform::Image)
             {
                 viewInfo.pNext = &usageInfo;
                 imageInfo.pView = &viewInfo;
                 resourceInfo.data.pImage = &imageInfo;
 
-                usageInfo.usage = type == ShaderResourceType::Image ? VK_IMAGE_USAGE_STORAGE_BIT : VK_IMAGE_USAGE_SAMPLED_BIT;
+                usageInfo.usage = type == Uniform::Image ? VK_IMAGE_USAGE_STORAGE_BIT : VK_IMAGE_USAGE_SAMPLED_BIT;
                 viewInfo.image = view.image.image;
                 viewInfo.viewType = view.image.viewType;
                 viewInfo.format = view.image.format;
-                viewInfo.components = type == ShaderResourceType::Image ? VkComponentMapping{} : VulkanEnumConvert::GetSwizzle(view.image.format);
+                viewInfo.components = type == Uniform::Image ? VkComponentMapping{} : VulkanEnumConvert::GetSwizzle(view.image.format);
                 viewInfo.subresourceRange = view.image.range;
                 imageInfo.layout = VK_IMAGE_LAYOUT_GENERAL;
 

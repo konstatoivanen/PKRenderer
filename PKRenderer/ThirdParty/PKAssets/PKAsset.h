@@ -164,9 +164,13 @@ namespace PKAssets
         Half3x3,
         Half4x4,
 
-        Texture2D,
-        Texture3D,
-        TextureCube,
+        Sampler,
+        Texture,
+        Image,
+        ConstantBuffer,
+        StorageBuffer,
+        InputAttachment,
+        AccelerationStructure,
         Keyword
     };
 
@@ -330,18 +334,6 @@ namespace PKAssets
         RayTraceGroupCallable = 0u // Not supported atm
     };
 
-    enum class PKDescriptorType : uint8_t
-    {
-        Invalid,
-        Sampler,
-        Texture,
-        Image,
-        ConstantBuffer,
-        StorageBuffer,
-        InputAttachment,
-        AccelerationStructure,
-        EnumCount
-    };
 
     enum class PKComparison : uint8_t
     {
@@ -505,7 +497,7 @@ namespace PKAssets
     struct alignas(4) PKDescriptor
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKDescriptorType type;               // 65 bytes
+        PKUniform type;                      // 65 bytes
         uint8_t __padding;                   // 66 bytes
         uint16_t count;                      // 68 bytes
         PKShaderStageFlags writeMask;        // 70 bytes

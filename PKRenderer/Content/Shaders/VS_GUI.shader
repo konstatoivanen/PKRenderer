@@ -16,7 +16,7 @@
 uniform StructuredBuffer<uint4> pk_GUI_Vertices;
 uniform float4 pk_GUI_ScreenTransform;
 
-struct VsOut
+struct Varyings
 {
     float4 position : SV_Position;
     sample float2 texcoord : TEXCOORD0;
@@ -25,7 +25,7 @@ struct VsOut
     nointerpolation uint shading_mode : TEXCOORD2;
 };
 
-VsOut MainVs(uint vertex_id : SV_VulkanVertexID)
+Varyings MainVs(uint vertex_id : SV_VulkanVertexID)
 {
     const uint4 vertex_packed = pk_GUI_Vertices[vertex_id];
 
@@ -37,26 +37,26 @@ VsOut MainVs(uint vertex_id : SV_VulkanVertexID)
     cs_pos *= pk_GUI_ScreenTransform.xy;
     cs_pos += pk_GUI_ScreenTransform.zw;
 
-    VsOut o;
-    o.position = float4(cs_pos, 0.0f, 1.0f);
-    o.texcoord = unpackHalf2x16(vertex_packed.z);
-    o.color = unpackUnorm4x8(vertex_packed.x);
-    o.texture_index = bitfieldExtract(vertex_packed.w, 0, 16);
-    o.shading_mode = bitfieldExtract(vertex_packed.w, 16, 16);
-    return o;
+    Varyings output;
+    output.position = float4(cs_pos, 0.0f, 1.0f);
+    output.texcoord = unpackHalf2x16(vertex_packed.z);
+    output.color = unpackUnorm4x8(vertex_packed.x);
+    output.texture_index = bitfieldExtract(vertex_packed.w, 0, 16);
+    output.shading_mode = bitfieldExtract(vertex_packed.w, 16, 16);
+    return output;
 }
 
-float4 MainFs(VsOut i) : SV_Target0
+float4 MainFs(Varyings input) : SV_Target0
 {
-    const float4 value = pk_Heap_Textures2D[i.texture_index].Sample(pk_SamplerBilinearRepeat, i.texcoord);
-    float4 color = i.color;
+    const float4 value = Texture2DRef<float4>(ushort(input.texture_index)).Get().Sample(pk_SamplerBilinearRepeat, input.texcoord);
+    float4 color = input.color;
 
-    if (i.shading_mode == PK_GUI_SHADING_MODE_FONT)
+    if (input.shading_mode == PK_GUI_SHADING_MODE_FONT)
     {
         const float sd_center = max(min(value.r, value.g), min(max(value.r, value.g), value.b)) - 0.5f;
         const float sd_subpx = ddx(sd_center) / 3.0f;
         const float3 sd_rgb = sd_center + float3(-sd_subpx, 0.0f, +sd_subpx);
-        const float px_range = PK_FONT_MSDF_UNIT / length(fwidth(i.texcoord));
+        const float px_range = PK_FONT_MSDF_UNIT / length(fwidth(input.texcoord));
         const float3 px_mask = saturate(sd_rgb * px_range + 0.5f);
         color *= float4(px_mask, px_mask.g);
     }

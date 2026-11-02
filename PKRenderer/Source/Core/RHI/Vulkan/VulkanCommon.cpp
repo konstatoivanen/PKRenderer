@@ -1576,17 +1576,17 @@ namespace PK
             }
         }
 
-        VkDescriptorType GetDescriptorType(ShaderResourceType type)
+        VkDescriptorType GetDescriptorType(Uniform type)
         {
             switch (type)
             {
-                case ShaderResourceType::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER;
-                case ShaderResourceType::Texture: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                case ShaderResourceType::Image: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-                case ShaderResourceType::ConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                case ShaderResourceType::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                case ShaderResourceType::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-                case ShaderResourceType::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+                case Uniform::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER;
+                case Uniform::Texture: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                case Uniform::Image: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                case Uniform::ConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                case Uniform::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                case Uniform::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+                case Uniform::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
                 default: return VK_DESCRIPTOR_TYPE_MAX_ENUM;
             }
         }
