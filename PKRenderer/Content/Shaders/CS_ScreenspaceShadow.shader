@@ -13,16 +13,15 @@ uniform RWTexture2D<float> pk_Image;
 uniform Texture2D<float> pk_Texture;
 
 [numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
-void ShadowmapCs()
+void ShadowmapCs(int2 coord_base : SV_DispatchThreadID)
 {
     // This is only run on the first light.
     // Through sorting it should be a directional shadow casting light.
     // Appropriate checks are done on cpp side.
     // Note: Only directional lights are supported here!
     const uint light_index = 0u;
-
-    const int2 coord_base = int2(gl_GlobalInvocationID.xy);
-    const int2 coord = int2(gl_GlobalInvocationID.xy * 2);
+    
+    const int2 coord = coord_base * 2;
 
     // Quarter res needs a higher mip. biased depth is not build to hierarchical depth.
     // Resolve via gather4
@@ -41,7 +40,7 @@ void ShadowmapCs()
     const float2 n2 = float2(gz_gather.z, gw_gather.z);
     const float2 n3 = float2(gz_gather.w, gw_gather.w);
     const float4 normal_dots = float4(dot(n0, n1), dot(n0, n2), dot(n3, n1), dot(n3, n2));
-    const bool normal_clip = Any_LEqual(normal_dots, -1.0f.xxxx);
+    const bool normal_clip = any(normal_dots <= -1.0f.xxxx);
 
     const float4 gbuffer_normal_roughness = float4(0.0f.xx, dot(gz_gather, 0.25f.xxxx) + 0.5f, dot(gw_gather, 0.25f.xxxx) + 0.5f);
     const float3 view_normal = DecodeGBufferViewNR(gbuffer_normal_roughness).xyz;
@@ -124,19 +123,18 @@ groupshared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
 groupshared float lds_depth[GROUP_SIZE * GROUP_SIZE];
 
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
-void ShadowmapUpsampleCs()
+void ShadowmapUpsampleCs(int thread : SV_GroupIndex, int2 group_coord : SV_GroupID, uint2 local_coord : SV_GroupThreadID, int2 coord : SV_DispatchThreadID)
 {
-    const int thread = int(gl_LocalInvocationIndex);
-    const int2 coord_base = int2(gl_WorkGroupID.xy) * GROUP_SIZE - int2(4);
+    const int2 coord_base = group_coord * GROUP_SIZE - int2(4);
     const int2 coord_load = coord_base + int2(thread % GROUP_SIZE, thread / GROUP_SIZE) * 2;
 
     const float4 base_depths = GatherViewDepths((coord_load + 1.0f.xx) * pk_View.ScreenParams.zw);
-    const bool far_clip = Any_GEqual(base_depths, pk_View.ClipParams.yyyy - 1e-2f);
+    const bool far_clip = any(base_depths >= (pk_View.ClipParams.yyyy - 1e-2f));
     const float base_depth = select(far_clip, -pk_View.ClipParams.y * 2.0f, cmin(base_depths));
     lds_depth[thread] = base_depth;
 
-    const half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_View.FrameIndex.y).xy) * 2.0hf - 1.0hf;
-    const half2 uv_base = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 1.5hf.xx + offset;
+    const half2 offset = half2(GlobalNoiseBlue(uint2(coord), pk_View.FrameIndex.y).xy) * 2.0hf - 1.0hf;
+    const half2 uv_base = half2(local_coord + 0.5f) * 0.5hf + 1.5hf.xx + offset;
 
     half2 offsets[4] =
     {
@@ -173,7 +171,7 @@ void ShadowmapUpsampleCs()
 
     GroupMemoryBarrierWithGroupSync();
 
-    const float depth = SampleViewDepth(int2(gl_GlobalInvocationID.xy));
+    const float depth = SampleViewDepth(coord);
     const float k_depth = 20.0f / sqrt(depth);
 
     half shadow = 0.0hf;
@@ -202,7 +200,7 @@ void ShadowmapUpsampleCs()
 
     shadow /= wsum;
 
-    pk_Image[int2(gl_GlobalInvocationID.xy)] = shadow;
+    pk_Image[coord] = shadow;
 }
 
 #if defined(PASS_SCREEN_DEPTH)
@@ -218,7 +216,7 @@ uniform float4 pk_LightCoordinate;
 uniform int2 pk_WaveOffset;
 
 [numthreads(WAVE_SIZE, 1u, 1u)]
-void ScreenSpaceShadowsCs()
+void ScreenSpaceShadowsCs(int3 group_coord : SV_GroupID, int thread : SV_GroupIndex)
 {
     DispatchParameters dispatch_params;
     dispatch_params.LightCoordinate = pk_LightCoordinate;	    // Values stored in DispatchList::LightCoordinate_Shader by BuildDispatchList()
@@ -237,5 +235,5 @@ void ScreenSpaceShadowsCs()
     dispatch_params.DebugOutputWaveIndex = false;
     dispatch_params.DepthBounds = float2(0, 1);
     dispatch_params.UseEarlyOut = true;
-    WriteScreenSpaceShadow(dispatch_params, int3(gl_WorkGroupID), int(gl_LocalInvocationIndex));
+    WriteScreenSpaceShadow(dispatch_params, group_coord, thread);
 }

@@ -7,9 +7,8 @@ uniform Texture2DMS<float4> pk_Texture;
 uniform RWTexture2D<float4> pk_Image;
 
 [numthreads(8u, 4u, 1u)]
-void GUIResolveCs()
+void GUIResolveCs(int2 coord : SV_DispatchThreadID)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const uint sampleCount = pk_Texture.GetSampleCount();
 
     float4 resolved = 0.0f.xxxx;

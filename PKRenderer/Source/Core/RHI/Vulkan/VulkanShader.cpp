@@ -91,8 +91,8 @@ namespace PK
         m_descriptorLayout.mappingCount = variant->descriptorCount;
         m_descriptorLayout.pMappings = variant->descriptorCount ? m_descriptors : nullptr;
 
-        m_pushConstantSize = variant->constantRange;
         m_pushConstantLayout.ClearFast();
+        m_pushConstantLayout.sizeBytes = math::align(variant->constantRange, (uint16_t)4u);
 
         if (variant->constantRange)
         {
@@ -102,8 +102,11 @@ namespace PK
             {
                 auto* constant = m_pushConstantLayout.Add();
                 constant->name = pVariables[i].name;
+                constant->accessMask = pVariables[i].accessMask;
+                constant->writeMask = pVariables[i].writeMask;
+                constant->type = pVariables[i].type;
                 constant->offset = pVariables[i].offset;
-                constant->size = pVariables[i].size;
+                constant->count = pVariables[i].arraySize;
             }
         }
 

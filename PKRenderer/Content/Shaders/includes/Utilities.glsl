@@ -110,16 +110,7 @@ float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float
 #define unlerp(a,b,value) (((value) - (a)) / ((b) - (a)))
 #define unlerp_sat(a,b,value) saturate(((value) - (a)) / ((b) - (a)))
 
-#define Any_GEqual(a, b) any((a) >= (b))
-#define Any_NotEqual(a, b) any((a) != (b))
-#define Any_LEqual(a, b) any((a) <= (b))
-
-#define All_Equal(a, b) all((a) == (b))
-#define All_Less(a, b) all((a) < (b))
-#define All_InArea(a, b, c) (all((a) >= (b)) && all((a) < (c)))
-
 #define Replace_NaN(v, r) (any(isnan(v)) ? (r) : (v))
-
 #define Test_NaN_EPS4(v) (isnan(v) || v <= 1e-4f)
 #define Test_NaN_EPS6(v) (isnan(v) || v <= 1e-6f)
 #define Test_EPS4(v) (v <= 1e-4f)

@@ -20,10 +20,9 @@
 uniform RWTexture2D<float4> pk_Image;
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
-void PostEffectsCompositeCs()
+void PostEffectsCompositeCs(int2 coord : SV_DispatchThreadID)
 {
     const int2 size = pk_Image.GetSize();
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     float2 uv = float2(coord + 0.5f.xx) / float2(size);
 
     float3 color = pk_Image[coord].rgb;

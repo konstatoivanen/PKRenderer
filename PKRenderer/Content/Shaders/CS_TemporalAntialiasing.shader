@@ -15,9 +15,8 @@ float3 TonemapColor(const float3 c) { return c / (1.0 + cmax(c)); }
 float3 UntonemapColor(const float3 c) { return c / max(1.0f / 65504.0f, 1.0 - cmax(c)); }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
-void TemporalAntialiasCs()
+void TemporalAntialiasCs(int2 coord : SV_DispatchThreadID, uint2 local_coord : SV_GroupThreadID)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const int2 size = int2(pk_View.ScreenSize.xy * 2u);
     const float2 texel_size = 2.0f.xx / size;
     const float2 jitter = pk_View.ProjectionJitter.xy * texel_size;
@@ -93,7 +92,7 @@ void TemporalAntialiasCs()
     downsampled *= 0.25f;
 
     [[branch]]
-    if ((gl_LocalInvocationID.x & 0x1u) == 0 && (gl_LocalInvocationID.y & 0x1u) == 0)
+    if ((local_coord.x & 0x1u) == 0 && (local_coord.y & 0x1u) == 0)
     {
         pk_Image1[coord / 2] = float4(downsampled, 1.0f);
     }

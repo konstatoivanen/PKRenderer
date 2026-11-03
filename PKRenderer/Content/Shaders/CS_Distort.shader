@@ -18,9 +18,8 @@ uniform RWTexture2D<float4> pk_Image;
 #endif
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
-void DistortPaniniCs()
+void DistortPaniniCs(int2 coord : SV_DispatchThreadID)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 texel = 1.0f.xx / pk_Texture.GetSize();
     const float4 params = pk_View.Panini_Projection_Parameters;
 
@@ -40,9 +39,8 @@ void DistortPaniniCs()
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
-void DistortChromaCs()
+void DistortChromaCs(int2 coord : SV_DispatchThreadID)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 texel = 1.0f.xx / pk_Texture.GetSize();
 
     const float2 uv = float2(coord + 0.5f.xx) * texel;

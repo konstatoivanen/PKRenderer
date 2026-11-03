@@ -76,7 +76,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
             const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
 
             [[branch]]
-            if (Any_NotEqual(xy, coord_base) && Test_DepthSurface(depth, s_depth, depth_bias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
+            if (any(xy != coord_base) && Test_DepthSurface(depth, s_depth, depth_bias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
                 const float s_target_pdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
                 ReSTIR_CombineReservoir(combined, s_reservoir, s_target_pdf, hash);
@@ -144,9 +144,8 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
 }
 
 [numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
-void AccumulateCs()
+void AccumulateCs(int2 coord_base : SV_DispatchThreadID)
 {
-    const int2 coord_base = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_base));
     const float4 normal_roughness = SampleViewNormalRoughness(coord);
     const float depth = PK_GI_SAMPLE_DEPTH(coord);

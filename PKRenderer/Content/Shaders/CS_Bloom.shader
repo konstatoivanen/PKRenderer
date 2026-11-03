@@ -16,9 +16,8 @@ uniform Texture2D<float3> pk_Texture;
 uniform RWTexture2D<uint> pk_Image;
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
-void Downsample0Cs()
+void Downsample0Cs(int2 coord : SV_DispatchThreadID)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 tx_dst = 1.0f.xx / pk_Image.GetSize();
     const float2 tx_src = 1.0f.xx / pk_Texture.GetSize();
     const float2 uv = float2(coord + 0.5f.xx) * tx_dst;
@@ -48,9 +47,8 @@ void Downsample0Cs()
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
-void Downsample1Cs()
+void Downsample1Cs(int2 coord : SV_DispatchThreadID)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 tx_dst = 1.0f.xx / pk_Image.GetSize();
     const float2 tx_src = 1.0f.xx / pk_Texture.GetSize();
     const float2 uv = float2(coord + 0.5f.xx) * tx_dst;
@@ -82,9 +80,8 @@ void Downsample1Cs()
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
-void UpsampleCs()
+void UpsampleCs(int2 coord : SV_DispatchThreadID)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 tx_dst = 1.0f.xx / pk_Image.GetSize();
     const float2 tx_src = 1.0f.xx / pk_Texture.GetSize();
     const float2 uv = float2(coord + 0.5f.xx) * tx_dst;

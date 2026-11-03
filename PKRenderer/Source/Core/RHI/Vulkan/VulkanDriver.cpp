@@ -230,51 +230,32 @@ namespace PK
         descriptorHeap->Prune();
     }
 
-
     VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDriver::VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         [[maybe_unused]] void* pUserData)
     {
-        // Image layouts are validated at queue submit and at wait fences. this causes some invalid state in the validation layers.
-        auto isValidationLayoutError = pCallbackData->messageIdNumber == 1180184443;
-
-        // If were experiencing a long cpu frame the swapchain might return the same image index for long periods of time.
-        // Causes a validation error where the semaphores used by other image indices are not used again in acquire image.
-        // There is no user control over which image index is used so this is pretty stupid.
-        auto isValidationSwapchainBug = pCallbackData->messageIdNumber == 1402107823;
-
         // Not all errors are flagged with error severity.
-        auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
+        const auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
 
         // Set loader messages as verbose clutter.
-        auto isLoaderMessage = pCallbackData->messageIdNumber == 0;
-        
-        auto isNvidiaWarning = 
-            pCallbackData->messageIdNumber == 547400806;
+        const auto isLoaderMessage = pCallbackData->messageIdNumber == 0;
 
-        // Some legacy warnings where the new function doesn't provide anything usefull.
-        auto isLegacyWarning = 
-            pCallbackData->messageIdNumber == -560987568 ||
-            pCallbackData->messageIdNumber == 888844017 ||
-            pCallbackData->messageIdNumber == -1006408074 ||
-            pCallbackData->messageIdNumber == -222910232 ||
-            pCallbackData->messageIdNumber == 1469440330 ||
-            pCallbackData->messageIdNumber == 1049149819 ||
-            pCallbackData->messageIdNumber == 888844017 ||
-            pCallbackData->messageIdNumber == -606804660;
+        // spv-val false positive: VUID-RuntimeSpirv-maxTaskPayloadSize-08758 (OpSpecConstantDescriptorSizeEXT underflow)
+        // spv-val false positive: VUID-RuntimeSpirv-maxTaskPayloadAndSharedMemorySize-08760 (OpSpecConstantDescriptorSizeEXT underflow)
+        const auto isSpvValPayloadFalsePositive =
+            pCallbackData->messageIdNumber == -606804660 ||
+            pCallbackData->messageIdNumber == -97700645 ||
+            pCallbackData->messageIdNumber == -923869234 ||
+            pCallbackData->messageIdNumber == -355546151;
 
         messageSeverity = isValidationError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT : messageSeverity;
-        messageSeverity = isValidationLayoutError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
-        messageSeverity = isValidationSwapchainBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isLoaderMessage ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
-        messageSeverity = isLegacyWarning ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
-        messageSeverity = isNvidiaWarning ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
+        messageSeverity = isSpvValPayloadFalsePositive ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
             PK_FATAL_ERROR("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
-            //PK_LOG_WARNING("VK Error: %i: %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 

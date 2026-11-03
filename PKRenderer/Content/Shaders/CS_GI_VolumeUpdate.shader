@@ -14,21 +14,20 @@ uniform RWTexture3D<float4> pk_Image2;
 groupshared float4 lds_Data[64u];
 
 [numthreads(4u, 4u, 4u)]
-void VolumeMipmapCs()
+void VolumeMipmapCs(uint thread : SV_GroupIndex, int3 coord : SV_DispatchThreadID, uint3 local_coord : SV_GroupThreadID)
 {
-    const uint thread = gl_LocalInvocationIndex;
     const uint3 size_base = pk_Texture.GetSize();
     const uint3 size_level = gl_NumWorkGroups.xyz * gl_WorkGroupSize.xyz;
     const int level = int(log2(float(size_base.x)) - log2(float(size_level.x))) - 1;
-    const float3 uvw = (gl_GlobalInvocationID + 0.5f.xxx) / size_level;
+    const float3 uvw = (coord + 0.5f.xxx) / size_level;
 
     float4 local = lds_Data[thread] = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uvw, level);
-    pk_Image[int3(gl_GlobalInvocationID)] = local;
+    pk_Image[coord] = local;
 
     GroupMemoryBarrierWithGroupSync();
 
     // Cant use binary mask due to 3d coordinates
-    if (All_Equal(gl_LocalInvocationID % 2, uint3(0u)))
+    if (all((local_coord % 2u) == uint3(0u)))
     {
         local += lds_Data[thread + 0x1u];
         local += lds_Data[thread + 0x4u];
@@ -40,7 +39,7 @@ void VolumeMipmapCs()
         local /= 8.0f;
 
         lds_Data[thread] = local;
-        pk_Image1[int3(gl_GlobalInvocationID) >> 1] = local;
+        pk_Image1[coord >> 1] = local;
     }
 
     GroupMemoryBarrierWithGroupSync();
@@ -55,14 +54,14 @@ void VolumeMipmapCs()
         local += lds_Data[thread + 0x28u];
         local += lds_Data[thread + 0x2au];
         local /= 8.0f;
-        pk_Image2[int3(gl_GlobalInvocationID) >> 2] = local;
+        pk_Image2[coord >> 2] = local;
     }
 }
 
 [numthreads(4u, 4u, 4u)]
-void VolumeClearCs()
+void VolumeClearCs(int3 coord : SV_DispatchThreadID)
 {
-    const float3 world_position = GI_VX_CoordToWorld(int3(gl_GlobalInvocationID));
+    const float3 world_position = GI_VX_CoordToWorld(coord);
     const float3 clip_uvw = WorldToClipUvw(world_position);
 
     if (!Test_InUvw(clip_uvw))
@@ -70,11 +69,11 @@ void VolumeClearCs()
         return;
     }
 
-    uint write_count = pk_GI_VX_Mask[int3(gl_GlobalInvocationID)].x;
-    pk_GI_VX_Mask[int3(gl_GlobalInvocationID)] = 0u;
+    uint write_count = pk_GI_VX_Mask[coord].x;
+    pk_GI_VX_Mask[coord] = 0u;
 
     if (write_count == 0u)
     {
-        pk_Image[int3(gl_GlobalInvocationID)] = 0.0f.xxxx;
+        pk_Image[coord] = 0.0f.xxxx;
     }
 }

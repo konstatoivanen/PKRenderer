@@ -6,10 +6,9 @@
 #include "includes/SceneGIGradients.glsl"
 
 [numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
-void GradientEstimateCs()
+void GradientEstimateCs(int2 coord : SV_DispatchThreadID)
 {
 #if defined(PK_GI_GRADIENT_FILTER)
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const int2 size = pk_Gradients.GetSize().xy;
 
     if (coord.x >= size.x || coord.y >= size.y)
@@ -32,7 +31,7 @@ void GradientEstimateCs()
         {
             const int2 xy = coord + int2(xx, yy);
             const float s_gradient = Gradient_Load(xy, 1).gradient;
-            const float s_w = waveletKernel[abs(yy)][abs(xx)] * float(All_InArea(xy, int2(0), size));
+            const float s_w = waveletKernel[abs(yy)][abs(xx)] * float(all(xy >= int2(0)) && all(xy < size));
             gradient.gradient += s_gradient * s_w;
             wSum += s_w;
         }
@@ -41,7 +40,6 @@ void GradientEstimateCs()
     Gradient_Store(coord, 0, gradient);
 
 #else
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const int2 size = pk_GradientInputs.GetSize();
 
     if (coord.x * GRADIENT_STRATA_SIZE >= size.x || coord.y * GRADIENT_STRATA_SIZE >= size.y)

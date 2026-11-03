@@ -41,11 +41,8 @@ float3 GetDirectionHemisphere(float2 xi)
 }
 
 [numthreads(8u, 8u, 1u)]
-void IntegrateCs()
+void IntegrateCs(int2 coord : SV_DispatchThreadID, uint thread : SV_GroupIndex)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const uint thread = gl_LocalInvocationIndex;
-
     float3 local_scatter = 0.0f.xxx;
 
 #if defined(PASS_INTEGRATE)

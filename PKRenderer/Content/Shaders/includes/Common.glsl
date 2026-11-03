@@ -195,9 +195,9 @@ bool4 Test_DepthReproject(const float4 z, const float4 zprev, const float4 bias)
 bool Test_DepthIsScene(const float depth) { return depth < (pk_View.ClipParams.y - 1e-2f); }
 bool Test_DepthReproject(const float z, const float zprev, const float bias) { return Test_DepthIsScene(zprev) && (abs(z - zprev - pk_View.ViewSpaceCameraDelta.z) / z) < bias; }
 bool Test_DepthSurface(const float z0, const float z1, const float bias) { return Test_DepthIsScene(z1) && (abs(z0 - z1 ) / z0) < bias; }
-bool Test_InUv(float2 uv) { return All_Equal(saturate( uv ), uv); }
-bool Test_InUvw(float3 uv) { return All_Equal(saturate( uv ), uv); }
-bool Test_InScreen(int2 coord) { return All_InArea(coord, int2(0), int2(pk_View.ScreenSize.xy)); }
+bool Test_InUv(float2 uv) { return all(saturate(uv) == uv); }
+bool Test_InUvw(float3 uv) { return all(saturate(uv) == uv); }
+bool Test_InScreen(int2 coord) { return all(coord >= int2(0)) && all(coord < int2(pk_View.ScreenSize.xy)); }
 #define ReplaceIfResized(v, r) (pk_View.FrameIndex.y == 0u? r : v)
 
 #endif

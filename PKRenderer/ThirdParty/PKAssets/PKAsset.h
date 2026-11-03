@@ -7,7 +7,7 @@ namespace PKAssets
     constexpr static const uint32_t PK_ASSET_NAME_MAX_LENGTH = 64u;
     constexpr static const uint32_t PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8u;
     constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTORS_PER_SET = 64u;
-    constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 16u;
+    constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 64u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVES = 16u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVE_SIZE = 16u;
@@ -412,6 +412,7 @@ namespace PKAssets
     };
 
     constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#pragma pk_log_verbose";
+    constexpr const static char* PK_SHADER_ATTRIB_LOGDISASSEMBLY= "#pragma pk_log_disassembly";
     constexpr const static char* PK_SHADER_ATTRIB_GENERATEDEBUGINFO = "#pragma pk_generate_debug_info";
     constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#pragma pk_zwrite ";
     constexpr const static char* PK_SHADER_ATTRIB_ZTEST = "#pragma pk_ztest ";
@@ -426,7 +427,6 @@ namespace PKAssets
     constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_PROP = "#pragma pk_enable_instancing";
     constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_NOFRAG_PROP = "#pragma pk_disable_fragment_instancing";
     constexpr const static char* PK_SHADER_ATTRIB_PROGRAM = "#pragma pk_program ";
-    constexpr const static char* PK_SHADER_ATTRIB_ALIAS = "_pkalias";
 
     constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";
     constexpr const static char* PK_SHADER_INSTANCING_INDICES = "pk_Instancing_Indices";
@@ -487,11 +487,15 @@ namespace PKAssets
         uint16_t __padding1 = 0u;            // 68 bytes
     };
 
+    // @TODO we need to write these in PKShaderWriter.
     struct alignas(4) PKConstantVariable
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        uint16_t offset;                     // 66 bytes
-        uint16_t size;                       // 68 bytes
+        PKShaderStageFlags writeMask;        // 66 bytes
+        PKShaderStageFlags accessMask;       // 68 bytes
+        PKUniform type;                      // 69 bytes
+        uint8_t offset;                      // 70 bytes
+        uint16_t arraySize;                  // 72 bytes
     };
 
     struct alignas(4) PKDescriptor

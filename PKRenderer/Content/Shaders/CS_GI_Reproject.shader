@@ -19,9 +19,8 @@ float GI_GetAntilag_SubgroupStretch(float2 reproject_coord)
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
-void ReprojectCs()
+void ReprojectCs(int2 coord : SV_DispatchThreadID)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
 
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     const int2 coord_store = int2

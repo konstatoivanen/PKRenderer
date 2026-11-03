@@ -70,10 +70,8 @@ bool IntersectionTest(uint lightIndex)
 }
 
 [numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, GROUP_SIZE_Z)]
-void LightAssignmentCs()
+void LightAssignmentCs(uint3 coord : SV_DispatchThreadID, uint thread : SV_GroupIndex)
 {
-    const uint3 coord = gl_GlobalInvocationID;
-    const uint thread = gl_LocalInvocationIndex;
     const float near = ViewDepthExp(coord.z, pk_View.LightTileZParams.xyz);
     const float far = ViewDepthExp(coord.z + 1u, pk_View.LightTileZParams.xyz);
 
@@ -130,7 +128,7 @@ void LightAssignmentCs()
     uint offset = 0u;
 
     [[branch]]
-    if (All_Less(coord.xy, LIGHT_TILE_COUNT_XY))
+    if (all(coord.xy < LIGHT_TILE_COUNT_XY))
     {
         InterlockedAdd(pk_LightCounter[0], visible_count, offset);
 

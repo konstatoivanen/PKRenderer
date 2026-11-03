@@ -22,13 +22,13 @@ void SetLogLuminanceMin(float value) { pk_AutoExposure_Histogram[257] = asuint(v
 float GetLogLuminanceMin() { return ReplaceIfResized(asfloat(pk_AutoExposure_Histogram[257]), DEFAULT_LOG_LUMINANCE_MIN); }
 
 [numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
-void HistogramCs()
+void HistogramCs(uint thread : SV_GroupIndex, uint2 coord : SV_DispatchThreadID)
 {
-    lds_Histogram[gl_LocalInvocationIndex] = 0;
+    lds_Histogram[thread] = 0;
     GroupMemoryBarrierWithGroupSync();
 
     const float2 resolution = pk_Texture.GetSize() >> 1;
-    const float2 uv = (gl_GlobalInvocationID.xy + 0.5f) / resolution;
+    const float2 uv = (coord + 0.5f) / resolution;
     
     const float3 color = pk_Texture.SampleLevel(pk_SamplerBilinearClamped, uv, 0).rgb;
     
@@ -43,13 +43,12 @@ void HistogramCs()
     InterlockedAdd(lds_Histogram[bin_index], 1u);
 
     GroupMemoryBarrierWithGroupSync();
-    InterlockedAdd(pk_AutoExposure_Histogram[gl_LocalInvocationIndex], lds_Histogram[gl_LocalInvocationIndex]);
+    InterlockedAdd(pk_AutoExposure_Histogram[thread], lds_Histogram[thread]);
 }
 
 [numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
-void AverageCs()
+void AverageCs(uint thread : SV_GroupIndex)
 {
-    const uint thread = gl_LocalInvocationIndex;
     const uint local_bin_val = pk_AutoExposure_Histogram[thread];
 
     lds_Histogram[thread] = local_bin_val * thread;

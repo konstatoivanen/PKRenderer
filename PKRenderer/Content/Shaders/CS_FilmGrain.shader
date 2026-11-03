@@ -61,10 +61,9 @@ float3 NoiseGrainColor(const float2 uv, const float x, const float range)
 }
 
 [numthreads(8u, 8u, 1u)]
-void FilmGrainCs()
+void FilmGrainCs(int2 coord : SV_DispatchThreadID)
 {
     const float phase = AsUnorm(pk_View.FrameRandom.x);
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float3 grain = NoiseGrainColor(coord, phase, 256.0f);
     pk_Image[coord] = grain;
 }

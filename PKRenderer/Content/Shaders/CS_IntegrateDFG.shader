@@ -8,10 +8,9 @@
 uniform RWTexture2D<float4> pk_Image;
 
 [numthreads(8u, 8u, 1u)]
-void IntegrateCs()
+void IntegrateCs(int2 coord : SV_DispatchThreadID)
 {
     const int size = pk_Image.GetSize().x;
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float NoV = (coord.x + 0.5f) / size;
     const float roughness = (coord.y + 0.5f) / size;
     const uint sample_count = 1024u;

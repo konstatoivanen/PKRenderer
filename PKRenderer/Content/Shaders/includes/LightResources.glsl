@@ -60,18 +60,18 @@ SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)
 {
     SceneLight l;
     l.position = asfloat(packed0.xyz);
-    l.radius = unpackHalf2x16(packed0.w).x;
+    l.radius = f16tof32(packed0.w);
     l.light_type = bitfieldExtract(packed0.w, 16, 4);
     l.index_ies = bitfieldExtract(packed0.w, 20, 12);
     l.color.xy = unpackHalf2x16(packed1.x);
-    l.color.z = unpackHalf2x16(packed1.y).x;
-    l.source_radius = unpackHalf2x16(packed1.y).y;
+    l.color.z = f16tof32(packed1.y);
+    l.source_radius = f16tof32(packed1.y >> 16u);
     l.spot_angles = unpackHalf2x16(packed1.z);
     l.index_shadow = packed1.w;
     l.rotation_inv.xy = unpackHalf2x16(packed2.x);
     l.rotation_inv.zw = unpackHalf2x16(packed2.y);
-    l.near_clip = unpackHalf2x16(packed2.z).x;
-    l.exponent = unpackHalf2x16(packed2.z).y;
+    l.near_clip = f16tof32(packed2.z);
+    l.exponent = f16tof32(packed2.z >> 16u);
     return l;
 }
 

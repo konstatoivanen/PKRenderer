@@ -182,8 +182,7 @@ void ReSTIR_Store_Current(const int2 coord, const Reservoir r)
 
     uint2 packed1;
     packed1.x = asuint(r.weight_sum);
-    packed1.y = packHalf2x16(r.target_pdf.xx) & 0xFFFFu;
-    packed1.y |= r.M << 16u; 
+    packed1.y = f32tof16(r.target_pdf) | (r.M << 16u);
     pk_Reservoirs1[int3(coord, RESTIR_LAYER_CUR)] = packed1;
 }
 
@@ -199,7 +198,7 @@ Reservoir ReSTIR_Load_Previous(const int2 coord)
 
     const uint2 packed1 = pk_Reservoirs1[int3(coord, RESTIR_LAYER_PRE)];
     r.weight_sum = asfloat(packed1.x);
-    r.target_pdf = unpackHalf2x16(packed1.y).x;
+    r.target_pdf = f16tof32(packed1.y);
     r.M = packed1.y >> 16u;
     return r;
 }

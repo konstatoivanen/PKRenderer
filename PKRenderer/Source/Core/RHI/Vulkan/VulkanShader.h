@@ -31,7 +31,7 @@ struct VulkanShader : public RHIShader, public VersionedObject
         constexpr const VkShaderDescriptorSetAndBindingMappingInfoEXT* GetDescriptorLayout() const { return &m_descriptorLayout; }
         constexpr const DescriptorOffset* GetDescriptorOffsets() const { return m_descriptorOffsets; }
         constexpr uint32_t GetResourceSetSize() const { return m_resourceSetSize; }
-        constexpr uint32_t GetPushConstantSize() const { return m_pushConstantSize; }
+        constexpr uint32_t GetPushConstantSize() const { return m_pushConstantLayout.sizeBytes; }
 
     private:
         const VulkanDriver* m_driver;
@@ -39,7 +39,6 @@ struct VulkanShader : public RHIShader, public VersionedObject
         ShaderPushConstantLayout m_pushConstantLayout;
         ShaderResourceLayout m_resourceLayout;
         ShaderStageFlags m_stageFlags = ShaderStageFlags::None;
-        uint32_t m_pushConstantSize = 0u;
         uint32_t m_resourceSetSize = 0u;
         uint3 m_groupSize{};
 

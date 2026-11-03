@@ -691,9 +691,8 @@ void EncodeP2Pattern(inout uint4 block, inout float blockMSLE, int pattern, floa
 }
 
 [numthreads(8u, 8u, 1u)]
-void CompressBC6HCs()
+void CompressBC6HCs(uint2 blockCoord : SV_DispatchThreadID)
 {
-    uint2 blockCoord = gl_GlobalInvocationID.xy;
     uint2 levelSize = gl_NumWorkGroups.xy * gl_WorkGroupSize.xy;
     float2 texelSize = 1.0f / (4.0f.xx * levelSize);
     float2 uv = (blockCoord * 4.0f + texelSize) * texelSize;

@@ -21,10 +21,8 @@ groupshared float3 lds_irrad;
 groupshared float3 lds_trans;
 
 [numthreads(8u, 8u, 1u)]
-void IntegrateCs()
+void IntegrateCs(int2 coord : SV_DispatchThreadID, uint thread : SV_GroupIndex)
 {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const uint thread = gl_LocalInvocationIndex;
     const float2 texel_size = 1.0f.xx / pk_SceneEnv.GetSize();
     const float2 uv_base = (coord + 1.0f.xx) * texel_size;
 

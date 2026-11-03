@@ -9,9 +9,8 @@
 #include "includes/ComputeQuadSwap.glsl"
 
 [numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
-void PostFilterCs()
+void PostFilterCs(int2 coord_base : SV_DispatchThreadID)
 {
-    const int2 coord_base = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_base));
     const int2 coord_n = GI_ExpandCheckerboardCoord(uint2(coord_base), 1u);
     const int2 coord_h = int2(coord_base.x + pk_View.ScreenSize.x / 2, coord_base.y);

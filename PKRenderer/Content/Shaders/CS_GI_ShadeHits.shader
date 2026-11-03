@@ -31,9 +31,8 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
-void ShadeHitsCs()
+void ShadeHitsCs(int2 coord_ray : SV_DispatchThreadID)
 {
-    const int2 coord_ray = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_ray));
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
 

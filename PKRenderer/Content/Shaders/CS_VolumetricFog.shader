@@ -34,7 +34,7 @@ float Fog_Fade_FroxelShadows_Volumetric(float view_dist)
 
 float Fog_GetAccumulation(float3 uvw)
 {
-    return VOLUMEFOG_ACCUMULATION + float(Any_NotEqual(clamp(uvw, 0.0f.xxx, float3(1.0f.xx, 2.0f)), uvw)) * (1.0f - VOLUMEFOG_ACCUMULATION);
+    return VOLUMEFOG_ACCUMULATION + float(any(clamp(uvw, 0.0f.xxx, float3(1.0f.xx, 2.0f)) != uvw)) * (1.0f - VOLUMEFOG_ACCUMULATION);
 }
 
 float3 Fog_WorldToPrevUvw(float3 world_pos)
@@ -80,17 +80,15 @@ float3 Fog_EstimateTransmittance(const float3 uvw, float fade_static)
 }
 
 [numthreads(4u, 4u, 4u)]
-void ClearCs()
+void ClearCs(int3 coord : SV_DispatchThreadID)
 {
-    const int3 coord = int3(gl_GlobalInvocationID);
     pk_Fog_Density_Write[coord] = 0.0f;
     pk_Fog_Inject_Write[coord] = 0u;
 }
 
 [numthreads(4u, 4u, 4u)]
-void DensityCs()
+void DensityCs(int3 pos : SV_DispatchThreadID)
 {
-    const int3 pos = int3(gl_GlobalInvocationID);
     const float3 dither = GlobalNoiseBlue(pos.xy, pk_View.FrameIndex.x);
     const float3 uvw_cur = (pos + dither) / VOLUMEFOG_SIZE;
 
@@ -104,11 +102,11 @@ void DensityCs()
 }
 
 [numthreads(4u, 4u, 4u)]
-void InjectCs()
+void InjectCs(uint3 group_coord : SV_GroupID)
 {
     // Subgroups are swizzled into a 2x4x4 pattern
     const uint thread = gl_SubgroupInvocationID;
-    const uint3 wave_id = gl_WorkGroupID.xyz * uint3(2u, 1u, 1u) + uint3(gl_SubgroupID, 0, 0);
+    const uint3 wave_id = group_coord * uint3(2u, 1u, 1u) + uint3(gl_SubgroupID, 0, 0);
     const uint3 local_coord = uint3(thread / 16u, thread & 3u, (thread / 4u) & 3u);
     const uint3 coord = wave_id * uint3(2u, 4u, 4u) + local_coord;
     g_shadow_prog_coord = coord.xy;
@@ -120,7 +118,7 @@ void InjectCs()
         const int2 wave_z_coord = int2(wave_id.xy) * int2(1, 2) + int2(thread_30 % 5u, thread_30 / 5u) - 2;
         const float lane_zmax = SampleMaxZ(wave_z_coord, 4);
         const float wave_zmax = WaveActiveMax(lane_zmax);
-        const float tile_zmax = Fog_ZToView((gl_WorkGroupID.z * 4.0f + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
+        const float tile_zmax = Fog_ZToView((group_coord.z * 4.0f + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
 
         [[branch]]
         if (WaveActiveAllTrue(wave_zmax < tile_zmax))
@@ -165,7 +163,7 @@ void InjectCs()
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
     value_cur *= Fog_EstimateTransmittance(uvw_cur, fade_shadow_volumetric);
 
-    LightTile tile = Lights_LoadTile_Coord(int2(gl_WorkGroupID.xy >> 1), depth);
+    LightTile tile = Lights_LoadTile_Coord(int2(group_coord.xy >> 1), depth);
 
     for (uint i = tile.start; i < tile.end; ++i)
     {
@@ -197,12 +195,12 @@ void InjectCs()
 }
 
 [numthreads(8u, 8u, 1u)]
-void IntegrateCs()
+void IntegrateCs(int2 coord : SV_DispatchThreadID)
 {
     float4 accum_scatter = float4(0.0f.xxx, 1.0f);
     float3 accum_transmittance = 1.0f.xxx;
 
-    int3 pos = int3(gl_GlobalInvocationID.xy, 0);
+    int3 pos = int3(coord, 0);
 
     for (; pos.z < VOLUMEFOG_SIZE_Z; ++pos.z)
     {

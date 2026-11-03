@@ -9,25 +9,36 @@ namespace PK
     struct ShaderPushConstant
     {
         NameID name = 0u;
-        uint16_t offset;
-        uint16_t size;
+        ShaderStageFlags accessMask = ShaderStageFlags::None;
+        ShaderStageFlags writeMask = ShaderStageFlags::None;
+        Uniform type = Uniform::Invalid;
+        uint8_t offset = 0u;
+        uint16_t count = 0u;
 
         ShaderPushConstant() = default;
 
-        ShaderPushConstant(NameID name, uint16_t size, uint16_t offset) :
+        ShaderPushConstant(NameID name, ShaderStageFlags accessMask, ShaderStageFlags writeMask, Uniform type, uint8_t offset, uint16_t count) :
             name(name),
+            accessMask(accessMask),
+            writeMask(writeMask),
+            type(type),
             offset(offset),
-            size(size)
+            count(count)
         {
         }
     };
 
     struct ShaderPushConstantLayout : public FixedList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>
     {
+        size_t sizeBytes;
+
         using TBase = FixedList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>;
         ShaderPushConstantLayout() {}
-        ShaderPushConstantLayout(const ShaderPushConstant* variables, size_t count) : TBase(variables, count) {}
+        ShaderPushConstantLayout(const ShaderPushConstant* elements, size_t count) : TBase(elements, count) {}
+        ShaderPushConstantLayout(initializer_list<ShaderPushConstant> elements) : TBase(elements) {}
+        const ShaderPushConstant* TryGetElement(NameID name, uint32_t* index) const;
     };
+
 
 
     struct ShaderResourceElement

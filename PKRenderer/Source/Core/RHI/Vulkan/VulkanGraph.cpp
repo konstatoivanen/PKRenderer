@@ -1495,14 +1495,65 @@ namespace PK
         cmd->pushConstantSize = shader->GetPushConstantSize();
         cmd->pushConstants = Allocate<uint8_t>(cmd->pushConstantSize);
 
-        const char* data = nullptr;
-        size_t dataSize = 0u;
+        auto* pushConstants = static_cast<uint8_t*>(cmd->pushConstants);
 
         for (const auto& element : shader->GetPushConstantLayout())
         {
-            if (resources->TryGet<char>(element.name, &data, &dataSize) && dataSize <= element.size)
+            if (RHIEnumConvert::IsResourceHandle(element.type))
             {
-                memcpy(static_cast<uint8_t*>(cmd->pushConstants) + element.offset, data, dataSize);
+                const auto access = element.writeMask != ShaderStageFlags::None ? VK_ACCESS_2_SHADER_WRITE_BIT : VK_ACCESS_2_NONE;
+                const auto stageFlags = VulkanEnumConvert::GetPipelineStageFlags(element.accessMask);
+
+                auto size = 0ull;
+                const VulkanResourceView* views = nullptr;
+
+                PK_FATAL_ASSERT(resources->TryGet<VulkanResourceView>(element.name, &views, &size), "Resource '%s' not bound!", element.name.c_str());
+
+                const auto count = (uint32_t)(size / sizeof(VulkanResourceView));
+                PK_FATAL_ASSERT(count == element.count, "Resource '%s' bound array size '%u' doesnt match size '%u' in shader", element.name.c_str(), count, element.count);
+
+                for (auto i = 0u; i < element.count; ++i)
+                {
+                    if (element.type == Uniform::AccelerationStructure)
+                    {
+                        reinterpret_cast<uint64_t*>(pushConstants + element.offset)[i] = views[i].memory.address;
+                        RecordMemoryAccess(queue, views[i], stageFlags, VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
+                        continue;
+                    }
+
+                    const auto heapIndex = m_descriptorHeap->GetResourceIndex(views[i], element.type);
+
+                    //@TODO Oopsie maybe shouldnt've deprecated this?
+                    if (element.type == Uniform::Sampler)
+                    {
+                        PK_DEBUG_FATAL_ASSERT(false, "Sampler push constants are not currently supported :(");
+                        //pushConstants[element.offset + i] = (uint8_t)heapIndex;
+                    }
+                    else
+                    {
+                        reinterpret_cast<uint16_t*>(pushConstants + element.offset)[i] = (uint16_t)heapIndex;
+                    }
+
+                    switch (element.type)
+                    {
+                        case Uniform::Texture:
+                        case Uniform::Image:          RecordImageAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT); break;
+                        case Uniform::StorageBuffer:  RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT); break;
+                        case Uniform::ConstantBuffer: RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_UNIFORM_READ_BIT | VK_ACCESS_2_SHADER_READ_BIT); break;
+                        default: break;
+                    }
+                }
+            }
+            else
+            {
+                const char* data = nullptr;
+                size_t dataSize = 0u;
+                const auto elementSize = RHIEnumConvert::Size(element.type) * element.count;
+
+                if (resources->TryGet<char>(element.name, &data, &dataSize) && dataSize <= elementSize)
+                {
+                    memcpy(pushConstants + element.offset, data, dataSize);
+                }
             }
         }
     }

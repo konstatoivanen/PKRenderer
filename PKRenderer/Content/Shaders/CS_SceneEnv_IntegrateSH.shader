@@ -17,10 +17,9 @@ groupshared float4 lds_SH_B[GROUP_SIZE * GROUP_SIZE];
 uniform float pk_SceneEnv_Exposure;
 
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
-void IntegrateCs()
+void IntegrateCs(uint2 local_coord : SV_GroupThreadID, uint thread : SV_GroupIndex)
 {
-    const uint2 coord = gl_LocalInvocationID.xy * uint2(4u);
-    const uint thread = gl_LocalInvocationIndex;
+    const uint2 coord = local_coord * uint2(4u);
 
     float4 local_SH_R = 0.0f.xxxx;
     float4 local_SH_G = 0.0f.xxxx;

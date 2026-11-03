@@ -20,10 +20,9 @@ uniform RWTexture2DArray<uint> pk_DoF_ColorWrite;
 uniform RWTexture2DArray<float> pk_DoF_AlphaWrite;
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
-void PrefilterCs()
+void PrefilterCs(int2 coord : SV_DispatchThreadID)
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 uv = (coord + 0.5f.xx) * texel_size;
 
     const int2 offsets[4] = { int2(-1,-1), int2(1,1), int2(-1,1), int2(1,-1) };
@@ -42,10 +41,9 @@ void PrefilterCs()
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
-void DiskBlurCs()
+void DiskBlurCs(int2 coord : SV_DispatchThreadID)
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 uv = (coord + 0.5f.xx) * texel_size;
 
     half4 background = 0.0hf.xxxx;
@@ -93,10 +91,9 @@ void DiskBlurCs()
 }
 
 [numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
-void UpsampleCs()
+void UpsampleCs(int2 coord : SV_DispatchThreadID)
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 uv = (coord + 0.5f.xx) * texel_size;
 
     half4 background = 0.0hf.xxxx;

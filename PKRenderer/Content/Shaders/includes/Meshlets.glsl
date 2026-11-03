@@ -197,11 +197,11 @@ PKMeshlet Meshlet_Unpack_Meshlet(const uint4 packed0, const uint4 packed1, const
     m.cone_cutoff = unpackSnorm4x8(packed0.z).w;
     m.vertex_count = bitfieldExtract(packed0.w, 0, 8);
     m.triangle_count = bitfieldExtract(packed0.w, 8, 8);
-    m.cone_apex.x = unpackHalf2x16(packed0.w).y;
+    m.cone_apex.x = f16tof32(packed0.w >> 16u);
     m.cone_apex.yz = unpackHalf2x16(packed1.x);
     m.center.xy = unpackHalf2x16(packed1.y);
-    m.center.z = unpackHalf2x16(packed1.z).x;
-    m.extents.x = unpackHalf2x16(packed1.z).y;
+    m.center.z = f16tof32(packed1.z);
+    m.extents.x = f16tof32(packed1.z >> 16u);
     m.extents.yz = unpackHalf2x16(packed1.w);
 
     m.lod_center_error_current.xy = unpackHalf2x16(packed2.x);
@@ -475,7 +475,7 @@ void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, PKMeshTaskPayload payload, in
 #endif
 
 [numthreads(MAX_MESHLETS_PER_TASK, 1, 1)]
-void MainMeshTask()
+void MainMeshTask(uint3 group_coord : SV_GroupID, uint3 local_coord : SV_GroupThreadID)
 {
     PKMeshTaskPayload payload = (PKMeshTaskPayload)0;
     uint meshlet_count = 0u;
@@ -483,7 +483,7 @@ void MainMeshTask()
     [[branch]]
     if (WaveIsFirstLane())
     {
-        const uint task_index = pk_Meshlet_DispatchOffset + gl_WorkGroupID.x;
+        const uint task_index = pk_Meshlet_DispatchOffset + group_coord.x;
         const PKTasklet tasklet = Meshlet_Load_Tasklet(task_index);
         PK_INSTANCING_ASSIGN_LOCALS(tasklet.instance_id);
         const PKSubmesh submesh = Meshlet_Load_Submesh(pk_Instancing_Submesh);
@@ -501,7 +501,7 @@ void MainMeshTask()
     PK_MESHLET_FUNC_TASKLET(payload);
 
     const uint meshlet_first = payload.packed0.w;
-    const uint meshlet_index_local = gl_LocalInvocationID.x;
+    const uint meshlet_index_local = local_coord.x;
     const uint meshlet_index = meshlet_first + meshlet_index_local;
     const PKMeshlet meshlet = Meshlet_Load_Meshlet(meshlet_index);
 
@@ -520,6 +520,8 @@ void MainMeshTask()
 [outputtopology("triangle")]
 [numthreads(MESHLET_LOCAL_GROUP_SIZE, 1, 1)]
 void MainMeshAssembly(
+    uint thread : SV_GroupIndex,
+    uint3 group_coord : SV_GroupID,
     in payload PKMeshTaskPayload inPayload,
     out vertices PKMeshletVertexVaryings outVertices[MAX_VERTICES_PER_MESHLET],
     out indices uint3 outTriangles[MAX_TRIANGLES_PER_MESHLET]
@@ -528,9 +530,8 @@ void MainMeshAssembly(
     const uint meshlet_first = inPayload.packed0.w;
     const uint instance_id = inPayload.packed1.w;
 
-    const uint thread = gl_LocalInvocationID.x;
     uint delta_index = countbits(inPayload.visible_mask.x & ((1u << thread) - 1u));
-    delta_index = select(delta_index == gl_WorkGroupID.x, thread, 0u);
+    delta_index = select(delta_index == group_coord.x, thread, 0u);
     delta_index = WaveActiveMax(delta_index);
 
     const uint meshlet_index = meshlet_first + delta_index;

@@ -61,7 +61,7 @@ void SpdStoreMip(int mip, int2 coord, float2 v) { pk_ImageArray[mip][int3(coord,
 #include "includes/ffx_spd.glsl"
 
 [numthreads(256, 1u, 1u)]
-void HierarchicalDepthCs()
+void HierarchicalDepthCs(uint2 group_coord : SV_GroupID, uint thread : SV_GroupIndex)
 {
-    SpdDownsample(gl_WorkGroupID.xy, gl_LocalInvocationIndex, pk_HZB_Parameters.x, pk_HZB_Parameters.y, pk_HZB_Parameters.zw);
+    SpdDownsample(group_coord, thread, pk_HZB_Parameters.x, pk_HZB_Parameters.y, pk_HZB_Parameters.zw);
 }
