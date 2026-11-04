@@ -2,7 +2,7 @@
 
 # PK Renderer
 
-**A physically based real-time renderer made with C++, GLSL & Vulkan.**
+**A physically based real-time renderer made with C++, Slang & Vulkan.**
 </div>
 
 The goal of this project is to be a feature rich & performant renderer without any precomputed scene structures or light transport. 
