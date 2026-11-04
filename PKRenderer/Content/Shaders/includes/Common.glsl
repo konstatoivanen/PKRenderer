@@ -112,25 +112,25 @@ struct PKRenderView
 
     uint PostEffectsFeatureMask;
 
-    SamplerRef SamplerBilinearRepeat;
-    SamplerRef SamplerBilinearMirror;
-    SamplerRef SamplerBilinearClamped;
-    SamplerRef SamplerTrilinearBorder;
-    SamplerRef SamplerTrilinearClamped;
-    SamplerRef SamplerPointClamped;
-    SamplerRef SamplerTrilinearRepeatAniso;
+    byte SamplerBilinearRepeat;
+    byte SamplerBilinearMirror;
+    byte SamplerBilinearClamped;
+    byte SamplerTrilinearBorder;
+    byte SamplerTrilinearClamped;
+    byte SamplerPointClamped;
+    byte SamplerTrilinearRepeatAniso;
 };
 
 uniform ConstantBuffer<PKRenderView> pk_View;
 uniform RaytracingAccelerationStructure pk_SceneStructure;
 
-property SamplerState pk_SamplerBilinearRepeat       { get { return pk_View.SamplerBilinearRepeat.Get(); } }
-property SamplerState pk_SamplerBilinearMirror       { get { return pk_View.SamplerBilinearMirror.Get(); } }
-property SamplerState pk_SamplerBilinearClamped      { get { return pk_View.SamplerBilinearClamped.Get(); } }
-property SamplerState pk_SamplerTrilinearBorder      { get { return pk_View.SamplerTrilinearBorder.Get(); } }
-property SamplerState pk_SamplerTrilinearClamped     { get { return pk_View.SamplerTrilinearClamped.Get(); } }
-property SamplerState pk_SamplerPointClamped         { get { return pk_View.SamplerPointClamped.Get(); } }
-property SamplerState pk_SamplerTrilinearRepeatAniso { get { return pk_View.SamplerTrilinearRepeatAniso.Get(); } }
+property SamplerState pk_SamplerBilinearRepeat       { get { return PK_GetDescriptor(SamplerState, pk_View.SamplerBilinearRepeat); } }
+property SamplerState pk_SamplerBilinearMirror       { get { return PK_GetDescriptor(SamplerState, pk_View.SamplerBilinearMirror); } }
+property SamplerState pk_SamplerBilinearClamped      { get { return PK_GetDescriptor(SamplerState, pk_View.SamplerBilinearClamped); } }
+property SamplerState pk_SamplerTrilinearBorder      { get { return PK_GetDescriptor(SamplerState, pk_View.SamplerTrilinearBorder); } }
+property SamplerState pk_SamplerTrilinearClamped     { get { return PK_GetDescriptor(SamplerState, pk_View.SamplerTrilinearClamped); } }
+property SamplerState pk_SamplerPointClamped         { get { return PK_GetDescriptor(SamplerState, pk_View.SamplerPointClamped); } }
+property SamplerState pk_SamplerTrilinearRepeatAniso { get { return PK_GetDescriptor(SamplerState, pk_View.SamplerTrilinearRepeatAniso); } }
 
 uint GetShadowCascadeIndex(float view_depth)
 {

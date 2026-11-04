@@ -48,7 +48,7 @@ Varyings MainVs(uint vertex_id : SV_VulkanVertexID)
 
 float4 MainFs(Varyings input) : SV_Target0
 {
-    const float4 value = Texture2DRef<float4>(ushort(input.texture_index)).Get().Sample(pk_SamplerBilinearRepeat, input.texcoord);
+    const float4 value = PK_GetDescriptor(Texture2D<float4>, input.texture_index).Sample(pk_SamplerBilinearRepeat, input.texcoord);
     float4 color = input.color;
 
     if (input.shading_mode == PK_GUI_SHADING_MODE_FONT)

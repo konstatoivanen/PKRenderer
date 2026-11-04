@@ -283,7 +283,9 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 world_pos, const 
     {
         const float3 diff_scene_env = SceneEnv_Sample_SH_Diffuse(surf.normal);
         // Occlude ground from secondary bounces.
-        const float3 diff_scene_env_masked = diff_scene_env * step(0.0f, surf.normal.y);
+        // This is not a good solution as it masks the entire cone and not just rays that cross the ground plane.
+        // const float3 diff_scene_env_masked = diff_scene_env * step(0.0f, surf.normal.y);
+        const float3 diff_scene_env_masked = diff_scene_env;
         const float4 diff_voxel_traced = GI_VX_ConeTrace_Diffuse(world_pos, surf.normal);
         return surf.diffuse * (diff_scene_env_masked * diff_voxel_traced.a + diff_voxel_traced.rgb);
     }
