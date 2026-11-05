@@ -174,8 +174,8 @@ namespace PK
             {
                 case Uniform::Texture:
                 {
-                    auto texIndex = RHI::GetGraph()->MakeResident(GetResource<RHITexture>(element.name));
-                    memcpy(dst + element.offset, &texIndex, sizeof(int32_t));
+                    auto texIndex = (uint16_t)RHI::GetGraph()->MakeResident(GetResource<RHITexture>(element.name));
+                    memcpy(dst + element.offset, &texIndex, sizeof(uint16_t));
                 }
                 break;
                 default: break;
