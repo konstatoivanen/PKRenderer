@@ -10,8 +10,7 @@ namespace PK
     constexpr static const uint32_t PK_RHI_MAX_FRAMES_IN_FLIGHT = 2;
     constexpr static const uint32_t PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT = 16;
     constexpr static const uint32_t PK_RHI_MAX_RENDER_TARGETS = 8;
-    constexpr static const uint32_t PK_RHI_MAX_DESCRIPTORS_PER_SET = PKAssets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
-    constexpr static const uint32_t PK_RHI_MAX_PUSH_CONSTANTS = PKAssets::PK_ASSET_MAX_PUSH_CONSTANTS;
+    constexpr static const uint32_t PK_RHI_MAX_SHADER_PARAMETERS = PKAssets::PK_ASSET_MAX_SHADER_PARAMETERS;
     constexpr static const uint32_t PK_RHI_MAX_VERTEX_ATTRIBUTES = PKAssets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
     constexpr static const uint32_t PK_RHI_MAX_VIEWPORTS = 16;
 
@@ -464,7 +463,6 @@ namespace PK
         uint32_t apiVersionMinor;
         uint32_t gcPruneDelay;
         uint32_t stagingArenaSize;
-        uint32_t descriptorArenaSize; // @TODO Will be replace by descriptor heap size.
         bool enableValidation;
         bool enableDebugNames;
         bool enableDebugLabels;

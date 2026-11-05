@@ -141,7 +141,7 @@ namespace PK
 
         disposer.New(512u);
         stagingArena.New(device, allocator, queueInitializer.selectedAll, properties.stagingArenaSize);
-        descriptorHeap.New(device, allocator, queueInitializer.selectedAll, physicalDeviceProperties, properties.descriptorArenaSize, properties.gcPruneDelay);
+        descriptorHeap.New(device, allocator, queueInitializer.selectedAll, physicalDeviceProperties, properties.gcPruneDelay);
         timerArena.New(device, physicalDeviceProperties.core.limits.timestampPeriod);
         queues.New(device, queueInitializer);
         graph.New(this);

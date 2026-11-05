@@ -265,7 +265,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDraw(*ctx->cmb, cmd->vertexCount, cmd->instanceCount, cmd->firstVertex, cmd->firstInstance);
         });
@@ -283,7 +283,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             vkCmdDrawIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
@@ -303,7 +303,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
             vkCmdDrawIndexed(*ctx->cmb, cmd->indexCount, cmd->instanceCount, cmd->firstIndex, cmd->vertexOffset, cmd->firstInstance);
@@ -323,7 +323,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawIndexedIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             ctx->cmb->SetVertexBuffers(cmd->vertexBuffers, cmd->vertexBufferCount);
             ctx->cmb->SetIndexBuffer(cmd->indexInfo);
             vkCmdDrawIndexedIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
@@ -344,7 +344,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksEXT(*ctx->cmb, cmd->dimensions.x, cmd->dimensions.y, cmd->dimensions.z);
         });
 
@@ -358,7 +358,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksIndirect2EXT(*ctx->cmb, &cmd->indirectInfo);
         });
 
@@ -377,7 +377,7 @@ namespace PK
         auto cmd = AllocateCommand(QueueType::Graphics, [](VulkanGraphContext* ctx, VulkanDrawMeshTasksIndirectCountCmd* cmd)
         {
             ctx->cmb->SetRasterState(cmd->renderingInfo, cmd->dynamicState);
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDrawMeshTasksIndirectCount2EXT(*ctx->cmb, &cmd->indirectCountInfo);
         });
 
@@ -399,7 +399,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchCmd* cmd)
         {
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDispatch(*ctx->cmb, cmd->groupCounts.x, cmd->groupCounts.y, cmd->groupCounts.z);
         });
 
@@ -415,7 +415,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchIndirectCmd* cmd)
         {
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdDispatchIndirect2KHR(*ctx->cmb, &cmd->indirectInfo);
         });
 
@@ -432,7 +432,7 @@ namespace PK
     {
         auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanDispatchRaysCmd* cmd)
         {
-            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->descriptorHeapOffset, cmd->pushConstants, cmd->pushConstantSize);
+            ctx->cmb->SetShaderState(cmd->shader, cmd->excludeStageMask, cmd->pushConstants, cmd->pushConstantSize);
             vkCmdTraceRaysKHR(*ctx->cmb, &cmd->addressRayGen, &cmd->addressMiss, &cmd->addressHit, &cmd->addressCallable, cmd->dimensions.x, cmd->dimensions.y, cmd->dimensions.z);
         });
 
@@ -1269,14 +1269,12 @@ namespace PK
             {
                 m_timerArena->FlushTimeline(m_scopes[i].timerTimelineIndex);
                 m_stagingArena->FreeRange(m_scopes[i].stagingRangeIndex);
-                m_descriptorHeap->FreeRange(m_scopes[i].descriptorRangeIndex);
                 m_scopes[i].fence.Invalidate();
             }
         }
 
         m_pipelineState = PipelineState();
         m_stagingArena->BeginRange();
-        m_descriptorHeap->BeginRange();
         m_accessRecorder.ResetPasses(completedPassCounter);
         RHIGraph::Clear();
     }
@@ -1285,7 +1283,6 @@ namespace PK
     {
         auto& scope = m_scopes[m_invocationCounter % PK_VK_MAX_GRAPH_SCOPES];
         scope.stagingRangeIndex = m_stagingArena->EndRange();
-        scope.descriptorRangeIndex = m_descriptorHeap->EndRange();
         scope.lastPassCounter = m_accessRecorder.GetPassCounter();
         return scope;
     }
@@ -1419,122 +1416,53 @@ namespace PK
 
         PK_DEBUG_FATAL_ASSERT(shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
-        const auto& resourceLayout = shader->GetResourceLayout();
-
-        for (auto index = 0u; index < resourceLayout.GetCount(); ++index)
-        {
-            const auto& element = resourceLayout[index];
-            const auto access = element.writeMask != 0u ? VK_ACCESS_2_SHADER_WRITE_BIT : VK_ACCESS_2_NONE;
-            const auto stageFlags = VulkanEnumConvert::GetPipelineStageFlags(element.accessMask);
-
-            auto& descriptor = state->descriptors[index];
-            const VulkanResourceView* views = nullptr;
-            auto size = 0ull;
-
-            PK_FATAL_ASSERT(resources->TryGet<VulkanResourceView>(element.name, &views, &size), "Descriptor '%s' not bound!", element.name.c_str());
-            
-            const auto count = (uint32_t)(size / sizeof(VulkanResourceView));
-            PK_FATAL_ASSERT(count == element.count, "Descriptor '%s' bound array size '%u' doesn't match size '%u' in shader", element.name.c_str(), count, element.count);
-
-            auto hash = views[0].hash;
-
-            for (auto i = 1u; i < count; ++i)
-            {
-                hash = Hash::Mix(hash, views[i].hash);
-            }
-
-            if (descriptor.views != views || descriptor.count != count || descriptor.type != element.type || descriptor.hash != hash)
-            {
-                state->dirtyFlags |= STATE_DIRTY_DESCRIPTORS;
-                descriptor.views = views;
-                descriptor.count = (uint16_t)count;
-                descriptor.type = element.type;
-                descriptor.hash = hash;
-            }
-
-            for (auto i = 0u; i < count; ++i)
-            {
-                if (descriptor.type == Uniform::Texture || descriptor.type == Uniform::Image)
-                {
-                    RecordImageAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
-                }
-
-                if (descriptor.type == Uniform::StorageBuffer)
-                {
-                    RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT);
-                }
-
-                if (descriptor.type == Uniform::ConstantBuffer)
-                {
-                    RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_UNIFORM_READ_BIT);
-                }
-
-                if (descriptor.type == Uniform::AccelerationStructure)
-                {
-                    RecordMemoryAccess(queue, views[i], stageFlags, VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
-                }
-            }
-        }
-
-        if (state->descriptorCount != resourceLayout.GetCount() || (state->dirtyFlags & STATE_DIRTY_SHADER) != 0u)
-        {
-            state->dirtyFlags |= STATE_DIRTY_DESCRIPTORS;
-            state->descriptorCount = (uint32_t)resourceLayout.GetCount();
-        }
-
-        if (state->dirtyFlags & STATE_DIRTY_DESCRIPTORS)
-        {
-            state->descriptorHeapOffset = m_descriptorHeap->AllocateDescriptorSet(shader.value, state->descriptors, state->descriptorCount);
-        }
-
-        state->dirtyFlags &= ~(STATE_DIRTY_DESCRIPTORS | STATE_DIRTY_SHADER);
+        state->dirtyFlags &= ~STATE_DIRTY_SHADER;
 
         cmd->shader = shader.value;
         cmd->excludeStageMask = state->excludeStageMask;
-        cmd->descriptorHeapOffset = state->descriptorHeapOffset;
-        cmd->pushConstantSize = shader->GetPushConstantSize();
+        cmd->pushConstantSize = shader->GetParameterLayout().sizeBytes;
         cmd->pushConstants = Allocate<uint8_t>(cmd->pushConstantSize);
 
         auto* pushConstants = static_cast<uint8_t*>(cmd->pushConstants);
 
-        for (const auto& element : shader->GetPushConstantLayout())
+        for (const auto& parameter : shader->GetParameterLayout())
         {
-            if (RHIEnumConvert::IsResourceHandle(element.type))
+            if (RHIEnumConvert::IsResourceHandle(parameter.type))
             {
-                const auto access = element.writeMask != ShaderStageFlags::None ? VK_ACCESS_2_SHADER_WRITE_BIT : VK_ACCESS_2_NONE;
-                const auto stageFlags = VulkanEnumConvert::GetPipelineStageFlags(element.accessMask);
+                const auto access = parameter.writeMask != ShaderStageFlags::None ? VK_ACCESS_2_SHADER_WRITE_BIT : VK_ACCESS_2_NONE;
+                const auto stageFlags = VulkanEnumConvert::GetPipelineStageFlags(parameter.accessMask);
 
                 auto size = 0ull;
                 const VulkanResourceView* views = nullptr;
 
-                PK_FATAL_ASSERT(resources->TryGet<VulkanResourceView>(element.name, &views, &size), "Resource '%s' not bound!", element.name.c_str());
+                PK_FATAL_ASSERT(resources->TryGet<VulkanResourceView>(parameter.name, &views, &size), "Parameter '%s' not bound!", parameter.name.c_str());
 
                 const auto count = (uint32_t)(size / sizeof(VulkanResourceView));
-                PK_FATAL_ASSERT(count == element.count, "Resource '%s' bound array size '%u' doesnt match size '%u' in shader", element.name.c_str(), count, element.count);
+                PK_FATAL_ASSERT(count == parameter.count, "Parameter '%s' bound array size '%u' doesnt match size '%u' in shader", parameter.name.c_str(), count, parameter.count);
 
-                for (auto i = 0u; i < element.count; ++i)
+                for (auto i = 0u; i < parameter.count; ++i)
                 {
-                    if (element.type == Uniform::AccelerationStructure)
+                    if (parameter.type == Uniform::AccelerationStructure)
                     {
-                        reinterpret_cast<uint64_t*>(pushConstants + element.offset)[i] = views[i].memory.address;
+                        reinterpret_cast<uint64_t*>(pushConstants + parameter.offset)[i] = views[i].memory.address;
                         RecordMemoryAccess(queue, views[i], stageFlags, VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
                         continue;
                     }
 
-                    const auto heapIndex = m_descriptorHeap->GetResourceIndex(views[i], element.type);
+                    const auto heapIndex = m_descriptorHeap->GetResourceIndex(views[i], parameter.type);
 
                     //@TODO Oopsie maybe shouldnt've deprecated this?
-                    if (element.type == Uniform::Sampler)
+                    if (parameter.type == Uniform::Sampler)
                     {
                         PK_DEBUG_FATAL_ASSERT(false, "Sampler push constants are not currently supported :(");
-                        //pushConstants[element.offset + i] = (uint8_t)heapIndex;
+                        //pushConstants[parameter.offset + i] = (uint8_t)heapIndex;
                     }
                     else
                     {
-                        reinterpret_cast<uint16_t*>(pushConstants + element.offset)[i] = (uint16_t)heapIndex;
+                        reinterpret_cast<uint16_t*>(pushConstants + parameter.offset)[i] = (uint16_t)heapIndex;
                     }
 
-                    switch (element.type)
+                    switch (parameter.type)
                     {
                         case Uniform::Texture:
                         case Uniform::Image:          RecordImageAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT); break;
@@ -1546,13 +1474,13 @@ namespace PK
             }
             else
             {
+                auto dataSize = 0ull;
                 const char* data = nullptr;
-                size_t dataSize = 0u;
-                const auto elementSize = RHIEnumConvert::Size(element.type) * element.count;
+                const auto parameterSize = RHIEnumConvert::Size(parameter.type) * parameter.count;
 
-                if (resources->TryGet<char>(element.name, &data, &dataSize) && dataSize <= elementSize)
+                if (resources->TryGet<char>(parameter.name, &data, &dataSize) && dataSize <= parameterSize)
                 {
-                    memcpy(pushConstants + element.offset, data, dataSize);
+                    memcpy(pushConstants + parameter.offset, data, dataSize);
                 }
             }
         }

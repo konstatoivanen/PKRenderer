@@ -118,9 +118,10 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
 
   - Vulkan 1.4 rendering backend.
     - "No-API" style design.
+    - Fully bindless
   - Async compute & transfer queues.
-  - Multiple buffering.
-  - Automatic resource barrier management.
+  - Render graph builder.
+     - Subresource level dependency tracking.
   - Entity component system.
   - Custom compressed mesh & shader formats.
   - Asset hot reloading

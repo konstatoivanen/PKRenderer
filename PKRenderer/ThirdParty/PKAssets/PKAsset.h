@@ -6,8 +6,7 @@ namespace PKAssets
     constexpr static const uint64_t PK_ASSET_MAGIC_NUMBER = 16056123332373007180ull;
     constexpr static const uint32_t PK_ASSET_NAME_MAX_LENGTH = 64u;
     constexpr static const uint32_t PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8u;
-    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTORS_PER_SET = 64u;
-    constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 64u;
+    constexpr static const uint32_t PK_ASSET_MAX_SHADER_PARAMETERS = 64u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVES = 16u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVE_SIZE = 16u;
@@ -487,8 +486,7 @@ namespace PKAssets
         uint16_t __padding1 = 0u;            // 68 bytes
     };
 
-    // @TODO we need to write these in PKShaderWriter.
-    struct alignas(4) PKConstantVariable
+    struct alignas(4) PKShaderParameter
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
         PKShaderStageFlags writeMask;        // 66 bytes
@@ -496,16 +494,6 @@ namespace PKAssets
         PKUniform type;                      // 69 bytes
         uint8_t offset;                      // 70 bytes
         uint16_t arraySize;                  // 72 bytes
-    };
-
-    struct alignas(4) PKDescriptor
-    {
-        char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKUniform type;                      // 65 bytes
-        uint8_t __padding;                   // 66 bytes
-        uint16_t count;                      // 68 bytes
-        PKShaderStageFlags writeMask;        // 70 bytes
-        PKShaderStageFlags accessMask;       // 72 bytes
     };
 
     struct alignas(4) PKShaderKeyword
@@ -535,13 +523,11 @@ namespace PKAssets
 
     struct alignas(4) PKShaderVariant
     {
-        uint8_t descriptorCount;                                            // 1 bytes
-        uint8_t vertexAttributeCount;                                       // 2 bytes
-        uint16_t constantCount;                                             // 4 bytes
-        uint16_t constantRange;                                             // 6 bytes
+        uint16_t vertexAttributeCount;                                      // 2 bytes
+        uint16_t parameterCount;                                            // 4 bytes
+        uint16_t parameterBlockSize;                                        // 6 bytes
         uint16_t groupSize[3]{};                                            // 12 bytes
-        RelativePtr<PKDescriptor> descriptors;                              // 20 bytes
-        RelativePtr<PKConstantVariable> constants;                          // 24 bytes
+        RelativePtr<PKShaderParameter> parameters;                          // 24 bytes
         RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 28 bytes
         uint32_t sprivSizes[(int)PKShaderStage::EnumCount];                 // 80 bytes
         RelativePtr<void> sprivBuffers[(int)PKShaderStage::EnumCount];      // 132 bytes

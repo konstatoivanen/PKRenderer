@@ -6,7 +6,7 @@
 
 namespace PK
 {
-    struct ShaderPushConstant
+    struct ShaderParameter
     {
         NameID name = 0u;
         ShaderStageFlags accessMask = ShaderStageFlags::None;
@@ -15,9 +15,9 @@ namespace PK
         uint8_t offset = 0u;
         uint16_t count = 0u;
 
-        ShaderPushConstant() = default;
+        ShaderParameter() = default;
 
-        ShaderPushConstant(NameID name, ShaderStageFlags accessMask, ShaderStageFlags writeMask, Uniform type, uint8_t offset, uint16_t count) :
+        ShaderParameter(NameID name, ShaderStageFlags accessMask, ShaderStageFlags writeMask, Uniform type, uint8_t offset, uint16_t count) :
             name(name),
             accessMask(accessMask),
             writeMask(writeMask),
@@ -28,49 +28,16 @@ namespace PK
         }
     };
 
-    struct ShaderPushConstantLayout : public FixedList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>
+    struct ShaderParameterLayout : public FixedList<ShaderParameter, PK_RHI_MAX_SHADER_PARAMETERS>
     {
         size_t sizeBytes;
 
-        using TBase = FixedList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>;
-        ShaderPushConstantLayout() {}
-        ShaderPushConstantLayout(const ShaderPushConstant* elements, size_t count) : TBase(elements, count) {}
-        ShaderPushConstantLayout(initializer_list<ShaderPushConstant> elements) : TBase(elements) {}
-        const ShaderPushConstant* TryGetElement(NameID name, uint32_t* index) const;
+        using TBase = FixedList<ShaderParameter, PK_RHI_MAX_SHADER_PARAMETERS>;
+        ShaderParameterLayout() {}
+        ShaderParameterLayout(const ShaderParameter* elements, size_t count) : TBase(elements, count) {}
+        ShaderParameterLayout(initializer_list<ShaderParameter> elements) : TBase(elements) {}
+        const ShaderParameter* TryGetElement(NameID name, uint32_t* index) const;
     };
-
-
-
-    struct ShaderResourceElement
-    {
-        NameID name = 0u;
-        ShaderStageFlags accessMask = ShaderStageFlags::None;
-        ShaderStageFlags writeMask = ShaderStageFlags::None;
-        uint16_t count = 0;
-        Uniform type = Uniform::Invalid;
-        uint8_t __padding = 0;
-
-        ShaderResourceElement() = default;
-
-        ShaderResourceElement(Uniform type, NameID name, ShaderStageFlags accessMask, ShaderStageFlags writeMask, uint16_t count) :
-            name(name),
-            accessMask(accessMask),
-            writeMask(writeMask),
-            count(count),
-            type(type)
-        {
-        }
-    };
-
-    struct ShaderResourceLayout : public FixedList<ShaderResourceElement, PK_RHI_MAX_DESCRIPTORS_PER_SET>
-    {
-        using TBase = FixedList<ShaderResourceElement, PK_RHI_MAX_DESCRIPTORS_PER_SET>;
-        ShaderResourceLayout() {}
-        ShaderResourceLayout(const ShaderResourceElement* elements, size_t count) : TBase(elements, count) {}
-        ShaderResourceLayout(initializer_list<ShaderResourceElement> elements) : TBase(elements) {}
-        const ShaderResourceElement* TryGetElement(NameID name, uint32_t* index) const;
-    };
-
 
     struct ShaderVertexInputElement
     {
@@ -166,7 +133,6 @@ namespace PK
         uint16_t byteStrides[(uint32_t)RayTracingShaderGroup::EnumCount];
         uint8_t offsets[(uint32_t)RayTracingShaderGroup::EnumCount];
         uint8_t counts[(uint32_t)RayTracingShaderGroup::EnumCount];
-        const ShaderResourceLayout* layouts[(uint32_t)RayTracingShaderGroup::EnumCount];
         uint16_t handleSize;
         uint16_t handleSizeAligned;
         uint16_t tableAlignment;

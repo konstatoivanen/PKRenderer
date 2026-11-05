@@ -4,12 +4,7 @@
 
 namespace PK
 {
-    VulkanDescriptorHeap::VulkanDescriptorHeap(VkDevice device,
-        VmaAllocator allocator,
-        const VulkanQueueFamilies& queueFamilies,
-        const VulkanPhysicalDeviceProperties& properties,
-        size_t resourceArenaSize,
-        uint64_t pruneDelay) :
+    VulkanDescriptorHeap::VulkanDescriptorHeap(VkDevice device, VmaAllocator allocator, const VulkanQueueFamilies& queueFamilies, const VulkanPhysicalDeviceProperties& properties, uint64_t pruneDelay) :
         m_device(device),
         m_allocator(allocator),
         m_properties(properties.descriptorHeapDerived),
@@ -24,10 +19,7 @@ namespace PK
         {
             PK_FATAL_ASSERT(m_properties.imageStride == m_properties.maxResourceStride, "Image descriptor stride must match maxResourceStride for default descriptor_heap indexing!");
 
-            m_resourceHeap.arenaOffset = PK_VK_MAX_DESCRIPTORS * m_properties.maxResourceStride;
-            m_resourceHeap.arenaCapacity = math::align(resourceArenaSize, m_properties.maxResourceStride);
-
-            const auto reservedOffset = m_resourceHeap.arenaOffset + m_resourceHeap.arenaCapacity;
+            const auto reservedOffset = PK_VK_MAX_DESCRIPTORS * m_properties.maxResourceStride;
             const auto reservedSize = properties.descriptorHeap.minResourceHeapReservedRange;
 
             VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -86,53 +78,6 @@ namespace PK
         vmaDestroyBuffer(m_allocator, m_resourceHeap.buffer, m_resourceHeap.memory);
         vmaDestroyBuffer(m_allocator, m_samplerHeap.buffer, m_samplerHeap.memory);
     }
-
-
-    void VulkanDescriptorHeap::BeginRange()
-    {
-        m_rangeCounter++;
-    }
-
-    uint64_t VulkanDescriptorHeap::EndRange()
-    {
-        m_resourceHeap.ranges[m_rangeCounter % PK_VK_MAX_DESCRIPTOR_RANGES] = m_resourceHeap.arenaHead;
-        m_samplerHeap.ranges[m_rangeCounter % PK_VK_MAX_DESCRIPTOR_RANGES] = m_samplerHeap.arenaHead;
-        return m_rangeCounter;
-    }
-
-    void VulkanDescriptorHeap::FreeRange(uint64_t rangeIndex)
-    {
-        m_resourceHeap.arenaTail = math::max(m_resourceHeap.arenaTail, m_resourceHeap.ranges[rangeIndex % PK_VK_MAX_DESCRIPTOR_RANGES]);
-        m_samplerHeap.arenaTail = math::max(m_samplerHeap.arenaTail, m_samplerHeap.ranges[rangeIndex % PK_VK_MAX_DESCRIPTOR_RANGES]);
-    }
-
-    void VulkanDescriptorHeap::Prune()
-    {
-        m_currentPruneTick++;
-
-        for (auto i = m_resourceCache.GetCount(); i > 0u; --i)
-        {
-            const auto& entry = m_resourceCache[i - 1].value;
-            
-            if (entry.pruneTick < m_currentPruneTick)
-            {
-                m_resourcePool.Delete(entry.index);
-                m_resourceCache.RemoveAt(i - 1);
-            }
-        }
-
-        for (auto i = m_renderTargetViews.GetCount(); i > 0u; --i)
-        {
-            const auto& entry = m_renderTargetViews[i - 1].value;
-
-            if (entry.pruneTick < m_currentPruneTick)
-            {
-                vkDestroyImageView(m_device, entry.view, nullptr);
-                m_renderTargetViews.RemoveAt(i - 1);
-            }
-        }
-    }
-
 
     VkImageView VulkanDescriptorHeap::GetRenderTargetView(const VulkanResourceView& view)
     {
@@ -261,52 +206,30 @@ namespace PK
         return m_resourcePool[bindlessIndex]->resolution;
     }
 
-    uint32_t VulkanDescriptorHeap::AllocateDescriptorSet(const VulkanShader* shader, const VulkanDescriptorBinding* bindings, uint32_t count)
+    void VulkanDescriptorHeap::Prune()
     {
-        const auto offset = AllocateDescriptorRange(m_resourceHeap, shader->GetResourceSetSize(), m_properties.maxResourceStride);
-        const auto* descriptors = shader->GetDescriptorOffsets();
+        m_currentPruneTick++;
 
-        for (auto i = 0u; i < count; ++i)
+        for (auto i = m_resourceCache.GetCount(); i > 0u; --i)
         {
-            const auto& binding = bindings[i];
-            const auto& descriptor = descriptors[i];
-
-            for (auto j = 0u; j < binding.count; ++j)
+            const auto& entry = m_resourceCache[i - 1].value;
+            
+            if (entry.pruneTick < m_currentPruneTick)
             {
-                const auto& view = binding.views[j];
-
-                if (descriptor.stride)
-                {
-                    const auto index = GetResourceIndex(view, binding.type);
-                    const auto* srcResource = m_resourcePool[index]->data;
-                    memcpy(m_resourceHeap.mappedPtr + offset + descriptor.offset + j * descriptor.stride, srcResource, descriptor.stride);
-                }
+                m_resourcePool.Delete(entry.index);
+                m_resourceCache.RemoveAt(i - 1);
             }
         }
 
-        return offset;
-    }
-
-    uint32_t VulkanDescriptorHeap::AllocateDescriptorRange(DescriptorHeap& heap, uint32_t size, uint32_t alignment)
-    {
-        if (size)
+        for (auto i = m_renderTargetViews.GetCount(); i > 0u; --i)
         {
-            size = math::align(size, alignment);
-            PK_DEBUG_FATAL_ASSERT(heap.arenaHead + size - heap.arenaTail <= heap.arenaCapacity, "Descriptor heap arena exhausted!");
+            const auto& entry = m_renderTargetViews[i - 1].value;
 
-            auto offset = heap.arenaHead % heap.arenaCapacity;
-
-            if (offset + size > heap.arenaCapacity)
+            if (entry.pruneTick < m_currentPruneTick)
             {
-                heap.arenaHead += heap.arenaCapacity - offset;
-                offset = 0u;
+                vkDestroyImageView(m_device, entry.view, nullptr);
+                m_renderTargetViews.RemoveAt(i - 1);
             }
-
-            heap.arenaHead += size;
-
-            return heap.arenaOffset + offset;
         }
-
-        return 0u;
     }
 }

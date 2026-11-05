@@ -17,7 +17,7 @@ namespace PK
         VK_SHADER_STAGE_COMPUTE_BIT
     };
 
-    void VulkanCommandBuffer::SetShaderState(const VulkanShader* shader, uint16_t excludeStageMask, uint32_t descriptorHeapOffset, const void* pushConstants, uint32_t pushConstantSize)
+    void VulkanCommandBuffer::SetShaderState(const VulkanShader* shader, uint16_t excludeStageMask, const void* pushConstants, uint32_t pushConstantSize)
     {
         if (m_shader != shader || m_excludeStageMask != excludeStageMask)
         {
@@ -51,15 +51,6 @@ namespace PK
 
             m_shader = shader;
             m_excludeStageMask = excludeStageMask;
-        }
-
-        if (m_descriptorHeapOffset != descriptorHeapOffset)
-        {
-            VkPushDataInfoEXT pushOffsetsInfo{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
-            pushOffsetsInfo.offset = PK_VK_PUSH_OFFSET_RESOURCE_HEAP;
-            pushOffsetsInfo.data = { &descriptorHeapOffset, sizeof(uint32_t) };
-            vkCmdPushDataEXT(m_commandBuffer, &pushOffsetsInfo);
-            m_descriptorHeapOffset = descriptorHeapOffset;
         }
 
         if (m_pushConstants != pushConstants && pushConstantSize)
@@ -306,7 +297,6 @@ namespace PK
         m_timelineIndex = ~0ull;
         m_shader = nullptr;
         m_excludeStageMask = 0u;
-        m_descriptorHeapOffset = ~0u;
         m_pushConstants = nullptr;
         m_renderingInfo = nullptr;
         m_dynamicState = nullptr;

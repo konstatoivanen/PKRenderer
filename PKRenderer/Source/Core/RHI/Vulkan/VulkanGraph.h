@@ -30,7 +30,6 @@ namespace PK
     {
         const VulkanShader* shader;
         void* pushConstants;
-        uint32_t descriptorHeapOffset;
         uint32_t pushConstantSize;
         uint16_t excludeStageMask;
     };
@@ -228,7 +227,6 @@ namespace PK
     {
         FenceRef fence;
         uint64_t stagingRangeIndex = 0ull;
-        uint64_t descriptorRangeIndex = 0ull;
         uint64_t timerTimelineIndex = 0ull;
         uint64_t invocationIndex = 0ull;
         uint64_t lastPassCounter = 0ull;
@@ -239,11 +237,10 @@ namespace PK
     {
         enum DirtyFlags : uint32_t
         {
-            STATE_DIRTY_RENDERTARGET = 1ull << 0ull,
-            STATE_DIRTY_SHADER = 1ull << 1ull,
-            STATE_DIRTY_VERTEXBUFFERS = 1ull << 2ull,
-            STATE_DIRTY_DESCRIPTORS = 1ull << 3ull,
-            STATE_DIRTY_DYNAMIC_STATE = 1u << 4u
+            STATE_DIRTY_RENDERTARGET = 1u << 0u,
+            STATE_DIRTY_SHADER = 1u << 1u,
+            STATE_DIRTY_VERTEXBUFFERS = 1u << 2u,
+            STATE_DIRTY_DYNAMIC_STATE = 1u << 3u
         };
 
         VulkanGraph(const VulkanDriver* driver);
@@ -356,13 +353,10 @@ namespace PK
             VkIndexType indexType = VK_INDEX_TYPE_UINT16;
             VulkanRenderTarget renderTarget{};
 
-            VulkanDescriptorBinding descriptors[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
-            uint32_t descriptorCount = 0u;
             uint32_t dirtyFlags = 0u;
             uint16_t excludeStageMask = 0u;
             uint32_t coalescingQueue = ~0u;
             uint64_t residencyPass = 0ull;
-            uint32_t descriptorHeapOffset = 0u;
 
             // Resolved state
             uint32_t vertexBufferCount = 0u;

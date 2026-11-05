@@ -43,70 +43,22 @@ namespace PK
             }
         }
 
-        m_resourceLayout.ClearFast();
-        m_resourceSetSize = 0u;
+        m_parameterLayout.ClearFast();
+        m_parameterLayout.sizeBytes = math::align(variant->parameterBlockSize, (uint16_t)4u);
 
-        if (variant->descriptorCount)
+        if (variant->parameterBlockSize)
         {
-            PK_WARNING_ASSERT(variant->descriptorCount <= PK_RHI_MAX_DESCRIPTORS_PER_SET, "Warning: Shader descriptor count exceeds the maximum count per set!");
-            const auto& descriptorProps = m_driver->physicalDeviceProperties.descriptorHeapDerived;
-            auto* pDescriptors = variant->descriptors.Get(base);
+            auto* pParameters = variant->parameters.Get(base);
 
-            for (auto j = 0u; j < variant->descriptorCount; ++j)
+            for (auto i = 0u; i < variant->parameterCount; ++i)
             {
-                const auto type = pDescriptors[j].type;
-                const auto count = pDescriptors[j].count;
-                const auto isImage = type == Uniform::Texture || type == Uniform::Image || type == Uniform::InputAttachment;
-                const auto isBuffer = type == Uniform::ConstantBuffer || type == Uniform::StorageBuffer || type == Uniform::AccelerationStructure;
-                const auto resourceStride = isImage ? descriptorProps.imageStride : isBuffer ? descriptorProps.bufferStride : 0u;
-
-                PK_FATAL_ASSERT(resourceStride > 0u, "Unsupported descriptor set resource type for '%s'!", pDescriptors[j].name);
-
-                m_resourceLayout.Add(type, pDescriptors[j].name, pDescriptors[j].accessMask, pDescriptors[j].writeMask, count);
-                m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)resourceStride);
-
-                m_descriptorOffsets[j].offset = m_resourceSetSize;
-                m_descriptorOffsets[j].stride = (uint16_t)resourceStride;
-                m_resourceSetSize += resourceStride * count;
-
-                auto& descriptor = m_descriptors[j];
-                descriptor.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_AND_BINDING_MAPPING_EXT;
-                descriptor.pNext = nullptr;
-                descriptor.descriptorSet = 0u;
-                descriptor.firstBinding = j;
-                descriptor.bindingCount = 1u;
-                descriptor.resourceMask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT;
-                descriptor.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
-                descriptor.sourceData.pushIndex.heapOffset = m_descriptorOffsets[j].offset;
-                descriptor.sourceData.pushIndex.pushOffset = PK_VK_PUSH_OFFSET_RESOURCE_HEAP;
-                descriptor.sourceData.pushIndex.heapIndexStride = 1u;
-                descriptor.sourceData.pushIndex.heapArrayStride = resourceStride;
-            }
-
-            m_resourceSetSize = math::align(m_resourceSetSize, (uint32_t)descriptorProps.maxResourceStride);
-        }
-
-        m_descriptorLayout.sType = VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT;
-        m_descriptorLayout.pNext = nullptr;
-        m_descriptorLayout.mappingCount = variant->descriptorCount;
-        m_descriptorLayout.pMappings = variant->descriptorCount ? m_descriptors : nullptr;
-
-        m_pushConstantLayout.ClearFast();
-        m_pushConstantLayout.sizeBytes = math::align(variant->constantRange, (uint16_t)4u);
-
-        if (variant->constantRange)
-        {
-            auto* pVariables = variant->constants.Get(base);
-
-            for (auto i = 0u; i < variant->constantCount; ++i)
-            {
-                auto* constant = m_pushConstantLayout.Add();
-                constant->name = pVariables[i].name;
-                constant->accessMask = pVariables[i].accessMask;
-                constant->writeMask = pVariables[i].writeMask;
-                constant->type = pVariables[i].type;
-                constant->offset = pVariables[i].offset;
-                constant->count = pVariables[i].arraySize;
+                auto* parameter = m_parameterLayout.Add();
+                parameter->name = pParameters[i].name;
+                parameter->accessMask = pParameters[i].accessMask;
+                parameter->writeMask = pParameters[i].writeMask;
+                parameter->type = pParameters[i].type;
+                parameter->offset = pParameters[i].offset;
+                parameter->count = pParameters[i].arraySize;
             }
         }
 
@@ -123,7 +75,7 @@ namespace PK
                 {
                     const auto stage = (ShaderStage)i;
                     moduleInfos[stageCount].sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-                    moduleInfos[stageCount].pNext = &m_descriptorLayout;
+                    moduleInfos[stageCount].pNext = nullptr;
                     moduleInfos[stageCount].codeSize = variant->sprivSizes[i];
                     moduleInfos[stageCount].pCode = reinterpret_cast<const uint32_t*>(variant->sprivBuffers[i].Get(base));
 
@@ -195,7 +147,7 @@ namespace PK
 
                     auto& info = createInfos[stageCount++];
                     info.sType = VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT;
-                    info.pNext = &m_descriptorLayout;
+                    info.pNext = nullptr;
                     info.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT | (stage == ShaderStage::MeshAssembly && hasNoTask ? VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT : 0u);
                     info.stage = vkStage;
                     info.nextStage = 0u;
@@ -274,7 +226,6 @@ namespace PK
                     info.byteOffsets[(uint32_t)currentGroup] = info.totalTableSize;
                     info.byteStrides[(uint32_t)currentGroup] = info.handleSizeAligned;
                     info.offsets[(uint32_t)currentGroup] = (uint8_t)info.totalHandleCount;
-                    info.layouts[(uint32_t)currentGroup] = nullptr;
                 }
 
                 info.counts[(uint32_t)currentGroup]++;

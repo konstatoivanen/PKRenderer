@@ -3,22 +3,7 @@
 
 namespace PK
 {
-    const ShaderPushConstant* ShaderPushConstantLayout::TryGetElement(NameID name, uint32_t* index) const
-    {
-        for (auto i = 0u; i < GetCount(); ++i)
-        {
-            if (GetData()[i].name == name)
-            {
-                *index = i;
-                return GetData() + i;
-            }
-        }
-
-        return nullptr;
-    }
-
-
-    const ShaderResourceElement* ShaderResourceLayout::TryGetElement(NameID name, uint32_t* index) const
+    const ShaderParameter* ShaderParameterLayout::TryGetElement(NameID name, uint32_t* index) const
     {
         // This will always have a small amount of elements (max 64) so mapping is redundant
         // Additionally this is only used for debug.

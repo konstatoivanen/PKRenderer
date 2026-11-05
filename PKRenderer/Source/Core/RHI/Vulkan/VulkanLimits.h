@@ -18,7 +18,6 @@ namespace PK
 
     constexpr static const uint32_t PK_VK_MAX_RESOURCE_DESCRIPTOR_SIZE = 64u;
     constexpr static const uint32_t PK_VK_MAX_SAMPLER_DESCRIPTOR_SIZE = 32u;
-    constexpr static const uint32_t PK_VK_PUSH_OFFSET_RESOURCE_HEAP = 252u;
     
     constexpr static const uint64_t PK_VK_MAX_COMMAND_BUFFERS = 24ull;
 

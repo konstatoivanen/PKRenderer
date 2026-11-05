@@ -51,10 +51,8 @@ namespace PK
     struct TextureDescriptor;
     struct TextureClearValue;
 
-    struct ShaderPushConstant;
-    struct ShaderPushConstantLayout;
-    struct ShaderResourceElement;
-    struct ShaderResourceLayout;
+    struct ShaderParameter;
+    struct ShaderParameterLayout;
     struct ShaderVertexInputLayout;
     struct VertexStreamElement;
     struct VertexStreamLayout;

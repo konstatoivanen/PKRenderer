@@ -75,8 +75,7 @@ namespace PK
     {
         virtual ~RHIShader() = 0;
         virtual const ShaderVertexInputLayout& GetVertexLayout() const = 0;
-        virtual const ShaderPushConstantLayout& GetPushConstantLayout() const = 0;
-        virtual const ShaderResourceLayout& GetResourceLayout() const = 0;
+        virtual const ShaderParameterLayout& GetParameterLayout() const = 0;
         virtual ShaderStageFlags GetStageFlags() const = 0;
         virtual const uint3& GetGroupSize() const = 0;
         virtual ShaderBindingTableInfo GetShaderBindingTableInfo() const = 0;

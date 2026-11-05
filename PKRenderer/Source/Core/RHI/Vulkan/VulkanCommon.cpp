@@ -1583,7 +1583,7 @@ namespace PK
                 case Uniform::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER;
                 case Uniform::Texture: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                 case Uniform::Image: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-                case Uniform::ConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                case Uniform::ConstantBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;//VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 case Uniform::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
                 case Uniform::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
                 case Uniform::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
