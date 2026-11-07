@@ -693,6 +693,154 @@ namespace PK
         return result != 0xFFFFFFFF && !(result & FILE_ATTRIBUTE_DIRECTORY);
     }
 
+    bool Win32Platform::MappedFileRead(const char* path, MappedFile* file)
+    {
+        MappedFileClose(file);
+
+        auto fileHandle = ::CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+        if (fileHandle == INVALID_HANDLE_VALUE)
+        {
+            return false;
+        }
+
+        LARGE_INTEGER fileSize{};
+
+        if (!::GetFileSizeEx(fileHandle, &fileSize) || fileSize.QuadPart <= 0ll)
+        {
+            ::CloseHandle(fileHandle);
+            return false;
+        }
+
+        auto mapHandle = ::CreateFileMappingA(fileHandle, nullptr, PAGE_READONLY, 0u, 0u, nullptr);
+        
+        if (!mapHandle)
+        {
+            ::CloseHandle(fileHandle);
+            return false;
+        }
+
+        auto* data = static_cast<uint8_t*>(::MapViewOfFile(mapHandle, FILE_MAP_READ, 0u, 0u, (size_t)fileSize.QuadPart));
+        
+        if (!data)
+        {
+            ::CloseHandle(mapHandle);
+            ::CloseHandle(fileHandle);
+            return false;
+        }
+
+        file->file = fileHandle;
+        file->map = mapHandle;
+        file->data = data;
+        file->size = (size_t)fileSize.QuadPart;
+        file->isWritable = false;
+        return true;
+    }
+
+    bool Win32Platform::MappedFileWrite(const char* path, size_t size, MappedFile* file)
+    {
+        MappedFileClose(file);
+
+        auto fileHandle = ::CreateFileA(path, GENERIC_READ | GENERIC_WRITE, 0u, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+        
+        if (fileHandle == INVALID_HANDLE_VALUE)
+        {
+            return false;
+        }
+
+        file->file = fileHandle;
+        file->isWritable = true;
+
+        if (!MappedFileResize(file, size))
+        {
+            MappedFileClose(file);
+            return false;
+        }
+
+        return true;
+    }
+
+    bool Win32Platform::MappedFileResize(MappedFile* file, size_t newSize)
+    {
+        if (!file->file || !file->isWritable)
+        {
+            return false;
+        }
+
+        if (file->data)
+        {
+            ::UnmapViewOfFile(file->data);
+            file->data = nullptr;
+        }
+
+        if (file->map)
+        {
+            ::CloseHandle(file->map);
+            file->map = nullptr;
+        }
+
+        const auto alignedSize = (newSize + 65535ull) & ~65535ull;
+        const auto sizeHigh = (DWORD)(alignedSize >> 32ull);
+        const auto sizeLow = (DWORD)(alignedSize & 0xFFFFFFFFull);
+
+        file->map = ::CreateFileMappingA(file->file, nullptr, PAGE_READWRITE, sizeHigh, sizeLow, nullptr);
+        
+        if (!file->map)
+        {
+            file->size = 0ull;
+            return false;
+        }
+
+        file->data = static_cast<uint8_t*>(::MapViewOfFile(file->map, FILE_MAP_WRITE, 0u, 0u, alignedSize));
+
+        if (!file->data)
+        {
+            CloseHandle(file->map);
+            file->map = nullptr;
+            file->size = 0ull;
+            return false;
+        }
+
+        file->size = alignedSize;
+        return true;
+    }
+
+    void Win32Platform::MappedFileClose(MappedFile* file, size_t writeSize)
+    {
+        if (file->data)
+        {
+            ::UnmapViewOfFile(file->data);
+            file->data = nullptr;
+        }
+
+        if (file->map)
+        {
+            ::CloseHandle(file->map);
+            file->map = nullptr;
+        }
+
+        if (file->file)
+        {
+            if (file->isWritable && writeSize > 0ull)
+            {
+                LARGE_INTEGER eof{};
+                eof.QuadPart = (LONGLONG)writeSize;
+                ::SetFilePointerEx(file->file, eof, nullptr, FILE_BEGIN);
+                ::SetEndOfFile(file->file);
+            }
+
+            ::CloseHandle(file->file);
+            file->file = nullptr;
+        }
+
+        file->size = 0ull;
+        file->isWritable = false;
+    }
+
+    bool Win32Platform::RemoveFile(const char* path)
+    {
+        return path && path[0] && ::DeleteFileA(path) != 0;
+    }
 
 
     double Win32Platform::GetTimeSeconds()

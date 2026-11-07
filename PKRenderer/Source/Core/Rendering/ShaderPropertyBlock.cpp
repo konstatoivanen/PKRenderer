@@ -62,7 +62,7 @@ namespace PK
 
         // In scalar block layout, struct alignment is the largest scalar alignment of its members.
         m_stridePadded = math::align(m_stride, (uint16_t)maxAlignment);
-        m_hash = Hash::FNV1AHash(m_values, GetCount() * sizeof(ShaderProperty));
+        m_hash = Hash::FNV1a(m_values, GetCount() * sizeof(ShaderProperty));
 
         // Material binding specific layout info.
         auto keywordsStride = m_stridePadded;

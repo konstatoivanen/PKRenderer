@@ -756,9 +756,6 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDescriptorHeap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\RHIGraph.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanGraph.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -766,6 +763,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Base\Containers\BinaryArchive.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1264,6 +1264,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Base\Containers\BinaryArchive.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

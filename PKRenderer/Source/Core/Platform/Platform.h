@@ -64,6 +64,15 @@
 
 namespace PK
 {
+    struct MappedFile
+    {
+        void* file = nullptr;
+        void* map = nullptr;
+        uint8_t* data = nullptr;
+        size_t size = 0ull;
+        bool isWritable = false;
+    };
+
     struct IPlatform
     {
         IPlatform(IPlatform const&) = delete;
@@ -100,6 +109,11 @@ namespace PK
         static bool CreateDirectory(const char* path) = delete;
         static bool DirectoryExists(const char* path) = delete;
         static bool FileExists(const char* path) = delete;
+        static bool MappedFileRead(const char* path, MappedFile* file) = delete;
+        static bool MappedFileWrite(const char* path, size_t size, MappedFile* file) = delete;
+        static bool MappedFileResize(MappedFile* file, size_t newSize) = delete;
+        static void MappedFileClose(MappedFile* file, size_t writeSize = 0ull) = delete;
+        static bool RemoveFile(const char* path) = delete;
 
         static double GetTimeSeconds() = delete;
         static uint64_t GetTimeCycles() = delete;

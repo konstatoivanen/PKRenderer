@@ -3,7 +3,6 @@
 #include "Core/RHI/Vulkan/VulkanAccessRecorder.h"
 #include "Core/RHI/Vulkan/VulkanShader.h"
 #include "Core/RHI/Vulkan/VulkanQueue.h"
-#include "Core/RHI/RHIGraph.h"
 
 namespace PK
 {
@@ -253,6 +252,7 @@ namespace PK
         void SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) final;
         void SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) final;
         void SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) final;
+        void SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) final;
         void SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) final;
         void SetConstant(NameID name, const void* data, uint32_t size) final;
         void SetKeyword(NameID name, bool value) final;

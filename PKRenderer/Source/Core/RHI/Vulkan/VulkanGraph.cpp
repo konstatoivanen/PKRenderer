@@ -56,6 +56,7 @@ namespace PK
     void VulkanGraph::SetBuffers(NameID name, RHIBuffer** buffers, const BufferIndexRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<const VulkanBuffer*>(buffers[i])->GetResourceView(ranges[i]), count); }
     void VulkanGraph::SetTextures(NameID name, RHITexture** textures, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<const VulkanTexture*>(textures[i])->GetResourceView(ranges[i], TextureViewMode::SRV), count); }
     void VulkanGraph::SetImages(NameID name, RHITexture** images, const TextureViewRange* ranges, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<const VulkanTexture*>(images[i])->GetResourceView(ranges[i], TextureViewMode::UAV), count); }
+    void VulkanGraph::SetSamplers(NameID name, const SamplerDescriptor* samplers, size_t count) { PK_VK_BIND_VIEWS(name, m_descriptorHeap->GetSamplerView(samplers[i]), count); }
     void VulkanGraph::SetAccelerationStructures(NameID name, RHIAccelerationStructure** structures, size_t count) { PK_VK_BIND_VIEWS(name, static_cast<VulkanAccelerationStructure*>(structures[i])->GetResourceView(), count); }
     void VulkanGraph::SetConstant(NameID name, const void* data, uint32_t size) { m_globalResources.Set<char>(name, static_cast<const char*>(data), size); }
     void VulkanGraph::SetKeyword(NameID name, bool value) { m_globalResources.Set<bool>(name, value); }
@@ -888,7 +889,8 @@ namespace PK
         const auto rebuildTLAS = rebuildBLAS || vkStructure->topologyHash != vkBuilder->topologyHash;
 
         auto needsScratch = (buildCount || rebuildTLAS) && scratchSize;
-        auto scratchBuffer = needsScratch ? AcquireStagingBuffer(scratchSize) : nullptr;
+        auto scratchBuffer = needsScratch ? AcquireStagingBuffer(scratchSize + 256u) : nullptr;
+        const auto scratchAddress = scratchBuffer ? math::align(scratchBuffer->GetDeviceAddress(), 256ull) : 0ull;
 
         if (rebuildBLAS)
         {
@@ -912,7 +914,7 @@ namespace PK
                     auto* rangeInfo = Allocate<VkAccelerationStructureBuildRangeInfoKHR>(1);
                     cmd->BLASBuildInfos[cmd->BLASBuildCount] = VulkanAccelerationStructure::GetBLASBuildInfo(structure->geometry, geometry, rangeInfo);
                     cmd->BLASBuildInfos[cmd->BLASBuildCount].dstAccelerationStructure = newHandle;
-                    cmd->BLASBuildInfos[cmd->BLASBuildCount].scratchData.deviceAddress = scratchBuffer->GetDeviceAddress() + structure->scratchOffset;
+                    cmd->BLASBuildInfos[cmd->BLASBuildCount].scratchData.deviceAddress = scratchAddress + structure->scratchOffset;
                     cmd->BLASRangeInfos[cmd->BLASBuildCount++] = rangeInfo;
                 }
                 else
@@ -971,7 +973,7 @@ namespace PK
             vkStructure->lastBuildFenceRef = GetFenceRef();
             cmd->TLASBuildInfo = buildInfo;
             cmd->TLASBuildInfo.dstAccelerationStructure = vkStructure->structure.handle;
-            cmd->TLASBuildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress() + vkStructure->structure.scratchOffset;
+            cmd->TLASBuildInfo.scratchData.deviceAddress = scratchAddress + vkStructure->structure.scratchOffset;
             cmd->TLASRangeInfo = VkAccelerationStructureBuildRangeInfoKHR{ vkBuilder->instanceCount, 0u, 0u, 0u };
             cmd->TLASBuild = true;
         }
@@ -1449,13 +1451,11 @@ namespace PK
                         continue;
                     }
 
-                    const auto heapIndex = m_descriptorHeap->GetResourceIndex(views[i], parameter.type);
+                    const auto heapIndex = m_descriptorHeap->GetBindlessIndex(views[i], parameter.type);
 
-                    //@TODO Oopsie maybe shouldnt've deprecated this?
                     if (parameter.type == Uniform::Sampler)
                     {
-                        PK_DEBUG_FATAL_ASSERT(false, "Sampler push constants are not currently supported :(");
-                        //pushConstants[parameter.offset + i] = (uint8_t)heapIndex;
+                        pushConstants[parameter.offset + i] = (uint8_t)heapIndex;
                     }
                     else
                     {

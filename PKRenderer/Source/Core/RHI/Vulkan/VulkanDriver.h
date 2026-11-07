@@ -3,6 +3,7 @@
 #include "Core/Base/Types/Ref.h"
 #include "Core/Base/Containers/TypeSet.h"
 #include "Core/Base/Containers/Pool.h"
+#include "Core/Base/Containers/BinaryArchive.h"
 #include "Core/ControlFlow/Disposer.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
@@ -23,6 +24,7 @@ namespace PK
     {
         FixedString64 appName;
         FixedString64 engineName;
+        FixedString256 workingDirectory;
         VulkanPhysicalDeviceFeatures features;
         ConstBufferView<const char*> instanceExtensions;
         ConstBufferView<const char*> deviceExtensions;
@@ -30,12 +32,14 @@ namespace PK
         VulkanDriverDescriptor(
             const char* appName = "Vulkan App",
             const char* engineName = "Vulkan Engine",
+            const char* workingDirectory = "",
             RHIDriverDescriptor descriptor = {},
             VulkanPhysicalDeviceFeatures features = {},
             ConstBufferView<const char*> instanceExtensions = { nullptr, 0u },
             ConstBufferView<const char*> deviceExtensions = { nullptr, 0u }) : RHIDriverDescriptor(descriptor),
             appName(appName),
             engineName(engineName),
+            workingDirectory(workingDirectory),
             features(features),
             instanceExtensions(instanceExtensions),
             deviceExtensions(deviceExtensions)
@@ -86,6 +90,7 @@ namespace PK
         mutable FixedUnique<VulkanTimerArena> timerArena;
         mutable FixedUnique<VulkanGraph> graph;
         mutable FixedUnique<BuiltInResources> builtInResources;
+        mutable FixedUnique<BinaryArchive> shaderArchive;
 
         FixedRefPool<VulkanTexture, PK_VK_MAX_IMAGES> texturePool;
         FixedRefPool<VulkanShader, PK_VK_MAX_SHADERS> shaderPool;

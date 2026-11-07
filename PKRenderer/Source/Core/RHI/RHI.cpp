@@ -24,7 +24,7 @@ namespace PK
     void RHI::WaitForIdle() { RHIDriver::Get()->WaitForIdle(); }
     void RHI::GC() { RHIDriver::Get()->GC(); }
 
-    RHIDriverScope RHI::CreateDriver(const RHIDriverDescriptor& descriptor)
+    RHIDriverScope RHI::CreateDriver(const char* workingDirectory, const RHIDriverDescriptor& descriptor)
     {
         PK_LOG_NEWLINE();
         PK_LOG_HEADER_SCOPE("----------INITIALIZING RHI----------");
@@ -173,6 +173,7 @@ namespace PK
                 (
                     "PK Renderer",
                     "PK Vulkan Engine",
+                    workingDirectory,
                     descriptor,
                     features,
                     { PK_INSTANCE_EXTENTIONS, sizeof(PK_INSTANCE_EXTENTIONS) / sizeof(const char*) },
@@ -326,6 +327,8 @@ namespace PK
     void RHI::SetTexture(NameID name, RHITexture* texture) { SetTexture(name, texture, {}); }
     void RHI::SetImage(NameID name, RHITexture* image, uint16_t level, uint16_t layer) { SetImage(name, image, { level, layer, 1u, 1u }); }
     void RHI::SetImage(NameID name, RHITexture* image) { SetImage(name, image, {}); }
+    void RHI::SetSamplerArray(NameID name, const SamplerDescriptor* samplers, size_t count) { GetGraph()->SetSamplers(name, samplers, count); }
+    void RHI::SetSampler(NameID name, const SamplerDescriptor& sampler) { GetGraph()->SetSamplers(name, &sampler, 1u); }
     void RHI::SetConstant(NameID name, const void* data, uint32_t size) { GetGraph()->SetConstant(name, data, size); }
     void RHI::SetKeyword(NameID name, bool value) { GetGraph()->SetKeyword(name, value); }
 

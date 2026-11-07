@@ -266,6 +266,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\ECS\ComponentViewInput.h" />
     <ClInclude Include="Source\App\ECS\EntityLightSphere.h" />
     <ClInclude Include="Source\App\InputConfig.h" />
+    <ClInclude Include="Source\Core\Base\Containers\BinaryArchive.h" />
     <ClInclude Include="Source\Core\Base\Containers\HashArena.h" />
     <ClInclude Include="Source\Core\Base\Containers\TLSFAllocator.h" />
     <ClInclude Include="Source\Core\Base\Types\NameIDProvider.h" />
@@ -319,7 +320,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Rendering\Font.h" />
     <ClInclude Include="Source\Core\Rendering\IESProfile.h" />
     <ClInclude Include="Source\Core\Rendering\Window.h" />
-    <ClInclude Include="Source\Core\RHI\RHIGraph.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDescriptorHeap.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanGraph.h" />
@@ -683,6 +683,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp" />
     <ClCompile Include="Source\App\Engines\EngineViewUpdate.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp" />
+    <ClCompile Include="Source\Core\Base\Containers\BinaryArchive.cpp" />
     <ClCompile Include="Source\Core\Base\Containers\TLSFAllocator.cpp" />
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp" />
     <ClCompile Include="Source\Core\ECS\EntityDatabase.cpp" />

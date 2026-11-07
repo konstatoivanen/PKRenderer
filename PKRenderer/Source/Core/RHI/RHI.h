@@ -118,7 +118,7 @@ namespace PK
         void WaitForIdle();
         void GC();
 
-        RHIDriverScope CreateDriver(const RHIDriverDescriptor& descriptor);
+        RHIDriverScope CreateDriver(const char* workingDirectory, const RHIDriverDescriptor& descriptor);
         RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name);
         RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name);
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name);
@@ -158,6 +158,8 @@ namespace PK
         void SetImage(NameID name, RHITexture* image, const TextureViewRange& range);
         void SetImage(NameID name, RHITexture* image, uint16_t level, uint16_t layer);
         void SetImage(NameID name, RHITexture* image);
+        void SetSamplerArray(NameID name, const SamplerDescriptor* samplers, size_t count);
+        void SetSampler(NameID name, const SamplerDescriptor& sampler);
         void SetAccelerationStructureArray(NameID name, RHIAccelerationStructure** structures, size_t count);
         void SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure);
         void SetConstant(NameID name, const void* data, uint32_t size);

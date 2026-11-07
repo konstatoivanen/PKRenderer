@@ -62,6 +62,7 @@ PFN_vkCmdSetConservativeRasterizationModeEXT pkfn_vkCmdSetConservativeRasterizat
 PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT pkfn_vkCmdSetExtraPrimitiveOverestimationSizeEXT = nullptr;
 PFN_vkCmdSetLineRasterizationModeEXT pkfn_vkCmdSetLineRasterizationModeEXT = nullptr;
 PFN_vkCmdSetFragmentShadingRateKHR pkfn_vkCmdSetFragmentShadingRateKHR = nullptr;
+PFN_vkGetShaderBinaryDataEXT pkfn_vkGetShaderBinaryDataEXT = nullptr;
 
 namespace PK
 {
@@ -438,6 +439,7 @@ namespace PK
         pkfn_vkCmdSetExtraPrimitiveOverestimationSizeEXT = (PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT)vkGetInstanceProcAddr(instance, "vkCmdSetExtraPrimitiveOverestimationSizeEXT");
         pkfn_vkCmdSetLineRasterizationModeEXT = (PFN_vkCmdSetLineRasterizationModeEXT)vkGetInstanceProcAddr(instance, "vkCmdSetLineRasterizationModeEXT");
         pkfn_vkCmdSetFragmentShadingRateKHR = (PFN_vkCmdSetFragmentShadingRateKHR)vkGetInstanceProcAddr(instance, "vkCmdSetFragmentShadingRateKHR");
+        pkfn_vkGetShaderBinaryDataEXT = (PFN_vkGetShaderBinaryDataEXT)vkGetInstanceProcAddr(instance, "vkGetShaderBinaryDataEXT");
     }
 
     
@@ -553,6 +555,7 @@ namespace PK
         props.subgroup = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES };
         props.meshShader = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT };
         props.descriptorHeap = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_PROPERTIES_EXT };
+        props.shaderObject = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT };
         
         VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
         deviceProperties.pNext = &props.accelerationStructure;
@@ -561,8 +564,11 @@ namespace PK
         props.conservativeRasterization.pNext = &props.subgroup;
         props.subgroup.pNext = &props.meshShader;
         props.meshShader.pNext = &props.descriptorHeap;
+        props.descriptorHeap.pNext = &props.shaderObject;
         vkGetPhysicalDeviceProperties2(device, &deviceProperties);
+        
         props.core = deviceProperties.properties;
+        props.shaderObject.pNext = nullptr;
 
         const auto& heap = props.descriptorHeap;
         auto& heapDerived = props.descriptorHeapDerived;
@@ -570,8 +576,6 @@ namespace PK
         heapDerived.bufferStride = math::align(heap.bufferDescriptorSize, heap.bufferDescriptorAlignment);
         heapDerived.maxResourceStride = math::max(heapDerived.imageStride, heapDerived.bufferStride);
         heapDerived.samplerStride = math::align(heap.samplerDescriptorSize, heap.samplerDescriptorAlignment);
-        heapDerived.resourceHeapOffset = math::align(heap.minResourceHeapReservedRange, heapDerived.maxResourceStride);
-        heapDerived.samplerHeapOffset = math::align(heap.minSamplerHeapReservedRange, heapDerived.samplerStride);
         heapDerived.resourceHeapAlignment = heap.resourceHeapAlignment;
         heapDerived.samplerHeapAlignment = heap.samplerHeapAlignment;
         heapDerived.maxResourceHeapSize = heap.maxResourceHeapSize;
@@ -579,6 +583,7 @@ namespace PK
 
         PK_FATAL_ASSERT(heapDerived.maxResourceStride <= PK_VK_MAX_RESOURCE_DESCRIPTOR_SIZE, "Device resource descriptor stride exceeds PK_VK_MAX_RESOURCE_DESCRIPTOR_SIZE!");
         PK_FATAL_ASSERT(heapDerived.samplerStride <= PK_VK_MAX_SAMPLER_DESCRIPTOR_SIZE, "Device sampler descriptor stride exceeds PK_VK_MAX_SAMPLER_DESCRIPTOR_SIZE!");
+
         return props;
     }
 

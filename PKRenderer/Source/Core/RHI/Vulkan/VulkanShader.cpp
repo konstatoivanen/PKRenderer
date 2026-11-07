@@ -124,14 +124,17 @@ namespace PK
         }
         else
         {
+            constexpr auto maxStages = (uint32_t)ShaderStage::RayGeneration;
+            constexpr auto headerSize = math::align(sizeof(uint32_t) * maxStages, 16ull);
+
             auto stageCount = 0u;
-            uint32_t stageIndices[(uint32_t)ShaderStage::RayGeneration]{};
-            VkShaderCreateInfoEXT createInfos[(uint32_t)ShaderStage::RayGeneration]{};
-            VkShaderEXT createdShaders[(uint32_t)ShaderStage::RayGeneration]{};
+            uint32_t stageIndices[maxStages]{};
+            VkShaderCreateInfoEXT createInfos[maxStages]{};
+            VkShaderEXT createdShaders[maxStages]{};
 
             const bool hasNoTask = (m_stageFlags & ShaderStageFlags::MeshTask) == 0u;
 
-            for (auto i = 0u; i < (uint32_t)ShaderStage::RayGeneration; ++i)
+            for (auto i = 0u; i < maxStages; ++i)
             {
                 if (variant->sprivSizes[i])
                 {
@@ -144,21 +147,74 @@ namespace PK
                     }
 
                     stageIndices[stageCount] = i;
-
                     auto& info = createInfos[stageCount++];
                     info.sType = VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT;
-                    info.pNext = nullptr;
                     info.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT | (stage == ShaderStage::MeshAssembly && hasNoTask ? VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT : 0u);
                     info.stage = vkStage;
-                    info.nextStage = 0u;
-                    info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-                    info.codeSize = variant->sprivSizes[i];
-                    info.pCode = variant->sprivBuffers[i].Get(base);
                     info.pName = "main";
                 }
             }
 
-            VK_ASSERT_RESULT_CTX(vkCreateShadersEXT(m_driver->device, stageCount, createInfos, nullptr, createdShaders), "Failed to create shader objects!");
+            auto cachedSize = 0ull;
+            const auto* cachedBinary = m_driver->shaderArchive->Read(variant->versionHash, &cachedSize);
+
+            if (cachedBinary)
+            {
+                const auto* stageSizes = reinterpret_cast<const uint32_t*>(cachedBinary);
+                auto offset = headerSize;
+
+                for (auto i = 0u; i < stageCount; ++i)
+                {
+                    createInfos[i].codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
+                    createInfos[i].codeSize = stageSizes[i];
+                    createInfos[i].pCode = cachedBinary + offset;
+                    offset += math::align((size_t)stageSizes[i], 16ull);
+                }
+
+                if (vkCreateShadersEXT(m_driver->device, stageCount, createInfos, nullptr, createdShaders) != VK_SUCCESS)
+                {
+                    m_driver->shaderArchive->Invalidate();
+                    cachedBinary = nullptr;
+                }
+            }
+
+            if (!cachedBinary)
+            {
+                for (auto i = 0u; i < stageCount; ++i)
+                {
+                    const auto stageIdx = stageIndices[i];
+                    createInfos[i].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+                    createInfos[i].codeSize = variant->sprivSizes[stageIdx];
+                    createInfos[i].pCode = variant->sprivBuffers[stageIdx].Get(base);
+                }
+
+                VK_ASSERT_RESULT_CTX(vkCreateShadersEXT(m_driver->device, stageCount, createInfos, nullptr, createdShaders), "Failed to create shader objects!");
+
+                if (m_driver->shaderArchive->IsWriteEnabled())
+                {
+                    size_t binarySizes[maxStages]{};
+                    auto totalSize = headerSize;
+
+                    for (auto i = 0u; i < stageCount; ++i)
+                    {
+                        VK_ASSERT_RESULT_CTX(vkGetShaderBinaryDataEXT(m_driver->device, createdShaders[i], &binarySizes[i], nullptr), "Failed to get shader binary size!");
+                        totalSize += math::align(binarySizes[i], 16ull);
+                    }
+
+                    if (auto* writeBlob = m_driver->shaderArchive->Write(variant->versionHash, totalSize))
+                    {
+                        auto* headerSizes = reinterpret_cast<uint32_t*>(writeBlob);
+                        auto offset = headerSize;
+
+                        for (auto i = 0u; i < stageCount; ++i)
+                        {
+                            headerSizes[i] = (uint32_t)binarySizes[i];
+                            VK_ASSERT_RESULT_CTX(vkGetShaderBinaryDataEXT(m_driver->device, createdShaders[i], &binarySizes[i], writeBlob + offset), "Failed to get shader binary data!");
+                            offset += math::align(binarySizes[i], 16ull);
+                        }
+                    }
+                }
+            }
 
             for (auto i = 0u; i < stageCount; ++i)
             {

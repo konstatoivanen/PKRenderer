@@ -521,12 +521,13 @@ namespace PKAssets
         float zoffsets[3] = { 0, 0, 0 };                            // 36 bytes
     };
 
-    struct alignas(4) PKShaderVariant
+    struct alignas(8) PKShaderVariant
     {
         uint16_t vertexAttributeCount;                                      // 2 bytes
         uint16_t parameterCount;                                            // 4 bytes
         uint16_t parameterBlockSize;                                        // 6 bytes
         uint16_t groupSize[3]{};                                            // 12 bytes
+        uint64_t versionHash;                                               // 20 bytes
         RelativePtr<PKShaderParameter> parameters;                          // 24 bytes
         RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 28 bytes
         uint32_t sprivSizes[(int)PKShaderStage::EnumCount];                 // 80 bytes

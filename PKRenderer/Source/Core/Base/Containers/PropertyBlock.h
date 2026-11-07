@@ -26,7 +26,7 @@ namespace PK
             inline static uint64_t MakeKey(const uint32_t hashId)
             {
                 static_assert(__is_trivially_copyable(T), "This container only supports trivially copyable types.");
-                return Hash::InterlaceHash32x2(hashId, pk_base_type_index<T>());
+                return Hash::Interlace32x2(hashId, pk_base_type_index<T>());
             };
 
         public:

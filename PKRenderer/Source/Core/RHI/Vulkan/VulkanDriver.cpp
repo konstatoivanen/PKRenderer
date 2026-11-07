@@ -146,10 +146,12 @@ namespace PK
         queues.New(device, queueInitializer);
         graph.New(this);
         builtInResources.New();
+        shaderArchive.New(FixedString256({ properties.workingDirectory, PK_VK_SHADER_CACHE_PATH }), &physicalDeviceProperties.shaderObject, sizeof(&physicalDeviceProperties.shaderObject));
     }
 
     VulkanDriver::~VulkanDriver()
     {
+        shaderArchive.Delete();
         builtInResources.Delete();
         graph.Delete();
 

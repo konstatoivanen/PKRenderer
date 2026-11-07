@@ -79,7 +79,7 @@ namespace PK::Hash
         return ExpandPrime(size);
     }
 
-    uint32_t ByteArrayHash(const void* data, size_t count)
+    uint32_t ByteArray(const void* data, size_t count)
     {
         const char* bytes = static_cast<const char*>(data);
 
@@ -100,7 +100,7 @@ namespace PK::Hash
         return (uint32_t)hash;
     }
 
-    uint64_t MurmurHash(const void* key, size_t len, uint64_t seed)
+    uint64_t Murmur(const void* key, size_t len, uint64_t seed)
     {
         const auto m = 0x5bd1e995u;
         const auto r = 24u;
@@ -151,23 +151,22 @@ namespace PK::Hash
         return h;
     }
 
-    uint64_t FNV1AHash(const void* data, size_t count)
+    uint64_t FNV1a(const void* data, size_t count, uint64_t hash)
     {
         auto chardata = static_cast<const uint8_t*>(data);
-        uint64_t value = 14695981039346656037ULL;
 
         for (size_t i = 0; i < count; ++i)
         {
-            value ^= (size_t)chardata[i];
-            value *= 1099511628211ULL;
+            hash ^= (size_t)chardata[i];
+            hash *= FNV1A_PRIME;
         }
 
-        return value;
+        return hash;
     }
 
     // Note morton order performed poorly in comparison due to too regular offsets.
     // This works ok in cases where both a & b are linear low order values.
-    uint64_t InterlaceHash32x2(uint32_t a, uint32_t b)
+    uint64_t Interlace32x2(uint32_t a, uint32_t b)
     {
         uint64_t o = 0ull;
         o |= ((uint64_t)a & 0x000000FFull) << 0ull;

@@ -10,6 +10,7 @@
 #include "Core/ControlFlow/FenceRef.h"
 #include "Core/RHI/Structs.h"
 
+constexpr const static char* PK_VK_SHADER_CACHE_PATH = "Saved/shadercache.cache";
 constexpr static const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_validation";
 
 #define VK_ASSERT_RESULT_CTX(cmd, ctx) \
@@ -238,6 +239,9 @@ extern PFN_vkCmdSetLineRasterizationModeEXT pkfn_vkCmdSetLineRasterizationModeEX
 extern PFN_vkCmdSetFragmentShadingRateKHR pkfn_vkCmdSetFragmentShadingRateKHR;
 #define vkCmdSetFragmentShadingRateKHR pkfn_vkCmdSetFragmentShadingRateKHR
 
+extern PFN_vkGetShaderBinaryDataEXT pkfn_vkGetShaderBinaryDataEXT;
+#define vkGetShaderBinaryDataEXT pkfn_vkGetShaderBinaryDataEXT
+
 namespace PK
 {
     struct VulkanQueueFamilies
@@ -252,8 +256,6 @@ namespace PK
         VkDeviceSize bufferStride = 0ull;
         VkDeviceSize maxResourceStride = 0ull;
         VkDeviceSize samplerStride = 0ull;
-        VkDeviceSize resourceHeapOffset = 0ull;
-        VkDeviceSize samplerHeapOffset = 0ull;
         VkDeviceSize resourceHeapAlignment = 0ull;
         VkDeviceSize samplerHeapAlignment = 0ull;
         VkDeviceSize maxResourceHeapSize = 0ull;
@@ -270,6 +272,7 @@ namespace PK
         VkPhysicalDeviceMeshShaderPropertiesEXT meshShader;
         VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptorHeap;
         VulkanDescriptorHeapProperties descriptorHeapDerived;
+        VkPhysicalDeviceShaderObjectPropertiesEXT shaderObject;
     };
 
     struct VulkanPhysicalDeviceFeatures

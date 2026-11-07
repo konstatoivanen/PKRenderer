@@ -191,7 +191,7 @@ namespace PK
         {
             size_t operator()(const FixedString<capacity>& str) const noexcept
             {
-                return FNV1AHash(str.c_str(), str.Length());
+                return FNV1a(str.c_str(), str.Length());
             }
         };
 
@@ -200,7 +200,7 @@ namespace PK
         {
             size_t operator()(const FixedWString<capacity>& str) const noexcept
             {
-                return FNV1AHash(str.c_str(), str.Length() * sizeof(wchar_t));
+                return FNV1a(str.c_str(), str.Length() * sizeof(wchar_t));
             }
         };
     }

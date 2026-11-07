@@ -146,7 +146,7 @@ namespace PK
 
         return index;
     }
-
+    
     uint32_t VulkanDescriptorHeap::GetResourceIndex(const VulkanResourceView& view, Uniform type)
     {
         // Pure resource descriptor: SamplerTexture in legacy shaders uses the exact same SAMPLED_IMAGE resource descriptor as Texture
@@ -199,6 +199,23 @@ namespace PK
 
         m_resourceCache[mapIndex].value.pruneTick = m_currentPruneTick + m_pruneDelay;
         return m_resourceCache[mapIndex].value.index;
+    }
+
+    uint32_t VulkanDescriptorHeap::GetBindlessIndex(const VulkanResourceView& view, Uniform type)
+    {
+        if (type == Uniform::Sampler)
+        {
+            return view.hash;
+        }
+
+        return GetResourceIndex(view, type);
+    }
+
+    VulkanResourceView VulkanDescriptorHeap::GetSamplerView(const SamplerDescriptor& descriptor)
+    {
+        VulkanResourceView view{};
+        view.hash = GetSamplerIndex(descriptor);
+        return view;
     }
 
     uint3 VulkanDescriptorHeap::GetTextureSize(uint32_t bindlessIndex) const

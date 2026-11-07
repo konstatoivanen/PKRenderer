@@ -10,7 +10,7 @@ namespace PK
     struct VulkanDescriptorHeap : public NoCopy
     {
         using SamplerData = TLiteral<uint8_t, PK_VK_MAX_SAMPLER_DESCRIPTOR_SIZE>;
-        using SamplerHash = Hash::TMurmurHash<SamplerDescriptor>;
+        using SamplerHash = Hash::TMurmur<SamplerDescriptor>;
 
         struct DescriptorHeap
         {
@@ -47,7 +47,10 @@ namespace PK
         VkImageView GetRenderTargetView(const VulkanResourceView& view);
         uint16_t GetSamplerIndex(const SamplerDescriptor& descriptor);
         uint32_t GetResourceIndex(const VulkanResourceView& view, Uniform type);
+        uint32_t GetBindlessIndex(const VulkanResourceView& view, Uniform type);
+        VulkanResourceView GetSamplerView(const SamplerDescriptor& descriptor);
         uint3 GetTextureSize(uint32_t bindlessIndex) const;
+
         void Prune();
 
     private:

@@ -139,6 +139,11 @@ namespace PK
         static bool CreateDirectory(const char* path);
         static bool DirectoryExists(const char* path);
         static bool FileExists(const char* path);
+        static bool MappedFileRead(const char* path, MappedFile* file);
+        static bool MappedFileWrite(const char* path, size_t size, MappedFile* file);
+        static bool MappedFileResize(MappedFile* file, size_t newSize);
+        static void MappedFileClose(MappedFile* file, size_t writeSize = 0ull);
+        static bool RemoveFile(const char* path);
 
         static double GetTimeSeconds();
         static uint64_t GetTimeCycles();
