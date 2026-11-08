@@ -33,7 +33,7 @@ namespace PK
         VulkanStagingArena(const VkDevice device, const VmaAllocator allocator, const VulkanQueueFamilies& queueFamilies, uint64_t stagingSize);
         ~VulkanStagingArena();
 
-        VulkanStagingBuffer* BeginWrite(VkDeviceSize size);
+        VulkanStagingBuffer* BeginWrite(VkDeviceSize size, VkDeviceSize alignment);
         VulkanStagingBuffer* EndWrite(RHIBuffer* alias);
 
         void BeginRange();

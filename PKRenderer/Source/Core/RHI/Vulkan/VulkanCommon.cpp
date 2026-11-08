@@ -344,7 +344,7 @@ namespace PK
         vkDestroyQueryPool(device, pool, nullptr);
     }
 
-    void VulkanQueryPool::GetResults(void* outBuffer, uint32_t first, uint32_t count, size_t stride, VkQueryResultFlagBits flags)
+    void VulkanQueryPool::GetResults(void* outBuffer, uint32_t first, uint32_t count, size_t stride, VkQueryResultFlags flags)
     {
         VK_ASSERT_RESULT_CTX(vkGetQueryPoolResults(device, pool, first, count, count * stride, outBuffer, stride, flags), "Failed to get query results!");
     }
@@ -546,6 +546,78 @@ namespace PK
     }
 
 
+    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR& info, uint32_t primitiveCount)
+    {
+        VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR };
+        vkGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &info, &primitiveCount, &accelerationStructureBuildSizesInfo);
+        return accelerationStructureBuildSizesInfo;
+    }
+    
+    VkDeviceAddress VulkanGetAccelerationStructureDeviceAddress(VkDevice device, VkAccelerationStructureKHR handle)
+    {
+        VkAccelerationStructureDeviceAddressInfoKHR info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR, nullptr, handle };
+        return vkGetAccelerationStructureDeviceAddressKHR(device, &info);
+    }
+    
+    VkDeviceAddress VulkanGetBufferDeviceAddress(VkDevice device, VkBuffer buffer)
+    {
+        VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, buffer };
+        return vkGetBufferDeviceAddress(device, &addressInfo);
+    }
+    
+    VkAccelerationStructureBuildGeometryInfoKHR VulkanGetBLASBuildInfo(const VulkanRaytracingGeometry& geo, VkAccelerationStructureGeometryKHR* outGeometry, VkAccelerationStructureBuildRangeInfoKHR* outRange)
+    {
+        const auto vertexCount = (uint32_t)(geo.vertexRange.size / geo.vertexStride);
+        const auto indexCount = (uint32_t)(geo.indexRange.size / geo.indexStride);
+
+        *outGeometry = VkAccelerationStructureGeometryKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
+        outGeometry->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+        outGeometry->geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+        outGeometry->geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+        outGeometry->geometry.triangles.vertexStride = geo.vertexStride;
+        outGeometry->geometry.triangles.vertexData.deviceAddress = geo.vertexRange.address;
+        outGeometry->geometry.triangles.maxVertex = vertexCount - 1u;
+        outGeometry->geometry.triangles.indexType = geo.indexStride > 2u ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
+        outGeometry->geometry.triangles.indexData.deviceAddress = geo.indexRange.address;
+        outGeometry->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+        *outRange = { indexCount / 3u, 0u, 0u, 0u };
+
+        VkAccelerationStructureBuildGeometryInfoKHR buildInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
+        buildInfo.geometryCount = 1u;
+        buildInfo.pGeometries = outGeometry;
+        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+        buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
+        return buildInfo;
+    }
+    
+    VkAccelerationStructureBuildGeometryInfoKHR VulkanGetTLASBuildInfo(VkDeviceAddress instanceDataAddress, VkAccelerationStructureGeometryKHR* outGeometry)
+    {
+        *outGeometry = VkAccelerationStructureGeometryKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
+        outGeometry->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+        outGeometry->geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+        outGeometry->geometry.instances.arrayOfPointers = VK_FALSE;
+        outGeometry->geometry.instances.data.deviceAddress = instanceDataAddress;
+        outGeometry->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+
+        VkAccelerationStructureBuildGeometryInfoKHR buildInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
+        buildInfo.geometryCount = 1u;
+        buildInfo.pGeometries = outGeometry;
+        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+        buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+        buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+        return buildInfo;
+    }
+    
+    VkCopyAccelerationStructureInfoKHR VulkanGetASCopyInfo(VkAccelerationStructureKHR src, VkAccelerationStructureKHR dst, bool compact)
+    {
+        VkCopyAccelerationStructureInfoKHR copyInfo{ VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR };
+        copyInfo.src = src;
+        copyInfo.dst = dst;
+        copyInfo.mode = compact ? VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR : VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+        return copyInfo;
+    }
+    
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device)
     {
         VulkanPhysicalDeviceProperties props;
@@ -607,24 +679,6 @@ namespace PK
         return info;
     }
 
-    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount)
-    {
-        VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR };
-        pkfn_vkGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &info, &primitiveCount, &accelerationStructureBuildSizesInfo);
-        return accelerationStructureBuildSizesInfo;
-    }
-
-    VkDeviceAddress VulkanGetAccelerationStructureDeviceAddress(VkDevice device, VkAccelerationStructureKHR handle)
-    {
-        VkAccelerationStructureDeviceAddressInfoKHR info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR, nullptr, handle };
-        return vkGetAccelerationStructureDeviceAddressKHR(device, &info);
-    }
-
-    VkDeviceAddress VulkanGetBudderDeviceAddress(VkDevice device, VkBuffer buffer)
-    {
-        VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, buffer };
-        return vkGetBufferDeviceAddress(device, &addressInfo);
-    }
 
     bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count)
     {

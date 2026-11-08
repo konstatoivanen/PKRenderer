@@ -262,7 +262,7 @@ namespace PK
         uint32_t MakeResident(const SamplerDescriptor& sampler) final;
         uint3 GetResidentTextureSize(uint32_t bindlessIndex) final;
 
-        RHIBuffer* AcquireStagingBuffer(size_t size) final;
+        RHIBuffer* AcquireStagingBuffer(size_t size, size_t alignment = 64ull) final;
         void ReleaseStagingBuffer(RHIBuffer* buffer) final;
 
         void SetViewPorts(const uint4* rects, uint32_t count) final;
@@ -323,7 +323,7 @@ namespace PK
 
         void AddResidencyBarrierPass();
         uint64_t AddBarrierPass(QueueType queue, bool isRaster);
-        void RecordMemoryAccess(QueueType queue, const VulkanResourceView& view, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
+        void RecordMemoryAccess(QueueType queue, const VkDeviceAddressRangeKHR& range, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
         void RecordImageAccess(QueueType queue, const VulkanResourceView& view, VkPipelineStageFlags2 stage, VkAccessFlags2 access);
         
         void RecordShaderCmd(QueueType queue, VulkanShaderCmd* cmd);

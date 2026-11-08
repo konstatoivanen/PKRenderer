@@ -80,7 +80,6 @@ namespace PK
     struct IRayTracingGeometry
     {
         virtual ~IRayTracingGeometry() = 0;
-        virtual bool HasPendingUpload() const = 0;
         virtual bool GatherRayTracingGeometry(uint32_t submesh, RayTracingGeometryInfo* outInfo) const = 0;
     };
 
@@ -109,7 +108,6 @@ namespace PK
         inline const SubMesh& GetSubmesh(uint32_t index) const { return *m_submeshes[index]; }
         constexpr const VertexStreamLayout& GetVertexStreamLayout() const { return m_streamLayout; }
         constexpr uint32_t GetIndexSize() const { return m_indexSize; }
-        inline bool HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
 
         Allocation* Allocate(const MeshStaticDescriptor& desc);
         void Deallocate(Allocation* allocation);
@@ -128,7 +126,6 @@ namespace PK
         VertexStreamLayout m_streamLayout;
         uint32_t m_indexSize = sizeof(uint32_t);
         int64_t m_preferredIndex = -1;
-        mutable FenceRef m_uploadFence;
     };
 
     struct MeshStatic : public IMesh, public IMeshlets, public IRayTracingGeometry, public Asset
@@ -152,7 +149,6 @@ namespace PK
         inline uint32_t GetIndexSize() const final { return m_allocation->allocator->GetIndexSize(); }
         inline uint32_t GetSubmeshCount() const final { return m_allocation->submeshCount; }
         inline const SubMesh& GetSubmesh(int32_t localIndex) const final { return m_allocation->allocator->GetSubmesh(GetGlobalSubmeshIndex((unsigned)localIndex)); }
-        inline bool HasPendingUpload() const final { return m_allocation->allocator->HasPendingUpload(); }
         bool GatherRayTracingGeometry(uint32_t localIndex, RayTracingGeometryInfo* outInfo) const final;
         
         private: 
@@ -188,7 +184,6 @@ namespace PK
         inline uint32_t GetIndexSize() const final { return m_indexSize; }
         inline uint32_t GetSubmeshCount() const final { return math::max(1u, (uint32_t)m_submeshes.GetCount()); }
         const SubMesh& GetSubmesh(int32_t submesh) const final;
-        inline bool HasPendingUpload() const final { return !m_uploadFence.WaitInvalidate(0ull); }
         bool GatherRayTracingGeometry(uint32_t submesh, RayTracingGeometryInfo* outInfo) const final;
 
     private:
@@ -199,7 +194,6 @@ namespace PK
         InlineList<SubMesh, 1ull> m_submeshes;
         SubMesh m_fullrange{};
         uint32_t m_positionAttributeIndex = ~0u;
-        mutable FenceRef m_uploadFence;
     };
 
     template<>

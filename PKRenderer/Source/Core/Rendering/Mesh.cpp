@@ -142,8 +142,6 @@ namespace PK
         graph.UploadBufferData(QueueType::Transfer, m_vertexBuffers[0].get(), (char*)desc.regular.pVertices + 0ull, offsetAttributes, sizeAttributes);
         graph.UploadBufferData(QueueType::Transfer, m_vertexBuffers[1].get(), (char*)desc.regular.pVertices + sizeAttributes, offsetPositions,  sizePositions);
 
-        m_uploadFence = graph->GetFenceRef();
-
         return allocation;
     }
 
@@ -159,24 +157,19 @@ namespace PK
 
     bool MeshStaticAllocator::GatherRayTracingGeometry(uint32_t globalSubmeshIndex, RayTracingGeometryInfo* outInfo) const
     {
-        if (!HasPendingUpload())
-        {
-            const auto& sm = GetSubmesh(globalSubmeshIndex);
-            outInfo->name = sm.name;
-            outInfo->vertexBuffer = m_vertexBuffers[1].get();
-            outInfo->indexBuffer = m_indexBuffer.get();
-            outInfo->vertexOffset = 0u;
-            outInfo->vertexStride = m_streamLayout.GetStride(1u);
-            outInfo->vertexFirst = sm.vertexFirst;
-            outInfo->vertexCount = sm.vertexCount;
-            outInfo->indexStride = m_indexSize;
-            outInfo->indexFirst = sm.indexFirst;
-            outInfo->indexCount = sm.indexCount;
-            outInfo->customIndex = 0u;
-            return true;
-        }
-
-        return false;
+        const auto& sm = GetSubmesh(globalSubmeshIndex);
+        outInfo->name = sm.name;
+        outInfo->vertexBuffer = m_vertexBuffers[1].get();
+        outInfo->indexBuffer = m_indexBuffer.get();
+        outInfo->vertexOffset = 0u;
+        outInfo->vertexStride = m_streamLayout.GetStride(1u);
+        outInfo->vertexFirst = sm.vertexFirst;
+        outInfo->vertexCount = sm.vertexCount;
+        outInfo->indexStride = m_indexSize;
+        outInfo->indexFirst = sm.indexFirst;
+        outInfo->indexCount = sm.indexCount;
+        outInfo->customIndex = 0u;
+        return true;
     }
 
 
@@ -384,8 +377,6 @@ namespace PK
         graph.UploadBufferData(QueueType::Transfer, indexBuffer.get(), desc.pIndices);
 
         SetResources(indexBuffer, desc.indexSize, desc.streamLayout, vertexBuffers, bufferCount, desc.pSubmeshes, desc.submeshCount);
-
-        m_uploadFence = graph->GetFenceRef();
     }
 
     void Mesh::SetResources(const RHIBufferRef& indexBuffer,
@@ -440,7 +431,7 @@ namespace PK
 
     bool Mesh::GatherRayTracingGeometry(uint32_t submesh, RayTracingGeometryInfo* outInfo) const
     {
-        if (!HasPendingUpload() && m_positionAttributeIndex != ~0u)
+        if (m_positionAttributeIndex != ~0u)
         {
             auto& sm = GetSubmesh(submesh);
             auto positionStream = &m_streamLayout[m_positionAttributeIndex];

@@ -45,18 +45,16 @@ namespace PK
 
             *structure = Structure();
             structure->name = geometry.name;
-            structure->geometry.vertexAddress = geometry.vertexBuffer->GetDeviceAddress() + geometry.vertexOffset;
-            structure->geometry.indexAddress = geometry.indexBuffer->GetDeviceAddress();
-            structure->geometry.vertexCount = geometry.vertexCount;
-            structure->geometry.vertexFirst = geometry.vertexFirst;
+            structure->geometry.vertexRange.address = geometry.vertexBuffer->GetDeviceAddress() + geometry.vertexOffset + (VkDeviceSize)geometry.vertexFirst * geometry.vertexStride;
+            structure->geometry.vertexRange.size = (VkDeviceSize)geometry.vertexCount * geometry.vertexStride;
+            structure->geometry.indexRange.address = geometry.indexBuffer->GetDeviceAddress() + (VkDeviceSize)geometry.indexFirst * geometry.indexStride;
+            structure->geometry.indexRange.size = (VkDeviceSize)geometry.indexCount * geometry.indexStride;
             structure->geometry.vertexStride = geometry.vertexStride;
-            structure->geometry.indexCount = geometry.indexCount;
-            structure->geometry.indexFirst = geometry.indexFirst;
             structure->geometry.indexStride = geometry.indexStride;
 
             VkAccelerationStructureGeometryKHR vkGeometry{};
             VkAccelerationStructureBuildRangeInfoKHR range{};
-            auto buildInfo = GetBLASBuildInfo(structure->geometry, &vkGeometry, &range);
+            auto buildInfo = VulkanGetBLASBuildInfo(structure->geometry, &vkGeometry, &range);
             const auto sizeInfo = VulkanGetAccelerationBuildSizesInfo(driver->device, buildInfo, range.primitiveCount);
             structure->size = sizeInfo.accelerationStructureSize;
             structure->buildScratchSize = sizeInfo.buildScratchSize;
@@ -65,69 +63,52 @@ namespace PK
         return index;
     }
 
-    void VulkanAccelerationStructureBuilder::AddInstance(const RayTracingGeometryInfo& geometry, const float3x4& matrix)
+    bool VulkanAccelerationStructure::PollCompactionResults()
     {
-        PK_DEBUG_FATAL_ASSERT(instanceCount < instanceLimit, "Instance limit exceeded!");
+        if (queryCount && queryPool->WaitResults(0ull))
+        {
+            PK_LOG_RHI("Bottom Level Compaction Update: %s", name.c_str());
+            PK_LOG_INDENT(PK_LOG_LVL_RHI);
 
-        auto index = structure->RegisterGeometry(geometry);
-        
-        VkAccelerationStructureInstanceKHR instance;
-        instance.transform = Memory::BitCast<float3x4, VkTransformMatrixKHR>(matrix);
-        instance.instanceCustomIndex = geometry.customIndex;
-        instance.mask = 0xFF;
-        instance.instanceShaderBindingTableRecordOffset = geometry.recordOffset;
-        instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-        instance.accelerationStructureReference = 0ull;
+            for (auto i = 0u; i < substructures.GetCount(); ++i)
+            {
+                auto* structure = &substructures[i].value;
 
-        // Important do not not "optimize" this to assign the members individually.
-        // This goes directly to PCIE BAR.
-        instances[instanceCount] = instance;
-        instanceIndices[instanceCount++] = index;
-        topologyHash += math::hash(matrix, 0.01f) * ((uint64_t)index + 1ull);
+                if (structure->handle && structure->compactionId && structure->compactionId != COMPACTED_ID)
+                {
+                    const auto size0 = structure->size;
+                    const auto size1 = queryPool->GetResult<VkDeviceSize>(structure->compactionId - 1u, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+                    structure->size = size1;
+                    PK_LOG_RHI("BLAS Compacted from %i to %i bytes", size0, size1);
+                }
+            }
+
+            queryPool->ResetQuery(0u, queryCount);
+            queryCount = 0u;
+            return true;
+        }
+
+        return false;
     }
 
-
-    // @TODO MOVE THESE OUT OF HERE.
-    VkAccelerationStructureBuildGeometryInfoKHR VulkanAccelerationStructure::GetBLASBuildInfo(const GeometryData& geo, VkAccelerationStructureGeometryKHR* outGeometry, VkAccelerationStructureBuildRangeInfoKHR* outRange)
+    uint32_t VulkanAccelerationStructure::AcquireCompactionQueries(VkAccelerationStructureKHR* outHandles, uint32_t* outQueryStart, const FenceRef& fence)
     {
-        *outGeometry = VkAccelerationStructureGeometryKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
-        outGeometry->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-        outGeometry->geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-        outGeometry->geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-        outGeometry->geometry.triangles.vertexStride = geo.vertexStride;
-        outGeometry->geometry.triangles.vertexData.deviceAddress = geo.vertexAddress;
-        outGeometry->geometry.triangles.maxVertex = geo.vertexFirst + geo.vertexCount - 1u;
-        outGeometry->geometry.triangles.indexType = geo.indexStride > 2u ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
-        outGeometry->geometry.triangles.indexData.deviceAddress = geo.indexAddress;
-        outGeometry->geometry.triangles.transformData.deviceAddress = 0ull;
-        outGeometry->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-        *outRange = { geo.indexCount / 3u, geo.indexStride * geo.indexFirst, geo.vertexFirst, 0u };
+        *outQueryStart = queryCount;
+        auto count = 0u;
 
-        VkAccelerationStructureBuildGeometryInfoKHR buildInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
-        buildInfo.geometryCount = 1u;
-        buildInfo.pGeometries = outGeometry;
-        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-        buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-        buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
-        return buildInfo;
-    }
+        for (auto i = 0u; i < substructures.GetCount() && queryCount < PK_VK_MAX_AS_COMPACTIONS; ++i)
+        {
+            auto* structure = &substructures[i].value;
 
-    VkAccelerationStructureBuildGeometryInfoKHR VulkanAccelerationStructure::GetTLASBuildInfo(VkDeviceAddress instanceDataAddress, VkAccelerationStructureGeometryKHR* outGeometry)
-    {
-        *outGeometry = VkAccelerationStructureGeometryKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
-        outGeometry->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-        outGeometry->geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-        outGeometry->geometry.instances.arrayOfPointers = VK_FALSE;
-        outGeometry->geometry.instances.data.deviceAddress = instanceDataAddress;
-        outGeometry->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+            if (structure->handle && !structure->compactionId)
+            {
+                queryPool->SetFence(fence);
+                outHandles[count++] = structure->handle;
+                structure->compactionId = ++queryCount;
+            }
+        }
 
-        VkAccelerationStructureBuildGeometryInfoKHR buildInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
-        buildInfo.geometryCount = 1u;
-        buildInfo.pGeometries = outGeometry;
-        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-        buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-        buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-        return buildInfo;
+        return count;
     }
 
     VkAccelerationStructureKHR VulkanAccelerationStructure::CreateStructure(const Structure* structure, VkAccelerationStructureTypeKHR type, const char* name) const
@@ -157,4 +138,24 @@ namespace PK
         }
     }
 
+    void VulkanAccelerationStructureBuilder::AddInstance(const RayTracingGeometryInfo& geometry, const float3x4& matrix)
+    {
+        PK_DEBUG_FATAL_ASSERT(instanceCount < instanceLimit, "Instance limit exceeded!");
+
+        auto index = structure->RegisterGeometry(geometry);
+        
+        VkAccelerationStructureInstanceKHR instance;
+        instance.transform = Memory::BitCast<float3x4, VkTransformMatrixKHR>(matrix);
+        instance.instanceCustomIndex = geometry.customIndex;
+        instance.mask = 0xFF;
+        instance.instanceShaderBindingTableRecordOffset = geometry.recordOffset;
+        instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+        instance.accelerationStructureReference = 0ull;
+
+        // Important do not not "optimize" this to assign the members individually.
+        // This goes directly to PCIE BAR.
+        instances[instanceCount] = instance;
+        instanceIndices[instanceCount++] = index;
+        topologyHash += math::hash(matrix, 0.01f) * ((uint64_t)index + 1ull);
+    }
 }

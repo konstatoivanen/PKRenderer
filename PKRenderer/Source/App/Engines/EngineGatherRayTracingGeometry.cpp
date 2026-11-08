@@ -33,6 +33,7 @@ namespace PK::App
 
             if (view.primitive->isVisibleInRayTracing)
             {
+                // @TODO we are missing material count here!
                 instanceCount++;
             }
         }

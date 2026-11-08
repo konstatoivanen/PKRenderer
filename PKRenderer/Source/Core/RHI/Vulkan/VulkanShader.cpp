@@ -156,29 +156,29 @@ namespace PK
             }
 
             auto cachedSize = 0ull;
-            const auto* cachedBinary = m_driver->shaderArchive->Read(variant->versionHash, &cachedSize);
+            const auto* cachedEntry = m_driver->shaderArchive->Read(variant->versionHash, &cachedSize);
 
-            if (cachedBinary)
+            if (cachedEntry)
             {
-                const auto* stageSizes = reinterpret_cast<const uint32_t*>(cachedBinary);
+                const auto* stageSizes = reinterpret_cast<const uint32_t*>(cachedEntry);
                 auto offset = headerSize;
 
                 for (auto i = 0u; i < stageCount; ++i)
                 {
                     createInfos[i].codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
                     createInfos[i].codeSize = stageSizes[i];
-                    createInfos[i].pCode = cachedBinary + offset;
+                    createInfos[i].pCode = cachedEntry + offset;
                     offset += math::align((size_t)stageSizes[i], 16ull);
                 }
 
                 if (vkCreateShadersEXT(m_driver->device, stageCount, createInfos, nullptr, createdShaders) != VK_SUCCESS)
                 {
                     m_driver->shaderArchive->Invalidate();
-                    cachedBinary = nullptr;
+                    cachedEntry = nullptr;
                 }
             }
 
-            if (!cachedBinary)
+            if (!cachedEntry)
             {
                 for (auto i = 0u; i < stageCount; ++i)
                 {
@@ -201,15 +201,15 @@ namespace PK
                         totalSize += math::align(binarySizes[i], 16ull);
                     }
 
-                    if (auto* writeBlob = m_driver->shaderArchive->Write(variant->versionHash, totalSize))
+                    if (auto* binary = m_driver->shaderArchive->Write(variant->versionHash, totalSize))
                     {
-                        auto* headerSizes = reinterpret_cast<uint32_t*>(writeBlob);
+                        auto* headerSizes = reinterpret_cast<uint32_t*>(binary);
                         auto offset = headerSize;
 
                         for (auto i = 0u; i < stageCount; ++i)
                         {
                             headerSizes[i] = (uint32_t)binarySizes[i];
-                            VK_ASSERT_RESULT_CTX(vkGetShaderBinaryDataEXT(m_driver->device, createdShaders[i], &binarySizes[i], writeBlob + offset), "Failed to get shader binary data!");
+                            VK_ASSERT_RESULT_CTX(vkGetShaderBinaryDataEXT(m_driver->device, createdShaders[i], &binarySizes[i], binary + offset), "Failed to get shader binary data!");
                             offset += math::align(binarySizes[i], 16ull);
                         }
                     }

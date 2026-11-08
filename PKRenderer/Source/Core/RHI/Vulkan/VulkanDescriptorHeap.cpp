@@ -36,7 +36,7 @@ namespace PK
             m_resourceHeap.mappedPtr = static_cast<uint8_t*>(allocationInfo.pMappedData);
 
             m_resourceHeap.bindInfo.sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT;
-            m_resourceHeap.bindInfo.heapRange = { VulkanGetBudderDeviceAddress(m_device, m_resourceHeap.buffer), bufferInfo.size };
+            m_resourceHeap.bindInfo.heapRange = { VulkanGetBufferDeviceAddress(m_device, m_resourceHeap.buffer), bufferInfo.size };
             m_resourceHeap.bindInfo.reservedRangeOffset = reservedOffset;
             m_resourceHeap.bindInfo.reservedRangeSize = reservedSize;
         }
@@ -60,7 +60,7 @@ namespace PK
             m_samplerHeap.mappedPtr = static_cast<uint8_t*>(allocationInfo.pMappedData);
 
             m_samplerHeap.bindInfo.sType = VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT;
-            m_samplerHeap.bindInfo.heapRange = { VulkanGetBudderDeviceAddress(m_device, m_samplerHeap.buffer), bufferInfo.size };
+            m_samplerHeap.bindInfo.heapRange = { VulkanGetBufferDeviceAddress(m_device, m_samplerHeap.buffer), bufferInfo.size };
             m_samplerHeap.bindInfo.reservedRangeOffset = reservedOffset;
             m_samplerHeap.bindInfo.reservedRangeSize = reservedSize;
         }

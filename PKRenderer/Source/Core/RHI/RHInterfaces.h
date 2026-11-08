@@ -63,7 +63,6 @@ namespace PK
         virtual ~RHIAccelerationStructure() = 0;
         virtual uint32_t GetInstanceCount() const = 0;
         virtual uint32_t GetSubStructureCount() const = 0;
-        virtual FenceRef GetLastBuildFenceRef() const = 0;
     };
 
     struct RHIAccelerationStructureBuilder : public NoCopy
@@ -133,7 +132,7 @@ namespace PK
         virtual uint32_t MakeResident(const SamplerDescriptor& sampler) = 0;
         virtual uint3 GetResidentTextureSize(uint32_t bindlessIndex) = 0;
 
-        virtual RHIBuffer* AcquireStagingBuffer(size_t size) = 0;
+        virtual RHIBuffer* AcquireStagingBuffer(size_t size, size_t alignment = 64ull) = 0;
         virtual void ReleaseStagingBuffer(RHIBuffer* buffer) = 0;
 
         virtual void SetViewPorts(const uint4* rects, uint32_t count) = 0;

@@ -19,18 +19,6 @@ namespace PK
             }
         };
 
-        struct GeometryData
-        {
-            VkDeviceAddress vertexAddress = 0ull;
-            VkDeviceAddress indexAddress = 0ull;
-            uint32_t vertexCount = 0u;
-            uint32_t vertexFirst = 0u;
-            uint32_t vertexStride = 0u;
-            uint32_t indexCount = 0u;
-            uint32_t indexFirst = 0u;
-            uint32_t indexStride = 0u;
-        };
-
         struct Structure
         {
             VkAccelerationStructureKHR handle = VK_NULL_HANDLE;
@@ -41,7 +29,7 @@ namespace PK
             VkDeviceSize bufferOffset = 0ull;
             uint32_t compactionId = 0u;
             NameID name = 0u;
-            GeometryData geometry{};
+            VulkanRaytracingGeometry geometry{};
         };
 
         VulkanAccelerationStructure(struct VulkanDriver* driver, const char* name);
@@ -49,14 +37,13 @@ namespace PK
         
         uint32_t GetInstanceCount() const final { return instanceCount; }
         uint32_t GetSubStructureCount() const final { return substructures.GetCount(); };
-        FenceRef GetLastBuildFenceRef() const final { return lastBuildFenceRef; }
         inline const VulkanResourceView GetResourceView() const { return view; };
 
         uint32_t RegisterGeometry(const RayTracingGeometryInfo& geometry);
 
-        // @TODO move these out of here
-        static VkAccelerationStructureBuildGeometryInfoKHR GetBLASBuildInfo(const GeometryData& geo, VkAccelerationStructureGeometryKHR* outGeometry, VkAccelerationStructureBuildRangeInfoKHR* outRange);
-        static VkAccelerationStructureBuildGeometryInfoKHR GetTLASBuildInfo(VkDeviceAddress instanceDataAddress, VkAccelerationStructureGeometryKHR* outGeometry);
+        bool PollCompactionResults();
+        uint32_t AcquireCompactionQueries(VkAccelerationStructureKHR* outHandles, uint32_t* outQueryStart, const FenceRef& fence);
+
         VkAccelerationStructureKHR CreateStructure(const Structure* structure, VkAccelerationStructureTypeKHR type, const char* name) const;
         void DisposeStructure(VkAccelerationStructureKHR handle, const FenceRef& fence) const;
 
@@ -72,7 +59,6 @@ namespace PK
         uint32_t queryCount = 0u;
         uint32_t instanceCount = 0u;
         uint64_t topologyHash = 0u;
-        FenceRef lastBuildFenceRef = {};
     };
 
     struct VulkanAccelerationStructureBuilder : public RHIAccelerationStructureBuilder
@@ -87,5 +73,4 @@ namespace PK
 
         void AddInstance(const RayTracingGeometryInfo& geometry, const float3x4& matrix) final;
     };
-
 }

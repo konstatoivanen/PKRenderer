@@ -62,7 +62,7 @@ namespace PK
         VK_ASSERT_RESULT_CTX(vmaCreateBuffer(driver->allocator, &createInfo, &allocInfo, &m_buffer, &m_memory, nullptr), "Failed to create a buffer!");
         VulkanSetObjectDebugName(driver->device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, name);
 
-        m_defaultView.memory.address = VulkanGetBudderDeviceAddress(driver->device, m_buffer);
+        m_defaultView.memory.address = VulkanGetBufferDeviceAddress(driver->device, m_buffer);
         m_defaultView.memory.size = m_size;
         m_defaultView.UpdateHashMemory();
 

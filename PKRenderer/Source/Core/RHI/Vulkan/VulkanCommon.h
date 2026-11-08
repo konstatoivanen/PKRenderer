@@ -369,12 +369,12 @@ namespace PK
         }
     };
 
-    struct VulkanDescriptorBinding
+    struct VulkanRaytracingGeometry
     {
-        const VulkanResourceView* views;
-        uint64_t hash;
-        uint16_t count;
-        Uniform type;
+        VkDeviceAddressRangeKHR vertexRange{};
+        VkDeviceAddressRangeKHR indexRange{};
+        uint32_t vertexStride = 0u;
+        uint32_t indexStride = 0u;
     };
 
     struct VulkanDynamicState
@@ -399,16 +399,16 @@ namespace PK
         VulkanQueryPool(VkDevice device, VkQueryType type, uint32_t size);
         ~VulkanQueryPool();
 
-        void GetResults(void* outBuffer, uint32_t first, uint32_t count, size_t stride, VkQueryResultFlagBits flags);
+        void GetResults(void* outBuffer, uint32_t first, uint32_t count, size_t stride, VkQueryResultFlags flags);
 
         template<typename T>
-        void GetResults(T* outBuffer, uint32_t first, uint32_t count, VkQueryResultFlagBits flags)
+        void GetResults(T* outBuffer, uint32_t first, uint32_t count, VkQueryResultFlags flags)
         {
             GetResults(outBuffer, first, count, sizeof(T), flags);
         }
 
         template<typename T>
-        T GetResult(uint32_t index, VkQueryResultFlagBits flags)
+        T GetResult(uint32_t index, VkQueryResultFlags flags)
         {
             T outValue = T();
             GetResults(&outValue, index, 1u, sizeof(T), flags);
@@ -431,9 +431,12 @@ namespace PK
     VkResult VulkanCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);
     VkResult VulkanCreateSurfaceKHR(VkInstance instance, void* nativeWindow, VkSurfaceKHR* surface);
 
-    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount);
+    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR& info, uint32_t primitiveCount);
     VkDeviceAddress VulkanGetAccelerationStructureDeviceAddress(VkDevice device, VkAccelerationStructureKHR handle);
-    VkDeviceAddress VulkanGetBudderDeviceAddress(VkDevice device, VkBuffer buffer);
+    VkDeviceAddress VulkanGetBufferDeviceAddress(VkDevice device, VkBuffer buffer);
+    VkAccelerationStructureBuildGeometryInfoKHR VulkanGetBLASBuildInfo(const VulkanRaytracingGeometry& geo, VkAccelerationStructureGeometryKHR* outGeometry, VkAccelerationStructureBuildRangeInfoKHR* outRange);
+    VkAccelerationStructureBuildGeometryInfoKHR VulkanGetTLASBuildInfo(VkDeviceAddress instanceDataAddress, VkAccelerationStructureGeometryKHR* outGeometry);
+    VkCopyAccelerationStructureInfoKHR VulkanGetASCopyInfo(VkAccelerationStructureKHR src, VkAccelerationStructureKHR dst, bool compact);
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
     VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
 

@@ -75,14 +75,14 @@ namespace PK
     {
         const auto& view = *buffer->GetNativeView<VulkanResourceView>();
         AddResidencyBarrierPass();
-        RecordMemoryAccess(QueueType::EnumCount, view, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_UNIFORM_READ_BIT);
+        RecordMemoryAccess(QueueType::EnumCount, view.memory, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_UNIFORM_READ_BIT);
         return m_descriptorHeap->GetResourceIndex(view, Uniform::StorageBuffer);
     }
 
     uint32_t VulkanGraph::MakeResident(const SamplerDescriptor& sampler) { return m_descriptorHeap->GetSamplerIndex(sampler); }
     uint3 VulkanGraph::GetResidentTextureSize(uint32_t bindlessIndex) { return m_descriptorHeap->GetTextureSize(bindlessIndex); }
     
-    RHIBuffer* VulkanGraph::AcquireStagingBuffer(size_t size) { return m_stagingArena->BeginWrite(size); }
+    RHIBuffer* VulkanGraph::AcquireStagingBuffer(size_t size, size_t alignment) { return m_stagingArena->BeginWrite(size, alignment); }
     void VulkanGraph::ReleaseStagingBuffer(RHIBuffer* buffer) { m_stagingArena->EndWrite(buffer); }
 
 
@@ -296,7 +296,7 @@ namespace PK
         cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         cmd->indirectInfo.drawCount = drawCount;
         RecordVertexCmd(cmd);
-        RecordMemoryAccess(QueueType::Graphics, *indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, indirectHandle->memory, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
@@ -337,7 +337,7 @@ namespace PK
         cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         cmd->indirectInfo.drawCount = drawCount;
         RecordIndexCmd(cmd);
-        RecordMemoryAccess(QueueType::Graphics, *indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, indirectHandle->memory, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DrawMeshTasks(const uint3& dimensions)
@@ -370,7 +370,7 @@ namespace PK
         cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         cmd->indirectInfo.drawCount = drawCount;
         RecordRasterCmd(cmd);
-        RecordMemoryAccess(QueueType::Graphics, *indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, indirectHandle->memory, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DrawMeshTasksIndirectCount(const RHIBuffer* indirectArguments, size_t offset, const RHIBuffer* countBuffer, size_t countOffset, uint32_t maxDrawCount, uint32_t stride)
@@ -392,8 +392,8 @@ namespace PK
         cmd->indirectCountInfo.countAddressFlags = PK_VK_ADDRESS_FLAGS;
         cmd->indirectCountInfo.maxDrawCount = maxDrawCount;
         RecordRasterCmd(cmd);
-        RecordMemoryAccess(QueueType::Graphics, *indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
-        RecordMemoryAccess(QueueType::Graphics, *countHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, indirectHandle->memory, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(QueueType::Graphics, countHandle->memory, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::Dispatch(QueueType queue, const uint3& dimensions)
@@ -426,7 +426,7 @@ namespace PK
         cmd->indirectInfo.addressRange = { indirectHandle->memory.address + offset, sizeof(VkDispatchIndirectCommand) };
         cmd->indirectInfo.addressFlags = PK_VK_ADDRESS_FLAGS;
         RecordShaderCmd(queue, cmd);
-        RecordMemoryAccess(queue, *indirectHandle, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+        RecordMemoryAccess(queue, indirectHandle->memory, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
     }
 
     void VulkanGraph::DispatchRays(QueueType queue, const uint3& dimensions)
@@ -552,7 +552,7 @@ namespace PK
         cmd->src = static_cast<VulkanSwapchain*>(src);
         cmd->region.addressRange = { handle->memory.address, handle->memory.size };
         cmd->region.addressFlags = PK_VK_ADDRESS_FLAGS;
-        RecordMemoryAccess(queue, *handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        RecordMemoryAccess(queue, handle->memory, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
     }
 
     void VulkanGraph::Blit(QueueType queue, RHITexture* src, RHITexture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter)
@@ -634,7 +634,7 @@ namespace PK
         cmd->range.address = handle->memory.address + offset;
         cmd->range.size = size;
         cmd->value = value;
-        RecordMemoryAccess(queue, *handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        RecordMemoryAccess(queue, handle->memory, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
     }
 
     void VulkanGraph::Clear(QueueType queue, RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value)
@@ -672,7 +672,7 @@ namespace PK
         cmd->range.size = size;
         cmd->pData = Allocate<uint8_t>(size);
         memcpy(cmd->pData, data, size);
-        RecordMemoryAccess(queue, *handle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT);
+        RecordMemoryAccess(queue, handle->memory, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT);
     }
 
     void VulkanGraph::CopyBuffer(QueueType queue, RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size)
@@ -695,7 +695,7 @@ namespace PK
         cmd->region.dstFlags = PK_VK_ADDRESS_FLAGS;
 
         // Assume always staging source?!?
-        RecordMemoryAccess(queue, *dstHandle, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        RecordMemoryAccess(queue, dstHandle->memory, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
     }
 
     void VulkanGraph::CopyToTexture(QueueType queue, RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount)
@@ -786,69 +786,13 @@ namespace PK
 
     void VulkanGraph::EndAccelerationStructureWrite(QueueType queue, RHIAccelerationStructureBuilder* builder)
     {
-        auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanWriteAccelerationStructureCmd* cmd)
-        {
-            for (auto i = 0u; i < cmd->copyCount; ++i)
-            {
-                vkCmdCopyAccelerationStructureKHR(*ctx->cmb, &cmd->copyInfos[i]);
-            }
-
-            if (cmd->BLASBuildCount)
-            {
-                vkCmdBuildAccelerationStructuresKHR(*ctx->cmb, cmd->BLASBuildCount, cmd->BLASBuildInfos, cmd->BLASRangeInfos);
-            }
-
-            if (cmd->BLASBuildCount || cmd->copyCount)
-            {
-                VkMemoryBarrier2 memoryBarrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER_2 };
-                memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-                memoryBarrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-                memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-                memoryBarrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-                ctx->cmb->Barrier(&memoryBarrier, nullptr, 0u);
-            }
-
-            if (cmd->queryCount)
-            {
-                vkCmdWriteAccelerationStructuresPropertiesKHR(*ctx->cmb, cmd->queryCount, cmd->queryHandles, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, cmd->queryPool, cmd->queryStart);
-            }
-
-            if (cmd->TLASBuild)
-            {
-                const auto* pRangeInfo = &cmd->TLASRangeInfo;
-                vkCmdBuildAccelerationStructuresKHR(*ctx->cmb, 1u, &cmd->TLASBuildInfo, &pRangeInfo);
-            }
-        });
-
         auto vkBuilder = static_cast<VulkanAccelerationStructureBuilder*>(builder);
         auto vkStructure = vkBuilder->structure;
-        auto queryPool = vkStructure->queryPool.get();
         const auto substructureCount = vkStructure->substructures.GetCount();
 
         PK_DEBUG_WARNING_ASSERT(vkBuilder->instanceCount, "VulkanAccelerationStructure.EndWrite: write has 0 instances!");
 
-        const bool hasCompactedResults = vkStructure->queryCount && queryPool->WaitResults(0ull);
-
-        if (hasCompactedResults)
-        {
-            PK_LOG_RHI("Bottom Level Compaction Update: %s", vkStructure->name.c_str());
-            PK_LOG_INDENT(PK_LOG_LVL_RHI);
-
-            for (auto i = 0u; i < substructureCount; ++i)
-            {
-                auto structure = &vkStructure->substructures[i].value;
-                if (structure->handle && structure->compactionId && structure->compactionId != VulkanAccelerationStructure::COMPACTED_ID)
-                {
-                    const auto size0 = structure->size;
-                    const auto size1 = queryPool->GetResult<VkDeviceSize>(structure->compactionId - 1u, VK_QUERY_RESULT_64_BIT);
-                    structure->size = size1;
-                    PK_LOG_RHI("BLAS Compacted from %i to %i bytes", size0, size1);
-                }
-            }
-
-            queryPool->ResetQuery(0u, vkStructure->queryCount);
-            vkStructure->queryCount = 0u;
-        }
+        const bool hasCompactedResults = vkStructure->PollCompactionResults();
 
         VkDeviceSize bufferSize = 0ull;
         VkDeviceSize scratchSize = 0ull;
@@ -869,28 +813,69 @@ namespace PK
         }
 
         auto* tlasGeometry = Allocate<VkAccelerationStructureGeometryKHR>(1);
-        auto buildInfo = VulkanAccelerationStructure::GetTLASBuildInfo(vkBuilder->stagingBuffer->GetDeviceAddress(), tlasGeometry);
+        const auto buildInfo = VulkanGetTLASBuildInfo(vkBuilder->stagingBuffer->GetDeviceAddress(), tlasGeometry);
         const auto sizeInfo = VulkanGetAccelerationBuildSizesInfo(m_driver->device, buildInfo, vkBuilder->instanceCount);
 
+        const auto prevRange = vkStructure->view.memory;
         const auto prevSize = vkStructure->structure.size;
         vkStructure->structure.size = sizeInfo.accelerationStructureSize;
         vkStructure->structure.buildScratchSize = sizeInfo.buildScratchSize;
         vkStructure->structure.bufferOffset = bufferSize;
         vkStructure->structure.scratchOffset = scratchSize;
-        bufferSize += math::align(sizeInfo.accelerationStructureSize, 256ull);
-        scratchSize += math::align(sizeInfo.buildScratchSize, 256ull);
+        bufferSize += sizeInfo.accelerationStructureSize;
+        scratchSize += sizeInfo.buildScratchSize;
 
-        const auto rebuildBLAS = buildCount ||
-            hasCompactedResults ||
-            prevSize < sizeInfo.accelerationStructureSize ||
-            vkStructure->buffer == nullptr ||
-            vkStructure->buffer->GetSize() < bufferSize;
+        auto rebuildBLAS = false;
+        rebuildBLAS |= buildCount;
+        rebuildBLAS |= hasCompactedResults;
+        rebuildBLAS |= prevSize < sizeInfo.accelerationStructureSize;
+        rebuildBLAS |= vkStructure->buffer == nullptr || vkStructure->buffer->GetSize() < bufferSize;
 
         const auto rebuildTLAS = rebuildBLAS || vkStructure->topologyHash != vkBuilder->topologyHash;
 
-        auto needsScratch = (buildCount || rebuildTLAS) && scratchSize;
-        auto scratchBuffer = needsScratch ? AcquireStagingBuffer(scratchSize + 256u) : nullptr;
-        const auto scratchAddress = scratchBuffer ? math::align(scratchBuffer->GetDeviceAddress(), 256ull) : 0ull;
+        if (!rebuildTLAS)
+        {
+            ReleaseStagingBuffer(vkBuilder->stagingBuffer);
+            return;
+        }
+
+        auto cmd = AllocateCommand(queue, [](VulkanGraphContext* ctx, VulkanWriteAccelerationStructureCmd* cmd)
+        {
+            for (auto i = 0u; i < cmd->copyCount; ++i)
+            {
+                vkCmdCopyAccelerationStructureKHR(*ctx->cmb, &cmd->copyInfos[i]);
+            }
+
+            if (cmd->BLASBuildCount)
+            {
+                vkCmdBuildAccelerationStructuresKHR(*ctx->cmb, cmd->BLASBuildCount, cmd->BLASBuildInfos, cmd->BLASRangeInfos);
+            }
+
+            if (cmd->BLASBuildCount || cmd->copyCount)
+            {
+                VkMemoryBarrier2 memoryBarrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER_2 };
+                memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
+                memoryBarrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+                memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
+                memoryBarrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+                ctx->cmb->Barrier(&memoryBarrier, nullptr, 0u);
+            }
+
+            if (cmd->queryCount)
+            {
+                vkCmdWriteAccelerationStructuresPropertiesKHR(*ctx->cmb, cmd->queryCount, cmd->queryHandles, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, cmd->queryPool, cmd->queryStart);
+            }
+
+            if (cmd->TLASBuild)
+            {
+                const auto* pRangeInfo = &cmd->TLASRangeInfo;
+                vkCmdBuildAccelerationStructuresKHR(*ctx->cmb, 1u, &cmd->TLASBuildInfo, &pRangeInfo);
+            }
+        });
+
+        cmd->passIndex = AddBarrierPass(queue, false);
+
+        auto scratchBuffer = AcquireStagingBuffer(scratchSize, 256ull);
 
         if (rebuildBLAS)
         {
@@ -912,25 +897,24 @@ namespace PK
                 {
                     auto* geometry = Allocate<VkAccelerationStructureGeometryKHR>(1);
                     auto* rangeInfo = Allocate<VkAccelerationStructureBuildRangeInfoKHR>(1);
-                    cmd->BLASBuildInfos[cmd->BLASBuildCount] = VulkanAccelerationStructure::GetBLASBuildInfo(structure->geometry, geometry, rangeInfo);
+                    cmd->BLASBuildInfos[cmd->BLASBuildCount] = VulkanGetBLASBuildInfo(structure->geometry, geometry, rangeInfo);
                     cmd->BLASBuildInfos[cmd->BLASBuildCount].dstAccelerationStructure = newHandle;
-                    cmd->BLASBuildInfos[cmd->BLASBuildCount].scratchData.deviceAddress = scratchAddress + structure->scratchOffset;
+                    cmd->BLASBuildInfos[cmd->BLASBuildCount].scratchData.deviceAddress = scratchBuffer->GetDeviceAddress() + structure->scratchOffset;
                     cmd->BLASRangeInfos[cmd->BLASBuildCount++] = rangeInfo;
+
+                    RecordMemoryAccess(queue, structure->geometry.vertexRange, VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT);
+                    RecordMemoryAccess(queue, structure->geometry.indexRange, VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT);
                 }
                 else
                 {
-                    auto& copyInfo = cmd->copyInfos[cmd->copyCount++];
-                    copyInfo = VkCopyAccelerationStructureInfoKHR{ VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR };
-                    copyInfo.src = structure->handle;
-                    copyInfo.dst = newHandle;
-                    copyInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+                    const auto compact = hasCompactedResults && structure->compactionId && structure->compactionId != VulkanAccelerationStructure::COMPACTED_ID;
 
-                    if (hasCompactedResults && structure->compactionId && structure->compactionId != VulkanAccelerationStructure::COMPACTED_ID)
+                    if (compact)
                     {
                         structure->compactionId = VulkanAccelerationStructure::COMPACTED_ID;
-                        copyInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR;
                     }
 
+                    cmd->copyInfos[cmd->copyCount++] = VulkanGetASCopyInfo(structure->handle, newHandle, compact);
                     vkStructure->DisposeStructure(structure->handle, GetFenceRef());
                 }
 
@@ -944,58 +928,38 @@ namespace PK
             vkStructure->view.memory.address = vkStructure->structure.deviceAddress;
             vkStructure->view.memory.size = vkStructure->structure.size;
             vkStructure->view.UpdateHashMemory();
+
+            cmd->queryPool = vkStructure->queryPool->pool;
+            cmd->queryHandles = Allocate<VkAccelerationStructureKHR>(substructureCount);
+            cmd->queryCount = vkStructure->AcquireCompactionQueries(cmd->queryHandles, &cmd->queryStart, GetFenceRef());
         }
 
-        cmd->queryPool = queryPool->pool;
-        cmd->queryHandles = Allocate<VkAccelerationStructureKHR>(substructureCount);
-        cmd->queryStart = vkStructure->queryCount;
-
-        for (auto i = 0u; i < substructureCount && vkStructure->queryCount < PK_VK_MAX_AS_COMPACTIONS; ++i)
+        for (auto i = 0u; i < vkBuilder->instanceCount; ++i)
         {
-            auto structure = &vkStructure->substructures[i].value;
-
-            if (structure->handle && !structure->compactionId)
-            {
-                queryPool->SetFence(GetFenceRef());
-                cmd->queryHandles[cmd->queryCount++] = structure->handle;
-                structure->compactionId = ++vkStructure->queryCount;
-            }
+            auto index = vkBuilder->instanceIndices[i];
+            vkBuilder->instances[i].accelerationStructureReference = vkStructure->substructures[index].value.deviceAddress;
         }
 
-        if (rebuildTLAS)
+        cmd->TLASBuildInfo = buildInfo;
+        cmd->TLASBuildInfo.dstAccelerationStructure = vkStructure->structure.handle;
+        cmd->TLASBuildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress() + vkStructure->structure.scratchOffset;
+        cmd->TLASRangeInfo = VkAccelerationStructureBuildRangeInfoKHR{ vkBuilder->instanceCount, 0u, 0u, 0u };
+        cmd->TLASBuild = true;
+
+        constexpr auto stageFlags = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
+        constexpr auto accessFlags = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+        if (prevRange.size && prevRange.address != vkStructure->view.memory.address)
         {
-            for (auto i = 0u; i < vkBuilder->instanceCount; ++i)
-            {
-                auto index = vkBuilder->instanceIndices[i];
-                vkBuilder->instances[i].accelerationStructureReference = vkStructure->substructures[index].value.deviceAddress;
-            }
-
-            vkStructure->lastBuildFenceRef = GetFenceRef();
-            cmd->TLASBuildInfo = buildInfo;
-            cmd->TLASBuildInfo.dstAccelerationStructure = vkStructure->structure.handle;
-            cmd->TLASBuildInfo.scratchData.deviceAddress = scratchAddress + vkStructure->structure.scratchOffset;
-            cmd->TLASRangeInfo = VkAccelerationStructureBuildRangeInfoKHR{ vkBuilder->instanceCount, 0u, 0u, 0u };
-            cmd->TLASBuild = true;
+            RecordMemoryAccess(queue, prevRange, stageFlags, accessFlags);
         }
 
-        if (scratchBuffer)
-        {
-            ReleaseStagingBuffer(scratchBuffer);
-        }
-
+        RecordMemoryAccess(queue, vkStructure->view.memory, stageFlags, accessFlags);
+        ReleaseStagingBuffer(scratchBuffer);
         ReleaseStagingBuffer(vkBuilder->stagingBuffer);
+
         vkStructure->topologyHash = vkBuilder->topologyHash;
         vkStructure->instanceCount = vkBuilder->instanceCount;
-
-        if (rebuildTLAS)
-        {
-            cmd->passIndex = AddBarrierPass(queue, false);
-
-            RecordMemoryAccess(queue, 
-                vkStructure->view, 
-                VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR,
-                VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
-        }
     }
 
 
@@ -1384,10 +1348,10 @@ namespace PK
         return 0u;
     }
 
-    void VulkanGraph::RecordMemoryAccess(QueueType queue, const VulkanResourceView& view, VkPipelineStageFlags2 stage, VkAccessFlags2 access)
+    void VulkanGraph::RecordMemoryAccess(QueueType queue, const VkDeviceAddressRangeKHR& range, VkPipelineStageFlags2 stage, VkAccessFlags2 access)
     {
         VulkanAccessRecord record{};
-        record.memory = view.memory;
+        record.memory = range;
         record.stage = stage;
         record.access = access;
         record.isLocked = queue == QueueType::EnumCount;
@@ -1447,7 +1411,7 @@ namespace PK
                     if (parameter.type == Uniform::AccelerationStructure)
                     {
                         reinterpret_cast<uint64_t*>(pushConstants + parameter.offset)[i] = views[i].memory.address;
-                        RecordMemoryAccess(queue, views[i], stageFlags, VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
+                        RecordMemoryAccess(queue, views[i].memory, stageFlags, VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR);
                         continue;
                     }
 
@@ -1466,8 +1430,8 @@ namespace PK
                     {
                         case Uniform::Texture:
                         case Uniform::Image:          RecordImageAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT); break;
-                        case Uniform::StorageBuffer:  RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT); break;
-                        case Uniform::ConstantBuffer: RecordMemoryAccess(queue, views[i], stageFlags, access | VK_ACCESS_2_UNIFORM_READ_BIT | VK_ACCESS_2_SHADER_READ_BIT); break;
+                        case Uniform::StorageBuffer:  RecordMemoryAccess(queue, views[i].memory, stageFlags, access | VK_ACCESS_2_SHADER_READ_BIT); break;
+                        case Uniform::ConstantBuffer: RecordMemoryAccess(queue, views[i].memory, stageFlags, access | VK_ACCESS_2_UNIFORM_READ_BIT | VK_ACCESS_2_SHADER_READ_BIT); break;
                         default: break;
                     }
                 }
@@ -1726,7 +1690,7 @@ namespace PK
 
         for (auto i = 0u; i < state->vertexBufferCount; ++i)
         {
-            RecordMemoryAccess(QueueType::Graphics, state->resolvedVertexViews[i], VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT);
+            RecordMemoryAccess(QueueType::Graphics, state->resolvedVertexViews[i].memory, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT);
         }
 
         cmd->vertexBufferCount = state->vertexBufferCount;
@@ -1738,7 +1702,7 @@ namespace PK
     {
         if (m_pipelineState.indexBuffer.hash)
         {
-            RecordMemoryAccess(QueueType::Graphics, m_pipelineState.indexBuffer, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT, VK_ACCESS_2_INDEX_READ_BIT);
+            RecordMemoryAccess(QueueType::Graphics, m_pipelineState.indexBuffer.memory, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT, VK_ACCESS_2_INDEX_READ_BIT);
             cmd->indexInfo.sType = VK_STRUCTURE_TYPE_BIND_INDEX_BUFFER_3_INFO_KHR;
             cmd->indexInfo.pNext = nullptr;
             cmd->indexInfo.addressRange = m_pipelineState.indexBuffer.memory;

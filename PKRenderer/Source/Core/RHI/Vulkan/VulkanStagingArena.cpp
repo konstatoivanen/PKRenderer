@@ -35,7 +35,7 @@ namespace PK
             PK_FATAL_ASSERT(memFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "VulkanStagingArena failed to allocate in ReBAR (DEVICE_LOCAL) memory!");
 
             VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)m_buffer, "VulkanStagingArena");
-            m_deviceAddress = VulkanGetBudderDeviceAddress(device, m_buffer);
+            m_deviceAddress = VulkanGetBufferDeviceAddress(device, m_buffer);
         }
     }
 
@@ -47,13 +47,15 @@ namespace PK
         }
     }
 
-    VulkanStagingBuffer* VulkanStagingArena::BeginWrite(VkDeviceSize size)
+    VulkanStagingBuffer* VulkanStagingArena::BeginWrite(VkDeviceSize size, VkDeviceSize alignment)
     {
         auto index = m_bufferMask.FindFirstZero();
 
         PK_DEBUG_FATAL_ASSERT(m_inRange && m_size && size && index >= 0 && index < MAX_STACK, "VulkanStagingArena: Failed to acquire staging buffer!");
 
-        const auto alignedSize = math::align(size, 64ull); // 512
+        m_bufferHead = math::align(m_bufferHead, alignment);
+
+        const auto alignedSize = math::align(size, alignment);
         auto allocationOffset = m_bufferHead % m_size;
 
         if (allocationOffset + alignedSize > m_size)
