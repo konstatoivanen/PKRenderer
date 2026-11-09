@@ -19,6 +19,7 @@ namespace PK
         const char* names[MAX_QUEUES]{};
         VkDeviceQueueCreateInfo createInfos[MAX_QUEUES]{};
         VkQueueFamilyProperties familyProperties[MAX_QUEUES]{};
+        VkDeviceQueueGlobalPriorityCreateInfoKHR globalPriorities[MAX_QUEUES]{};
         uint32_t queueCount = 0u;
         VulkanQueueFamilies selectedAll;
         VulkanQueueFamilies selectedRender;

@@ -19,10 +19,11 @@ namespace PK
     {
         uint64_t passIndex;
         const VkImageMemoryBarrier2* imageTransitions = nullptr;
-        const VkMemoryBarrier2* memoryBarrier = nullptr;
+        VkMemoryBarrier2* memoryBarrier = nullptr;
         VkPipelineStageFlags2 waitStageMask = 0ull;
         uint32_t imageTransitionCount = 0u;
-        uint32_t dependencyMask = 0u;
+        uint16_t dependencyMask = 0u;
+        uint16_t submitQueueMask = 0u;
     };
 
     struct VulkanShaderCmd : public VulkanCmd
@@ -339,6 +340,7 @@ namespace PK
         VulkanTimerArena* m_timerArena;
         mutable VulkanGraphScope m_scopes[PK_VK_MAX_GRAPH_SCOPES]{};
         uint64_t m_invocationCounter;
+        uint32_t m_syncedPasses[(uint32_t)QueueType::EnumCount][(uint32_t)QueueType::EnumCount]{};
         
         struct PipelineState
         {

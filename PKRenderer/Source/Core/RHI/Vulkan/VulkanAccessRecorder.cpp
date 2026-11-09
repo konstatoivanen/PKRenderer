@@ -5,6 +5,7 @@
 namespace PK
 {
     constexpr const static uint32_t NULL_NODE = UINT32_MAX;
+    constexpr const static uint8_t NULL_QUEUE = 0xFFu;
 
     inline static uint64_t MinU64(uint64_t a, uint64_t b) { return a < b ? a : b; }
     inline static uint64_t MaxU64(uint64_t a, uint64_t b) { return a > b ? a : b; }
@@ -15,29 +16,85 @@ namespace PK
     inline static uint32_t AddU32(uint32_t offset, uint32_t size) { return size == ~0u ? ~0u : (offset + size); }
     inline static uint32_t SubU32(uint32_t beg, uint32_t end) { return end == ~0u ? ~0u : (end - beg); }
 
-    inline static bool NeedsBarrier(const VulkanAccessRecorder::State& a, const VulkanAccessRecorder::State& b)
+    inline static void ClearState(VulkanAccessRecorder::State& state)
     {
-        if (a.lastPass == b.lastPass || a.access == VK_ACCESS_2_NONE)
+        state = {};
+        state.writeQueue = NULL_QUEUE;
+    }
+
+    inline static void MergeState(VulkanAccessRecorder::State& dst, const VulkanAccessRecorder::State& src)
+    {
+        if (src.writePass)
         {
-            return false;
+            dst.writeStage |= src.writeStage;
+            dst.writeAccess |= src.writeAccess;
+
+            if (src.writePass > dst.writePass)
+            {
+                dst.writePass = src.writePass;
+                dst.writeQueue = src.writeQueue;
+            }
         }
 
-        return VulkanEnumConvert::IsWriteAccess(a.access) || VulkanEnumConvert::IsWriteAccess(b.access);
+        dst.isLocked |= src.isLocked;
+        dst.readMask |= src.readMask;
+
+        for (auto queue = 0u; queue < (uint32_t)QueueType::EnumCount; ++queue)
+        {
+            if (src.readMask & (1u << queue))
+            {
+                dst.readStage[queue] |= src.readStage[queue];
+                dst.readPass[queue] = MaxU32(dst.readPass[queue], src.readPass[queue]);
+            }
+        }
     }
 
     inline static bool CanMerge(const VulkanAccessRecorder::State& a, const VulkanAccessRecorder::State& b)
     {
-        if (a.isLocked != b.isLocked)
+        if (a.isLocked != b.isLocked || a.writeQueue != b.writeQueue || a.writePass != b.writePass || a.readMask != b.readMask)
         {
             return false;
         }
 
-        if (VulkanEnumConvert::IsWriteAccess(a.access) || VulkanEnumConvert::IsWriteAccess(b.access))
+        if (a.writePass && (a.writeStage != b.writeStage || a.writeAccess != b.writeAccess))
         {
-            return a.access == b.access && a.stage == b.stage && a.lastPass == b.lastPass && a.queueMask == b.queueMask;
+            return false;
         }
 
-        return a.queueMask == b.queueMask;
+        for (auto queue = 0u; queue < (uint32_t)QueueType::EnumCount; ++queue)
+        {
+            if ((a.readMask & (1u << queue)) && a.readPass[queue] != b.readPass[queue])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    inline static bool ResetState(VulkanAccessRecorder::State& state, uint64_t passFlush)
+    {
+        state.isLocked = 0u;
+
+        if (state.writePass <= passFlush)
+        {
+            state.writeStage = VK_PIPELINE_STAGE_2_NONE;
+            state.writeAccess = VK_ACCESS_2_NONE;
+            state.writePass = 0u;
+            state.writeQueue = NULL_QUEUE;
+        }
+
+        for (auto queue = 0u; queue < (uint32_t)QueueType::EnumCount; ++queue)
+        {
+            if (state.readPass[queue] <= passFlush)
+            {
+                state.readStage[queue] = VK_PIPELINE_STAGE_2_NONE;
+                state.readPass[queue] = 0u;
+                state.readMask &= ~(1u << queue);
+            }
+        }
+
+        return state.writePass == 0u && state.readMask == 0u;
     }
 
     void VulkanAccessRecorder::ResetPasses(uint64_t flushedPassIndex)
@@ -46,50 +103,66 @@ namespace PK
         m_passCount = 0u;
         m_passFlush = MaxU64(m_passFlush, flushedPassIndex);
         m_passFirst = m_passCounter;
+        memset(m_residencyWaitPasses, 0, sizeof(m_residencyWaitPasses));
 
         for (auto curr = m_memoryHead; curr != NULL_NODE; curr = m_nodes[curr].next)
         {
             auto* node = &m_nodes[curr];
-            node->state.isLocked = 0u;
 
-            if (node->state.lastPass <= m_passFlush)
+            if (ResetState(node->state, m_passFlush) &&
+                node->prev != NULL_NODE &&
+                m_nodes[node->prev].state.writePass == 0u &&
+                m_nodes[node->prev].state.readMask == 0u)
             {
-                node->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-                node->state.access = VK_ACCESS_2_NONE;
-                node->state.lastPass = 0u;
-                node->state.queueMask = 0u;
+                auto* prev = &m_nodes[node->prev];
+                const auto currEnd = AddU64(node->memory.offset, node->memory.size);
+                node->memory.offset = prev->memory.offset;
+                node->memory.size = SubU64(prev->memory.offset, currEnd);
+                ListRemove(&m_memoryHead, node->prev);
+            }
+        }
 
-                if (node->prev != NULL_NODE && m_nodes[node->prev].state.lastPass == 0u)
+        for (auto i = 0u; i < m_images.GetCount(); ++i)
+        {
+            auto head = m_images[i].value.head;
+            auto isIdle = true;
+
+            for (auto curr = head; curr != NULL_NODE; curr = m_nodes[curr].next)
+            {
+                isIdle &= ResetState(m_nodes[curr].state, m_passFlush);
+            }
+
+            if (isIdle && head != NULL_NODE && m_nodes[head].next != NULL_NODE)
+            {
+                while (m_nodes[head].next != NULL_NODE)
                 {
-                    auto* prev = &m_nodes[node->prev];
-                    const auto currEnd = AddU64(node->memory.offset, node->memory.size);
-                    node->memory.offset = prev->memory.offset;
-                    node->memory.size = SubU64(prev->memory.offset, currEnd);
-                    ListRemove(&m_memoryHead, node->prev);
+                    ListRemove(&m_images[i].value.head, m_nodes[head].next);
                 }
+
+                m_nodes[head].image.baseMipLevel = 0u;
+                m_nodes[head].image.levelCount = VK_REMAINING_MIP_LEVELS;
+                m_nodes[head].image.baseArrayLayer = 0u;
+                m_nodes[head].image.layerCount = VK_REMAINING_ARRAY_LAYERS;
             }
         }
     }
-    
+
     uint64_t VulkanAccessRecorder::AddPass()
     {
         PK_DEBUG_FATAL_ASSERT(m_passCount < PK_VK_MAX_ACCESS_PASSES, "VulkanAccessRecorder::PassBarriers pool exhausted!");
-    
+
         if (m_passCount < PK_VK_MAX_ACCESS_PASSES)
         {
             auto passIndex = m_passCount++;
-            auto* pass = &m_passes[passIndex];
-            pass->imageTransitions = &m_imageTransitions[m_imageTransitionHead];
-            pass->memoryBarrier = {};
-            pass->memoryBarrier.sType = VK_STRUCTURE_TYPE_MAX_ENUM;
-            pass->imageTransitionCount = 0u;
-            pass->dependencyMask = 0u;
+            m_passes[passIndex] = {};
+            m_passes[passIndex].imageTransitions = &m_imageTransitions[m_imageTransitionHead];
+            m_passes[passIndex].memoryBarrier.sType = VK_STRUCTURE_TYPE_MAX_ENUM;
             m_passCounter++;
         }
 
         return m_passCount;
     }
-    
+
     void VulkanAccessRecorder::RegisterImage(VkImage image, VkImageAspectFlags aspectMask)
     {
         auto index = 0u;
@@ -98,21 +171,17 @@ namespace PK
             m_images[index].value.aspectMask = aspectMask;
             m_images[index].value.isNew = true;
             const auto node = AllocNode();
-    
-            if (node != NULL_NODE) 
+
+            if (node != NULL_NODE)
             {
                 auto* n = &m_nodes[node];
                 n->image.baseMipLevel = 0;
                 n->image.levelCount = VK_REMAINING_MIP_LEVELS;
                 n->image.baseArrayLayer = 0;
                 n->image.layerCount = VK_REMAINING_ARRAY_LAYERS;
-                n->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-                n->state.access = VK_ACCESS_2_NONE;
-                n->state.lastPass = 0u;
-                n->state.queueMask = 0u;
-                n->state.isLocked = 0u;
                 n->next = NULL_NODE;
                 n->prev = NULL_NODE;
+                ClearState(n->state);
                 m_images[index].value.head = node;
             }
         }
@@ -125,21 +194,21 @@ namespace PK
         if (index != -1)
         {
             auto curr = m_images[index].value.head;
-            
-            while (curr != NULL_NODE) 
+
+            while (curr != NULL_NODE)
             {
                 auto next = m_nodes[curr].next;
                 m_nodeResidency[curr] = false;
                 curr = next;
             }
-            
+
             m_images.RemoveAt(index);
         }
     }
 
     void VulkanAccessRecorder::RecordMemoryAccess(const VulkanAccessRecord& record)
     {
-        PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanAccessRecorder::RecordBufferAccess called before calling VulkanAccessRecorder::AddPass!");
+        PK_DEBUG_FATAL_ASSERT(m_passCount > 0, "VulkanAccessRecorder::RecordMemoryAccess called before calling VulkanAccessRecorder::AddPass!");
 
         if (m_memoryHead == NULL_NODE)
         {
@@ -147,22 +216,11 @@ namespace PK
             auto* root = &m_nodes[m_memoryHead];
             root->memory.offset = 0ull;
             root->memory.size = VK_WHOLE_SIZE;
-            root->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-            root->state.access = VK_ACCESS_2_NONE;
-            root->state.lastPass = 0u;
-            root->state.queueMask = 0u;
-            root->state.isLocked = 0u;
+            ClearState(root->state);
         }
 
         const auto new_beg = record.memory.address;
         const auto new_end = AddU64(record.memory.address, record.memory.size);
-
-        State new_state;
-        new_state.stage = record.stage;
-        new_state.access = record.access;
-        new_state.lastPass = (uint32_t)m_passCounter;
-        new_state.queueMask = record.queueMask;
-        new_state.isLocked = record.isLocked;
 
         for (auto curr = m_memoryHead; curr != NULL_NODE; curr = m_nodes[curr].next)
         {
@@ -177,36 +235,8 @@ namespace PK
                 break;
             }
 
-            if (overlap_beg >= overlap_end)
+            if (overlap_beg < overlap_end)
             {
-                continue;
-            }
-
-            if (node->state.lastPass <= m_passFirst)
-            {
-                node->state.isLocked = 0u;
-            }
-
-            // If this range's last access already finished on the GPU, clear its stale state
-            if (node->state.lastPass && node->state.lastPass <= m_passFlush)
-            {
-                node->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-                node->state.access = VK_ACCESS_2_NONE;
-                node->state.lastPass = 0u;
-                node->state.queueMask = 0u;
-                node->state.isLocked = 0u;
-            }
-
-
-            if (NeedsBarrier(node->state, new_state) || node->state.access == VK_ACCESS_2_NONE)
-            {
-                PK_DEBUG_FATAL_ASSERT(!node->state.isLocked || !VulkanEnumConvert::IsWriteAccess(new_state.access), "Attempting to write to a read-only locked resident memory range!");
-                
-                if (node->state.access != VK_ACCESS_2_NONE)
-                {
-                    EmitMemoryBarrier(node->state, new_state);
-                }
-
                 if (cur_beg < overlap_beg)
                 {
                     const auto left = AllocNode();
@@ -227,43 +257,31 @@ namespace PK
 
                 node->memory.offset = overlap_beg;
                 node->memory.size = SubU64(overlap_beg, overlap_end);
-                node->state = new_state;
-            }
-            else
-            {
-                node->state.stage |= new_state.stage;
-                node->state.access |= new_state.access;
-                node->state.lastPass = new_state.lastPass;
-                node->state.queueMask |= new_state.queueMask;
-                node->state.isLocked |= new_state.isLocked;
-            }
+                ResolveAccess(node->state, record);
 
-            if (node->prev != NULL_NODE)
-            {
-                auto* prev = &m_nodes[node->prev];
-                if (CanMerge(prev->state, node->state))
+                if (node->prev != NULL_NODE)
                 {
-                    const auto curr_end_new = AddU64(node->memory.offset, node->memory.size);
-                    node->memory.offset = prev->memory.offset;
-                    node->memory.size = SubU64(prev->memory.offset, curr_end_new);
-                    node->state.stage |= prev->state.stage;
-                    node->state.access |= prev->state.access;
-                    node->state.lastPass = MaxU32(node->state.lastPass, prev->state.lastPass);
-                    ListRemove(&m_memoryHead, node->prev);
+                    auto* prev = &m_nodes[node->prev];
+                    if (CanMerge(prev->state, node->state))
+                    {
+                        const auto curr_end_new = AddU64(node->memory.offset, node->memory.size);
+                        node->memory.offset = prev->memory.offset;
+                        node->memory.size = SubU64(prev->memory.offset, curr_end_new);
+                        MergeState(node->state, prev->state);
+                        ListRemove(&m_memoryHead, node->prev);
+                    }
                 }
-            }
 
-            if (node->next != NULL_NODE)
-            {
-                auto* next = &m_nodes[node->next];
-                if (CanMerge(node->state, next->state))
+                if (node->next != NULL_NODE)
                 {
-                    const auto merged_end = AddU64(next->memory.offset, next->memory.size);
-                    node->memory.size = SubU64(node->memory.offset, merged_end);
-                    node->state.stage |= next->state.stage;
-                    node->state.access |= next->state.access;
-                    node->state.lastPass = MaxU32(node->state.lastPass, next->state.lastPass);
-                    ListRemove(&m_memoryHead, node->next);
+                    auto* next = &m_nodes[node->next];
+                    if (CanMerge(node->state, next->state))
+                    {
+                        const auto merged_end = AddU64(next->memory.offset, next->memory.size);
+                        node->memory.size = SubU64(node->memory.offset, merged_end);
+                        MergeState(node->state, next->state);
+                        ListRemove(&m_memoryHead, node->next);
+                    }
                 }
             }
         }
@@ -304,13 +322,8 @@ namespace PK
             imageHead->isNew = false;
         }
 
-        State new_state;
-        new_state.stage = record.stage;
-        new_state.access = record.access;
-        new_state.lastPass = m_passCounter;
-        new_state.queueMask = record.queueMask;
-        new_state.isLocked = record.isLocked;;
-        State accumulated_state = new_state;
+        State accumulated_state;
+        ClearState(accumulated_state);
 
         for (auto curr = imageHead->head; curr != NULL_NODE;)
         {
@@ -329,34 +342,6 @@ namespace PK
             {
                 curr = next;
                 continue;
-            }
-
-            if (node->state.lastPass <= m_passFirst)
-            {
-                node->state.isLocked = 0u;
-            }
-
-            if (node->state.lastPass && node->state.lastPass <= m_passFlush)
-            {
-                node->state.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-                node->state.access = VK_ACCESS_2_NONE;
-                node->state.lastPass = 0u;
-                node->state.queueMask = 0u;
-                node->state.isLocked = 0u;
-            }
-
-            if (NeedsBarrier(node->state, new_state))
-            {
-                PK_DEBUG_FATAL_ASSERT(!node->state.isLocked || !VulkanEnumConvert::IsWriteAccess(new_state.access), "Cannot write to a bindless resident image during the same graph scope!");
-                EmitMemoryBarrier(node->state, new_state);
-            }
-            else
-            {
-                accumulated_state.stage |= node->state.stage;
-                accumulated_state.access |= node->state.access;
-                accumulated_state.queueMask |= node->state.queueMask;
-                accumulated_state.isLocked |= node->state.isLocked;
-                PK_DEBUG_FATAL_ASSERT(!accumulated_state.isLocked || !VulkanEnumConvert::IsWriteAccess(accumulated_state.access), "Cannot write to a bindless resident image during the same graph scope!");
             }
 
             if (cur_level_beg < overlap_level_beg)
@@ -403,8 +388,11 @@ namespace PK
                 ListInsertBefore(&imageHead->head, curr, right);
             }
 
+            ResolveAccess(node->state, record);
+            MergeState(accumulated_state, node->state);
+
             ListRemove(&imageHead->head, curr);
-            curr = node->next;
+            curr = next;
         }
 
         const auto final_node = AllocNode();
@@ -413,7 +401,7 @@ namespace PK
         m_nodes[final_node].image.baseArrayLayer = record.image.baseArrayLayer;
         m_nodes[final_node].image.layerCount = record.image.layerCount;
         m_nodes[final_node].state = accumulated_state;
-        
+
         if (imageHead->head == NULL_NODE)
         {
             imageHead->head = final_node;
@@ -427,33 +415,119 @@ namespace PK
     VulkanPassDependencies VulkanAccessRecorder::GetPassDependencies(uint32_t passIndex)
     {
         VulkanPassDependencies dependencies{};
-        
+
         if (passIndex <= m_passCount && passIndex > 0u)
         {
-            const auto* pass = &m_passes[passIndex - 1u];
+            auto* pass = &m_passes[passIndex - 1u];
             dependencies.memoryBarrier = pass->memoryBarrier.sType != VK_STRUCTURE_TYPE_MAX_ENUM ? &pass->memoryBarrier : nullptr;
             dependencies.imageTransitions = pass->imageTransitions;
             dependencies.imageTransitionCount = pass->imageTransitionCount;
-            dependencies.dependencyMask = pass->dependencyMask;
+            dependencies.waitStageMask = pass->waitStageMask;
+            dependencies.waitPasses = pass->waitPasses;
         }
 
         return dependencies;
     }
 
-    void VulkanAccessRecorder::EmitMemoryBarrier(const State& src, const State& dst)
+    void VulkanAccessRecorder::ResolveAccess(State& state, const VulkanAccessRecord& record)
+    {
+        const auto currentPass = (uint32_t)m_passCounter;
+        const auto isWrite = VulkanEnumConvert::IsWriteAccess(record.access);
+        PK_DEBUG_FATAL_ASSERT(!state.isLocked || !isWrite, "Cannot write to a read-only locked resident resource during the same graph scope!");
+
+        if (record.isLocked)
+        {
+            if (state.writePass)
+            {
+                EmitBarrier(state.writeQueue, state.writePass, state.writeStage, state.writeAccess, record.stage, record.access);
+                EmitWait(state.writeQueue, state.writePass, record.stage);
+                m_residencyWaitPasses[state.writeQueue] = MaxU32(m_residencyWaitPasses[state.writeQueue], state.writePass);
+                ClearState(state);
+            }
+
+            state.isLocked = 1u;
+            return;
+        }
+
+        // RAW & WAW: Synchronize against last write
+        const auto dstStage = isWrite ? record.stage : (record.stage & ~state.readStage[record.queue]);
+
+        if (state.writePass && state.writePass != currentPass && dstStage)
+        {
+            if (state.writeQueue == record.queue)
+            {
+                EmitBarrier(record.queue, state.writePass, state.writeStage, state.writeAccess, dstStage, record.access);
+            }
+            else
+            {
+                EmitWait(state.writeQueue, state.writePass, dstStage);
+            }
+        }
+
+        if (!isWrite)
+        {
+            if (state.writePass != currentPass)
+            {
+                state.readStage[record.queue] |= record.stage;
+                state.readPass[record.queue] = currentPass;
+                state.readMask |= (1u << record.queue);
+            }
+
+            return;
+        }
+
+        // WAR: Synchronize against active readers since last write
+        for (auto queue = 0u; queue < (uint32_t)QueueType::EnumCount; ++queue)
+        {
+            if ((state.readMask & (1u << queue)) && state.readPass[queue] != currentPass)
+            {
+                if (queue == record.queue)
+                {
+                    EmitBarrier(queue, state.readPass[queue], state.readStage[queue], VK_ACCESS_2_NONE, record.stage, VK_ACCESS_2_NONE);
+                }
+                else
+                {
+                    EmitWait(queue, state.readPass[queue], record.stage);
+                }
+            }
+        }
+
+        // Record new write state and clear readers
+        if (state.writePass != currentPass || state.writeQueue != record.queue)
+        {
+            ClearState(state);
+            state.writePass = currentPass;
+            state.writeQueue = record.queue;
+        }
+
+        state.writeStage |= record.stage;
+        state.writeAccess |= record.access;
+    }
+
+    void VulkanAccessRecorder::EmitBarrier(
+        uint32_t srcQueue,
+        uint32_t srcPass,
+        VkPipelineStageFlags2 srcStage,
+        VkAccessFlags2 srcAccess,
+        VkPipelineStageFlags2 dstStage,
+        VkAccessFlags2 dstAccess)
     {
         auto* pass = &m_passes[m_passCount - 1ull];
         pass->memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
-        pass->memoryBarrier.srcStageMask |= src.stage;
-        pass->memoryBarrier.srcAccessMask |= src.access;
-        pass->memoryBarrier.dstStageMask |= dst.stage;
-        pass->memoryBarrier.dstAccessMask |= dst.access;
-
-        if (src.queueMask != dst.queueMask)
-        {
-            pass->dependencyMask |= src.queueMask;
-        }
+        pass->memoryBarrier.srcStageMask |= srcStage;
+        pass->memoryBarrier.srcAccessMask |= srcAccess;
+        pass->memoryBarrier.dstStageMask |= dstStage;
+        pass->memoryBarrier.dstAccessMask |= dstAccess;
+        pass->waitPasses[srcQueue] = MaxU32(pass->waitPasses[srcQueue], srcPass);
     }
+
+    void VulkanAccessRecorder::EmitWait(uint32_t srcQueue, uint32_t srcPass, VkPipelineStageFlags2 dstStage)
+    {
+        auto* pass = &m_passes[m_passCount - 1ull];
+        pass->waitStageMask |= dstStage;
+        pass->waitPasses[srcQueue] = MaxU32(pass->waitPasses[srcQueue], srcPass);
+    }
+
 
     uint32_t VulkanAccessRecorder::AllocNode()
     {
@@ -476,7 +550,7 @@ namespace PK
         auto* r = &m_nodes[ref];
         n->next = ref;
         n->prev = r->prev;
-        
+
         if (r->prev != NULL_NODE)
         {
             m_nodes[r->prev].next = node;
@@ -488,7 +562,7 @@ namespace PK
 
         r->prev = node;
     }
-    
+
     void VulkanAccessRecorder::ListInsertAfter(uint32_t ref, uint32_t node)
     {
         auto* n = &m_nodes[node];
@@ -503,21 +577,21 @@ namespace PK
 
         r->next = node;
     }
-    
+
     void VulkanAccessRecorder::ListRemove(uint32_t* head, uint32_t node)
     {
         auto* n = &m_nodes[node];
-        
+
         if (n->prev != NULL_NODE)
         {
             m_nodes[n->prev].next = n->next;
         }
-        else 
+        else
         {
             *head = n->next;
         }
 
-        if (n->next != NULL_NODE) 
+        if (n->next != NULL_NODE)
         {
             m_nodes[n->next].prev = n->prev;
         }

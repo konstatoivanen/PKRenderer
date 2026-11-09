@@ -1001,7 +1001,7 @@ namespace PK
 
             if (acquireSignal != VK_NULL_HANDLE)
             {
-                ctx->queue->AddWait(acquireSignal, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, 0ull);
+                ctx->queue->AddWait(acquireSignal, VK_PIPELINE_STAGE_2_BLIT_BIT, 0ull);
             }
 
             if (presentSignal != VK_NULL_HANDLE)
@@ -1106,114 +1106,198 @@ namespace PK
     {
         auto queues = m_driver->queues.get();
         queues->SetDescriptorHeaps(m_descriptorHeap->GetResourceHeapInfo(), m_descriptorHeap->GetSamplerHeapInfo());
-
+    
         auto queueCount = queues->GetQueueCount();
         auto& scope = EndGraph();
         m_timerArena->BeginTimeline();
+    
+        const auto passFirst = (uint32_t)m_accessRecorder.GetPassFirst();
+        const auto passFlush = (uint32_t)m_accessRecorder.GetPassFlush();
+        const auto passCount = (uint32_t)m_accessRecorder.GetPassCount();
+        const auto* residencyWaitPasses = m_accessRecorder.GetResidencyWaitPasses();
+    
+        // Maps local pass index -> the next command on the SAME queue that starts after that pass finishes
+        auto* producerSplitCmds = Allocate<VulkanCmd*>(passCount);
 
-        uint32_t activeQueueIndex = ~0u;
-        uint32_t* activeDependencyMask = nullptr;
-        VkPipelineStageFlags2* activeWaitStageMask = nullptr;
-        uint32_t queueBatchId[(uint32_t)QueueType::EnumCount]{ 1u, 1u, 1u, 1u };
-        uint32_t syncedBatchId[(uint32_t)QueueType::EnumCount][(uint32_t)QueueType::EnumCount]{};
-        VulkanGraphDebugScopes debugScopes{};
-
-        for (auto command = static_cast<VulkanCmd*>(GetCommands()); command; command = static_cast<VulkanCmd*>(command->next))
+        if (producerSplitCmds)
         {
-            if (command->queue != QueueType::EnumCount)
+            memset(producerSplitCmds, 0, sizeof(VulkanCmd*) * passCount);
+        }
+
+        VulkanCmd* hoistBarrierCmd[(uint32_t)QueueType::EnumCount]{};
+        uint32_t prevPassOnQueue[(uint32_t)QueueType::EnumCount]{};
+        uint32_t hoistBarrierPass[(uint32_t)QueueType::EnumCount]{};
+
+        for (auto queue = 0u; queue < queueCount; ++queue)
+        {
+            prevPassOnQueue[queue] = passFirst;
+            hoistBarrierPass[queue] = passFlush;
+
+            for (auto producerQueue = 0u; producerQueue < queueCount; ++producerQueue)
             {
-                const auto dstQueueIndex = queues->GetQueueIndex(command->queue);
-
-                if (activeQueueIndex != dstQueueIndex)
-                {
-                    activeQueueIndex = dstQueueIndex;
-                    activeDependencyMask = &command->dependencyMask;
-                    activeWaitStageMask = &command->waitStageMask;
-                    queueBatchId[dstQueueIndex]++;
-                }
-
-                if (command->passIndex)
-                {
-                    auto dependencies = m_accessRecorder.GetPassDependencies(command->passIndex);
-                    auto rawMask = dependencies.dependencyMask & ~(1u << dstQueueIndex);
-                    auto newMask = 0u;
-
-                    for (auto srcQueueIndex = 0u; srcQueueIndex < queueCount; ++srcQueueIndex)
-                    {
-                        if ((rawMask & (1u << srcQueueIndex)) && syncedBatchId[dstQueueIndex][srcQueueIndex] < queueBatchId[srcQueueIndex])
-                        {
-                            newMask |= (1u << srcQueueIndex);
-                            syncedBatchId[dstQueueIndex][srcQueueIndex] = queueBatchId[srcQueueIndex];
-                        }
-                    }
-
-                    if (newMask)
-                    {
-                        *activeDependencyMask |= newMask;
-                        *activeWaitStageMask |= dependencies.memoryBarrier->dstStageMask;
-                    }
-
-                    command->memoryBarrier = dependencies.memoryBarrier;
-                    command->imageTransitions = dependencies.imageTransitions;
-                    command->imageTransitionCount = dependencies.imageTransitionCount;
-                }
+                m_syncedPasses[queue][producerQueue] = math::max(m_syncedPasses[queue][producerQueue], passFlush);
             }
         }
 
         for (auto command = static_cast<VulkanCmd*>(GetCommands()); command; command = static_cast<VulkanCmd*>(command->next))
         {
+            if (command->queue == QueueType::EnumCount || command->passIndex == 0u)
+            {
+                continue;
+            }
+
+            const auto consumerQueue = queues->GetQueueIndex(command->queue);
+            const auto consumerPass = passFirst + (uint32_t)command->passIndex;
+            auto deps = m_accessRecorder.GetPassDependencies((uint32_t)command->passIndex);
+
+            // Link the previous pass on this queue to this command so it can split here if another queue consumes it
+            if (prevPassOnQueue[consumerQueue] > passFirst)
+            {
+                producerSplitCmds[prevPassOnQueue[consumerQueue] - passFirst - 1u] = command;
+            }
+
+            // Cross-queue dependencies: split producer immediately after producerPass & flush consumer before waiting
+            uint16_t waitQueueMask = 0u;
+
+            for (auto producerQueue = 0u; producerQueue < queueCount; ++producerQueue)
+            {
+                const auto producerPass = math::max(deps.waitPasses[producerQueue], residencyWaitPasses[producerQueue]);
+
+                if (producerQueue != consumerQueue && producerPass > m_syncedPasses[consumerQueue][producerQueue])
+                {
+                    waitQueueMask |= 1u << producerQueue;
+
+                    if (producerPass > passFirst)
+                    {
+                        m_syncedPasses[consumerQueue][producerQueue] = producerPass;
+
+                        if (auto* producerSplitCmd = producerSplitCmds[producerPass - passFirst - 1u])
+                        {
+                            producerSplitCmd->submitQueueMask |= 1u << producerQueue;
+                        }
+                        else
+                        {
+                            command->submitQueueMask |= 1u << producerQueue;
+                        }
+                    }
+                    else
+                    {
+                        // Producer pass was already submitted at the end of a previous scope
+                        m_syncedPasses[consumerQueue][producerQueue] = passFirst;
+                    }
+                }
+            }
+
+            if (waitQueueMask)
+            {
+                // If consumerQueue already recorded independent passes in this scope, submit them before waiting
+                if (prevPassOnQueue[consumerQueue] > passFirst)
+                {
+                    command->submitQueueMask |= (1u << consumerQueue);
+                }
+
+                command->dependencyMask = waitQueueMask;
+                command->waitStageMask = deps.waitStageMask ? deps.waitStageMask : VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+                hoistBarrierCmd[consumerQueue] = nullptr;
+            }
+
+            // Same-queue dependencies: hoist and merge barriers across independent passes
+            command->imageTransitions = deps.imageTransitions;
+            command->imageTransitionCount = deps.imageTransitionCount;
+
+            if (deps.memoryBarrier)
+            {
+                const auto producerPass = deps.waitPasses[consumerQueue];
+
+                if (producerPass <= hoistBarrierPass[consumerQueue] && hoistBarrierCmd[consumerQueue])
+                {
+                    auto* hoistedBarrier = hoistBarrierCmd[consumerQueue]->memoryBarrier;
+                    hoistedBarrier->srcStageMask |= deps.memoryBarrier->srcStageMask;
+                    hoistedBarrier->srcAccessMask |= deps.memoryBarrier->srcAccessMask;
+                    hoistedBarrier->dstStageMask |= deps.memoryBarrier->dstStageMask;
+                    hoistedBarrier->dstAccessMask |= deps.memoryBarrier->dstAccessMask;
+                    command->memoryBarrier = nullptr;
+                }
+                else
+                {
+                    command->memoryBarrier = deps.memoryBarrier;
+                    hoistBarrierPass[consumerQueue] = prevPassOnQueue[consumerQueue];
+                    hoistBarrierCmd[consumerQueue] = command;
+                }
+            }
+            else if (deps.imageTransitionCount)
+            {
+                hoistBarrierPass[consumerQueue] = prevPassOnQueue[consumerQueue];
+            }
+
+            prevPassOnQueue[consumerQueue] = consumerPass;
+        }
+    
+        VulkanGraphDebugScopes debugScopes{};
+    
+        // Execute commands, submits, waits, and barriers
+        for (auto command = static_cast<VulkanCmd*>(GetCommands()); command; command = static_cast<VulkanCmd*>(command->next))
+        {
             VulkanGraphContext ctx{};
             ctx.graph = this;
             ctx.debugScopes = &debugScopes;
-
+    
             if (command->queue == QueueType::EnumCount)
             {
                 command->call(&ctx, command);
                 continue;
             }
-
+    
             ctx.queueIndex = queues->GetQueueIndex(command->queue);
             ctx.queue = queues->GetQueueAt(ctx.queueIndex);
-            
-            if (command->dependencyMask)
+    
+            if (command->submitQueueMask != 0u)
             {
-                SubmitQueue(ctx.queueIndex, VK_NULL_HANDLE, &debugScopes);
-
-                for (auto srcQueueIndex = 0u; srcQueueIndex < queueCount; ++srcQueueIndex)
+                for (auto queue = 0u; queue < queueCount; ++queue)
                 {
-                    if (command->dependencyMask & (1u << srcQueueIndex))
+                    if (command->submitQueueMask & (1u << queue))
                     {
-                        SubmitQueue(srcQueueIndex, VK_NULL_HANDLE, &debugScopes);
-                        ctx.queue->AddWait(queues->GetQueueAt(srcQueueIndex), command->waitStageMask);
+                        SubmitQueue(queue, VK_NULL_HANDLE, &debugScopes);
                     }
                 }
             }
-
+    
+            if (command->dependencyMask)
+            {
+                for (auto srcQueue = 0u; srcQueue < queueCount; ++srcQueue)
+                {
+                    if (command->dependencyMask & (1u << srcQueue))
+                    {
+                        ctx.queue->AddWait(queues->GetQueueAt(srcQueue), command->waitStageMask);
+                    }
+                }
+            }
+    
             ctx.cmb = ctx.queue->GetCommandBuffer();
             ctx.cmb->PrepareForCommands();
-
+    
             ApplyDebugScopes(ctx.queueIndex, &debugScopes, debugScopes.debugHead, debugScopes.timerHead);
-
+    
             // Only the first raster command of a draw sequence has a valid pass index.
             // The rest are coalesced. so by that token we can end rendering based on if the passIndex is valid.
             if (command->passIndex)
             {
                 ctx.cmb->EndRenderPass();
             }
-
+    
             if (command->memoryBarrier || command->imageTransitionCount)
             {
                 ctx.cmb->Barrier(command->memoryBarrier, command->imageTransitions, command->imageTransitionCount);
             }
-            
+    
             command->call(&ctx, command);
         }
-
+    
         for (auto i = 0u; i < queueCount; ++i)
         {
             SubmitQueue(i, VK_NULL_HANDLE, &debugScopes);
         }
-        
+    
         scope.fence = queues->GetFenceRef();
         scope.timerTimelineIndex = m_timerArena->EndTimeline();
         scope.invocationIndex = m_invocationCounter;
@@ -1355,7 +1439,7 @@ namespace PK
         record.stage = stage;
         record.access = access;
         record.isLocked = queue == QueueType::EnumCount;
-        record.queueMask = record.isLocked ? 0xFFFFu : (uint16_t)(1u << m_driver->queues->GetQueueIndex(queue));
+        record.queue = record.isLocked ? 0xFFu : (uint8_t)m_driver->queues->GetQueueIndex(queue);
         m_accessRecorder.RecordMemoryAccess(record);
     }
 
@@ -1369,7 +1453,7 @@ namespace PK
         record.stage = stage;
         record.access = access;
         record.isLocked = queue == QueueType::EnumCount;
-        record.queueMask = record.isLocked ? 0xFFFFu : (uint16_t)(1u << m_driver->queues->GetQueueIndex(queue));
+        record.queue = record.isLocked ? 0xFFu : (uint8_t)m_driver->queues->GetQueueIndex(queue);
         m_accessRecorder.RecordImageAccess(view.image.image, record);
     }
 
@@ -1489,6 +1573,7 @@ namespace PK
                 if (format)
                 {
                     const auto hasResolve = color.resolve.image.image != VK_NULL_HANDLE;
+
                     auto& attachment = colorAttachments[i];
                     attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
                     attachment.pNext = nullptr;
@@ -1516,7 +1601,7 @@ namespace PK
             {
                 const auto hasResolve = depth.resolve.image.image != VK_NULL_HANDLE;
                 const auto isStencil = VulkanEnumConvert::IsDepthStencilFormat(depthFormat);
-                const auto isReadOnly = !state->dynamicState.depthStencil.depthWriteEnable && (!isStencil || state->dynamicState.depthStencil.stencilTestEnable);
+                const auto isReadOnly = !state->dynamicState.depthStencil.depthWriteEnable && (!isStencil || !state->dynamicState.depthStencil.stencilTestEnable);
 
                 depthAttachment->sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
                 depthAttachment->pNext = nullptr;

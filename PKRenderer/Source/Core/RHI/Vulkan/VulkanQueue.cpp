@@ -63,12 +63,16 @@ namespace PK
             ctx.familyToQueueIndex[selectedFamily] = index;
             ctx.initializer->queueFamilies[index] = selectedFamily;
             ctx.initializer->familyProperties[index] = ctx.properties[selectedFamily];
+
+            ctx.initializer->priorities[index] = requiredFlags & VK_QUEUE_GRAPHICS_BIT ? 1.0f : 0.5f;
+            ctx.initializer->globalPriorities[index].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR;
+            ctx.initializer->globalPriorities[index].globalPriority = Platform::GetProcIsElevated() ? VK_QUEUE_GLOBAL_PRIORITY_HIGH : VK_QUEUE_GLOBAL_PRIORITY_MEDIUM;
             ctx.initializer->createInfos[index].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            ctx.initializer->createInfos[index].pNext = nullptr;
+            ctx.initializer->createInfos[index].pNext = &ctx.initializer->globalPriorities[index]; 
             ctx.initializer->createInfos[index].flags = 0u;
             ctx.initializer->createInfos[index].queueFamilyIndex = selectedFamily;
             ctx.initializer->createInfos[index].queueCount = 1u;
-            ctx.initializer->createInfos[index].pQueuePriorities = ctx.initializer->priorities;
+            ctx.initializer->createInfos[index].pQueuePriorities = &ctx.initializer->priorities[index];
         }
 
         return ctx.familyToQueueIndex[selectedFamily];
