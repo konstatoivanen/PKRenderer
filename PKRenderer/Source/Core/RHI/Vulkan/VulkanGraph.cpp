@@ -1118,12 +1118,6 @@ namespace PK
     
         // Maps local pass index -> the next command on the SAME queue that starts after that pass finishes
         auto* producerSplitCmds = Allocate<VulkanCmd*>(passCount);
-
-        if (producerSplitCmds)
-        {
-            memset(producerSplitCmds, 0, sizeof(VulkanCmd*) * passCount);
-        }
-
         VulkanCmd* hoistBarrierCmd[(uint32_t)QueueType::EnumCount]{};
         uint32_t prevPassOnQueue[(uint32_t)QueueType::EnumCount]{};
         uint32_t hoistBarrierPass[(uint32_t)QueueType::EnumCount]{};
